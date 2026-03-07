@@ -1,14 +1,10 @@
-services:
-  # PostgreSQL Database
-  - type: pserv
-    name: wallfruits-db
-    env: docker
+databases:
+  - name: wallfruits-db
+    databaseName: wallfruits_db
+    user: wallfruits
     plan: free
-    databases:
-      - name: wallfruits_db
-        user: wallfruits
 
-  # FastAPI Web Service
+services:
   - type: web
     name: wallfruits-api
     env: python
@@ -37,3 +33,7 @@ services:
         value: WallFruits API
       - key: API_VERSION
         value: 2.0.0
+      - key: CORS_ORIGINS
+        value: '["https://wallfruits-api.onrender.com"]'
+      - key: ALLOWED_HOSTS
+        value: '["wallfruits-api.onrender.com"]'
