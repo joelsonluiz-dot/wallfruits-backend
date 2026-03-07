@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block title %}QA Browser Test - WallFruits{% endblock %}
+
+{% block content %}
+<h1 class="mb-3">QA Browser Test</h1>
+<p class="text-muted">Fluxo real de teste manual no navegador, usando os endpoints da API.</p>
+
+<div class="alert alert-warning">
+    <strong>Como usar:</strong> registre ou faça login, depois execute os botões dos cenários.
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">1) Sessão (Token)</div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <label class="form-label">Email</label>
+                    <input id="loginEmail" class="form-control" type="email" placeholder="usuario@email.com">
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Senha</label>
+                    <input id="loginPassword" class="form-control" type="password" placeholder="******">
+                </div>
+                <div class="d-flex gap-2">
+                    <button id="btnLogin" class="btn btn-success">Login</button>
+                    <button id="btnWhoami" class="btn btn-outline-primary">/auth/me</button>
+                    <button id="btnLogout" class="btn btn-outline-secondary">Limpar token</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">2) Criar Oferta</div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <label class="form-label">Produto</label>
+                    <input id="offerProduct" class="form-control" value="Banana Prata">
+                </div>
+                <div class="row g-2 mb-2">
+                    <div class="col">
+                        <label class="form-label">Quantidade</label>
+                        <input id="offerQty" class="form-control" type="number" step="0.01" value="100">
+                    </div>
+                    <div class="col">
+                        <label class="form-label">Preço</label>
+                        <input id="offerPrice" class="form-control" type="number" step="0.01" value="6.5">
+                    </div>
+                    <div class="col">
+                        <label class="form-label">Unidade</label>
+                        <input id="offerUnit" class="form-control" value="kg">
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Local</label>
+                    <input id="offerLocation" class="form-control" value="Sao Paulo/SP">
+                </div>
+                <button id="btnCreateOffer" class="btn btn-success">Criar oferta</button>
+                <button id="btnMyOffers" class="btn btn-outline-primary">Listar minhas ofertas</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">3) Favoritos e Compra</div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <label class="form-label">Offer ID (UUID)</label>
+                    <input id="targetOfferId" class="form-control" placeholder="Cole uma oferta aqui">
+                </div>
+                <div class="row g-2 mb-2">
+                    <div class="col">
+                        <label class="form-label">Qtd compra</label>
+                        <input id="txQty" class="form-control" type="number" step="0.01" value="5">
+                    </div>
+                    <div class="col">
+                        <label class="form-label">Pagamento</label>
+                        <select id="txPayment" class="form-select">
+                            <option value="cash">cash</option>
+                            <option value="card">card</option>
+                            <option value="transfer">transfer</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="d-flex gap-2 flex-wrap">
+                    <button id="btnFavorite" class="btn btn-success">Favoritar</button>
+                    <button id="btnBuy" class="btn btn-outline-danger">Comprar (transacao)</button>
+                    <button id="btnTxHistory" class="btn btn-outline-primary">Historico transacoes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">4) Mensagens e Dashboard</div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <label class="form-label">Receiver ID</label>
+                    <input id="receiverId" class="form-control" type="number" value="1">
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Mensagem</label>
+                    <input id="messageContent" class="form-control" value="Teste real via navegador">
+                </div>
+                <div class="d-flex gap-2 flex-wrap">
+                    <button id="btnSendMsg" class="btn btn-success">Enviar mensagem</button>
+                    <button id="btnMessages" class="btn btn-outline-primary">Listar mensagens</button>
+                    <button id="btnDashboard" class="btn btn-outline-primary">Meu dashboard</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mt-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Log de Teste (resultado bruto)</span>
+        <button id="btnClearLog" class="btn btn-sm btn-outline-secondary">Limpar log</button>
+    </div>
+    <div class="card-body">
+        <pre id="qaLog" style="max-height: 420px; overflow:auto; background:#111; color:#d7ffd7; padding:12px; border-radius:6px;">Pronto para testar.</pre>
+    </div>
+</div>
+
+<script>
+    const qaLog = document.getElementById('qaLog');
+
+    function appendLog(title, data) {
+        const block = `\n[${new Date().toLocaleTimeString()}] ${title}\n${JSON.stringify(data, null, 2)}\n`;
+        qaLog.textContent += block;
+        qaLog.scrollTop = qaLog.scrollHeight;
+    }
+
+    async function run(title, fn) {
+        try {
+            const result = await fn();
+            appendLog(`OK - ${title}`, result);
+            return result;
+        } catch (error) {
+            appendLog(`ERRO - ${title}`, { message: error.message });
+            throw error;
+        }
+    }
+
+    document.getElementById('btnLogin').addEventListener('click', async () => {
+        await run('Login', async () => {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const response = await apiRequest('/auth/login', 'POST', { email, password });
+            localStorage.setItem('token', response.access_token);
+            localStorage.setItem('user', JSON.stringify(response.user || {}));
+            return response;
+        });
+    });
+
+    document.getElementById('btnWhoami').addEventListener('click', async () => {
+        await run('/auth/me', () => apiRequest('/auth/me'));
+    });
+
+    document.getElementById('btnLogout').addEventListener('click', () => {
+        clearSessionToken();
+        appendLog('Token removido', { ok: true });
+    });
+
+    document.getElementById('btnCreateOffer').addEventListener('click', async () => {
+        await run('Criar oferta', () => apiRequest('/offers', 'POST', {
+            product_name: document.getElementById('offerProduct').value,
+            description: 'Oferta criada pela tela QA browser test',
+            category: 'frutas',
+            quantity: Number(document.getElementById('offerQty').value),
+            price: Number(document.getElementById('offerPrice').value),
+            unit: document.getElementById('offerUnit').value,
+            location: document.getElementById('offerLocation').value,
+            images: []
+        }));
+    });
+
+    document.getElementById('btnMyOffers').addEventListener('click', async () => {
+        const result = await run('Minhas ofertas', () => apiRequest('/offers/my'));
+        if (result && result.length > 0) {
+            document.getElementById('targetOfferId').value = result[0].id;
+        }
+    });
+
+    document.getElementById('btnFavorite').addEventListener('click', async () => {
+        const offerId = document.getElementById('targetOfferId').value;
+        await run('Favoritar oferta', () => apiRequest('/favorites', 'POST', { offer_id: offerId }));
+    });
+
+    document.getElementById('btnBuy').addEventListener('click', async () => {
+        const offerId = document.getElementById('targetOfferId').value;
+        await run('Criar transacao (compra)', () => apiRequest('/transactions', 'POST', {
+            offer_id: offerId,
+            quantity: Number(document.getElementById('txQty').value),
+            delivery_method: 'pickup',
+            payment_method: document.getElementById('txPayment').value
+        }));
+    });
+
+    document.getElementById('btnTxHistory').addEventListener('click', async () => {
+        await run('Historico de transacoes', () => apiRequest('/transactions/history?type=all'));
+    });
+
+    document.getElementById('btnSendMsg').addEventListener('click', async () => {
+        await run('Enviar mensagem', () => apiRequest('/messages', 'POST', {
+            receiver_id: Number(document.getElementById('receiverId').value),
+            content: document.getElementById('messageContent').value,
+            message_type: 'direct'
+        }));
+    });
+
+    document.getElementById('btnMessages').addEventListener('click', async () => {
+        await run('Listar mensagens', () => apiRequest('/messages?limit=20'));
+    });
+
+    document.getElementById('btnDashboard').addEventListener('click', async () => {
+        await run('Meu dashboard', () => apiRequest('/dashboard/my-dashboard'));
+    });
+
+    document.getElementById('btnClearLog').addEventListener('click', () => {
+        qaLog.textContent = 'Log limpo.';
+    });
+</script>
+{% endblock %}

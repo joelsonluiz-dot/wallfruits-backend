@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}WallFruits - Bem-vindo{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <h1>Bem-vindo ao WallFruits</h1>
+        <p>Ambiente de validação funcional para testar o software no navegador.</p>
+        <a href="/offers" class="btn btn-success btn-lg">Ver Ofertas</a>
+        <a href="/qa" class="btn btn-outline-dark btn-lg ms-2">Abrir QA Browser Test</a>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Estatísticas</h5>
+                <p class="card-text">Ofertas ativas: <span id="activeOffers">Carregando...</span></p>
+                <p class="card-text">Transações (24h): <span id="tx24h">Carregando...</span></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Carregar estatísticas
+    async function loadStats() {
+        try {
+            const stats = await apiRequest('/dashboard/insights');
+            const totalOffers = (stats.price_insights || []).reduce((acc, item) => acc + (item.offer_count || 0), 0);
+            document.getElementById('activeOffers').textContent = totalOffers;
+            document.getElementById('tx24h').textContent = stats.recent_activity?.new_transactions_24h || 0;
+        } catch (error) {
+            console.error('Erro ao carregar estatísticas:', error);
+            document.getElementById('activeOffers').textContent = 'n/a';
+            document.getElementById('tx24h').textContent = 'n/a';
+        }
+    }
+    loadStats();
+</script>
+{% endblock %}

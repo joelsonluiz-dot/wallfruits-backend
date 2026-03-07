@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Ofertas - WallFruits{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Ofertas Disponíveis</h1>
+    <a href="/qa" class="btn btn-outline-dark">Criar/Testar via QA</a>
+</div>
+
+<div class="row" id="offersContainer">
+    <!-- Ofertas serão carregadas aqui -->
+</div>
+
+<script>
+    async function loadOffers() {
+        try {
+            const data = await apiRequest('/offers?limit=12');
+            const offers = data.offers || [];
+            const container = document.getElementById('offersContainer');
+
+            if (!offers.length) {
+                container.innerHTML = '<div class="col-12"><div class="alert alert-info">Nenhuma oferta encontrada.</div></div>';
+                return;
+            }
+
+            container.innerHTML = offers.map(offer => `
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">${offer.product_name}</h5>
+                            <p class="card-text">${offer.description || 'Sem descrição'}</p>
+                            <p class="card-text"><strong>R$ ${offer.price}</strong></p>
+                            <p class="card-text mb-1">Quantidade: ${offer.quantity} ${offer.unit}</p>
+                            <p class="card-text text-muted">Local: ${offer.location || 'N/A'}</p>
+                            <span class="badge bg-secondary">${offer.status}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        } catch (error) {
+            console.error('Erro ao carregar ofertas:', error);
+            document.getElementById('offersContainer').innerHTML = `<div class="col-12"><div class="alert alert-danger">${error.message}</div></div>`;
+        }
+    }
+    loadOffers();
+</script>
+{% endblock %}
