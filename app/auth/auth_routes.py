@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
+import logging
 
-from app.database.connection import get_db
+from app.database.connection import get_db, _ensure_postgres_schema_compatibility
 from app.models.user import User
 from app.schemas.user_schema import (
     UserCreate, UserLogin, UserResponse,
@@ -18,16 +19,30 @@ router = APIRouter(
     tags=["auth"]
 )
 
+logger = logging.getLogger("wallfruits_api")
+
+
+def ensure_auth_schema_ready() -> None:
+    """Garante que colunas novas da tabela users existam antes das consultas."""
+    try:
+        _ensure_postgres_schema_compatibility()
+    except Exception as exc:
+        logger.error(f"Erro ao sincronizar schema de auth: {exc}", exc_info=True)
+        raise HTTPException(500, "Erro ao preparar banco de dados")
+
 
 # -----------------------
 # REGISTER
 # -----------------------
 @router.post("/register", response_model=UserResponse)
 def register_user(user: UserCreate, db: Session = Depends(get_db)):
-    import logging
-    logger = logging.getLogger("wallfruits_api")
+    ensure_auth_schema_ready()
 
-    existing_user = db.query(User).filter(User.email == user.email).first()
+    try:
+        existing_user = db.query(User.id).filter(User.email == user.email).first()
+    except Exception as e:
+        logger.error(f"Erro ao consultar email existente: {e}", exc_info=True)
+        raise HTTPException(500, "Erro ao validar email no banco")
 
     if existing_user:
         raise HTTPException(400, "Email já cadastrado")
@@ -68,8 +83,13 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
 # -----------------------
 @router.post("/login")
 def login(user: UserLogin, db: Session = Depends(get_db)):
+    ensure_auth_schema_ready()
 
-    db_user = db.query(User).filter(User.email == user.email).first()
+    try:
+        db_user = db.query(User).filter(User.email == user.email).first()
+    except Exception as e:
+        logger.error(f"Erro ao consultar usuario para login: {e}", exc_info=True)
+        raise HTTPException(500, "Erro ao consultar usuário no banco")
 
     if not db_user:
         raise HTTPException(401, "Credenciais inválidas")
