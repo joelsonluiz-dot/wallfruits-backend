@@ -492,10 +492,6 @@
         </div>
     </nav>
 
-    <div class="wf-container wf-fade-in">
-        {% block content %}{% endblock %}
-    </div>
-
     <script>
         async function apiRequest(url, method = 'GET', data = null) {
             const isAbsolute = url.startsWith('http://') || url.startsWith('https://');
@@ -533,5 +529,9 @@
             localStorage.removeItem('user');
         }
     </script>
+
+    <div class="wf-container wf-fade-in">
+        {% block content %}{% endblock %}
+    </div>
 </body>
 </html>
