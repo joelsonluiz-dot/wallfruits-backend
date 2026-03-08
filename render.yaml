@@ -34,6 +34,6 @@ services:
       - key: API_VERSION
         value: 2.0.0
       - key: CORS_ORIGINS
-        value: '["https://wallfruits-api.onrender.com"]'
+        value: '["https://wallfruits-backend.onrender.com","https://wallfruits-api.onrender.com"]'
       - key: ALLOWED_HOSTS
-        value: '["wallfruits-api.onrender.com"]'
+        value: '["wallfruits-backend.onrender.com","wallfruits-api.onrender.com"]'

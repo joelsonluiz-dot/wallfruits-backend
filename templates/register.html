@@ -142,7 +142,8 @@
                             </label>
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-wf-primary w-100" style="padding: 0.75rem;">
+                    <div id="registerMsg" style="display:none; padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem; font-size: 0.9rem;"></div>
+                    <button type="submit" id="registerBtn" class="btn btn-wf-primary w-100" style="padding: 0.75rem;">
                         Criar conta &rarr;
                     </button>
                 </form>
@@ -158,12 +159,36 @@
 <script>
     document.getElementById('registerForm').addEventListener('submit', async (e) => {
         e.preventDefault();
+        const msgDiv = document.getElementById('registerMsg');
+        const btn = document.getElementById('registerBtn');
         const name = document.getElementById('name').value;
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
         const phone = document.getElementById('phone').value;
         const location = document.getElementById('location').value;
-        const role = document.querySelector('input[name="role"]:checked').value;
+        const roleEl = document.querySelector('input[name="role"]:checked');
+
+        // Validações básicas no client
+        if (!name || !email || !password) {
+            msgDiv.style.display = 'block';
+            msgDiv.style.background = 'rgba(255,60,60,0.15)';
+            msgDiv.style.border = '1px solid #ff3c3c';
+            msgDiv.style.color = '#ff6b6b';
+            msgDiv.textContent = 'Preencha nome, email e senha.';
+            return;
+        }
+        if (!roleEl) {
+            msgDiv.style.display = 'block';
+            msgDiv.style.background = 'rgba(255,60,60,0.15)';
+            msgDiv.style.border = '1px solid #ff3c3c';
+            msgDiv.style.color = '#ff6b6b';
+            msgDiv.textContent = 'Selecione um tipo de conta.';
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<span style="display:inline-block;width:1rem;height:1rem;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:0.5rem;"></span> Criando conta...';
+        msgDiv.style.display = 'none';
 
         try {
             await apiRequest('/auth/register', 'POST', {
@@ -172,14 +197,25 @@
                 password,
                 phone: phone || null,
                 location: location || null,
-                role
+                role: roleEl.value
             });
 
-            alert('Registro bem-sucedido! Faça login.');
-                window.location.href = '/login';
+            msgDiv.style.display = 'block';
+            msgDiv.style.background = 'rgba(0,255,136,0.15)';
+            msgDiv.style.border = '1px solid #00ff88';
+            msgDiv.style.color = '#00ff88';
+            msgDiv.textContent = '✓ Conta criada com sucesso! Redirecionando...';
+            setTimeout(() => { window.location.href = '/login'; }, 1500);
         } catch (error) {
-            alert('Erro: ' + error.message);
+            msgDiv.style.display = 'block';
+            msgDiv.style.background = 'rgba(255,60,60,0.15)';
+            msgDiv.style.border = '1px solid #ff3c3c';
+            msgDiv.style.color = '#ff6b6b';
+            msgDiv.textContent = '✗ ' + (error.message || 'Erro ao criar conta. Tente novamente.');
+            btn.disabled = false;
+            btn.innerHTML = 'Criar conta &rarr;';
         }
     });
 </script>
+<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
 {% endblock %}

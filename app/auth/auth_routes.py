@@ -24,6 +24,8 @@ router = APIRouter(
 # -----------------------
 @router.post("/register", response_model=UserResponse)
 def register_user(user: UserCreate, db: Session = Depends(get_db)):
+    import logging
+    logger = logging.getLogger("wallfruits_api")
 
     existing_user = db.query(User).filter(User.email == user.email).first()
 
@@ -33,7 +35,11 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
     if user.role == "admin":
         raise HTTPException(403, "Não é permitido registrar conta admin por esta rota")
 
-    hashed_password = hash_password(user.password)
+    try:
+        hashed_password = hash_password(user.password)
+    except Exception as e:
+        logger.error(f"Erro ao gerar hash da senha: {e}", exc_info=True)
+        raise HTTPException(500, f"Erro ao processar senha: {type(e).__name__}")
 
     new_user = User(
         name=user.name,
@@ -45,9 +51,14 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
         bio=user.bio
     )
 
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
+    try:
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Erro ao salvar usuário no banco: {e}", exc_info=True)
+        raise HTTPException(500, f"Erro ao criar conta: {type(e).__name__}")
 
     return new_user
 
