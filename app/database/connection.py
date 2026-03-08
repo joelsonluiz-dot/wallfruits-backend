@@ -74,6 +74,7 @@ def _ensure_postgres_schema_compatibility() -> None:
     # Em ambientes já provisionados, create_all nao adiciona colunas novas.
     # Este bloco evita falha 500 em registro/login por colunas ausentes na tabela users.
     statements = [
+        # Users table
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(50) DEFAULT 'buyer'",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(20)",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS location VARCHAR(150)",
@@ -84,7 +85,29 @@ def _ensure_postgres_schema_compatibility() -> None:
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS rating INTEGER DEFAULT 0",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS total_reviews INTEGER DEFAULT 0",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW()",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ"
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ",
+        # Offers table - new detail columns
+        "ALTER TABLE offers ADD COLUMN IF NOT EXISTS variety VARCHAR(100)",
+        "ALTER TABLE offers ADD COLUMN IF NOT EXISTS quality_class VARCHAR(50)",
+        "ALTER TABLE offers ADD COLUMN IF NOT EXISTS certification VARCHAR(100)",
+        "ALTER TABLE offers ADD COLUMN IF NOT EXISTS box_weight_kg NUMERIC(10,2)",
+        "ALTER TABLE offers ADD COLUMN IF NOT EXISTS price_per_kg NUMERIC(10,2)",
+        "ALTER TABLE offers ADD COLUMN IF NOT EXISTS price_min_kg NUMERIC(10,2)",
+        "ALTER TABLE offers ADD COLUMN IF NOT EXISTS price_avg_kg NUMERIC(10,2)",
+        "ALTER TABLE offers ADD COLUMN IF NOT EXISTS price_max_kg NUMERIC(10,2)",
+        "ALTER TABLE offers ADD COLUMN IF NOT EXISTS available_quantity NUMERIC(10,2)",
+        "ALTER TABLE offers ADD COLUMN IF NOT EXISTS origin VARCHAR(100)",
+        "ALTER TABLE offers ADD COLUMN IF NOT EXISTS target_market VARCHAR(100)",
+        "ALTER TABLE offers ADD COLUMN IF NOT EXISTS maturation VARCHAR(50)",
+        "ALTER TABLE offers ADD COLUMN IF NOT EXISTS shelf_life VARCHAR(50)",
+        "ALTER TABLE offers ADD COLUMN IF NOT EXISTS harvest_date_actual DATE",
+        "ALTER TABLE offers ADD COLUMN IF NOT EXISTS reservation_start DATE",
+        "ALTER TABLE offers ADD COLUMN IF NOT EXISTS reservation_end DATE",
+        "ALTER TABLE offers ADD COLUMN IF NOT EXISTS property_name VARCHAR(200)",
+        "ALTER TABLE offers ADD COLUMN IF NOT EXISTS property_address VARCHAR(300)",
+        "ALTER TABLE offers ADD COLUMN IF NOT EXISTS ad_duration_days INTEGER DEFAULT 30",
+        "ALTER TABLE offers ADD COLUMN IF NOT EXISTS min_boxes_to_negotiate INTEGER DEFAULT 1",
+        "ALTER TABLE offers ADD COLUMN IF NOT EXISTS platform_fee NUMERIC(10,4) DEFAULT 0.03",
     ]
 
     with engine.begin() as conn:

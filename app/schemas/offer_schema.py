@@ -2,8 +2,20 @@ from pydantic import BaseModel, Field, validator, field_validator
 from typing import Optional, List, Dict
 from uuid import UUID
 from decimal import Decimal
-from datetime import datetime
+from datetime import datetime, date
 import json
+
+
+# Valores válidos para dropdowns
+QUALITY_CLASSES = ["Primeira", "Segunda", "Casquinhou", "Polpa", "Descarte"]
+CERTIFICATIONS = [
+    "Orgânicos", "Global GAP", "Fair Trade", "Bonsucro",
+    "RainForest Alliance", "UTZ Certified", "ISO 14001"
+]
+ORIGINS = ["Nacional", "Importado"]
+TARGET_MARKETS = ["Interno", "Externo", "Exportação"]
+MATURATION_LEVELS = ["Verde", "Maduro", "Super-maduro"]
+SHELF_LIFE_OPTIONS = ["3 a 6", "3 a 9", "5 a 15"]
 
 
 class OfferCreate(BaseModel):
@@ -28,10 +40,76 @@ class OfferCreate(BaseModel):
     organic: bool = False
     harvest_date: Optional[datetime] = None
 
+    # Etapa 1 — Detalhes do produto
+    variety: Optional[str] = Field(None, max_length=150)
+    quality_class: Optional[str] = None
+    certification: Optional[str] = None
+    box_weight_kg: Optional[Decimal] = Field(None, gt=0)
+    price_per_kg: Optional[Decimal] = Field(None, gt=0)
+    price_min_kg: Optional[Decimal] = Field(None, ge=0)
+    price_avg_kg: Optional[Decimal] = Field(None, ge=0)
+    price_max_kg: Optional[Decimal] = Field(None, ge=0)
+    available_quantity: Optional[Decimal] = Field(None, ge=0)
+    origin: Optional[str] = None
+    target_market: Optional[str] = None
+    maturation: Optional[str] = None
+    shelf_life: Optional[str] = None
+    harvest_date_actual: Optional[date] = None
+    reservation_start: Optional[date] = None
+    reservation_end: Optional[date] = None
+
+    # Etapa 2 — Propriedade e anúncio
+    property_name: Optional[str] = Field(None, max_length=255)
+    property_address: Optional[str] = Field(None, max_length=500)
+    ad_duration_days: Optional[int] = Field(None, gt=0)
+    min_boxes_to_negotiate: Optional[int] = Field(None, gt=0)
+
     @validator('images')
     def validate_images(cls, v):
         if v and len(v) > 10:
             raise ValueError('Máximo de 10 imagens por oferta')
+        return v
+
+    @validator('quality_class')
+    def validate_quality_class(cls, v):
+        if v and v not in QUALITY_CLASSES:
+            raise ValueError(f'Qualidade deve ser uma de: {", ".join(QUALITY_CLASSES)}')
+        return v
+
+    @validator('certification')
+    def validate_certification(cls, v):
+        if v and v not in CERTIFICATIONS:
+            raise ValueError(f'Certificação deve ser uma de: {", ".join(CERTIFICATIONS)}')
+        return v
+
+    @validator('origin')
+    def validate_origin(cls, v):
+        if v and v not in ORIGINS:
+            raise ValueError(f'Origem deve ser uma de: {", ".join(ORIGINS)}')
+        return v
+
+    @validator('target_market')
+    def validate_target_market(cls, v):
+        if v and v not in TARGET_MARKETS:
+            raise ValueError(f'Mercado deve ser um de: {", ".join(TARGET_MARKETS)}')
+        return v
+
+    @validator('maturation')
+    def validate_maturation(cls, v):
+        if v and v not in MATURATION_LEVELS:
+            raise ValueError(f'Maturação deve ser uma de: {", ".join(MATURATION_LEVELS)}')
+        return v
+
+    @validator('shelf_life')
+    def validate_shelf_life(cls, v):
+        if v and v not in SHELF_LIFE_OPTIONS:
+            raise ValueError(f'Prazo de validade deve ser um de: {", ".join(SHELF_LIFE_OPTIONS)}')
+        return v
+
+    @validator('reservation_end')
+    def validate_reservation_range(cls, v, values):
+        if v and values.get('reservation_start') and v < values['reservation_start']:
+            raise ValueError('Data final da reserva deve ser posterior à data inicial')
         return v
 
 
@@ -57,6 +135,30 @@ class OfferUpdate(BaseModel):
     quality_grade: Optional[str] = Field(None, pattern="^(A|B|C)$")
     organic: Optional[bool] = None
     harvest_date: Optional[datetime] = None
+
+    # Etapa 1
+    variety: Optional[str] = Field(None, max_length=150)
+    quality_class: Optional[str] = None
+    certification: Optional[str] = None
+    box_weight_kg: Optional[Decimal] = Field(None, gt=0)
+    price_per_kg: Optional[Decimal] = Field(None, gt=0)
+    price_min_kg: Optional[Decimal] = Field(None, ge=0)
+    price_avg_kg: Optional[Decimal] = Field(None, ge=0)
+    price_max_kg: Optional[Decimal] = Field(None, ge=0)
+    available_quantity: Optional[Decimal] = Field(None, ge=0)
+    origin: Optional[str] = None
+    target_market: Optional[str] = None
+    maturation: Optional[str] = None
+    shelf_life: Optional[str] = None
+    harvest_date_actual: Optional[date] = None
+    reservation_start: Optional[date] = None
+    reservation_end: Optional[date] = None
+
+    # Etapa 2
+    property_name: Optional[str] = Field(None, max_length=255)
+    property_address: Optional[str] = Field(None, max_length=500)
+    ad_duration_days: Optional[int] = Field(None, gt=0)
+    min_boxes_to_negotiate: Optional[int] = Field(None, gt=0)
 
 
 class OfferResponse(BaseModel):
@@ -84,6 +186,29 @@ class OfferResponse(BaseModel):
     quality_grade: Optional[str]
     organic: bool
     harvest_date: Optional[datetime]
+
+    # Novos campos
+    variety: Optional[str] = None
+    quality_class: Optional[str] = None
+    certification: Optional[str] = None
+    box_weight_kg: Optional[Decimal] = None
+    price_per_kg: Optional[Decimal] = None
+    price_min_kg: Optional[Decimal] = None
+    price_avg_kg: Optional[Decimal] = None
+    price_max_kg: Optional[Decimal] = None
+    available_quantity: Optional[Decimal] = None
+    origin: Optional[str] = None
+    target_market: Optional[str] = None
+    maturation: Optional[str] = None
+    shelf_life: Optional[str] = None
+    harvest_date_actual: Optional[date] = None
+    reservation_start: Optional[date] = None
+    reservation_end: Optional[date] = None
+    property_name: Optional[str] = None
+    property_address: Optional[str] = None
+    ad_duration_days: Optional[int] = None
+    min_boxes_to_negotiate: Optional[int] = None
+    platform_fee: Optional[Decimal] = None
 
     views: int
     favorites_count: int

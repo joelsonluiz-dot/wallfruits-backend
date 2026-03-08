@@ -1,129 +1,426 @@
 {% extends "base.html" %}
 
-{% block title %}QA Browser Test - WallFruits{% endblock %}
+{% block title %}QA Test Lab - WallFruits{% endblock %}
 
 {% block content %}
-<h1 class="mb-3">QA Browser Test</h1>
-<p class="text-muted">Fluxo real de teste manual no navegador, usando os endpoints da API.</p>
+<style>
+    .qa-header {
+        margin-bottom: 2rem;
+    }
+    .qa-header h1 {
+        font-size: 2rem;
+        font-weight: 800;
+        letter-spacing: -1px;
+        margin-bottom: 0.3rem;
+    }
+    .qa-header p {
+        color: var(--wf-text-secondary);
+        font-size: 0.9rem;
+    }
+    .qa-tip {
+        background: rgba(251,191,36,0.06);
+        border: 1px solid rgba(251,191,36,0.15);
+        border-radius: var(--wf-radius-sm);
+        padding: 0.85rem 1.2rem;
+        font-size: 0.85rem;
+        color: #fcd34d;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .qa-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+        gap: 1.25rem;
+        margin-bottom: 1.5rem;
+    }
+    .qa-section-num {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 22px;
+        height: 22px;
+        background: var(--wf-accent);
+        color: #0a0a0f;
+        border-radius: 6px;
+        font-size: 0.7rem;
+        font-weight: 800;
+        margin-right: 8px;
+    }
+    .qa-btn-group {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .qa-terminal {
+        background: #08080d;
+        color: #39ff8f;
+        font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+        font-size: 0.82rem;
+        padding: 1.25rem;
+        border-radius: var(--wf-radius-sm);
+        max-height: 450px;
+        overflow: auto;
+        line-height: 1.6;
+        border: 1px solid rgba(57,255,143,0.08);
+        box-shadow: inset 0 0 60px rgba(0,0,0,0.5);
+    }
+    .qa-terminal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .qa-terminal-header span {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.8rem;
+        color: var(--wf-text-secondary);
+    }
+    .qa-terminal-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #39ff8f;
+        box-shadow: 0 0 6px rgba(57,255,143,0.5);
+    }
+    @media (max-width: 768px) {
+        .qa-grid { grid-template-columns: 1fr; }
+    }
+</style>
 
-<div class="alert alert-warning">
-    <strong>Como usar:</strong> registre ou faça login, depois execute os botões dos cenários.
+<div class="qa-header">
+    <h1>QA <span class="wf-gradient-text">Test Lab</span></h1>
+    <p>Console de testes interativos para validação de endpoints da API em tempo real</p>
 </div>
 
-<div class="row g-3">
-    <div class="col-lg-6">
-        <div class="card">
-            <div class="card-header">1) Sessão (Token)</div>
-            <div class="card-body">
-                <div class="mb-2">
-                    <label class="form-label">Email</label>
-                    <input id="loginEmail" class="form-control" type="email" placeholder="usuario@email.com">
-                </div>
-                <div class="mb-2">
-                    <label class="form-label">Senha</label>
-                    <input id="loginPassword" class="form-control" type="password" placeholder="******">
-                </div>
-                <div class="d-flex gap-2">
-                    <button id="btnLogin" class="btn btn-success">Login</button>
-                    <button id="btnWhoami" class="btn btn-outline-primary">/auth/me</button>
-                    <button id="btnLogout" class="btn btn-outline-secondary">Limpar token</button>
-                </div>
+<div class="qa-tip">
+    <span>&#9889;</span>
+    Registre ou faça login primeiro, depois execute os cenários de teste abaixo.
+</div>
+
+<div class="qa-grid wf-stagger">
+    <!-- Session -->
+    <div class="wf-card">
+        <div class="card-header">
+            <span class="qa-section-num">1</span> Sessão / Autenticação
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label class="wf-label">Email</label>
+                <input id="loginEmail" class="wf-input form-control" type="email" placeholder="usuario@email.com">
+            </div>
+            <div class="mb-3">
+                <label class="wf-label">Senha</label>
+                <input id="loginPassword" class="wf-input form-control" type="password" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;">
+            </div>
+            <div class="qa-btn-group">
+                <button id="btnLogin" class="btn btn-wf-primary">Login</button>
+                <button id="btnWhoami" class="btn btn-wf-ghost">/auth/me</button>
+                <button id="btnLogout" class="btn btn-wf-secondary">Limpar token</button>
             </div>
         </div>
     </div>
 
-    <div class="col-lg-6">
-        <div class="card">
-            <div class="card-header">2) Criar Oferta</div>
-            <div class="card-body">
-                <div class="mb-2">
-                    <label class="form-label">Produto</label>
-                    <input id="offerProduct" class="form-control" value="Banana Prata">
-                </div>
-                <div class="row g-2 mb-2">
-                    <div class="col">
-                        <label class="form-label">Quantidade</label>
-                        <input id="offerQty" class="form-control" type="number" step="0.01" value="100">
-                    </div>
-                    <div class="col">
-                        <label class="form-label">Preço</label>
-                        <input id="offerPrice" class="form-control" type="number" step="0.01" value="6.5">
-                    </div>
-                    <div class="col">
-                        <label class="form-label">Unidade</label>
-                        <input id="offerUnit" class="form-control" value="kg">
-                    </div>
-                </div>
-                <div class="mb-2">
-                    <label class="form-label">Local</label>
-                    <input id="offerLocation" class="form-control" value="Sao Paulo/SP">
-                </div>
-                <button id="btnCreateOffer" class="btn btn-success">Criar oferta</button>
-                <button id="btnMyOffers" class="btn btn-outline-primary">Listar minhas ofertas</button>
+    <!-- =========================================== -->
+    <!-- CRIAR OFERTA — FORMULÁRIO EM 2 ETAPAS       -->
+    <!-- =========================================== -->
+    <div class="wf-card" style="grid-column: 1 / -1;">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <span class="qa-section-num">2</span> Criar Oferta
+            </div>
+            <div class="d-flex gap-2 align-items-center" style="font-size:0.8rem;">
+                <span id="stepIndicator1" class="wf-badge wf-badge-active">Etapa 1 — Produto</span>
+                <span id="stepIndicator2" class="wf-badge wf-badge-neutral">Etapa 2 — Propriedade</span>
             </div>
         </div>
-    </div>
+        <div class="card-body">
 
-    <div class="col-lg-6">
-        <div class="card">
-            <div class="card-header">3) Favoritos e Compra</div>
-            <div class="card-body">
-                <div class="mb-2">
-                    <label class="form-label">Offer ID (UUID)</label>
-                    <input id="targetOfferId" class="form-control" placeholder="Cole uma oferta aqui">
+            <!-- ETAPA 1 — Detalhes do Produto -->
+            <div id="offerStep1">
+                <div style="margin-bottom:1.25rem;padding-bottom:0.75rem;border-bottom:1px solid var(--wf-border);">
+                    <h6 style="font-weight:700;margin:0;color:var(--wf-accent);">&#127819; Informações do Produto</h6>
                 </div>
-                <div class="row g-2 mb-2">
-                    <div class="col">
-                        <label class="form-label">Qtd compra</label>
-                        <input id="txQty" class="form-control" type="number" step="0.01" value="5">
+
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="wf-label">Produto (Fruta)</label>
+                        <input id="offerProduct" class="wf-input form-control" value="Banana Prata">
                     </div>
-                    <div class="col">
-                        <label class="form-label">Pagamento</label>
-                        <select id="txPayment" class="form-select">
-                            <option value="cash">cash</option>
-                            <option value="card">card</option>
-                            <option value="transfer">transfer</option>
+                    <div class="col-md-4">
+                        <label class="wf-label">Variedade</label>
+                        <input id="offerVariety" class="wf-input form-control" placeholder="Ex: Prata, Nanica, Maçã...">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="wf-label">Qualidade</label>
+                        <select id="offerQualityClass" class="wf-select form-select">
+                            <option value="">Selecione...</option>
+                            <option value="Primeira">Primeira</option>
+                            <option value="Segunda">Segunda</option>
+                            <option value="Casquinhou">Casquinhou</option>
+                            <option value="Polpa">Polpa</option>
+                            <option value="Descarte">Descarte</option>
                         </select>
                     </div>
                 </div>
-                <div class="d-flex gap-2 flex-wrap">
-                    <button id="btnFavorite" class="btn btn-success">Favoritar</button>
-                    <button id="btnBuy" class="btn btn-outline-danger">Comprar (transacao)</button>
-                    <button id="btnTxHistory" class="btn btn-outline-primary">Historico transacoes</button>
+
+                <div class="row g-3 mt-1">
+                    <div class="col-md-4">
+                        <label class="wf-label">Certificação</label>
+                        <select id="offerCertification" class="wf-select form-select">
+                            <option value="">Nenhuma</option>
+                            <option value="Orgânicos">Orgânicos</option>
+                            <option value="Global GAP">Global GAP</option>
+                            <option value="Fair Trade">Fair Trade</option>
+                            <option value="Bonsucro">Bonsucro</option>
+                            <option value="RainForest Alliance">RainForest Alliance</option>
+                            <option value="UTZ Certified">UTZ Certified</option>
+                            <option value="ISO 14001">ISO 14001</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="wf-label">Peso Aproximado da Caixa (kg)</label>
+                        <input id="offerBoxWeight" class="wf-input form-control" type="number" step="0.01" placeholder="Ex: 22.5">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="wf-label">Preço por Kg (R$)</label>
+                        <input id="offerPricePerKg" class="wf-input form-control" type="number" step="0.01" value="6.50">
+                    </div>
+                </div>
+
+                <div style="margin:1.25rem 0 0.75rem;padding-top:1rem;border-top:1px solid var(--wf-border);">
+                    <h6 style="font-weight:700;margin:0;color:var(--wf-text-secondary);font-size:0.85rem;">&#128200; Faixa de Preço por Kg</h6>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="wf-label">Preço Mínimo / Kg (R$)</label>
+                        <input id="offerPriceMinKg" class="wf-input form-control" type="number" step="0.01" placeholder="Ex: 3.00">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="wf-label">Preço Médio / Kg (R$)</label>
+                        <input id="offerPriceAvgKg" class="wf-input form-control" type="number" step="0.01" placeholder="Ex: 5.50">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="wf-label">Preço Máximo / Kg (R$)</label>
+                        <input id="offerPriceMaxKg" class="wf-input form-control" type="number" step="0.01" placeholder="Ex: 8.00">
+                    </div>
+                </div>
+
+                <div style="margin:1.25rem 0 0.75rem;padding-top:1rem;border-top:1px solid var(--wf-border);">
+                    <h6 style="font-weight:700;margin:0;color:var(--wf-text-secondary);font-size:0.85rem;">&#128230; Estoque e Logística</h6>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="wf-label">Quantidade Disponível</label>
+                        <input id="offerAvailableQty" class="wf-input form-control" type="number" step="0.01" value="100">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="wf-label">Unidade</label>
+                        <input id="offerUnit" class="wf-input form-control" value="kg">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="wf-label">Origem</label>
+                        <select id="offerOrigin" class="wf-select form-select">
+                            <option value="">Selecione...</option>
+                            <option value="Nacional" selected>Nacional</option>
+                            <option value="Importado">Importado</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="wf-label">Mercado para Venda</label>
+                        <select id="offerTargetMarket" class="wf-select form-select">
+                            <option value="">Selecione...</option>
+                            <option value="Interno" selected>Interno</option>
+                            <option value="Externo">Externo</option>
+                            <option value="Exportação">Exportação</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row g-3 mt-1">
+                    <div class="col-md-3">
+                        <label class="wf-label">Grau de Maturação</label>
+                        <select id="offerMaturation" class="wf-select form-select">
+                            <option value="">Selecione...</option>
+                            <option value="Verde">Verde</option>
+                            <option value="Maduro">Maduro</option>
+                            <option value="Super-maduro">Super-maduro</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="wf-label">Prazo de Validade (dias)</label>
+                        <select id="offerShelfLife" class="wf-select form-select">
+                            <option value="">Selecione...</option>
+                            <option value="3 a 6">3 a 6 dias</option>
+                            <option value="3 a 9">3 a 9 dias</option>
+                            <option value="5 a 15">5 a 15 dias</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="wf-label">Data da Colheita</label>
+                        <input id="offerHarvestDate" class="wf-input form-control" type="date">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="wf-label">Localização</label>
+                        <input id="offerLocation" class="wf-input form-control" value="São Paulo/SP">
+                    </div>
+                </div>
+
+                <div style="margin:1.25rem 0 0.75rem;padding-top:1rem;border-top:1px solid var(--wf-border);">
+                    <h6 style="font-weight:700;margin:0;color:var(--wf-text-secondary);font-size:0.85rem;">&#128197; Período de Reserva</h6>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="wf-label">Data Inicial da Reserva</label>
+                        <input id="offerReservationStart" class="wf-input form-control" type="date">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="wf-label">Data Final da Reserva</label>
+                        <input id="offerReservationEnd" class="wf-input form-control" type="date">
+                    </div>
+                </div>
+
+                <div class="mt-4 d-flex justify-content-end">
+                    <button id="btnGoStep2" class="btn btn-wf-primary">Próxima Etapa &rarr;</button>
+                </div>
+            </div>
+
+            <!-- ETAPA 2 — Propriedade e Anúncio -->
+            <div id="offerStep2" style="display:none;">
+                <div style="margin-bottom:1.25rem;padding-bottom:0.75rem;border-bottom:1px solid var(--wf-border);">
+                    <h6 style="font-weight:700;margin:0;color:var(--wf-accent);">&#127969; Propriedade e Anúncio</h6>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="wf-label">Nome da Propriedade</label>
+                        <input id="offerPropertyName" class="wf-input form-control" placeholder="Ex: Fazenda São José">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="wf-label">Endereço da Propriedade</label>
+                        <input id="offerPropertyAddress" class="wf-input form-control" placeholder="Ex: Rod. SP-294, km 12 — Marília/SP">
+                    </div>
+                </div>
+
+                <div class="row g-3 mt-1">
+                    <div class="col-md-12">
+                        <label class="wf-label">Descrição do Produto</label>
+                        <textarea id="offerDescription" class="wf-input form-control" rows="3" placeholder="Descreva as características, diferenciais e condições do produto..."></textarea>
+                    </div>
+                </div>
+
+                <div class="row g-3 mt-1">
+                    <div class="col-md-4">
+                        <label class="wf-label">Duração do Anúncio (dias)</label>
+                        <input id="offerAdDuration" class="wf-input form-control" type="number" value="30" min="1">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="wf-label">Qtd. Mínima de Caixas para Negociar</label>
+                        <input id="offerMinBoxes" class="wf-input form-control" type="number" value="10" min="1">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="wf-label">Categoria</label>
+                        <input id="offerCategory" class="wf-input form-control" value="frutas">
+                    </div>
+                </div>
+
+                <!-- Taxa da plataforma -->
+                <div style="margin-top:1.5rem;padding:1rem 1.25rem;background:rgba(0,212,170,0.05);border:1px solid rgba(0,212,170,0.12);border-radius:var(--wf-radius-sm);">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:0.4rem;">
+                        <span style="font-size:1rem;">&#9432;</span>
+                        <strong style="font-size:0.85rem;color:var(--wf-accent);">Taxa da Plataforma WallFruits</strong>
+                    </div>
+                    <p style="font-size:0.83rem;color:var(--wf-text-secondary);margin:0;line-height:1.55;">
+                        Será aplicada uma taxa fixa de <strong style="color:var(--wf-text);">R$ 0,03</strong> por kg sobre o valor do produto final.
+                        Essa taxa é somada automaticamente ao preço exibido ao comprador para manutenção e operação da plataforma.
+                    </p>
+                    <div style="margin-top:0.6rem;font-size:0.82rem;color:var(--wf-text-secondary);">
+                        Preço final estimado: <strong id="precofinalEstimado" style="color:var(--wf-accent);">—</strong>
+                    </div>
+                </div>
+
+                <div class="mt-4 d-flex justify-content-between">
+                    <button id="btnBackStep1" class="btn btn-wf-secondary">&larr; Voltar</button>
+                    <div class="qa-btn-group">
+                        <button id="btnCreateOffer" class="btn btn-wf-primary">&#10003; Criar Oferta</button>
+                        <button id="btnMyOffers" class="btn btn-wf-ghost">Minhas Ofertas</button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="col-lg-6">
-        <div class="card">
-            <div class="card-header">4) Mensagens e Dashboard</div>
-            <div class="card-body">
-                <div class="mb-2">
-                    <label class="form-label">Receiver ID</label>
-                    <input id="receiverId" class="form-control" type="number" value="1">
+    <!-- Favorites & Purchase -->
+    <div class="wf-card">
+        <div class="card-header">
+            <span class="qa-section-num">3</span> Favoritos & Compra
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label class="wf-label">Offer ID (UUID)</label>
+                <input id="targetOfferId" class="wf-input form-control" placeholder="Cole o ID da oferta aqui">
+            </div>
+            <div class="row g-2 mb-3">
+                <div class="col-6">
+                    <label class="wf-label">Qtd compra</label>
+                    <input id="txQty" class="wf-input form-control" type="number" step="0.01" value="5">
                 </div>
-                <div class="mb-2">
-                    <label class="form-label">Mensagem</label>
-                    <input id="messageContent" class="form-control" value="Teste real via navegador">
+                <div class="col-6">
+                    <label class="wf-label">Pagamento</label>
+                    <select id="txPayment" class="wf-select form-select">
+                        <option value="cash">Cash</option>
+                        <option value="card">Card</option>
+                        <option value="transfer">Transfer</option>
+                    </select>
                 </div>
-                <div class="d-flex gap-2 flex-wrap">
-                    <button id="btnSendMsg" class="btn btn-success">Enviar mensagem</button>
-                    <button id="btnMessages" class="btn btn-outline-primary">Listar mensagens</button>
-                    <button id="btnDashboard" class="btn btn-outline-primary">Meu dashboard</button>
-                </div>
+            </div>
+            <div class="qa-btn-group">
+                <button id="btnFavorite" class="btn btn-wf-primary">&#9829; Favoritar</button>
+                <button id="btnBuy" class="btn btn-wf-danger">Comprar</button>
+                <button id="btnTxHistory" class="btn btn-wf-ghost">Histórico</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Messages & Dashboard -->
+    <div class="wf-card">
+        <div class="card-header">
+            <span class="qa-section-num">4</span> Mensagens & Dashboard
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label class="wf-label">Receiver ID</label>
+                <input id="receiverId" class="wf-input form-control" type="number" value="1">
+            </div>
+            <div class="mb-3">
+                <label class="wf-label">Mensagem</label>
+                <input id="messageContent" class="wf-input form-control" value="Teste real via navegador">
+            </div>
+            <div class="qa-btn-group">
+                <button id="btnSendMsg" class="btn btn-wf-primary">Enviar</button>
+                <button id="btnMessages" class="btn btn-wf-ghost">Mensagens</button>
+                <button id="btnDashboard" class="btn btn-wf-ghost">Dashboard</button>
             </div>
         </div>
     </div>
 </div>
 
-<div class="card mt-3">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <span>Log de Teste (resultado bruto)</span>
-        <button id="btnClearLog" class="btn btn-sm btn-outline-secondary">Limpar log</button>
+<!-- Terminal Output -->
+<div class="wf-card">
+    <div class="card-header qa-terminal-header">
+        <span>
+            <span class="qa-terminal-dot"></span>
+            Terminal de Saída
+        </span>
+        <button id="btnClearLog" class="btn btn-wf-secondary" style="padding:0.3rem 0.8rem;font-size:0.75rem;">Limpar</button>
     </div>
-    <div class="card-body">
-        <pre id="qaLog" style="max-height: 420px; overflow:auto; background:#111; color:#d7ffd7; padding:12px; border-radius:6px;">Pronto para testar.</pre>
+    <div class="card-body" style="padding:0;">
+        <pre id="qaLog" class="qa-terminal">&#9654; Pronto para testar. Execute um cenário acima.</pre>
     </div>
 </div>
 
@@ -139,14 +436,42 @@
     async function run(title, fn) {
         try {
             const result = await fn();
-            appendLog(`OK - ${title}`, result);
+            appendLog(`\u2705 ${title}`, result);
             return result;
         } catch (error) {
-            appendLog(`ERRO - ${title}`, { message: error.message });
+            appendLog(`\u274C ${title}`, { message: error.message });
             throw error;
         }
     }
 
+    // === Navegação entre etapas ===
+    document.getElementById('btnGoStep2').addEventListener('click', () => {
+        document.getElementById('offerStep1').style.display = 'none';
+        document.getElementById('offerStep2').style.display = 'block';
+        document.getElementById('stepIndicator1').className = 'wf-badge wf-badge-neutral';
+        document.getElementById('stepIndicator2').className = 'wf-badge wf-badge-active';
+        // Calcular preço final estimado
+        updatePrecoFinal();
+    });
+
+    document.getElementById('btnBackStep1').addEventListener('click', () => {
+        document.getElementById('offerStep2').style.display = 'none';
+        document.getElementById('offerStep1').style.display = 'block';
+        document.getElementById('stepIndicator1').className = 'wf-badge wf-badge-active';
+        document.getElementById('stepIndicator2').className = 'wf-badge wf-badge-neutral';
+    });
+
+    // === Cálculo do preço final com taxa ===
+    function updatePrecoFinal() {
+        const pricePerKg = parseFloat(document.getElementById('offerPricePerKg').value) || 0;
+        const taxa = 0.03;
+        const final = (pricePerKg + taxa).toFixed(2);
+        document.getElementById('precofinalEstimado').textContent = `R$ ${final} / kg (produto R$ ${pricePerKg.toFixed(2)} + taxa R$ ${taxa.toFixed(2)})`;
+    }
+
+    document.getElementById('offerPricePerKg').addEventListener('input', updatePrecoFinal);
+
+    // === Login ===
     document.getElementById('btnLogin').addEventListener('click', async () => {
         await run('Login', async () => {
             const email = document.getElementById('loginEmail').value;
@@ -164,20 +489,57 @@
 
     document.getElementById('btnLogout').addEventListener('click', () => {
         clearSessionToken();
-        appendLog('Token removido', { ok: true });
+        appendLog('\u2705 Token removido', { ok: true });
     });
 
+    // === Criar Oferta (com todos os campos novos) ===
     document.getElementById('btnCreateOffer').addEventListener('click', async () => {
-        await run('Criar oferta', () => apiRequest('/offers', 'POST', {
-            product_name: document.getElementById('offerProduct').value,
-            description: 'Oferta criada pela tela QA browser test',
-            category: 'frutas',
-            quantity: Number(document.getElementById('offerQty').value),
-            price: Number(document.getElementById('offerPrice').value),
-            unit: document.getElementById('offerUnit').value,
-            location: document.getElementById('offerLocation').value,
-            images: []
-        }));
+        const val = (id) => document.getElementById(id).value;
+        const num = (id) => { const v = document.getElementById(id).value; return v ? Number(v) : null; };
+
+        const pricePerKg = num('offerPricePerKg') || 0;
+        const priceWithFee = pricePerKg + 0.03;
+
+        const payload = {
+            // Campos básicos
+            product_name: val('offerProduct'),
+            description: val('offerDescription') || 'Oferta criada via QA Test Lab',
+            category: val('offerCategory') || 'frutas',
+            quantity: num('offerAvailableQty') || 100,
+            price: priceWithFee,
+            unit: val('offerUnit'),
+            location: val('offerLocation'),
+            images: [],
+
+            // Etapa 1 — Produto
+            variety: val('offerVariety') || null,
+            quality_class: val('offerQualityClass') || null,
+            certification: val('offerCertification') || null,
+            box_weight_kg: num('offerBoxWeight'),
+            price_per_kg: num('offerPricePerKg'),
+            price_min_kg: num('offerPriceMinKg'),
+            price_avg_kg: num('offerPriceAvgKg'),
+            price_max_kg: num('offerPriceMaxKg'),
+            available_quantity: num('offerAvailableQty'),
+            origin: val('offerOrigin') || null,
+            target_market: val('offerTargetMarket') || null,
+            maturation: val('offerMaturation') || null,
+            shelf_life: val('offerShelfLife') || null,
+            harvest_date_actual: val('offerHarvestDate') || null,
+            reservation_start: val('offerReservationStart') || null,
+            reservation_end: val('offerReservationEnd') || null,
+
+            // Etapa 2 — Propriedade
+            property_name: val('offerPropertyName') || null,
+            property_address: val('offerPropertyAddress') || null,
+            ad_duration_days: num('offerAdDuration'),
+            min_boxes_to_negotiate: num('offerMinBoxes')
+        };
+
+        // Remover campos null para não enviar
+        Object.keys(payload).forEach(k => { if (payload[k] === null || payload[k] === '') delete payload[k]; });
+
+        await run('Criar oferta', () => apiRequest('/offers', 'POST', payload));
     });
 
     document.getElementById('btnMyOffers').addEventListener('click', async () => {
@@ -187,6 +549,7 @@
         }
     });
 
+    // === Favoritos & Compra ===
     document.getElementById('btnFavorite').addEventListener('click', async () => {
         const offerId = document.getElementById('targetOfferId').value;
         await run('Favoritar oferta', () => apiRequest('/favorites', 'POST', { offer_id: offerId }));
@@ -194,7 +557,7 @@
 
     document.getElementById('btnBuy').addEventListener('click', async () => {
         const offerId = document.getElementById('targetOfferId').value;
-        await run('Criar transacao (compra)', () => apiRequest('/transactions', 'POST', {
+        await run('Criar transação (compra)', () => apiRequest('/transactions', 'POST', {
             offer_id: offerId,
             quantity: Number(document.getElementById('txQty').value),
             delivery_method: 'pickup',
@@ -203,9 +566,10 @@
     });
 
     document.getElementById('btnTxHistory').addEventListener('click', async () => {
-        await run('Historico de transacoes', () => apiRequest('/transactions/history?type=all'));
+        await run('Histórico de transações', () => apiRequest('/transactions/history?type=all'));
     });
 
+    // === Mensagens & Dashboard ===
     document.getElementById('btnSendMsg').addEventListener('click', async () => {
         await run('Enviar mensagem', () => apiRequest('/messages', 'POST', {
             receiver_id: Number(document.getElementById('receiverId').value),
@@ -223,7 +587,7 @@
     });
 
     document.getElementById('btnClearLog').addEventListener('click', () => {
-        qaLog.textContent = 'Log limpo.';
+        qaLog.textContent = '\u25b6 Log limpo. Pronto para novos testes.';
     });
 </script>
 {% endblock %}

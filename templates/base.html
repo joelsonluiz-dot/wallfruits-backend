@@ -5,39 +5,451 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}WallFruits - Marketplace{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <style>
-        body { background-color: #f8f9fa; }
-        .navbar-brand { font-weight: bold; }
-        .card { margin-bottom: 20px; }
+        :root {
+            --wf-bg: #0a0a0f;
+            --wf-surface: #12121a;
+            --wf-card: rgba(255,255,255,0.03);
+            --wf-border: rgba(255,255,255,0.06);
+            --wf-text: #e8e8ed;
+            --wf-text-secondary: #8a8a9a;
+            --wf-accent: #00d4aa;
+            --wf-accent-glow: rgba(0,212,170,0.15);
+            --wf-accent2: #6366f1;
+            --wf-danger: #ff4d6a;
+            --wf-glass: rgba(18,18,26,0.7);
+            --wf-radius: 16px;
+            --wf-radius-sm: 10px;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--wf-bg);
+            color: var(--wf-text);
+            min-height: 100vh;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Animated gradient background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(ellipse at 20% 50%, rgba(0,212,170,0.06) 0%, transparent 50%),
+                        radial-gradient(ellipse at 80% 20%, rgba(99,102,241,0.05) 0%, transparent 50%),
+                        radial-gradient(ellipse at 50% 80%, rgba(255,77,106,0.03) 0%, transparent 50%);
+            animation: bgShift 20s ease-in-out infinite alternate;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        @keyframes bgShift {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            100% { transform: translate(-5%, -3%) rotate(3deg); }
+        }
+
+        /* Grid overlay effect */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+            background-size: 60px 60px;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* Navbar */
+        .wf-nav {
+            background: var(--wf-glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--wf-border);
+            padding: 0.8rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .wf-brand {
+            font-weight: 800;
+            font-size: 1.35rem;
+            color: var(--wf-text) !important;
+            text-decoration: none;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .wf-brand-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--wf-accent);
+            border-radius: 50%;
+            box-shadow: 0 0 12px var(--wf-accent), 0 0 24px rgba(0,212,170,0.3);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(0.85); }
+        }
+
+        .wf-nav .nav-link {
+            color: var(--wf-text-secondary) !important;
+            font-weight: 500;
+            font-size: 0.9rem;
+            padding: 0.5rem 1rem !important;
+            border-radius: var(--wf-radius-sm);
+            transition: all 0.25s ease;
+            position: relative;
+        }
+
+        .wf-nav .nav-link:hover {
+            color: var(--wf-text) !important;
+            background: rgba(255,255,255,0.05);
+        }
+
+        .wf-nav-btn {
+            background: var(--wf-accent) !important;
+            color: #0a0a0f !important;
+            font-weight: 600 !important;
+            border: none !important;
+            padding: 0.5rem 1.2rem !important;
+            border-radius: 50px !important;
+            font-size: 0.85rem !important;
+            transition: all 0.3s ease !important;
+            box-shadow: 0 0 20px rgba(0,212,170,0.2);
+        }
+
+        .wf-nav-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 30px rgba(0,212,170,0.35) !important;
+            color: #0a0a0f !important;
+        }
+
+        /* Cards */
+        .wf-card {
+            background: var(--wf-card);
+            border: 1px solid var(--wf-border);
+            border-radius: var(--wf-radius);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+
+        .wf-card:hover {
+            border-color: rgba(0,212,170,0.2);
+            box-shadow: 0 8px 40px rgba(0,0,0,0.3), 0 0 0 1px rgba(0,212,170,0.1);
+            transform: translateY(-2px);
+        }
+
+        .wf-card .card-header {
+            background: rgba(255,255,255,0.02);
+            border-bottom: 1px solid var(--wf-border);
+            font-weight: 600;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: var(--wf-text-secondary);
+            padding: 1rem 1.5rem;
+        }
+
+        .wf-card .card-body {
+            padding: 1.5rem;
+        }
+
+        /* Buttons */
+        .btn-wf-primary {
+            background: var(--wf-accent);
+            color: #0a0a0f;
+            border: none;
+            font-weight: 600;
+            padding: 0.65rem 1.5rem;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px rgba(0,212,170,0.15);
+            letter-spacing: -0.2px;
+        }
+
+        .btn-wf-primary:hover {
+            background: #00e8bb;
+            color: #0a0a0f;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0,212,170,0.3);
+        }
+
+        .btn-wf-secondary {
+            background: transparent;
+            color: var(--wf-text);
+            border: 1px solid var(--wf-border);
+            font-weight: 500;
+            padding: 0.65rem 1.5rem;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-wf-secondary:hover {
+            background: rgba(255,255,255,0.05);
+            border-color: rgba(255,255,255,0.15);
+            color: var(--wf-text);
+            transform: translateY(-1px);
+        }
+
+        .btn-wf-danger {
+            background: transparent;
+            color: var(--wf-danger);
+            border: 1px solid rgba(255,77,106,0.3);
+            font-weight: 500;
+            padding: 0.65rem 1.5rem;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-wf-danger:hover {
+            background: rgba(255,77,106,0.1);
+            border-color: var(--wf-danger);
+            color: var(--wf-danger);
+        }
+
+        .btn-wf-ghost {
+            background: rgba(255,255,255,0.04);
+            color: var(--wf-accent);
+            border: none;
+            font-weight: 500;
+            padding: 0.65rem 1.5rem;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-wf-ghost:hover {
+            background: var(--wf-accent-glow);
+            color: var(--wf-accent);
+        }
+
+        /* Inputs */
+        .wf-input {
+            background: rgba(255,255,255,0.04) !important;
+            border: 1px solid var(--wf-border) !important;
+            border-radius: var(--wf-radius-sm) !important;
+            color: var(--wf-text) !important;
+            padding: 0.7rem 1rem !important;
+            font-size: 0.9rem !important;
+            transition: all 0.25s ease !important;
+        }
+
+        .wf-input:focus {
+            background: rgba(255,255,255,0.06) !important;
+            border-color: var(--wf-accent) !important;
+            box-shadow: 0 0 0 3px rgba(0,212,170,0.1) !important;
+            color: var(--wf-text) !important;
+            outline: none !important;
+        }
+
+        .wf-input::placeholder {
+            color: var(--wf-text-secondary) !important;
+            opacity: 0.6 !important;
+        }
+
+        .wf-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--wf-text-secondary);
+            margin-bottom: 0.4rem;
+        }
+
+        /* Badges */
+        .wf-badge {
+            padding: 0.35rem 0.8rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        .wf-badge-active {
+            background: rgba(0,212,170,0.12);
+            color: var(--wf-accent);
+            border: 1px solid rgba(0,212,170,0.2);
+        }
+
+        .wf-badge-neutral {
+            background: rgba(255,255,255,0.05);
+            color: var(--wf-text-secondary);
+            border: 1px solid var(--wf-border);
+        }
+
+        /* Alerts */
+        .wf-alert {
+            border-radius: var(--wf-radius-sm);
+            padding: 1rem 1.25rem;
+            font-size: 0.9rem;
+            border: 1px solid;
+        }
+
+        .wf-alert-info {
+            background: rgba(99,102,241,0.08);
+            border-color: rgba(99,102,241,0.2);
+            color: #a5b4fc;
+        }
+
+        .wf-alert-warn {
+            background: rgba(251,191,36,0.08);
+            border-color: rgba(251,191,36,0.2);
+            color: #fcd34d;
+        }
+
+        .wf-alert-error {
+            background: rgba(255,77,106,0.08);
+            border-color: rgba(255,77,106,0.2);
+            color: #fca5a5;
+        }
+
+        /* Section headers */
+        .wf-section-title {
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -1px;
+            line-height: 1.1;
+        }
+
+        .wf-gradient-text {
+            background: linear-gradient(135deg, var(--wf-accent), var(--wf-accent2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Container */
+        .wf-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.1);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        /* Animations */
+        .wf-fade-in {
+            animation: fadeIn 0.6s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .wf-stagger > * {
+            opacity: 0;
+            animation: fadeIn 0.5s ease forwards;
+        }
+        .wf-stagger > *:nth-child(1) { animation-delay: 0.05s; }
+        .wf-stagger > *:nth-child(2) { animation-delay: 0.1s; }
+        .wf-stagger > *:nth-child(3) { animation-delay: 0.15s; }
+        .wf-stagger > *:nth-child(4) { animation-delay: 0.2s; }
+        .wf-stagger > *:nth-child(5) { animation-delay: 0.25s; }
+        .wf-stagger > *:nth-child(6) { animation-delay: 0.3s; }
+
+        /* Select */
+        .wf-select {
+            background: rgba(255,255,255,0.04) !important;
+            border: 1px solid var(--wf-border) !important;
+            border-radius: var(--wf-radius-sm) !important;
+            color: var(--wf-text) !important;
+            padding: 0.7rem 1rem !important;
+            font-size: 0.9rem !important;
+        }
+        .wf-select:focus {
+            border-color: var(--wf-accent) !important;
+            box-shadow: 0 0 0 3px rgba(0,212,170,0.1) !important;
+        }
+        .wf-select option {
+            background: var(--wf-surface);
+            color: var(--wf-text);
+        }
+
+        /* Link */
+        a.wf-link {
+            color: var(--wf-accent);
+            text-decoration: none;
+            font-weight: 500;
+            transition: opacity 0.2s;
+        }
+        a.wf-link:hover {
+            opacity: 0.8;
+            color: var(--wf-accent);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .wf-section-title { font-size: 1.5rem; }
+            .wf-container { padding: 1.5rem 1rem; }
+        }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-success">
+    <nav class="wf-nav">
         <div class="container">
-            <a class="navbar-brand" href="/">WallFruits</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item"><a class="nav-link" href="/offers">Ofertas</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/qa">QA Browser Test</a></li>
-                </ul>
-                <ul class="navbar-nav">
-                    <li class="nav-item"><a class="nav-link" href="/login">Entrar</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/register">Registrar</a></li>
-                </ul>
+            <div class="d-flex justify-content-between align-items-center">
+                <a class="wf-brand" href="/">
+                    <span class="wf-brand-dot"></span>
+                    WallFruits
+                </a>
+                <button class="navbar-toggler d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                    style="border:1px solid var(--wf-border);padding:0.4rem 0.6rem;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+                    </svg>
+                </button>
+                <div class="collapse navbar-collapse d-lg-flex justify-content-end" id="navbarNav">
+                    <div class="d-flex align-items-center gap-1 flex-wrap mt-3 mt-lg-0">
+                        <a class="nav-link" href="/offers" style="color:var(--wf-text-secondary);font-weight:500;font-size:0.9rem;padding:0.5rem 1rem;border-radius:var(--wf-radius-sm);transition:all 0.25s ease;">Ofertas</a>
+                        <a class="nav-link" href="/qa" style="color:var(--wf-text-secondary);font-weight:500;font-size:0.9rem;padding:0.5rem 1rem;border-radius:var(--wf-radius-sm);transition:all 0.25s ease;">QA Test</a>
+                        <a class="nav-link" href="/login" style="color:var(--wf-text-secondary);font-weight:500;font-size:0.9rem;padding:0.5rem 1rem;border-radius:var(--wf-radius-sm);transition:all 0.25s ease;">Entrar</a>
+                        <a class="nav-link wf-nav-btn ms-2" href="/register">Criar Conta</a>
+                    </div>
+                </div>
             </div>
         </div>
     </nav>
 
-    <div class="container mt-4">
+    <div class="wf-container wf-fade-in">
         {% block content %}{% endblock %}
     </div>
 
     <script>
-        // Função para fazer requisições à API
         async function apiRequest(url, method = 'GET', data = null) {
             const isAbsolute = url.startsWith('http://') || url.startsWith('https://');
             const apiUrl = isAbsolute || url.startsWith('/api') ? url : `/api${url.startsWith('/') ? url : `/${url}`}`;

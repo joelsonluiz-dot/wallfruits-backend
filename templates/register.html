@@ -1,47 +1,148 @@
 {% extends "base.html" %}
 
-{% block title %}Registrar - WallFruits{% endblock %}
+{% block title %}Criar Conta - WallFruits{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h3>Registrar-se</h3>
-            </div>
-            <div class="card-body">
+<style>
+    .auth-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: calc(100vh - 200px);
+        padding: 2rem 0;
+    }
+    .auth-card {
+        width: 100%;
+        max-width: 460px;
+    }
+    .auth-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    .auth-header h1 {
+        font-size: 1.8rem;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+        margin-bottom: 0.4rem;
+    }
+    .auth-header p {
+        color: var(--wf-text-secondary);
+        font-size: 0.9rem;
+    }
+    .auth-footer {
+        text-align: center;
+        margin-top: 1.5rem;
+        font-size: 0.9rem;
+        color: var(--wf-text-secondary);
+    }
+    .role-selector {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+    }
+    .role-option {
+        position: relative;
+        cursor: pointer;
+    }
+    .role-option input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+    }
+    .role-option-label {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 1rem;
+        background: rgba(255,255,255,0.03);
+        border: 1px solid var(--wf-border);
+        border-radius: var(--wf-radius-sm);
+        font-size: 0.85rem;
+        font-weight: 600;
+        transition: all 0.25s ease;
+        text-align: center;
+    }
+    .role-option-label .role-icon {
+        font-size: 1.5rem;
+    }
+    .role-option-label .role-desc {
+        font-size: 0.75rem;
+        font-weight: 400;
+        color: var(--wf-text-secondary);
+    }
+    .role-option input:checked + .role-option-label {
+        border-color: var(--wf-accent);
+        background: var(--wf-accent-glow);
+        color: var(--wf-accent);
+    }
+    .role-option:hover .role-option-label {
+        border-color: rgba(255,255,255,0.12);
+    }
+</style>
+
+<div class="auth-wrapper">
+    <div class="auth-card">
+        <div class="auth-header">
+            <h1>Crie sua conta</h1>
+            <p>Junte-se ao futuro do marketplace</p>
+        </div>
+
+        <div class="wf-card">
+            <div class="card-body" style="padding: 2rem;">
                 <form id="registerForm">
                     <div class="mb-3">
-                        <label for="name" class="form-label">Nome</label>
-                        <input type="text" class="form-control" id="name" required>
+                        <label for="name" class="wf-label">Nome completo</label>
+                        <input type="text" class="wf-input form-control" id="name" placeholder="Seu nome" required>
                     </div>
                     <div class="mb-3">
-                        <label for="email" class="form-label">Email</label>
-                        <input type="email" class="form-control" id="email" required>
+                        <label for="email" class="wf-label">Email</label>
+                        <input type="email" class="wf-input form-control" id="email" placeholder="seu@email.com" required>
                     </div>
                     <div class="mb-3">
-                        <label for="password" class="form-label">Senha</label>
-                        <input type="password" class="form-control" id="password" required>
+                        <label for="password" class="wf-label">Senha</label>
+                        <input type="password" class="wf-input form-control" id="password" placeholder="Mínimo 6 caracteres" required>
                     </div>
-                    <div class="mb-3">
-                        <label for="phone" class="form-label">Telefone</label>
-                        <input type="tel" class="form-control" id="phone">
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <label for="phone" class="wf-label">Telefone</label>
+                            <input type="tel" class="wf-input form-control" id="phone" placeholder="(11) 99999-0000">
+                        </div>
+                        <div class="col-6">
+                            <label for="location" class="wf-label">Localização</label>
+                            <input type="text" class="wf-input form-control" id="location" placeholder="Cidade/UF">
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="location" class="form-label">Localização</label>
-                        <input type="text" class="form-control" id="location" placeholder="Cidade/UF">
+                    <div class="mb-4">
+                        <label class="wf-label">Tipo de conta</label>
+                        <div class="role-selector">
+                            <label class="role-option">
+                                <input type="radio" name="role" value="buyer" checked>
+                                <div class="role-option-label">
+                                    <span class="role-icon">&#128722;</span>
+                                    <span>Comprador</span>
+                                    <span class="role-desc">Comprar produtos</span>
+                                </div>
+                            </label>
+                            <label class="role-option">
+                                <input type="radio" name="role" value="producer">
+                                <div class="role-option-label">
+                                    <span class="role-icon">&#127793;</span>
+                                    <span>Produtor</span>
+                                    <span class="role-desc">Vender produtos</span>
+                                </div>
+                            </label>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="role" class="form-label">Tipo de conta</label>
-                        <select id="role" class="form-select">
-                            <option value="buyer" selected>Comprador (buyer)</option>
-                            <option value="producer">Produtor (producer)</option>
-                        </select>
-                    </div>
-                    <button type="submit" class="btn btn-success">Registrar</button>
+                    <button type="submit" class="btn btn-wf-primary w-100" style="padding: 0.75rem;">
+                        Criar conta &rarr;
+                    </button>
                 </form>
-                <p class="mt-3">Já tem conta? <a href="/login">Entrar</a></p>
             </div>
+        </div>
+
+        <div class="auth-footer">
+            Já tem conta? <a href="/login" class="wf-link">Entrar</a>
         </div>
     </div>
 </div>
@@ -54,7 +155,7 @@
         const password = document.getElementById('password').value;
         const phone = document.getElementById('phone').value;
         const location = document.getElementById('location').value;
-        const role = document.getElementById('role').value;
+        const role = document.querySelector('input[name="role"]:checked').value;
 
         try {
             await apiRequest('/auth/register', 'POST', {

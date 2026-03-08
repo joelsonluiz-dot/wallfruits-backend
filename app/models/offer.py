@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, String, Numeric, Text, DateTime, Integer, Boolean, ForeignKey
+from sqlalchemy import Column, String, Numeric, Text, DateTime, Date, Integer, Boolean, ForeignKey
 from sqlalchemy.sql import func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
@@ -25,7 +25,7 @@ class Offer(Base):
     unit = Column(String(50), nullable=False)  # kg, unidade, caixa, etc.
 
     location = Column(String(150), index=True)
-    latitude = Column(Numeric(10, 8))  # Para geolocalização
+    latitude = Column(Numeric(10, 8))
     longitude = Column(Numeric(11, 8))
 
     # Imagens do produto
@@ -44,6 +44,35 @@ class Offer(Base):
     quality_grade = Column(String(20))  # A, B, C
     organic = Column(Boolean, default=False)
     harvest_date = Column(DateTime(timezone=True))
+
+    # === Novos campos de detalhamento da oferta ===
+
+    # Etapa 1 — Detalhes do produto
+    variety = Column(String(150))                       # Variedade da fruta
+    quality_class = Column(String(50))                  # Primeira, Segunda, Casquinhou, Polpa, Descarte
+    certification = Column(String(100))                 # Orgânicos, Global GAP, Fair Trade, etc.
+    box_weight_kg = Column(Numeric(10, 2))              # Peso aproximado da caixa (kg)
+    price_per_kg = Column(Numeric(10, 2))               # Preço por kg (R$)
+    price_min_kg = Column(Numeric(10, 2))               # Preço mínimo por kg
+    price_avg_kg = Column(Numeric(10, 2))               # Preço médio por kg
+    price_max_kg = Column(Numeric(10, 2))               # Preço máximo por kg
+    available_quantity = Column(Numeric(10, 2))          # Quantidade disponível (caixas)
+    origin = Column(String(50))                         # Nacional / Importado
+    target_market = Column(String(50))                  # Interno / Externo / Exportação
+    maturation = Column(String(50))                     # Verde / Maduro / Super-maduro
+    shelf_life = Column(String(20))                     # 3 a 6, 3 a 9, 5 a 15 (dias)
+    harvest_date_actual = Column(Date)                  # Data real da colheita
+    reservation_start = Column(Date)                    # Período de reserva — início
+    reservation_end = Column(Date)                      # Período de reserva — fim
+
+    # Etapa 2 — Propriedade e anúncio
+    property_name = Column(String(255))                 # Nome da propriedade
+    property_address = Column(Text)                     # Endereço da propriedade
+    ad_duration_days = Column(Integer)                  # Duração/validade do anúncio (dias)
+    min_boxes_to_negotiate = Column(Integer)            # Quantidade mínima de caixas para negociar
+
+    # Taxa fixa da plataforma (R$ 0,03 por kg no produto final)
+    platform_fee = Column(Numeric(10, 2), default=0.03)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
