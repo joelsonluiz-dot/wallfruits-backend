@@ -413,9 +413,56 @@
         }
 
         /* Responsive */
-        @media (max-width: 768px) {
-            .wf-section-title { font-size: 1.5rem; }
+        @media (max-width: 992px) {
+            .wf-section-title { font-size: 1.6rem; }
             .wf-container { padding: 1.5rem 1rem; }
+        }
+
+        @media (max-width: 768px) {
+            .wf-section-title { font-size: 1.35rem; letter-spacing: -0.5px; }
+            .wf-container { padding: 1.25rem 0.85rem; }
+            .wf-card .card-body { padding: 1.15rem; }
+            .wf-card .card-header { padding: 0.85rem 1.15rem; font-size: 0.78rem; }
+            .btn-wf-primary, .btn-wf-secondary, .btn-wf-danger, .btn-wf-ghost {
+                padding: 0.6rem 1.2rem;
+                font-size: 0.85rem;
+            }
+            .wf-input, .wf-select {
+                padding: 0.65rem 0.85rem !important;
+                font-size: 0.88rem !important;
+            }
+            .wf-label { font-size: 0.75rem; }
+        }
+
+        @media (max-width: 480px) {
+            .wf-section-title { font-size: 1.2rem; }
+            .wf-container { padding: 1rem 0.65rem; }
+            .wf-card .card-body { padding: 1rem; }
+            .wf-card .card-header {
+                padding: 0.75rem 1rem;
+                font-size: 0.72rem;
+                flex-wrap: wrap;
+                gap: 0.4rem;
+            }
+        }
+
+        /* Mobile navbar */
+        @media (max-width: 991.98px) {
+            .wf-nav-mobile-menu {
+                flex-direction: column;
+                align-items: stretch !important;
+                gap: 0.25rem !important;
+                padding-top: 0.75rem;
+            }
+            .wf-nav-mobile-menu .nav-link {
+                padding: 0.65rem 1rem !important;
+                border-radius: var(--wf-radius-sm);
+            }
+            .wf-nav-mobile-menu .wf-nav-btn {
+                text-align: center;
+                margin-left: 0 !important;
+                margin-top: 0.35rem;
+            }
         }
     </style>
 </head>
@@ -427,14 +474,14 @@
                     <span class="wf-brand-dot"></span>
                     WallFruits
                 </a>
-                <button class="navbar-toggler d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
-                    style="border:1px solid var(--wf-border);padding:0.4rem 0.6rem;">
+                <button class="navbar-toggler d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Menu"
+                    style="border:1px solid var(--wf-border);padding:0.4rem 0.6rem;color:var(--wf-text);">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
                     </svg>
                 </button>
-                <div class="collapse navbar-collapse d-lg-flex justify-content-end" id="navbarNav">
-                    <div class="d-flex align-items-center gap-1 flex-wrap mt-3 mt-lg-0">
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <div class="d-flex align-items-center gap-1 flex-wrap mt-3 mt-lg-0 ms-lg-auto wf-nav-mobile-menu">
                         <a class="nav-link" href="/offers" style="color:var(--wf-text-secondary);font-weight:500;font-size:0.9rem;padding:0.5rem 1rem;border-radius:var(--wf-radius-sm);transition:all 0.25s ease;">Ofertas</a>
                         <a class="nav-link" href="/qa" style="color:var(--wf-text-secondary);font-weight:500;font-size:0.9rem;padding:0.5rem 1rem;border-radius:var(--wf-radius-sm);transition:all 0.25s ease;">QA Test</a>
                         <a class="nav-link" href="/login" style="color:var(--wf-text-secondary);font-weight:500;font-size:0.9rem;padding:0.5rem 1rem;border-radius:var(--wf-radius-sm);transition:all 0.25s ease;">Entrar</a>

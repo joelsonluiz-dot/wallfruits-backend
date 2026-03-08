@@ -31,7 +31,7 @@
     }
     .qa-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(min(380px, 100%), 1fr));
         gap: 1.25rem;
         margin-bottom: 1.5rem;
     }
@@ -87,6 +87,13 @@
     }
     @media (max-width: 768px) {
         .qa-grid { grid-template-columns: 1fr; }
+        .qa-header h1 { font-size: 1.5rem; }
+        .qa-btn-group { flex-direction: column; }
+        .qa-btn-group .btn { width: 100%; text-align: center; }
+        .qa-terminal { font-size: 0.75rem; padding: 1rem; max-height: 300px; }
+    }
+    @media (max-width: 480px) {
+        .qa-tip { font-size: 0.78rem; flex-direction: column; text-align: center; }
     }
 </style>
 
@@ -127,7 +134,7 @@
     <!-- CRIAR OFERTA — FORMULÁRIO EM 2 ETAPAS       -->
     <!-- =========================================== -->
     <div class="wf-card" style="grid-column: 1 / -1;">
-        <div class="card-header d-flex justify-content-between align-items-center">
+        <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
             <div>
                 <span class="qa-section-num">2</span> Criar Oferta
             </div>

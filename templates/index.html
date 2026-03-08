@@ -128,6 +128,23 @@
     @media (max-width: 768px) {
         .hero-title { font-size: 2.2rem; letter-spacing: -1px; }
         .hero-section { padding: 2.5rem 0 2rem; }
+        .hero-subtitle { font-size: 1rem; }
+        .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; margin-top: 2.5rem; }
+        .stat-card { padding: 1.15rem; }
+        .stat-value { font-size: 1.6rem; }
+        .stat-label { font-size: 0.7rem; }
+        .features-section { margin-top: 3rem; }
+        .feature-grid { grid-template-columns: 1fr; }
+        .feature-item { padding: 1.5rem 1.15rem; }
+        .hero-actions { flex-direction: column; align-items: center; }
+        .hero-actions .btn { width: 100%; max-width: 300px; }
+    }
+    @media (max-width: 480px) {
+        .hero-title { font-size: 1.75rem; letter-spacing: -0.8px; }
+        .hero-subtitle { font-size: 0.92rem; }
+        .stats-grid { grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+        .stat-value { font-size: 1.4rem; }
+        .hero-tag { font-size: 0.7rem; padding: 0.35rem 0.8rem; }
     }
 </style>
 

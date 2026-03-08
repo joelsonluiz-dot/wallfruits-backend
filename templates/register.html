@@ -79,6 +79,14 @@
     .role-option:hover .role-option-label {
         border-color: rgba(255,255,255,0.12);
     }
+    @media (max-width: 480px) {
+        .auth-card { max-width: 100%; }
+        .auth-header h1 { font-size: 1.5rem; }
+        .role-selector { grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+        .role-option-label { padding: 0.75rem 0.5rem; }
+        .role-option-label .role-icon { font-size: 1.25rem; }
+        .role-option-label .role-desc { font-size: 0.68rem; }
+    }
 </style>
 
 <div class="auth-wrapper">
