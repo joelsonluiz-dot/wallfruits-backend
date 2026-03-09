@@ -1,9 +1,3 @@
-databases:
-  - name: wallfruits-db
-    databaseName: wallfruits_db
-    user: wallfruits
-    plan: free
-
 services:
   - type: web
     name: wallfruits-api
@@ -20,15 +14,21 @@ services:
       - key: REDIS_ENABLED
         value: false
       - key: DATABASE_URL
-        fromDatabase:
-          name: wallfruits-db
-          property: connectionString
+        sync: false
       - key: SECRET_KEY
         generateValue: true
       - key: ALGORITHM
         value: HS256
       - key: ACCESS_TOKEN_EXPIRE_MINUTES
         value: 60
+      - key: SUPABASE_AUTH_ENABLED
+        value: true
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
       - key: API_TITLE
         value: WallFruits API
       - key: API_VERSION
