@@ -3,10 +3,19 @@ Configuracoes do aplicativo WallFruits.
 """
 import json
 from functools import lru_cache
+from pathlib import Path
 from typing import Any
 
+from dotenv import load_dotenv
 from pydantic import field_validator
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+BASE_DIR = Path(__file__).resolve().parents[2]
+ENV_FILE = BASE_DIR / ".env"
+
+# Carrega .env explicitamente para scripts iniciados fora da raiz do projeto.
+load_dotenv(ENV_FILE, override=False)
 
 
 class Settings(BaseSettings):
@@ -46,11 +55,12 @@ class Settings(BaseSettings):
     # Security
     DEBUG: bool = False
     
-    class Config:
-        """Configuração do Pydantic"""
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = True
+    model_config = SettingsConfigDict(
+        env_file=str(ENV_FILE),
+        env_file_encoding="utf-8",
+        case_sensitive=True,
+        extra="ignore",
+    )
 
     @staticmethod
     def _parse_list(value: Any) -> list[str]:

@@ -1,18 +1,23 @@
-from sqlalchemy import create_engine, event, text
-from sqlalchemy.orm import sessionmaker, declarative_base
-from sqlalchemy.pool import StaticPool
 import logging
 import os
+
+from sqlalchemy import create_engine, event, text
+from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.pool import StaticPool
 
 from app.core.config import settings
 
 logger = logging.getLogger("database")
 
-# Usar DATABASE_URL do environment se disponível
-DATABASE_URL = os.getenv("DATABASE_URL", settings.DATABASE_URL)
+DATABASE_URL = (os.getenv("DATABASE_URL") or settings.DATABASE_URL or "").strip()
+
+if not DATABASE_URL:
+    raise RuntimeError("DATABASE_URL não configurada. Defina no ambiente ou no arquivo .env")
+
+IS_SQLITE = DATABASE_URL.startswith("sqlite")
 
 # Configurar engine baseado no tipo de banco
-if "sqlite" in DATABASE_URL:
+if IS_SQLITE:
     # Configuração para SQLite
     engine = create_engine(
         DATABASE_URL,
@@ -36,9 +41,11 @@ else:
 
 # Tratamento de reconexão automática
 @event.listens_for(engine, "connect")
-def set_sqlite_pragma(dbapi_connection, connection_record):
+def set_connection_defaults(dbapi_connection, connection_record):
     """Configurar pool_recycle para evitar 'gone away' errors"""
-    if "sqlite" not in str(dbapi_connection):
+    del connection_record  # assinatura exigida pelo SQLAlchemy
+
+    if not IS_SQLITE:
         cursor = dbapi_connection.cursor()
         cursor.execute("SET client_encoding='utf8'")
         cursor.close()
@@ -58,23 +65,62 @@ def get_db():
     db = SessionLocal()
     try:
         yield db
-    except Exception as e:
-        logger.error(f"Erro ao acessar banco de dados: {e}")
+    except Exception as exc:
+        logger.error(f"Erro ao acessar banco de dados: {exc}", exc_info=True)
         db.rollback()
         raise
     finally:
         db.close()
 
 
-def _ensure_postgres_schema_compatibility() -> None:
-    """Aplica ajustes de compatibilidade para bancos PostgreSQL já existentes."""
-    if "sqlite" in DATABASE_URL:
+def _table_exists(conn, table_name: str) -> bool:
+    if IS_SQLITE:
+        result = conn.execute(
+            text("SELECT name FROM sqlite_master WHERE type='table' AND name=:name"),
+            {"name": table_name},
+        ).scalar()
+        return result is not None
+
+    result = conn.execute(
+        text("SELECT to_regclass(:table_name)"),
+        {"table_name": f"public.{table_name}"},
+    ).scalar()
+    return result is not None
+
+
+def _ensure_users_schema_compatibility() -> None:
+    """Garante colunas necessárias para autenticação na tabela users."""
+    if IS_SQLITE:
+        sqlite_statements = {
+            "role": "ALTER TABLE users ADD COLUMN role VARCHAR(50) DEFAULT 'buyer'",
+            "phone": "ALTER TABLE users ADD COLUMN phone VARCHAR(20)",
+            "location": "ALTER TABLE users ADD COLUMN location VARCHAR(150)",
+            "bio": "ALTER TABLE users ADD COLUMN bio TEXT",
+            "profile_image": "ALTER TABLE users ADD COLUMN profile_image VARCHAR(500)",
+            "is_active": "ALTER TABLE users ADD COLUMN is_active BOOLEAN DEFAULT 1",
+            "is_verified": "ALTER TABLE users ADD COLUMN is_verified BOOLEAN DEFAULT 0",
+            "rating": "ALTER TABLE users ADD COLUMN rating INTEGER DEFAULT 0",
+            "total_reviews": "ALTER TABLE users ADD COLUMN total_reviews INTEGER DEFAULT 0",
+            "created_at": "ALTER TABLE users ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP",
+            "updated_at": "ALTER TABLE users ADD COLUMN updated_at DATETIME",
+        }
+
+        with engine.begin() as conn:
+            if not _table_exists(conn, "users"):
+                return
+
+            existing_columns = {
+                row[1]
+                for row in conn.execute(text("PRAGMA table_info(users)"))
+            }
+
+            for column_name, statement in sqlite_statements.items():
+                if column_name not in existing_columns:
+                    conn.execute(text(statement))
+
         return
 
-    # Em ambientes já provisionados, create_all nao adiciona colunas novas.
-    # Este bloco evita falha 500 em registro/login por colunas ausentes na tabela users.
-    statements = [
-        # Users table
+    user_statements = [
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(50) DEFAULT 'buyer'",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(20)",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS location VARCHAR(150)",
@@ -86,7 +132,28 @@ def _ensure_postgres_schema_compatibility() -> None:
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS total_reviews INTEGER DEFAULT 0",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW()",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ",
-        # Offers table - new detail columns
+    ]
+
+    with engine.begin() as conn:
+        if not _table_exists(conn, "users"):
+            return
+
+        for statement in user_statements:
+            conn.execute(text(statement))
+
+
+def ensure_auth_schema_compatibility() -> None:
+    """Compatibilidade mínima necessária para fluxo de login/registro."""
+    _ensure_users_schema_compatibility()
+
+
+def _ensure_postgres_schema_compatibility() -> None:
+    """Aplica ajustes de compatibilidade para bancos já existentes."""
+    if IS_SQLITE:
+        _ensure_users_schema_compatibility()
+        return
+
+    offer_statements = [
         "ALTER TABLE offers ADD COLUMN IF NOT EXISTS variety VARCHAR(100)",
         "ALTER TABLE offers ADD COLUMN IF NOT EXISTS quality_class VARCHAR(50)",
         "ALTER TABLE offers ADD COLUMN IF NOT EXISTS certification VARCHAR(100)",
@@ -110,8 +177,13 @@ def _ensure_postgres_schema_compatibility() -> None:
         "ALTER TABLE offers ADD COLUMN IF NOT EXISTS platform_fee NUMERIC(10,4) DEFAULT 0.03",
     ]
 
+    _ensure_users_schema_compatibility()
+
     with engine.begin() as conn:
-        for statement in statements:
+        if not _table_exists(conn, "offers"):
+            return
+
+        for statement in offer_statements:
             conn.execute(text(statement))
 
 

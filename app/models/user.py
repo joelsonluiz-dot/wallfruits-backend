@@ -32,6 +32,16 @@ class User(Base):
 
     # Relacionamentos
     offers = relationship("Offer", back_populates="owner", cascade="all, delete-orphan")
-    transactions = relationship("Transaction", back_populates="user", cascade="all, delete-orphan")
-    reviews = relationship("Review", back_populates="reviewer", cascade="all, delete-orphan")
+    transactions = relationship("Transaction", back_populates="buyer", cascade="all, delete-orphan")
+    reviews = relationship(
+        "Review",
+        foreign_keys="Review.reviewer_id",
+        back_populates="reviewer",
+        cascade="all, delete-orphan"
+    )
+    received_reviews = relationship(
+        "Review",
+        foreign_keys="Review.reviewed_user_id",
+        back_populates="reviewed_user"
+    )
     favorites = relationship("Favorite", back_populates="user", cascade="all, delete-orphan")

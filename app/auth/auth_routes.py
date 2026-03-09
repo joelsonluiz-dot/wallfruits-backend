@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from typing import List
 import logging
 
-from app.database.connection import get_db, _ensure_postgres_schema_compatibility
+from app.database.connection import get_db, ensure_auth_schema_compatibility
 from app.models.user import User
 from app.schemas.user_schema import (
     UserCreate, UserLogin, UserResponse,
@@ -25,7 +26,7 @@ logger = logging.getLogger("wallfruits_api")
 def ensure_auth_schema_ready() -> None:
     """Garante que colunas novas da tabela users existam antes das consultas."""
     try:
-        _ensure_postgres_schema_compatibility()
+        ensure_auth_schema_compatibility()
     except Exception as exc:
         logger.error(f"Erro ao sincronizar schema de auth: {exc}", exc_info=True)
         raise HTTPException(500, "Erro ao preparar banco de dados")
@@ -40,7 +41,7 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
 
     try:
         existing_user = db.query(User.id).filter(User.email == user.email).first()
-    except Exception as e:
+    except SQLAlchemyError as e:
         logger.error(f"Erro ao consultar email existente: {e}", exc_info=True)
         raise HTTPException(500, "Erro ao validar email no banco")
 
@@ -70,7 +71,7 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
         db.add(new_user)
         db.commit()
         db.refresh(new_user)
-    except Exception as e:
+    except SQLAlchemyError as e:
         db.rollback()
         logger.error(f"Erro ao salvar usuário no banco: {e}", exc_info=True)
         raise HTTPException(500, f"Erro ao criar conta: {type(e).__name__}")
@@ -87,7 +88,7 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
 
     try:
         db_user = db.query(User).filter(User.email == user.email).first()
-    except Exception as e:
+    except SQLAlchemyError as e:
         logger.error(f"Erro ao consultar usuario para login: {e}", exc_info=True)
         raise HTTPException(500, "Erro ao consultar usuário no banco")
 

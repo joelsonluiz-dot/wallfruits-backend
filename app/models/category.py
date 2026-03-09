@@ -30,4 +30,3 @@ class Category(Base):
 
     # Relacionamentos
     parent = relationship("Category", remote_side=[id], backref="subcategories")
-    offers = relationship("Offer", backref="category_obj")

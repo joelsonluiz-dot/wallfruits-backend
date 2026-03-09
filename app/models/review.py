@@ -39,6 +39,6 @@ class Review(Base):
 
     # Relacionamentos
     reviewer = relationship("User", foreign_keys=[reviewer_id], back_populates="reviews")
-    reviewed_user = relationship("User", foreign_keys=[reviewed_user_id])
+    reviewed_user = relationship("User", foreign_keys=[reviewed_user_id], back_populates="received_reviews")
     offer = relationship("Offer", back_populates="reviews")
     transaction = relationship("Transaction")
