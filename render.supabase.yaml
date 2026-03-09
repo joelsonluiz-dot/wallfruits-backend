@@ -1,0 +1,39 @@
+services:
+  - type: web
+    name: wallfruits-api
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.0
+      - key: DEBUG
+        value: false
+      - key: REDIS_ENABLED
+        value: false
+      - key: DATABASE_URL
+        value: __SET_SUPABASE_DATABASE_URL__
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: 60
+      - key: API_TITLE
+        value: WallFruits API
+      - key: API_VERSION
+        value: 2.0.0
+      - key: SUPABASE_AUTH_ENABLED
+        value: true
+      - key: SUPABASE_URL
+        value: __SET_SUPABASE_URL__
+      - key: SUPABASE_ANON_KEY
+        value: __SET_SUPABASE_ANON_KEY__
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        value: __SET_SUPABASE_SERVICE_ROLE_KEY__
+      - key: CORS_ORIGINS
+        value: '["https://wallfruits-backend.onrender.com","https://wallfruits-api.onrender.com"]'
+      - key: ALLOWED_HOSTS
+        value: '["wallfruits-backend.onrender.com","wallfruits-api.onrender.com"]'

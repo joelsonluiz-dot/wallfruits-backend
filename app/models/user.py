@@ -13,6 +13,7 @@ class User(Base):
     name = Column(String(150), nullable=False)
     email = Column(String(255), unique=True, index=True, nullable=False)
     password = Column(String(255), nullable=False)
+    supabase_user_id = Column(String(64), unique=True, index=True, nullable=True)
 
     # Novos campos para marketplace
     role = Column(String(50), default="buyer", nullable=False)  # buyer, producer, admin

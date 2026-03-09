@@ -5,8 +5,11 @@
 Arquivos prontos para Render:
 - ✅ `requirements.txt` - dependências Python
 - ✅ `render.yaml` - configuração automática
+- ✅ `render.supabase.yaml` - configuração para API no Render + banco/auth no Supabase
 - ✅ `.gitignore` - arquivos ignorados no Git
 - ✅ `.env.example` - exemplo de variáveis
+
+Se você for usar Supabase para banco e autenticação, prefira o blueprint `render.supabase.yaml`.
 
 ---
 

@@ -15,6 +15,11 @@ if not DATABASE_URL:
     raise RuntimeError("DATABASE_URL não configurada. Defina no ambiente ou no arquivo .env")
 
 IS_SQLITE = DATABASE_URL.startswith("sqlite")
+IS_SUPABASE = (not IS_SQLITE) and (
+    "supabase.co" in DATABASE_URL
+    or "supabase.com" in DATABASE_URL
+    or ".supabase." in DATABASE_URL
+)
 
 # Configurar engine baseado no tipo de banco
 if IS_SQLITE:
@@ -27,16 +32,21 @@ if IS_SQLITE:
     )
 else:
     # Configuração para PostgreSQL
+    postgres_connect_args = {
+        "connect_timeout": 10,
+        "options": "-c timezone=UTC"
+    }
+
+    if IS_SUPABASE:
+        postgres_connect_args["sslmode"] = "require"
+
     engine = create_engine(
         DATABASE_URL,
         echo=settings.DB_ECHO,
-        pool_size=20,
-        max_overflow=40,
+        pool_size=5 if IS_SUPABASE else 20,
+        max_overflow=10 if IS_SUPABASE else 40,
         pool_pre_ping=True,
-        connect_args={
-            "connect_timeout": 10,
-            "options": "-c timezone=UTC"
-        }
+        connect_args=postgres_connect_args,
     )
 
 # Tratamento de reconexão automática
@@ -93,6 +103,7 @@ def _ensure_users_schema_compatibility() -> None:
     if IS_SQLITE:
         sqlite_statements = {
             "role": "ALTER TABLE users ADD COLUMN role VARCHAR(50) DEFAULT 'buyer'",
+            "supabase_user_id": "ALTER TABLE users ADD COLUMN supabase_user_id VARCHAR(64)",
             "phone": "ALTER TABLE users ADD COLUMN phone VARCHAR(20)",
             "location": "ALTER TABLE users ADD COLUMN location VARCHAR(150)",
             "bio": "ALTER TABLE users ADD COLUMN bio TEXT",
@@ -118,10 +129,18 @@ def _ensure_users_schema_compatibility() -> None:
                 if column_name not in existing_columns:
                     conn.execute(text(statement))
 
+            conn.execute(
+                text(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS ix_users_supabase_user_id "
+                    "ON users (supabase_user_id)"
+                )
+            )
+
         return
 
     user_statements = [
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(50) DEFAULT 'buyer'",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS supabase_user_id VARCHAR(64)",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(20)",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS location VARCHAR(150)",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT",
@@ -132,6 +151,7 @@ def _ensure_users_schema_compatibility() -> None:
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS total_reviews INTEGER DEFAULT 0",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW()",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ",
+        "CREATE UNIQUE INDEX IF NOT EXISTS ix_users_supabase_user_id ON users (supabase_user_id)",
     ]
 
     with engine.begin() as conn:

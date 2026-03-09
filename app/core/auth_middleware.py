@@ -10,6 +10,24 @@ from app.auth.jwt_handler import decode_token
 security = HTTPBearer(auto_error=False)
 
 
+def _resolve_user_from_payload(db: Session, payload: dict) -> Optional[User]:
+    user_id = payload.get("user_id")
+    if user_id:
+        return db.query(User).filter(User.id == user_id).first()
+
+    supabase_user_id = payload.get("supabase_user_id")
+    if supabase_user_id:
+        user = db.query(User).filter(User.supabase_user_id == supabase_user_id).first()
+        if user:
+            return user
+
+    email = payload.get("email")
+    if email:
+        return db.query(User).filter(User.email == email).first()
+
+    return None
+
+
 async def get_current_user(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
     db: Session = Depends(get_db)
@@ -25,15 +43,7 @@ async def get_current_user(
 
     try:
         payload = decode_token(credentials.credentials)
-        user_id = payload.get("user_id")
-
-        if not user_id:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Token inválido"
-            )
-
-        user = db.query(User).filter(User.id == user_id).first()
+        user = _resolve_user_from_payload(db, payload)
 
         if not user:
             raise HTTPException(
@@ -70,12 +80,7 @@ async def get_current_user_optional(
 
     try:
         payload = decode_token(credentials.credentials)
-        user_id = payload.get("user_id")
-
-        if not user_id:
-            return None
-
-        user = db.query(User).filter(User.id == user_id).first()
+        user = _resolve_user_from_payload(db, payload)
 
         if not user or not user.is_active:
             return None
@@ -123,11 +128,9 @@ async def optional_auth(
 
     try:
         payload = decode_token(credentials.credentials)
-        user_id = payload.get("user_id")
-
-        if user_id:
-            user = db.query(User).filter(User.id == user_id).first()
-            return user if user and user.is_active else None
+        user = _resolve_user_from_payload(db, payload)
+        if user and user.is_active:
+            return user
 
     except Exception:
         pass
@@ -138,15 +141,7 @@ async def optional_auth(
 def get_user_from_token(token: str, db: Session) -> User:
     """Resolve um usuário ativo a partir de um token JWT bruto."""
     payload = decode_token(token)
-    user_id = payload.get("user_id")
-
-    if not user_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token inválido"
-        )
-
-    user = db.query(User).filter(User.id == user_id).first()
+    user = _resolve_user_from_payload(db, payload)
 
     if not user:
         raise HTTPException(

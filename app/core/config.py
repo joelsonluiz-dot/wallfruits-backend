@@ -24,6 +24,12 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = "postgresql://postgres:Wallfruits%402026@localhost:5432/wallfruits_db"
     DB_ECHO: bool = False
+
+    # Supabase
+    SUPABASE_AUTH_ENABLED: bool = False
+    SUPABASE_URL: str = ""
+    SUPABASE_ANON_KEY: str = ""
+    SUPABASE_SERVICE_ROLE_KEY: str = ""
     
     # JWT
     SECRET_KEY: str = "wallfruits_super_secret_key_change_in_production"
