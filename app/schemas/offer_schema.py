@@ -220,9 +220,9 @@ class OfferResponse(BaseModel):
     min_boxes_to_negotiate: Optional[int] = None
     platform_fee: Optional[Decimal] = None
 
-    views: int
-    favorites_count: int
-    owner_profile_id: UUID
+    views: Optional[int] = 0
+    favorites_count: Optional[int] = 0
+    owner_profile_id: Optional[UUID] = None
     is_featured: bool = False
 
     created_at: datetime
