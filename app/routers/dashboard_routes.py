@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from app.database.connection import get_db
 from app.models import User, Offer, Transaction, Review, Favorite, Message
 from app.core.auth_middleware import get_current_user
+from app.services.profile_service import ProfileService
 
 router = APIRouter(
     prefix="/dashboard",
@@ -22,17 +23,26 @@ def get_user_dashboard(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    profile_service = ProfileService(db)
+    current_profile = profile_service.get_or_create_profile(current_user)
+
+    owner_filter = or_(
+        Offer.owner_profile_id == current_profile.id,
+        and_(Offer.owner_profile_id.is_(None), Offer.user_id == current_user.id),
+    )
+
+    seller_offer_ids = db.query(Offer.id).filter(owner_filter)
 
     # Estatísticas básicas
-    total_offers = db.query(func.count(Offer.id)).filter(Offer.user_id == current_user.id).scalar()
+    total_offers = db.query(func.count(Offer.id)).filter(owner_filter).scalar()
 
     active_offers = db.query(func.count(Offer.id)).filter(
-        Offer.user_id == current_user.id,
+        owner_filter,
         Offer.status == "active"
     ).scalar()
 
     total_sales = db.query(func.count(Transaction.id)).join(Offer).filter(
-        Offer.user_id == current_user.id
+        owner_filter
     ).scalar()
 
     total_purchases = db.query(func.count(Transaction.id)).filter(
@@ -50,7 +60,7 @@ def get_user_dashboard(
 
     # Receita total
     total_revenue = db.query(func.sum(Transaction.total_price)).join(Offer).filter(
-        Offer.user_id == current_user.id,
+        owner_filter,
         Transaction.status == "completed"
     ).scalar() or 0
 
@@ -62,18 +72,14 @@ def get_user_dashboard(
 
     # Ofertas recentes
     recent_offers = db.query(Offer).filter(
-        Offer.user_id == current_user.id
+        owner_filter
     ).order_by(desc(Offer.created_at)).limit(5).all()
 
     # Transações recentes
     recent_transactions = db.query(Transaction).filter(
         or_(
             Transaction.buyer_id == current_user.id,
-            and_(
-                Transaction.offer_id.in_(
-                    db.query(Offer.id).filter(Offer.user_id == current_user.id)
-                )
-            )
+            Transaction.offer_id.in_(seller_offer_ids)
         )
     ).order_by(desc(Transaction.created_at)).limit(5).all()
 
@@ -82,7 +88,7 @@ def get_user_dashboard(
         Offer.status,
         func.count(Offer.id)
     ).filter(
-        Offer.user_id == current_user.id
+        owner_filter
     ).group_by(Offer.status).all()
 
     # Atividade dos ultimos 7 dias
@@ -92,14 +98,14 @@ def get_user_dashboard(
         func.count(Transaction.id).label("count"),
         func.sum(Transaction.total_price).label("value")
     ).join(Offer).filter(
-        Offer.user_id == current_user.id,
+        owner_filter,
         Transaction.created_at >= seven_days_ago
     ).group_by(func.date(Transaction.created_at)).order_by(func.date(Transaction.created_at)).all()
 
     completion_rate = 0.0
     if total_sales > 0:
         completed_sales = db.query(func.count(Transaction.id)).join(Offer).filter(
-            Offer.user_id == current_user.id,
+            owner_filter,
             Transaction.status == "completed"
         ).scalar()
         completion_rate = (completed_sales / total_sales) * 100
@@ -144,7 +150,12 @@ def get_user_dashboard(
         "recent_transactions": [
             {
                 "id": str(tx.id),
-                "type": "sale" if tx.offer.user_id == current_user.id else "purchase",
+                "type": "sale"
+                if (
+                    tx.offer.owner_profile_id == current_profile.id
+                    or (tx.offer.owner_profile_id is None and tx.offer.user_id == current_user.id)
+                )
+                else "purchase",
                 "product_name": tx.offer.product_name,
                 "total_price": float(tx.total_price),
                 "status": tx.status,
@@ -246,6 +257,13 @@ def get_sales_report(
         raise HTTPException(403, "Apenas produtores podem acessar relatórios de vendas")
 
     start_date = datetime.utcnow() - timedelta(days=days)
+    profile_service = ProfileService(db)
+    current_profile = profile_service.get_or_create_profile(current_user)
+
+    owner_filter = or_(
+        Offer.owner_profile_id == current_profile.id,
+        and_(Offer.owner_profile_id.is_(None), Offer.user_id == current_user.id),
+    )
 
     # Vendas por período
     sales_by_period = db.query(
@@ -253,7 +271,7 @@ def get_sales_report(
         func.count(Transaction.id).label('sales_count'),
         func.sum(Transaction.total_price).label('total_revenue')
     ).join(Offer).filter(
-        Offer.user_id == current_user.id,
+        owner_filter,
         Transaction.created_at >= start_date,
         Transaction.status == "completed"
     ).group_by(func.date(Transaction.created_at)).order_by('date').all()
@@ -264,14 +282,14 @@ def get_sales_report(
         func.count(Transaction.id).label('sales_count'),
         func.sum(Transaction.total_price).label('total_revenue')
     ).join(Transaction).filter(
-        Offer.user_id == current_user.id,
+        owner_filter,
         Transaction.created_at >= start_date,
         Transaction.status == "completed"
     ).group_by(Offer.product_name).order_by(desc('sales_count')).limit(10).all()
 
     # Receita total no período
     total_revenue = db.query(func.sum(Transaction.total_price)).join(Offer).filter(
-        Offer.user_id == current_user.id,
+        owner_filter,
         Transaction.created_at >= start_date,
         Transaction.status == "completed"
     ).scalar() or 0

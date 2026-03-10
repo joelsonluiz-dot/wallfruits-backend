@@ -25,6 +25,9 @@ class OfferCreate(BaseModel):
 
     quantity: Decimal = Field(..., gt=0)
     price: Decimal = Field(..., gt=0)
+    public_price: Optional[Decimal] = Field(None, gt=0)
+    private_price: Optional[Decimal] = Field(None, gt=0)
+    visibility: str = Field("public", pattern="^(public|premium_only)$")
     unit: str = Field(..., min_length=1, max_length=50)
 
     location: str = Field(..., min_length=2, max_length=150)
@@ -128,7 +131,11 @@ class OfferUpdate(BaseModel):
 
     images: Optional[List[str]] = None
 
-    status: Optional[str] = Field(None, pattern="^(active|sold|paused|expired)$")
+    status: Optional[str] = Field(None, pattern="^(active|sold|paused|expired|closed|suspended)$")
+    public_price: Optional[Decimal] = Field(None, gt=0)
+    private_price: Optional[Decimal] = Field(None, gt=0)
+    visibility: Optional[str] = Field(None, pattern="^(public|premium_only)$")
+    is_featured: Optional[bool] = None
     is_negotiable: Optional[bool] = None
     min_order: Optional[Decimal] = Field(None, gt=0)
 
@@ -171,6 +178,9 @@ class OfferResponse(BaseModel):
 
     quantity: Decimal
     price: Decimal
+    public_price: Optional[Decimal]
+    private_price: Optional[Decimal]
+    visibility: str
     unit: str
 
     location: str
@@ -212,6 +222,8 @@ class OfferResponse(BaseModel):
 
     views: int
     favorites_count: int
+    owner_profile_id: UUID
+    is_featured: bool = False
 
     created_at: datetime
     updated_at: Optional[datetime]
@@ -238,6 +250,26 @@ class OfferResponse(BaseModel):
             except json.JSONDecodeError:
                 return []
         return []
+
+    @field_validator("owner", mode="before")
+    @classmethod
+    def parse_owner(cls, value):
+        if value is None:
+            return None
+        if isinstance(value, dict):
+            return value
+
+        # Compatibilidade quando SQLAlchemy retorna a relação owner como objeto ORM.
+        return {
+            "id": getattr(value, "id", None),
+            "name": getattr(value, "name", None),
+            "email": getattr(value, "email", None),
+            "profile_image": getattr(value, "profile_image", None),
+            "rating": getattr(value, "rating", None),
+            "total_reviews": getattr(value, "total_reviews", None),
+            "location": getattr(value, "location", None),
+            "is_verified": getattr(value, "is_verified", None),
+        }
 
 
 class PaginatedOfferResponse(BaseModel):

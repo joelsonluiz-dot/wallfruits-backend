@@ -24,6 +24,10 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = "postgresql://postgres:Wallfruits%402026@localhost:5432/wallfruits_db"
     DB_ECHO: bool = False
+    STARTUP_DB_RETRIES: int = 5
+    STARTUP_DB_RETRY_DELAY_SECONDS: float = 2.0
+    STRICT_STARTUP: bool = False
+    HEALTHCHECK_TIMEOUT_SECONDS: float = 3.0
 
     # Supabase
     SUPABASE_AUTH_ENABLED: bool = False
@@ -48,6 +52,25 @@ class Settings(BaseSettings):
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"
     REDIS_ENABLED: bool = True
+
+    # Webhooks de dominio
+    INTERMEDIATION_WEBHOOK_URL: str = ""
+    INTERMEDIATION_WEBHOOK_TIMEOUT_SECONDS: float = 5.0
+    INTERMEDIATION_WEBHOOK_SECRET: str = ""
+    INTERMEDIATION_WEBHOOK_MAX_RETRIES: int = 3
+
+    # E-mail (Resend)
+    RESEND_API_KEY: str = ""
+    EMAIL_FROM: str = "WallFruits <noreply@wallfruits.com.br>"
+    EMAIL_ENABLED: bool = False
+    FRONTEND_URL: str = "http://localhost:3000"
+
+    # Pagamentos (Stripe)
+    STRIPE_SECRET_KEY: str = ""
+    STRIPE_PUBLISHABLE_KEY: str = ""
+    STRIPE_WEBHOOK_SECRET: str = ""
+    STRIPE_PRICE_BASIC: str = ""   # price_xxxx do plano básico no Stripe
+    STRIPE_PRICE_PREMIUM: str = "" # price_xxxx do plano premium no Stripe
     
     # Logging
     LOG_LEVEL: str = "INFO"
@@ -57,9 +80,13 @@ class Settings(BaseSettings):
     UPLOAD_DIRECTORY: str = "static/uploads"
     MAX_FILE_SIZE: int = 10 * 1024 * 1024  # 10 MB
     ALLOWED_EXTENSIONS: list[str] = ["jpg", "jpeg", "png", "gif"]
+    MAX_CONTRACT_FILE_SIZE: int = 15 * 1024 * 1024  # 15 MB
+    ALLOWED_CONTRACT_EXTENSIONS: list[str] = ["pdf", "doc", "docx", "png", "jpg", "jpeg"]
+    CONTRACT_MAX_RETAINED_VERSIONS: int = 5
     
     # Security
     DEBUG: bool = False
+    APP_ENV: str = "development"
     
     model_config = SettingsConfigDict(
         env_file=str(ENV_FILE),
@@ -90,7 +117,7 @@ class Settings(BaseSettings):
 
         return []
 
-    @field_validator("CORS_ORIGINS", "ALLOWED_HOSTS", mode="before")
+    @field_validator("CORS_ORIGINS", "ALLOWED_HOSTS", "ALLOWED_CONTRACT_EXTENSIONS", mode="before")
     @classmethod
     def parse_string_list(cls, value: Any):
         return cls._parse_list(value)
@@ -101,6 +128,48 @@ class Settings(BaseSettings):
 def get_settings() -> Settings:
     """Retorna instância de Settings em cache"""
     settings = Settings()
+
+    if not settings.DATABASE_URL.strip():
+        raise RuntimeError("DATABASE_URL não configurada")
+
+    if settings.STARTUP_DB_RETRIES < 1:
+        raise RuntimeError("STARTUP_DB_RETRIES deve ser >= 1")
+
+    if settings.STARTUP_DB_RETRY_DELAY_SECONDS < 0:
+        raise RuntimeError("STARTUP_DB_RETRY_DELAY_SECONDS deve ser >= 0")
+
+    if settings.HEALTHCHECK_TIMEOUT_SECONDS <= 0:
+        raise RuntimeError("HEALTHCHECK_TIMEOUT_SECONDS deve ser > 0")
+
+    if settings.INTERMEDIATION_WEBHOOK_TIMEOUT_SECONDS <= 0:
+        raise RuntimeError("INTERMEDIATION_WEBHOOK_TIMEOUT_SECONDS deve ser > 0")
+
+    if settings.INTERMEDIATION_WEBHOOK_MAX_RETRIES < 0:
+        raise RuntimeError("INTERMEDIATION_WEBHOOK_MAX_RETRIES deve ser >= 0")
+
+    if settings.MAX_CONTRACT_FILE_SIZE <= 0:
+        raise RuntimeError("MAX_CONTRACT_FILE_SIZE deve ser > 0")
+
+    if settings.CONTRACT_MAX_RETAINED_VERSIONS < 1:
+        raise RuntimeError("CONTRACT_MAX_RETAINED_VERSIONS deve ser >= 1")
+
+    if not settings.ALLOWED_CONTRACT_EXTENSIONS:
+        raise RuntimeError("ALLOWED_CONTRACT_EXTENSIONS nao pode ser vazio")
+
+    if settings.SUPABASE_AUTH_ENABLED:
+        if not settings.SUPABASE_URL.strip():
+            raise RuntimeError("Supabase Auth habilitado, mas falta SUPABASE_URL")
+        if not settings.SUPABASE_ANON_KEY.strip():
+            import sys
+            print(
+                "AVISO: SUPABASE_ANON_KEY ausente; login/senha via Supabase fica desativado, "
+                "mas OAuth pode funcionar.",
+                file=sys.stderr,
+            )
+
+    env_lower = settings.APP_ENV.strip().lower()
+    if env_lower in {"prod", "production", "staging"} and settings.SECRET_KEY == "wallfruits_super_secret_key_change_in_production":
+        raise RuntimeError("SECRET_KEY padrão não pode ser usada em produção")
     
     # Validações adicionais
     if settings.SECRET_KEY == "wallfruits_super_secret_key_change_in_production":

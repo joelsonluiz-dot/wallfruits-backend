@@ -546,7 +546,11 @@
         // Remover campos null para não enviar
         Object.keys(payload).forEach(k => { if (payload[k] === null || payload[k] === '') delete payload[k]; });
 
-        await run('Criar oferta', () => apiRequest('/offers', 'POST', payload));
+        const createdOffer = await run('Criar oferta', () => apiRequest('/offers', 'POST', payload));
+        if (createdOffer?.id) {
+            document.getElementById('targetOfferId').value = createdOffer.id;
+            window.open(`/offers/${createdOffer.id}`, '_blank', 'noopener');
+        }
     });
 
     document.getElementById('btnMyOffers').addEventListener('click', async () => {

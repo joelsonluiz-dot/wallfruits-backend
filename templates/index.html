@@ -86,6 +86,92 @@
         margin-top: 5rem;
         padding-bottom: 2rem;
     }
+    .home-offers-section {
+        margin-top: 3.5rem;
+    }
+    .home-offers-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.7rem;
+        flex-wrap: wrap;
+        margin-bottom: 0.9rem;
+    }
+    .home-offers-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.8rem;
+    }
+    .home-offer-card {
+        display: flex;
+        min-height: 145px;
+        border-radius: 8px;
+        border: 1px solid var(--wf-border);
+        background: var(--wf-card);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+        overflow: hidden;
+        cursor: pointer;
+        transition: all 0.28s ease;
+    }
+    .home-offer-card:hover {
+        transform: translateY(-2px);
+        border-color: rgba(237,164,76,0.28);
+    }
+    .home-offer-image {
+        width: 75px;
+        min-width: 75px;
+        object-fit: cover;
+        background: rgba(255,255,255,0.06);
+    }
+    .home-offer-body {
+        flex: 1;
+        padding: 0.65rem 0.75rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+    }
+    .home-producer {
+        font-size: 0.72rem;
+        color: var(--wf-text-secondary);
+    }
+    .home-fruit {
+        font-size: 0.98rem;
+        font-weight: 800;
+        color: #EDA44C;
+        margin: 0;
+    }
+    .home-price-row {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.3rem;
+        border: 1px solid rgba(255,255,255,0.08);
+        background: rgba(255,255,255,0.03);
+        border-radius: 8px;
+        padding: 0.32rem;
+    }
+    .home-price-col {
+        text-align: center;
+        border-right: 1px dashed rgba(255,255,255,0.1);
+    }
+    .home-price-col:last-child {
+        border-right: none;
+    }
+    .home-price-label {
+        display: block;
+        font-size: 0.6rem;
+        color: var(--wf-text-secondary);
+    }
+    .home-price-val {
+        font-size: 0.72rem;
+        font-weight: 700;
+    }
+    .home-offer-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.68rem;
+        color: var(--wf-text-secondary);
+    }
     .feature-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -134,6 +220,7 @@
         .stat-value { font-size: 1.6rem; }
         .stat-label { font-size: 0.7rem; }
         .features-section { margin-top: 3rem; }
+        .home-offers-section { margin-top: 2.5rem; }
         .feature-grid { grid-template-columns: 1fr; }
         .feature-item { padding: 1.5rem 1.15rem; }
         .hero-actions { flex-direction: column; align-items: center; }
@@ -168,6 +255,17 @@
             QA Test Lab
         </a>
     </div>
+</section>
+
+<section class="home-offers-section">
+    <div class="home-offers-head">
+        <div>
+            <h2 class="wf-section-title" style="font-size:1.45rem;margin:0;">Ofertas em <span class="wf-gradient-text">destaque</span></h2>
+            <p style="color:var(--wf-text-secondary);margin:0.2rem 0 0;font-size:0.86rem;">Clique no card para abrir os detalhes completos em outra aba.</p>
+        </div>
+        <a href="/offers" class="btn btn-wf-secondary">Ver todas</a>
+    </div>
+    <div id="homeOffersList" class="home-offers-list wf-stagger"></div>
 </section>
 
 <div class="stats-grid wf-stagger">
@@ -214,6 +312,78 @@
 </section>
 
 <script>
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text ?? '';
+        return div.innerHTML;
+    }
+
+    function toCurrency(value) {
+        if (value === null || value === undefined || Number.isNaN(Number(value))) {
+            return 'R$ -';
+        }
+        return `R$ ${Number(value).toFixed(2)}`;
+    }
+
+    function fallbackImageSvg(label) {
+        const safeLabel = encodeURIComponent((label || 'Fruta').slice(0, 16));
+        const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%' stop-color='%23161a24'/><stop offset='100%' stop-color='%23272d3a'/></linearGradient></defs><rect width='100%' height='100%' fill='url(%23g)'/><circle cx='150' cy='120' r='65' fill='%23EDA44C' opacity='0.22'/><text x='50%' y='84%' dominant-baseline='middle' text-anchor='middle' fill='%23e8e8ed' font-size='22' font-family='Arial'>${safeLabel}</text></svg>`;
+        return `data:image/svg+xml;utf8,${svg}`;
+    }
+
+    function getOfferImage(offer) {
+        if (Array.isArray(offer.images) && offer.images.length && offer.images[0]) {
+            return offer.images[0];
+        }
+        return fallbackImageSvg(offer.product_name);
+    }
+
+    async function loadHomeOffers() {
+        const container = document.getElementById('homeOffersList');
+        try {
+            const data = await apiRequest('/offers?limit=3');
+            const offers = data.offers || [];
+
+            if (!offers.length) {
+                container.innerHTML = '<div class="wf-alert wf-alert-info">Ainda não há ofertas em destaque.</div>';
+                return;
+            }
+
+            container.innerHTML = offers.map((offer) => {
+                const min = offer.price_min_kg ?? offer.price_per_kg ?? offer.price;
+                const perKg = offer.price_per_kg ?? offer.price_avg_kg ?? offer.price;
+                const max = offer.price_max_kg ?? offer.price_per_kg ?? offer.price;
+                return `
+                    <article class="home-offer-card" data-offer-id="${offer.id}">
+                        <img class="home-offer-image" src="${escapeHtml(getOfferImage(offer))}" alt="${escapeHtml(offer.product_name)}">
+                        <div class="home-offer-body">
+                            <div class="home-producer">${escapeHtml(offer.owner_data?.name || 'Produtor')}</div>
+                            <h3 class="home-fruit">${escapeHtml(offer.product_name)}</h3>
+                            <div class="home-price-row">
+                                <div class="home-price-col"><span class="home-price-label">Min</span><span class="home-price-val">${toCurrency(min)}</span></div>
+                                <div class="home-price-col"><span class="home-price-label">Kg</span><span class="home-price-val">${toCurrency(perKg)}</span></div>
+                                <div class="home-price-col"><span class="home-price-label">Max</span><span class="home-price-val">${toCurrency(max)}</span></div>
+                            </div>
+                            <div class="home-offer-footer">
+                                <span>${escapeHtml(offer.location || 'Sem localização')}</span>
+                                <span>Abrir detalhes</span>
+                            </div>
+                        </div>
+                    </article>
+                `;
+            }).join('');
+
+            container.querySelectorAll('.home-offer-card').forEach((card) => {
+                card.addEventListener('click', () => {
+                    const offerId = card.dataset.offerId;
+                    window.open(`/offers/${offerId}`, '_blank', 'noopener');
+                });
+            });
+        } catch (error) {
+            container.innerHTML = '<div class="wf-alert wf-alert-error">Falha ao carregar ofertas da home.</div>';
+        }
+    }
+
     async function loadStats() {
         try {
             const stats = await apiRequest('/dashboard/insights');
@@ -225,6 +395,7 @@
             document.getElementById('tx24h').textContent = '0';
         }
     }
+    loadHomeOffers();
     loadStats();
 </script>
 {% endblock %}

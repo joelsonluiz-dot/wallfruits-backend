@@ -518,7 +518,12 @@
             }
 
             if (!response.ok) {
-                throw new Error(payload?.detail || `Erro HTTP ${response.status}`);
+                const errorMessage =
+                    payload?.detail ||
+                    payload?.error?.message ||
+                    payload?.message ||
+                    `Erro HTTP ${response.status}`;
+                throw new Error(errorMessage);
             }
 
             return payload;

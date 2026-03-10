@@ -1,18 +1,29 @@
-from fastapi import APIRouter, HTTPException, Depends, status, Query
-from sqlalchemy.orm import Session
+from decimal import Decimal
 from typing import List
 from uuid import UUID
-from decimal import Decimal
 
-from app.database.connection import get_db
-from app.models import Transaction, Offer, User
-from app.schemas import TransactionCreate, TransactionResponse, TransactionUpdate
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import and_, or_
+from sqlalchemy.orm import Session
+
 from app.core.auth_middleware import get_current_user
+from app.core.domain_permissions import enforce_negotiation_policy
+from app.database.connection import get_db
+from app.models import Offer, Transaction, User
+from app.schemas import TransactionCreate, TransactionResponse, TransactionUpdate
+from app.services.profile_service import ProfileService
 
 router = APIRouter(
     prefix="/transactions",
-    tags=["transactions"]
+    tags=["transactions"],
 )
+
+
+def _seller_offer_scope(*, current_user: User, current_profile_id):
+    return or_(
+        Offer.owner_profile_id == current_profile_id,
+        and_(Offer.owner_profile_id.is_(None), Offer.user_id == current_user.id),
+    )
 
 
 # -----------------------------
@@ -21,32 +32,34 @@ router = APIRouter(
 @router.post("/", response_model=TransactionResponse, status_code=status.HTTP_201_CREATED)
 def create_transaction(
     transaction: TransactionCreate,
+    _policy_guard: None = Depends(enforce_negotiation_policy),
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
+    profile_service = ProfileService(db)
+    buyer_profile = profile_service.get_or_create_profile(current_user)
 
-    # Verificar se a oferta existe e está ativa
     offer = db.query(Offer).filter(
         Offer.id == transaction.offer_id,
-        Offer.status == "active"
+        Offer.status == "active",
     ).first()
 
     if not offer:
         raise HTTPException(404, "Oferta não encontrada ou não está disponível")
 
-    # Verificar se o usuário não está comprando sua própria oferta
-    if offer.user_id == current_user.id:
+    seller_profile = profile_service.ensure_offer_owner_profile(offer)
+    if seller_profile.id == buyer_profile.id:
         raise HTTPException(400, "Não é possível comprar sua própria oferta")
 
-    # Verificar quantidade disponível
     if transaction.quantity > offer.quantity:
-        raise HTTPException(400, f"Quantidade solicitada ({transaction.quantity}) maior que disponível ({offer.quantity})")
+        raise HTTPException(
+            400,
+            f"Quantidade solicitada ({transaction.quantity}) maior que disponível ({offer.quantity})",
+        )
 
-    # Calcular valores
     unit_price = offer.price
     total_price = unit_price * transaction.quantity
 
-    # Criar transação
     new_transaction = Transaction(
         buyer_id=current_user.id,
         offer_id=transaction.offer_id,
@@ -57,14 +70,13 @@ def create_transaction(
         delivery_address=transaction.delivery_address,
         delivery_date=transaction.delivery_date,
         notes=transaction.notes,
-        payment_method=transaction.payment_method
+        payment_method=transaction.payment_method,
     )
 
     db.add(new_transaction)
     db.commit()
     db.refresh(new_transaction)
 
-    # Reservar estoque no momento da compra (qualquer método de entrega)
     offer.quantity -= transaction.quantity
     if offer.quantity <= 0:
         offer.status = "sold"
@@ -83,25 +95,30 @@ def get_my_transactions(
     db: Session = Depends(get_db),
     type: str = Query("all", pattern="^(all|purchases|sales)$"),
     skip: int = Query(0, ge=0),
-    limit: int = Query(20, ge=1, le=100)
+    limit: int = Query(20, ge=1, le=100),
 ):
+    profile_service = ProfileService(db)
+    current_profile = profile_service.get_or_create_profile(current_user)
+    seller_scope = _seller_offer_scope(
+        current_user=current_user,
+        current_profile_id=current_profile.id,
+    )
+
+    seller_offer_ids = db.query(Offer.id).filter(seller_scope)
 
     query = db.query(Transaction)
 
     if type == "purchases":
         query = query.filter(Transaction.buyer_id == current_user.id)
     elif type == "sales":
-        query = query.join(Offer).filter(Offer.user_id == current_user.id)
-    else:  # all
+        query = query.join(Offer).filter(seller_scope)
+    else:
         query = query.filter(
-            (Transaction.buyer_id == current_user.id) |
-            (Transaction.offer_id.in_(
-                db.query(Offer.id).filter(Offer.user_id == current_user.id)
-            ))
+            (Transaction.buyer_id == current_user.id)
+            | (Transaction.offer_id.in_(seller_offer_ids))
         )
 
     transactions = query.order_by(Transaction.created_at.desc()).offset(skip).limit(limit).all()
-
     return transactions
 
 
@@ -114,21 +131,27 @@ def get_transaction_history(
     db: Session = Depends(get_db),
     type: str = Query("all", pattern="^(all|purchases|sales)$"),
     skip: int = Query(0, ge=0),
-    limit: int = Query(20, ge=1, le=100)
+    limit: int = Query(20, ge=1, le=100),
 ):
+    profile_service = ProfileService(db)
+    current_profile = profile_service.get_or_create_profile(current_user)
+    seller_scope = _seller_offer_scope(
+        current_user=current_user,
+        current_profile_id=current_profile.id,
+    )
+
+    seller_offer_ids = db.query(Offer.id).filter(seller_scope)
 
     base_query = db.query(Transaction)
 
     if type == "purchases":
         base_query = base_query.filter(Transaction.buyer_id == current_user.id)
     elif type == "sales":
-        base_query = base_query.join(Offer).filter(Offer.user_id == current_user.id)
+        base_query = base_query.join(Offer).filter(seller_scope)
     else:
         base_query = base_query.filter(
-            (Transaction.buyer_id == current_user.id) |
-            (Transaction.offer_id.in_(
-                db.query(Offer.id).filter(Offer.user_id == current_user.id)
-            ))
+            (Transaction.buyer_id == current_user.id)
+            | (Transaction.offer_id.in_(seller_offer_ids))
         )
 
     total_count = base_query.count()
@@ -148,9 +171,9 @@ def get_transaction_history(
         "filters": {"type": type},
         "summary": {
             "status_counts": status_counts,
-            "page_total_value": float(total_value)
+            "page_total_value": float(total_value),
         },
-        "items": items
+        "items": items,
     }
 
 
@@ -161,19 +184,23 @@ def get_transaction_history(
 def get_transaction(
     transaction_id: UUID,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
+    profile_service = ProfileService(db)
 
     transaction = db.query(Transaction).filter(Transaction.id == transaction_id).first()
 
     if not transaction:
         raise HTTPException(404, "Transação não encontrada")
 
-    # Verificar se o usuário tem permissão para ver esta transação
     offer = transaction.offer
-    if (transaction.buyer_id != current_user.id and
-        offer.user_id != current_user.id and
-        current_user.role != "admin"):
+    is_seller = profile_service.is_offer_owner(offer=offer, user=current_user)
+
+    if (
+        transaction.buyer_id != current_user.id
+        and not is_seller
+        and current_user.role != "admin"
+    ):
         raise HTTPException(403, "Acesso negado")
 
     return transaction
@@ -187,18 +214,18 @@ def update_transaction(
     transaction_id: UUID,
     update_data: TransactionUpdate,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
+    profile_service = ProfileService(db)
 
     transaction = db.query(Transaction).filter(Transaction.id == transaction_id).first()
 
     if not transaction:
         raise HTTPException(404, "Transação não encontrada")
 
-    # Verificar permissões
     offer = transaction.offer
     is_buyer = transaction.buyer_id == current_user.id
-    is_seller = offer.user_id == current_user.id
+    is_seller = profile_service.is_offer_owner(offer=offer, user=current_user)
     is_admin = current_user.role == "admin"
 
     if not (is_buyer or is_seller or is_admin):
@@ -206,29 +233,25 @@ def update_transaction(
 
     old_status = transaction.status
 
-    # Regras de atualização de status
     if update_data.status:
         current_status = transaction.status
 
-        # Comprador pode confirmar pedido
         if update_data.status == "confirmed" and is_buyer and current_status == "pending":
-            pass  # Permitido
-        # Vendedor pode marcar como concluída
+            pass
         elif update_data.status == "completed" and (is_seller or is_admin) and current_status in ["confirmed", "paid"]:
-            pass  # Permitido
-        # Cancelamento por comprador/vendedor/admin
+            pass
         elif update_data.status == "cancelled" and current_status in ["pending", "confirmed"]:
             if not (is_buyer or is_seller or is_admin):
                 raise HTTPException(403, "Acesso negado")
-        # Admin pode alterar qualquer status
         elif not is_admin:
-            raise HTTPException(400, f"Transição de status não permitida: {current_status} -> {update_data.status}")
+            raise HTTPException(
+                400,
+                f"Transição de status não permitida: {current_status} -> {update_data.status}",
+            )
 
-    # Atualizar campos
     for field, value in update_data.dict(exclude_unset=True).items():
         setattr(transaction, field, value)
 
-    # Se a transação foi cancelada, devolver estoque reservado
     if old_status in ["pending", "confirmed"] and transaction.status == "cancelled":
         offer.quantity += transaction.quantity
         if offer.status == "sold" and offer.quantity > 0:

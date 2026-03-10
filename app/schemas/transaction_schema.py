@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field
+from pydantic import field_validator
 from typing import Optional, Dict
 from uuid import UUID
 from decimal import Decimal
@@ -53,3 +54,29 @@ class TransactionResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+    @field_validator("buyer", mode="before")
+    @classmethod
+    def parse_buyer(cls, value):
+        if value is None or isinstance(value, dict):
+            return value
+
+        return {
+            "id": getattr(value, "id", None),
+            "name": getattr(value, "name", None),
+            "email": getattr(value, "email", None),
+            "profile_image": getattr(value, "profile_image", None),
+        }
+
+    @field_validator("offer", mode="before")
+    @classmethod
+    def parse_offer(cls, value):
+        if value is None or isinstance(value, dict):
+            return value
+
+        return {
+            "id": str(getattr(value, "id", "")) or None,
+            "product_name": getattr(value, "product_name", None),
+            "price": float(getattr(value, "price", 0) or 0),
+            "status": getattr(value, "status", None),
+        }

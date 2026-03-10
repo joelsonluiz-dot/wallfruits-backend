@@ -12,6 +12,7 @@ from uuid import UUID
 from app.database.connection import get_db
 from app.core.auth_middleware import get_current_user, require_producer_or_admin
 from app.models import User, Offer
+from app.services.profile_service import ProfileService
 
 router = APIRouter(
     prefix="/uploads",
@@ -121,13 +122,14 @@ async def upload_offer_images(
     current_user: User = Depends(require_producer_or_admin),
     db: Session = Depends(get_db)
 ):
+    profile_service = ProfileService(db)
 
     offer = db.query(Offer).filter(Offer.id == offer_id).first()
 
     if not offer:
         raise HTTPException(404, "Oferta não encontrada")
 
-    if offer.user_id != current_user.id and current_user.role != "admin":
+    if not profile_service.is_offer_owner(offer=offer, user=current_user):
         raise HTTPException(403, "Apenas o dono da oferta pode enviar imagens")
 
     if len(files) > 10:
@@ -210,6 +212,8 @@ async def delete_image(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    profile_service = ProfileService(db)
+
 
     # Verificar se a imagem pertence ao usuário
     # Esta é uma verificação básica - em produção seria mais robusta
@@ -230,7 +234,7 @@ async def delete_image(
     if offer_path.exists():
         linked_offers = db.query(Offer).filter(Offer.images.isnot(None)).all()
         for offer in linked_offers:
-            if offer.user_id != current_user.id and current_user.role != "admin":
+            if not profile_service.is_offer_owner(offer=offer, user=current_user):
                 continue
 
             images = _parse_offer_images(offer.images)

@@ -15,6 +15,7 @@ class Offer(Base):
 
     # Relacionamento com usuário
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    owner_profile_id = Column(UUID(as_uuid=True), ForeignKey("profiles.id"), nullable=False, index=True)
 
     product_name = Column(String(255), nullable=False)
     description = Column(Text)
@@ -22,6 +23,8 @@ class Offer(Base):
 
     quantity = Column(Numeric(10, 2), nullable=False)
     price = Column(Numeric(10, 2), nullable=False)
+    public_price = Column(Numeric(10, 2), nullable=True)
+    private_price = Column(Numeric(10, 2))
     unit = Column(String(50), nullable=False)  # kg, unidade, caixa, etc.
 
     location = Column(String(150), index=True)
@@ -33,6 +36,8 @@ class Offer(Base):
 
     # Status e controle
     status = Column(String(50), default="active", index=True)  # active, sold, paused, expired
+    visibility = Column(String(30), default="public", nullable=False)
+    is_featured = Column(Boolean, default=False)
     is_negotiable = Column(Boolean, default=True)
     min_order = Column(Numeric(10, 2), default=1)
 
@@ -79,6 +84,7 @@ class Offer(Base):
 
     # Relacionamentos
     owner = relationship("User", back_populates="offers")
+    owner_profile = relationship("Profile", back_populates="offers")
     transactions = relationship("Transaction", back_populates="offer", cascade="all, delete-orphan")
     reviews = relationship("Review", back_populates="offer", cascade="all, delete-orphan")
     favorites = relationship("Favorite", back_populates="offer", cascade="all, delete-orphan")

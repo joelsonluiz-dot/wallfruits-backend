@@ -23,6 +23,7 @@ class User(Base):
     profile_image = Column(String(500))  # URL da imagem de perfil
 
     is_active = Column(Boolean, default=True)
+    is_superuser = Column(Boolean, default=False)
     is_verified = Column(Boolean, default=False)
 
     rating = Column(Integer, default=0)  # Rating de 0-5
@@ -30,6 +31,7 @@ class User(Base):
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    last_login = Column(DateTime(timezone=True))
 
     # Relacionamentos
     offers = relationship("Offer", back_populates="owner", cascade="all, delete-orphan")
@@ -46,3 +48,12 @@ class User(Base):
         back_populates="reviewed_user"
     )
     favorites = relationship("Favorite", back_populates="user", cascade="all, delete-orphan")
+    profile = relationship(
+        "Profile",
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan",
+        foreign_keys="Profile.user_id",
+    )
+    subscriptions = relationship("Subscription", back_populates="user", cascade="all, delete-orphan")
+    wallet = relationship("Wallet", back_populates="user", uselist=False, cascade="all, delete-orphan")

@@ -37,3 +37,23 @@ services:
         value: '["https://wallfruits-backend.onrender.com","https://wallfruits-api.onrender.com"]'
       - key: ALLOWED_HOSTS
         value: '["wallfruits-backend.onrender.com","wallfruits-api.onrender.com"]'
+      # E-mail — Resend (preencha no painel do Render)
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        value: "WallFruits <noreply@wallfruits.com.br>"
+      - key: EMAIL_ENABLED
+        value: true
+      - key: FRONTEND_URL
+        value: "https://wallfruits.com.br"
+      # Pagamentos — Stripe (preencha no painel do Render)
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_PUBLISHABLE_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: STRIPE_PRICE_BASIC
+        sync: false
+      - key: STRIPE_PRICE_PREMIUM
+        sync: false

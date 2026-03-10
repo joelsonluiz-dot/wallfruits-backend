@@ -81,6 +81,10 @@
 
                 <div class="auth-divider">ou</div>
 
+                <button type="button" class="btn btn-wf-secondary w-100 mb-2" id="googleLoginBtn">
+                    Entrar com Google
+                </button>
+
                 <button type="button" class="btn btn-wf-secondary w-100" id="clearTokenBtn">
                     Sair da sessão atual
                 </button>
@@ -94,6 +98,42 @@
 </div>
 
 <script>
+    async function handleOAuthCallbackIfAny() {
+        const hashParams = new URLSearchParams(window.location.hash.replace('#', ''));
+        const accessToken = hashParams.get('access_token');
+        const errorDescription = hashParams.get('error_description');
+
+        if (errorDescription) {
+            alert('Falha no login Google: ' + decodeURIComponent(errorDescription));
+            window.history.replaceState({}, document.title, window.location.pathname);
+            return;
+        }
+
+        if (!accessToken) {
+            return;
+        }
+
+        try {
+            const response = await apiRequest('/auth/supabase/exchange', 'POST', {
+                access_token: accessToken,
+            });
+
+            localStorage.setItem('token', response.access_token);
+            localStorage.setItem('user', JSON.stringify(response.user || {}));
+
+            // Remove token/hash da URL para não vazar em histórico.
+            window.history.replaceState({}, document.title, window.location.pathname);
+            alert('Login Google realizado com sucesso.');
+            window.location.href = '/';
+        } catch (error) {
+            alert('Erro ao concluir login Google: ' + error.message);
+        }
+    }
+
+    document.getElementById('googleLoginBtn').addEventListener('click', () => {
+        window.location.href = '/api/auth/google/login';
+    });
+
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const email = document.getElementById('email').value;
@@ -118,5 +158,7 @@
         clearSessionToken();
         alert('Token removido do navegador.');
     });
+
+    handleOAuthCallbackIfAny();
 </script>
 {% endblock %}

@@ -15,7 +15,9 @@ from app.schemas import (
     OfferSearchFilters
 )
 from app.cache.redis_client import get_cache, set_cache
-from app.core.auth_middleware import get_current_user, require_producer_or_admin, optional_auth
+from app.core.auth_middleware import get_current_user, optional_auth
+from app.core.domain_permissions import require_approved_offer_publisher
+from app.services.profile_service import ProfileService
 
 logger = logging.getLogger("offer_logger")
 
@@ -93,13 +95,19 @@ async def websocket_endpoint(websocket: WebSocket, group_name: Optional[str] = N
 @router.post("/", response_model=OfferResponse, status_code=status.HTTP_201_CREATED)
 async def create_offer(
     offer: OfferCreate,
-    current_user: User = Depends(require_producer_or_admin),
+    current_user: User = Depends(require_approved_offer_publisher),
     db: Session = Depends(get_db)
 ):
 
+    profile = ProfileService(db).get_or_create_profile(current_user)
+
     new_offer = Offer(
         **offer.dict(),
-        user_id=current_user.id
+        user_id=current_user.id,
+        owner_profile_id=profile.id,
+        public_price=offer.public_price or offer.price,
+        private_price=offer.private_price,
+        visibility=offer.visibility or "public",
     )
 
     if isinstance(offer.images, list):
@@ -137,11 +145,18 @@ def get_my_offers(
     limit: int = Query(20, ge=1, le=100),
     status_filter: Optional[str] = Query(
         None,
-        pattern="^(active|sold|paused|expired)$"
+        pattern="^(active|sold|paused|expired|closed|suspended)$"
     )
 ):
+    profile_service = ProfileService(db)
+    current_profile = profile_service.get_or_create_profile(current_user)
 
-    query = db.query(Offer).filter(Offer.user_id == current_user.id)
+    query = db.query(Offer).filter(
+        or_(
+            Offer.owner_profile_id == current_profile.id,
+            and_(Offer.owner_profile_id.is_(None), Offer.user_id == current_user.id),
+        )
+    )
 
     if status_filter:
         query = query.filter(Offer.status == status_filter)
@@ -243,6 +258,8 @@ def get_offers(
         offer.owner_data = {
             "id": offer.owner.id,
             "name": offer.owner.name,
+            "email": offer.owner.email,
+            "profile_image": offer.owner.profile_image,
             "rating": offer.owner.rating,
             "location": offer.owner.location
         }
@@ -300,7 +317,7 @@ def get_offers(
     )
 
     # Cache por 5 minutos
-    set_cache(cache_key, json.dumps(response.dict()), 300)
+    set_cache(cache_key, json.dumps(response.model_dump(mode="json")), 300)
 
     return response
 
@@ -321,7 +338,16 @@ def get_offer(
         raise HTTPException(404, "Oferta não encontrada")
 
     # Incrementar visualizações (exceto para o próprio dono)
-    if not current_user or current_user.id != offer.user_id:
+    is_owner = False
+    if current_user:
+        previous_owner_profile_id = offer.owner_profile_id
+        profile_service = ProfileService(db)
+        is_owner = profile_service.is_offer_owner(offer=offer, user=current_user)
+
+        if previous_owner_profile_id is None and offer.owner_profile_id is not None:
+            db.commit()
+
+    if not is_owner:
         offer.views += 1
         db.commit()
 
@@ -338,6 +364,8 @@ def get_offer(
     offer.owner_data = {
         "id": offer.owner.id,
         "name": offer.owner.name,
+        "email": offer.owner.email,
+        "profile_image": offer.owner.profile_image,
         "rating": offer.owner.rating,
         "total_reviews": offer.owner.total_reviews,
         "location": offer.owner.location,
@@ -364,8 +392,10 @@ def delete_offer(
     if not offer:
         raise HTTPException(404, "Oferta não encontrada")
 
+    profile_service = ProfileService(db)
+
     # Verificar se o usuário é o dono da oferta ou admin
-    if offer.user_id != current_user.id and current_user.role != "admin":
+    if not profile_service.is_offer_owner(offer=offer, user=current_user):
         raise HTTPException(403, "Apenas o dono da oferta pode excluí-la")
 
     db.delete(offer)
@@ -388,8 +418,10 @@ def update_offer(
     if not offer:
         raise HTTPException(404, "Oferta não encontrada")
 
+    profile_service = ProfileService(db)
+
     # Verificar se o usuário é o dono da oferta ou admin
-    if offer.user_id != current_user.id and current_user.role != "admin":
+    if not profile_service.is_offer_owner(offer=offer, user=current_user):
         raise HTTPException(403, "Apenas o dono da oferta pode editá-la")
 
     # Não permitir alterar status para vendido se não for através de uma transação

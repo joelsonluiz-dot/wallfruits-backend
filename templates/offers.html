@@ -3,203 +3,330 @@
 {% block title %}Ofertas - WallFruits{% endblock %}
 
 {% block content %}
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,400,0,0" />
 <style>
     .offers-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 2rem;
+        margin-bottom: 1.5rem;
         flex-wrap: wrap;
-        gap: 1rem;
+        gap: 0.8rem;
     }
+
     .offers-header h1 {
         font-size: 2rem;
         font-weight: 800;
         letter-spacing: -1px;
         margin: 0;
     }
+
     .offers-count {
         color: var(--wf-text-secondary);
         font-size: 0.85rem;
-        margin-top: 0.25rem;
+        margin-top: 0.2rem;
     }
-    .offers-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(min(360px, 100%), 1fr));
-        gap: 1.25rem;
-    }
-    .offer-card {
-        background: var(--wf-card);
-        border: 1px solid var(--wf-border);
-        border-radius: var(--wf-radius);
-        padding: 1.5rem;
-        transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+
+    .offers-list {
         display: flex;
         flex-direction: column;
-        gap: 0.65rem;
+        gap: 1rem;
     }
-    .offer-card:hover {
-        border-color: rgba(0,212,170,0.2);
-        transform: translateY(-3px);
-        box-shadow: 0 12px 40px rgba(0,0,0,0.3), 0 0 0 1px rgba(0,212,170,0.08);
-    }
-    .offer-top {
+
+    .produto-card {
         display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 0.5rem;
-    }
-    .offer-name {
-        font-size: 1.1rem;
-        font-weight: 700;
-        letter-spacing: -0.3px;
-        margin: 0;
-    }
-    .offer-variety {
-        font-size: 0.8rem;
-        color: var(--wf-text-secondary);
-        font-weight: 400;
-    }
-    .offer-price {
-        font-size: 1.25rem;
-        font-weight: 800;
-        color: var(--wf-accent);
-        white-space: nowrap;
-    }
-    .offer-price-kg {
-        font-size: 0.75rem;
-        color: var(--wf-text-secondary);
-        font-weight: 500;
-    }
-    .offer-desc {
-        color: var(--wf-text-secondary);
-        font-size: 0.85rem;
-        line-height: 1.5;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-    }
-    .offer-price-range {
-        display: flex;
-        justify-content: space-between;
-        font-size: 0.78rem;
-        padding: 0.5rem 0.75rem;
-        background: rgba(255,255,255,0.02);
-        border-radius: var(--wf-radius-sm);
+        min-height: 220px;
+        border-radius: 8px;
         border: 1px solid var(--wf-border);
-        gap: 0.5rem;
-        flex-wrap: wrap;
+        background: var(--wf-card);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.18);
+        overflow: hidden;
+        cursor: pointer;
+        transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
     }
-    .offer-price-range span {
-        text-align: center;
+
+    .produto-card:hover {
+        transform: translateY(-2px);
+        border-color: rgba(237, 164, 76, 0.35);
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
     }
-    .offer-price-range .price-label {
+
+    .produto-img-wrap {
+        width: 75px;
+        min-width: 75px;
+        min-height: 220px;
+        border-right: 1px solid rgba(255, 255, 255, 0.06);
+        background: rgba(255, 255, 255, 0.04);
+    }
+
+    .produto-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
         display: block;
+    }
+
+    .produto-content {
+        flex: 1;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 0.75rem;
+        padding: 0.8rem;
+    }
+
+    .produtor-box {
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+    }
+
+    .produtor-avatar {
+        width: 25px;
+        height: 25px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .produtor-avatar-fallback {
+        width: 25px;
+        height: 25px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.64rem;
+        font-weight: 700;
+        color: #0a0a0f;
+        background: #eda44c;
+    }
+
+    .produtor-info {
+        line-height: 1.15;
+    }
+
+    .produtor-nome {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--wf-text);
+    }
+
+    .produtor-username {
+        font-size: 0.7rem;
         color: var(--wf-text-secondary);
-        font-size: 0.65rem;
+    }
+
+    .fruta-nome {
+        font-size: 1.08rem;
+        font-weight: 800;
+        color: #eda44c;
+        letter-spacing: -0.3px;
+        margin: 0.35rem 0 0.45rem;
+    }
+
+    .price-box {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.35rem;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+        padding: 0.45rem;
+        margin-bottom: 0.45rem;
+    }
+
+    .price-col {
+        text-align: center;
+        border-right: 1px dashed rgba(255, 255, 255, 0.08);
+    }
+
+    .price-col:last-child {
+        border-right: none;
+    }
+
+    .price-label {
+        display: block;
+        font-size: 0.62rem;
         text-transform: uppercase;
+        color: var(--wf-text-secondary);
         letter-spacing: 0.3px;
         margin-bottom: 2px;
     }
-    .offer-price-range .price-val-min { color: #60a5fa; }
-    .offer-price-range .price-val-avg { color: #fbbf24; }
-    .offer-price-range .price-val-max { color: #f87171; }
-    .offer-meta {
-        display: flex;
-        gap: 0.75rem;
-        flex-wrap: wrap;
-        font-size: 0.78rem;
-        color: var(--wf-text-secondary);
+
+    .price-val {
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: var(--wf-text);
     }
-    .offer-meta-item {
+
+    .mini-meta-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.35rem;
+    }
+
+    .mini-meta-card {
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.03);
+        padding: 0.3rem 0.35rem;
+        min-height: 42px;
+    }
+
+    .mini-meta-top {
         display: flex;
         align-items: center;
-        gap: 4px;
+        gap: 3px;
+        color: var(--wf-text-secondary);
+        font-size: 0.6rem;
+        margin-bottom: 1px;
     }
-    .offer-meta-icon {
-        opacity: 0.5;
-    }
-    .offer-tags {
-        display: flex;
-        gap: 6px;
-        flex-wrap: wrap;
-    }
-    .offer-tag {
-        padding: 0.2rem 0.6rem;
-        border-radius: 50px;
-        font-size: 0.7rem;
+
+    .mini-meta-val {
+        font-size: 0.69rem;
+        color: var(--wf-text);
         font-weight: 600;
-        background: rgba(255,255,255,0.04);
-        border: 1px solid var(--wf-border);
-        color: var(--wf-text-secondary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
-    .offer-tag-cert {
-        background: rgba(0,212,170,0.08);
-        border-color: rgba(0,212,170,0.15);
-        color: var(--wf-accent);
+
+    .material-symbols-outlined {
+        font-size: 15px;
+        font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 20;
     }
-    .offer-footer {
+
+    .product-actions {
         display: flex;
+        gap: 0.35rem;
+        margin-top: 0.5rem;
+    }
+
+    .action-primary,
+    .action-secondary,
+    .action-side {
+        border: 1px solid rgba(255, 255, 255, 0.11);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.03);
+        color: var(--wf-text);
+        transition: all 0.2s ease;
+    }
+
+    .action-primary,
+    .action-secondary {
+        font-size: 0.72rem;
+        font-weight: 600;
+        padding: 0.35rem 0.72rem;
+    }
+
+    .action-primary {
+        background: rgba(237, 164, 76, 0.2);
+        border-color: rgba(237, 164, 76, 0.45);
+        color: #f9d09b;
+    }
+
+    .action-secondary:hover,
+    .action-primary:hover,
+    .action-side:hover {
+        transform: translateY(-1px);
+        border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .card-side {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
         justify-content: space-between;
-        align-items: center;
-        margin-top: auto;
-        padding-top: 0.75rem;
-        border-top: 1px solid var(--wf-border);
+        gap: 0.45rem;
     }
-    .offer-property {
-        font-size: 0.75rem;
+
+    .action-side {
+        width: 34px;
+        height: 34px;
+        border-radius: 9px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+    }
+
+    .action-side.active-like {
+        color: #ff7a92;
+        border-color: rgba(255, 122, 146, 0.35);
+        background: rgba(255, 122, 146, 0.12);
+    }
+
+    .action-side.active-bookmark {
+        color: #78d6ff;
+        border-color: rgba(120, 214, 255, 0.35);
+        background: rgba(120, 214, 255, 0.12);
+    }
+
+    .open-tip {
+        font-size: 0.62rem;
         color: var(--wf-text-secondary);
-        display: flex;
-        align-items: center;
-        gap: 4px;
+        text-align: center;
+        line-height: 1.2;
+        max-width: 34px;
     }
+
     .empty-state {
         text-align: center;
-        padding: 4rem 2rem;
-    }
-    .empty-state-icon {
-        font-size: 3rem;
-        margin-bottom: 1rem;
-        opacity: 0.2;
-    }
-    .empty-state-text {
+        padding: 3rem 1rem;
+        border: 1px dashed var(--wf-border);
+        border-radius: 12px;
         color: var(--wf-text-secondary);
-        font-size: 1rem;
     }
+
     .skeleton-card {
-        background: var(--wf-card);
+        min-height: 220px;
+        border-radius: 8px;
         border: 1px solid var(--wf-border);
-        border-radius: var(--wf-radius);
-        padding: 1.5rem;
-        height: 260px;
-    }
-    .skeleton-line {
-        background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
+        background: linear-gradient(90deg, rgba(255, 255, 255, 0.04) 20%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.04) 80%);
         background-size: 200% 100%;
-        animation: shimmer 1.5s infinite;
-        border-radius: 6px;
-        margin-bottom: 0.75rem;
+        animation: shimmer 1.4s infinite;
     }
+
     @keyframes shimmer {
         0% { background-position: 200% 0; }
         100% { background-position: -200% 0; }
     }
-    @media (max-width: 768px) {
-        .offers-header h1 { font-size: 1.5rem; }
-        .offer-card { padding: 1.15rem; gap: 0.5rem; }
-        .offer-name { font-size: 1rem; }
-        .offer-price { font-size: 1.1rem; }
-        .offer-meta { gap: 0.5rem; font-size: 0.74rem; }
-        .offer-price-range { font-size: 0.72rem; padding: 0.4rem 0.6rem; }
-        .offer-tags { gap: 4px; }
-        .offer-tag { font-size: 0.65rem; padding: 0.18rem 0.5rem; }
+
+    @media (max-width: 840px) {
+        .offers-header h1 {
+            font-size: 1.5rem;
+        }
+
+        .produto-content {
+            grid-template-columns: 1fr;
+        }
+
+        .card-side {
+            flex-direction: row;
+            justify-content: flex-start;
+            align-items: center;
+            margin-top: 0.35rem;
+        }
+
+        .open-tip {
+            max-width: none;
+            text-align: left;
+        }
     }
-    @media (max-width: 480px) {
-        .offers-header { flex-direction: column; align-items: flex-start; }
-        .offers-header .btn { width: 100%; text-align: center; }
-        .offer-top { flex-direction: column; gap: 0.35rem; }
-        .offer-price { font-size: 1.2rem; }
+
+    @media (max-width: 640px) {
+        .produto-card {
+            min-height: 208px;
+        }
+
+        .produto-img-wrap {
+            min-height: 208px;
+        }
+
+        .mini-meta-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
     }
 </style>
 
@@ -208,133 +335,351 @@
         <h1>Ofertas <span class="wf-gradient-text">Disponíveis</span></h1>
         <div class="offers-count" id="offersCount"></div>
     </div>
-    <a href="/qa" class="btn btn-wf-secondary">
-        + Criar via QA Lab
-    </a>
+    <a href="/qa" class="btn btn-wf-secondary">+ Criar oferta</a>
 </div>
 
-<div class="offers-grid wf-stagger" id="offersContainer">
-    <div class="skeleton-card">
-        <div class="skeleton-line" style="width:60%;height:20px;"></div>
-        <div class="skeleton-line" style="width:90%;height:14px;"></div>
-        <div class="skeleton-line" style="width:100%;height:40px;margin-top:0.5rem;"></div>
-        <div class="skeleton-line" style="width:45%;height:14px;margin-top:0.5rem;"></div>
-        <div class="skeleton-line" style="width:30%;height:28px;margin-top:1rem;"></div>
-    </div>
-    <div class="skeleton-card">
-        <div class="skeleton-line" style="width:50%;height:20px;"></div>
-        <div class="skeleton-line" style="width:80%;height:14px;"></div>
-        <div class="skeleton-line" style="width:100%;height:40px;margin-top:0.5rem;"></div>
-        <div class="skeleton-line" style="width:40%;height:14px;margin-top:0.5rem;"></div>
-        <div class="skeleton-line" style="width:35%;height:28px;margin-top:1rem;"></div>
-    </div>
-    <div class="skeleton-card">
-        <div class="skeleton-line" style="width:70%;height:20px;"></div>
-        <div class="skeleton-line" style="width:85%;height:14px;"></div>
-        <div class="skeleton-line" style="width:100%;height:40px;margin-top:0.5rem;"></div>
-        <div class="skeleton-line" style="width:50%;height:14px;margin-top:0.5rem;"></div>
-        <div class="skeleton-line" style="width:25%;height:28px;margin-top:1rem;"></div>
-    </div>
+<div class="offers-list wf-stagger" id="offersContainer">
+    <div class="skeleton-card"></div>
+    <div class="skeleton-card"></div>
+    <div class="skeleton-card"></div>
 </div>
 
 <script>
+    const offersStore = new Map();
+    const BOOKMARK_STORAGE_KEY = 'wf_offer_bookmarks';
+
     function escapeHtml(text) {
         const div = document.createElement('div');
-        div.textContent = text;
+        div.textContent = text ?? '';
         return div.innerHTML;
     }
 
+    function toCurrency(value) {
+        if (value === null || value === undefined || Number.isNaN(Number(value))) {
+            return 'R$ -';
+        }
+        return `R$ ${Number(value).toFixed(2)}`;
+    }
+
+    function fallbackImageSvg(label) {
+        const safeLabel = encodeURIComponent((label || 'Fruta').slice(0, 16));
+        const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='400' height='700'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%' stop-color='%231a1a23'/><stop offset='100%' stop-color='%23262835'/></linearGradient></defs><rect width='100%' height='100%' fill='url(%23g)'/><circle cx='200' cy='260' r='90' fill='%23EDA44C' opacity='0.25'/><text x='50%' y='80%' dominant-baseline='middle' text-anchor='middle' fill='%23e8e8ed' font-size='30' font-family='Arial'>${safeLabel}</text></svg>`;
+        return `data:image/svg+xml;utf8,${svg}`;
+    }
+
+    function getOfferImage(offer) {
+        if (Array.isArray(offer.images) && offer.images.length > 0 && offer.images[0]) {
+            return offer.images[0];
+        }
+        return fallbackImageSvg(offer.product_name);
+    }
+
+    function getOwnerUsername(offer) {
+        const email = offer.owner_data?.email || '';
+        if (email.includes('@')) {
+            return '@' + email.split('@')[0];
+        }
+        const ownerId = offer.owner_data?.id || offer.user_id;
+        return `@produtor${ownerId}`;
+    }
+
+    function getOwnerAvatar(offer) {
+        if (offer.owner_data?.profile_image) {
+            return `<img class="produtor-avatar" src="${escapeHtml(offer.owner_data.profile_image)}" alt="Avatar do produtor">`;
+        }
+
+        const name = offer.owner_data?.name || 'Produtor';
+        const initials = name
+            .split(' ')
+            .filter(Boolean)
+            .slice(0, 2)
+            .map((p) => p[0].toUpperCase())
+            .join('');
+
+        return `<span class="produtor-avatar-fallback">${escapeHtml(initials || 'PR')}</span>`;
+    }
+
+    function getBookmarks() {
+        try {
+            return JSON.parse(localStorage.getItem(BOOKMARK_STORAGE_KEY) || '[]');
+        } catch {
+            return [];
+        }
+    }
+
+    function isBookmarked(offerId) {
+        return getBookmarks().includes(offerId);
+    }
+
+    function setBookmarked(offerId, enabled) {
+        const set = new Set(getBookmarks());
+        if (enabled) {
+            set.add(offerId);
+        } else {
+            set.delete(offerId);
+        }
+        localStorage.setItem(BOOKMARK_STORAGE_KEY, JSON.stringify(Array.from(set)));
+    }
+
+    function cardMetaItems(offer) {
+        const quantity = offer.available_quantity || offer.quantity || '-';
+        const market = offer.target_market || offer.origin || '-';
+
+        return [
+            { icon: 'balance', label: 'Quantidade', value: `${quantity} ${offer.unit || 'kg'}` },
+            { icon: 'wifi', label: 'Disponivel', value: offer.status || '-' },
+            { icon: 'list', label: 'Qualidade', value: offer.quality_class || offer.quality_grade || '-' },
+            { icon: 'workspace_premium', label: 'Certificacao', value: offer.certification || '-' },
+            { icon: 'timer', label: 'Duracao', value: offer.ad_duration_days ? `${offer.ad_duration_days} dias` : (offer.shelf_life ? `${offer.shelf_life} dias` : '-') },
+            { icon: 'storefront', label: 'Mercado', value: market },
+        ];
+    }
+
+    function renderOfferCard(offer) {
+        const min = offer.price_min_kg ?? offer.price_per_kg ?? offer.price;
+        const perKg = offer.price_per_kg ?? offer.price_avg_kg ?? offer.price;
+        const max = offer.price_max_kg ?? offer.price_per_kg ?? offer.price;
+
+        const metaCards = cardMetaItems(offer).map((item) => `
+            <div class="mini-meta-card">
+                <div class="mini-meta-top">
+                    <span class="material-symbols-outlined">${item.icon}</span>
+                    <span>${escapeHtml(item.label)}</span>
+                </div>
+                <div class="mini-meta-val" title="${escapeHtml(String(item.value))}">${escapeHtml(String(item.value))}</div>
+            </div>
+        `).join('');
+
+        const bookmarked = isBookmarked(offer.id);
+
+        return `
+            <article class="produto-card" data-offer-id="${offer.id}">
+                <div class="produto-img-wrap">
+                    <img class="produto-img" src="${escapeHtml(getOfferImage(offer))}" alt="Imagem de ${escapeHtml(offer.product_name)}">
+                </div>
+
+                <div class="produto-content">
+                    <div>
+                        <div class="produtor-box">
+                            ${getOwnerAvatar(offer)}
+                            <div class="produtor-info">
+                                <div class="produtor-nome">${escapeHtml(offer.owner_data?.name || 'Produtor')}</div>
+                                <div class="produtor-username">${escapeHtml(getOwnerUsername(offer))}</div>
+                            </div>
+                        </div>
+
+                        <h3 class="fruta-nome">${escapeHtml(offer.product_name)}</h3>
+
+                        <div class="price-box">
+                            <div class="price-col">
+                                <span class="price-label">Preco min</span>
+                                <span class="price-val">${toCurrency(min)}</span>
+                            </div>
+                            <div class="price-col">
+                                <span class="price-label">Preco/kg</span>
+                                <span class="price-val">${toCurrency(perKg)}</span>
+                            </div>
+                            <div class="price-col">
+                                <span class="price-label">Preco max</span>
+                                <span class="price-val">${toCurrency(max)}</span>
+                            </div>
+                        </div>
+
+                        <div class="mini-meta-grid">${metaCards}</div>
+
+                        <div class="product-actions">
+                            <button class="action-primary" onclick="notifyProducer('${offer.id}', event)">Avisar</button>
+                            <button class="action-secondary" onclick="reserveOffer('${offer.id}', event)">Reservar</button>
+                        </div>
+                    </div>
+
+                    <div class="card-side">
+                        <button class="action-side ${offer.is_favorited ? 'active-like' : ''}" title="Curtir" onclick="toggleLike('${offer.id}', event)">
+                            <span class="material-symbols-outlined">favorite</span>
+                        </button>
+                        <button class="action-side ${bookmarked ? 'active-bookmark' : ''}" title="Bookmark" onclick="toggleBookmark('${offer.id}', event)">
+                            <span class="material-symbols-outlined">bookmark</span>
+                        </button>
+                        <button class="action-side" title="Chat" onclick="openChat('${offer.id}', event)">
+                            <span class="material-symbols-outlined">chat</span>
+                        </button>
+                        <div class="open-tip">abrir detalhes</div>
+                    </div>
+                </div>
+            </article>
+        `;
+    }
+
+    async function notifyProducer(offerId, event) {
+        event.stopPropagation();
+
+        const offer = offersStore.get(offerId);
+        const receiverId = offer?.owner_data?.id;
+
+        if (!receiverId) {
+            alert('Nao foi possivel identificar o produtor.');
+            return;
+        }
+
+        if (!localStorage.getItem('token')) {
+            window.location.href = '/login';
+            return;
+        }
+
+        try {
+            await apiRequest('/messages', 'POST', {
+                receiver_id: receiverId,
+                offer_id: offer.id,
+                message_type: 'offer_inquiry',
+                subject: `Interesse na oferta: ${offer.product_name}`,
+                content: `Ola! Tenho interesse na oferta ${offer.product_name}. Pode me informar disponibilidade e condicoes de reserva?`,
+            });
+            alert('Mensagem enviada para o produtor.');
+        } catch (error) {
+            alert(error.message || 'Nao foi possivel enviar a mensagem.');
+        }
+    }
+
+    async function reserveOffer(offerId, event) {
+        event.stopPropagation();
+
+        const offer = offersStore.get(offerId);
+        if (!offer) return;
+
+        if (!localStorage.getItem('token')) {
+            window.location.href = '/login';
+            return;
+        }
+
+        const defaultQty = Number(offer.min_order || 1);
+        const rawQty = prompt(`Quantidade para reservar (${offer.unit || 'kg'}):`, String(defaultQty));
+        if (rawQty === null) return;
+
+        const qty = Number(rawQty);
+        if (!qty || qty <= 0) {
+            alert('Quantidade invalida.');
+            return;
+        }
+
+        try {
+            await apiRequest('/transactions', 'POST', {
+                offer_id: offer.id,
+                quantity: qty,
+                delivery_method: 'pickup',
+                payment_method: 'transfer',
+            });
+            alert('Reserva registrada com sucesso.');
+        } catch (error) {
+            alert(error.message || 'Nao foi possivel reservar agora.');
+        }
+    }
+
+    async function toggleLike(offerId, event) {
+        event.stopPropagation();
+
+        const offer = offersStore.get(offerId);
+        if (!offer) return;
+
+        if (!localStorage.getItem('token')) {
+            window.location.href = '/login';
+            return;
+        }
+
+        try {
+            if (offer.is_favorited) {
+                await apiRequest(`/favorites/${offer.id}`, 'DELETE');
+                offer.is_favorited = false;
+            } else {
+                await apiRequest('/favorites', 'POST', { offer_id: offer.id });
+                offer.is_favorited = true;
+            }
+
+            const button = event.currentTarget;
+            button.classList.toggle('active-like', offer.is_favorited);
+        } catch (error) {
+            alert(error.message || 'Falha ao atualizar favorito.');
+        }
+    }
+
+    function toggleBookmark(offerId, event) {
+        event.stopPropagation();
+
+        const shouldEnable = !isBookmarked(offerId);
+        setBookmarked(offerId, shouldEnable);
+        event.currentTarget.classList.toggle('active-bookmark', shouldEnable);
+    }
+
+    function openChat(offerId, event) {
+        event.stopPropagation();
+        const offer = offersStore.get(offerId);
+        if (!offer) return;
+
+        if (!offer.owner_data?.id) {
+            alert('Nao foi possivel identificar o produtor para chat.');
+            return;
+        }
+
+        if (!localStorage.getItem('token')) {
+            window.location.href = '/login';
+            return;
+        }
+
+        const message = prompt('Digite a mensagem para o produtor:');
+        if (!message) return;
+
+        apiRequest('/messages', 'POST', {
+            receiver_id: offer.owner_data?.id,
+            offer_id: offer.id,
+            message_type: 'offer_inquiry',
+            subject: `Chat da oferta: ${offer.product_name}`,
+            content: message,
+        }).then(() => {
+            alert('Mensagem enviada no chat.');
+        }).catch((error) => {
+            alert(error.message || 'Nao foi possivel enviar no chat.');
+        });
+    }
+
+    function bindCardOpenBehavior() {
+        document.querySelectorAll('.produto-card').forEach((card) => {
+            card.addEventListener('click', (event) => {
+                const interactive = event.target.closest('button');
+                if (interactive) return;
+
+                const offerId = card.dataset.offerId;
+                if (!offerId) return;
+
+                window.open(`/offers/${offerId}`, '_blank', 'noopener');
+            });
+        });
+    }
+
     async function loadOffers() {
+        const container = document.getElementById('offersContainer');
         try {
             const data = await apiRequest('/offers?limit=12');
             const offers = data.offers || [];
-            const container = document.getElementById('offersContainer');
+
+            document.getElementById('offersCount').textContent = `${offers.length} oferta${offers.length === 1 ? '' : 's'} encontrada${offers.length === 1 ? '' : 's'}`;
 
             if (!offers.length) {
                 container.innerHTML = `
-                    <div class="empty-state" style="grid-column: 1 / -1;">
-                        <div class="empty-state-icon">&#128230;</div>
-                        <div class="empty-state-text">Nenhuma oferta encontrada ainda.</div>
-                        <a href="/qa" class="btn btn-wf-primary mt-3">Criar primeira oferta</a>
-                    </div>`;
-                document.getElementById('offersCount').textContent = '0 ofertas';
+                    <div class="empty-state">
+                        <p>Nenhuma oferta cadastrada ainda.</p>
+                        <a href="/qa" class="btn btn-wf-primary">Criar primeira oferta</a>
+                    </div>
+                `;
                 return;
             }
 
-            document.getElementById('offersCount').textContent = offers.length + ' oferta' + (offers.length !== 1 ? 's' : '') + ' encontrada' + (offers.length !== 1 ? 's' : '');
-
-            container.innerHTML = offers.map(offer => {
-                const hasPriceRange = offer.price_min_kg || offer.price_avg_kg || offer.price_max_kg;
-                const tags = [];
-                if (offer.quality_class) tags.push(escapeHtml(offer.quality_class));
-                if (offer.maturation) tags.push(escapeHtml(offer.maturation));
-                if (offer.origin) tags.push(escapeHtml(offer.origin));
-                if (offer.target_market) tags.push(escapeHtml(offer.target_market));
-
-                return `
-                <div class="offer-card">
-                    <div class="offer-top">
-                        <div>
-                            <h3 class="offer-name">${escapeHtml(offer.product_name)}</h3>
-                            ${offer.variety ? `<span class="offer-variety">${escapeHtml(offer.variety)}</span>` : ''}
-                        </div>
-                        <div style="text-align:right;">
-                            <div class="offer-price">R$ ${Number(offer.price).toFixed(2)}</div>
-                            ${offer.price_per_kg ? `<div class="offer-price-kg">R$ ${Number(offer.price_per_kg).toFixed(2)} / kg</div>` : ''}
-                        </div>
-                    </div>
-
-                    <div class="offer-desc">${escapeHtml(offer.description || 'Sem descrição disponível')}</div>
-
-                    ${hasPriceRange ? `
-                    <div class="offer-price-range">
-                        <span>
-                            <span class="price-label">Mínimo</span>
-                            <strong class="price-val-min">R$ ${offer.price_min_kg ? Number(offer.price_min_kg).toFixed(2) : '—'}</strong>
-                        </span>
-                        <span>
-                            <span class="price-label">Médio</span>
-                            <strong class="price-val-avg">R$ ${offer.price_avg_kg ? Number(offer.price_avg_kg).toFixed(2) : '—'}</strong>
-                        </span>
-                        <span>
-                            <span class="price-label">Máximo</span>
-                            <strong class="price-val-max">R$ ${offer.price_max_kg ? Number(offer.price_max_kg).toFixed(2) : '—'}</strong>
-                        </span>
-                    </div>` : ''}
-
-                    ${offer.certification ? `
-                    <div class="offer-tags">
-                        <span class="offer-tag offer-tag-cert">&#10003; ${escapeHtml(offer.certification)}</span>
-                    </div>` : ''}
-
-                    <div class="offer-meta">
-                        <div class="offer-meta-item">
-                            <span class="offer-meta-icon">&#9878;</span>
-                            ${offer.available_quantity || offer.quantity} ${escapeHtml(offer.unit)}
-                        </div>
-                        <div class="offer-meta-item">
-                            <span class="offer-meta-icon">&#128205;</span>
-                            ${escapeHtml(offer.location || 'N/A')}
-                        </div>
-                        ${offer.box_weight_kg ? `<div class="offer-meta-item"><span class="offer-meta-icon">&#128230;</span> Cx ${Number(offer.box_weight_kg).toFixed(1)} kg</div>` : ''}
-                        ${offer.shelf_life ? `<div class="offer-meta-item"><span class="offer-meta-icon">&#9200;</span> ${escapeHtml(offer.shelf_life)} dias</div>` : ''}
-                    </div>
-
-                    ${tags.length ? `<div class="offer-tags">${tags.map(t => `<span class="offer-tag">${t}</span>`).join('')}</div>` : ''}
-
-                    <div class="offer-footer">
-                        <span class="wf-badge ${offer.status === 'active' ? 'wf-badge-active' : 'wf-badge-neutral'}">${escapeHtml(offer.status)}</span>
-                        ${offer.property_name ? `<span class="offer-property">&#127969; ${escapeHtml(offer.property_name)}</span>` : ''}
-                    </div>
-                </div>`;
-            }).join('');
+            offers.forEach((offer) => offersStore.set(offer.id, offer));
+            container.innerHTML = offers.map(renderOfferCard).join('');
+            bindCardOpenBehavior();
         } catch (error) {
-            document.getElementById('offersContainer').innerHTML = `
-                <div style="grid-column: 1 / -1;">
-                    <div class="wf-alert wf-alert-error">${error.message}</div>
-                </div>`;
+            container.innerHTML = `<div class="wf-alert wf-alert-error">${escapeHtml(error.message || 'Falha ao carregar ofertas')}</div>`;
         }
     }
+
     loadOffers();
 </script>
 {% endblock %}

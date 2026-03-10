@@ -3,6 +3,8 @@ import sys
 import traceback
 import sqlalchemy
 
+failures = []
+
 print("=" * 80)
 print("TESTE DE INICIALIZAÇÃO - WallFruits Backend")
 print("=" * 80)
@@ -17,18 +19,20 @@ try:
 except Exception as e:
     print(f"   ❌ Erro nos imports: {e}")
     traceback.print_exc()
-    sys.exit(1)
+    failures.append("imports basicos")
 
 # 2. Testar configuração
 print("\n2️⃣ Testando configurações...")
+strict_startup = True
 try:
     from app.core.config import settings
     print(f"   ✅ DATABASE_URL: {settings.DATABASE_URL[:30]}...")
     print(f"   ✅ API_VERSION: {settings.API_VERSION}")
+    strict_startup = settings.STRICT_STARTUP
 except Exception as e:
     print(f"   ❌ Erro nas configurações: {e}")
     traceback.print_exc()
-    sys.exit(1)
+    failures.append("configuracoes")
 
 # 3. Testar Redis
 print("\n3️⃣ Testando conexão Redis...")
@@ -50,8 +54,13 @@ try:
         print("   ✅ PostgreSQL conectado com sucesso")
 except Exception as e:
     print(f"   ❌ PostgreSQL não disponível: {e}")
-    print("   (Servidor NÃO vai iniciar sem o banco)")
-    traceback.print_exc()
+    if strict_startup:
+        print("   (Servidor NÃO vai iniciar sem o banco porque STRICT_STARTUP=true)")
+        traceback.print_exc()
+    else:
+        print("   (Modo degradado permitido: STRICT_STARTUP=false)")
+    if strict_startup:
+        failures.append("database")
 
 # 5. Testar imports de modelos
 print("\n5️⃣ Testando imports de modelos...")
@@ -61,7 +70,7 @@ try:
 except Exception as e:
     print(f"   ❌ Erro nos modelos: {e}")
     traceback.print_exc()
-    sys.exit(1)
+    failures.append("modelos")
 
 # 6. Testar app principal
 print("\n6️⃣ Testando app.main...")
@@ -72,6 +81,12 @@ try:
 except Exception as e:
     print(f"   ❌ Erro ao criar app: {e}")
     traceback.print_exc()
+    failures.append("app.main")
+
+if failures:
+    print("\n" + "=" * 80)
+    print(f"❌ FALHAS DETECTADAS: {', '.join(failures)}")
+    print("=" * 80)
     sys.exit(1)
 
 print("\n" + "=" * 80)
