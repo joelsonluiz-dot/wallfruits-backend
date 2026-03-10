@@ -83,6 +83,7 @@
                 <div class="d-flex gap-2 flex-wrap">
                     <button class="btn btn-wf-primary" type="submit">Salvar perfil</button>
                     <button class="btn btn-wf-secondary" type="button" onclick="loadProfile()">Atualizar</button>
+                    <button class="btn btn-wf-danger" type="button" id="becomeAdminBtn">Tornar-me Admin Geral</button>
                 </div>
             </form>
         </div>
@@ -213,6 +214,12 @@
             document.getElementById('editName').value = data.name || '';
             document.getElementById('editLocation').value = data.location || '';
             document.getElementById('editBio').value = data.bio || '';
+
+            const userRaw = localStorage.getItem('user');
+            const localUser = userRaw ? JSON.parse(userRaw) : {};
+            if (localUser?.role === 'admin') {
+                document.getElementById('becomeAdminBtn').style.display = 'none';
+            }
         } else {
             actionsEl.innerHTML = `
                 <button class="btn ${data.is_following ? 'btn-wf-secondary' : 'btn-wf-primary'}" onclick="followUser(${data.id}, ${!data.is_following})">
@@ -242,6 +249,21 @@
 
         alert('Perfil atualizado com sucesso.');
         await loadProfile();
+    });
+
+    document.getElementById('becomeAdminBtn').addEventListener('click', async () => {
+        try {
+            const result = await apiRequest('/auth/bootstrap-admin', 'POST');
+            const userRaw = localStorage.getItem('user');
+            const user = userRaw ? JSON.parse(userRaw) : {};
+            user.role = 'admin';
+            localStorage.setItem('user', JSON.stringify(user));
+
+            alert(result.message || 'Agora você é admin geral.');
+            window.location.href = '/admin';
+        } catch (error) {
+            alert(error.message || 'Não foi possível promover para admin.');
+        }
     });
 
     loadProfile().catch((err) => {

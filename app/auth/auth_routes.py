@@ -114,6 +114,33 @@ def _default_oauth_redirect_to(request: Request) -> str:
     return f"{str(request.base_url).rstrip('/')}/login"
 
 
+@router.post("/bootstrap-admin")
+def bootstrap_first_admin(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Promove o usuário atual a admin somente se ainda não houver admins no sistema."""
+    admin_count = db.query(User).filter(User.role == "admin").count()
+    if admin_count > 0:
+        raise HTTPException(403, "Já existe administrador cadastrado. Operação bloqueada.")
+
+    current_user.role = "admin"
+    current_user.is_superuser = True
+    db.commit()
+    db.refresh(current_user)
+
+    return {
+        "message": "Usuário promovido a administrador com sucesso.",
+        "user": {
+            "id": current_user.id,
+            "name": current_user.name,
+            "email": current_user.email,
+            "role": current_user.role,
+            "is_superuser": current_user.is_superuser,
+        },
+    }
+
+
 # -----------------------
 # GOOGLE LOGIN (SUPABASE OAUTH)
 # -----------------------

@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Nova Oferta - WallFruits{% endblock %}
+
+{% block content %}
+<style>
+    .offer-form-wrap { max-width: 860px; margin: 0 auto; }
+    .offer-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.85rem; }
+    .full { grid-column: 1 / -1; }
+    @media (max-width: 760px) { .offer-form-grid { grid-template-columns: 1fr; } }
+</style>
+
+<div class="offer-form-wrap">
+    <div class="wf-card mb-3">
+        <div class="card-header">Publicar Nova Oferta</div>
+        <div class="card-body">
+            <p style="color: var(--wf-text-secondary); margin-bottom: 0;">
+                Fluxo oficial da plataforma para criar ofertas reais.
+            </p>
+        </div>
+    </div>
+
+    <div class="wf-card">
+        <div class="card-body">
+            <form id="newOfferForm" class="offer-form-grid">
+                <div class="full">
+                    <label class="wf-label">Nome do produto</label>
+                    <input id="product_name" class="wf-input form-control" type="text" required minlength="2" maxlength="255" placeholder="Ex.: Manga Tommy, Uva Itália, Banana Prata">
+                </div>
+
+                <div class="full">
+                    <label class="wf-label">Descrição</label>
+                    <textarea id="description" class="wf-input form-control" rows="3" maxlength="1000" placeholder="Descreva qualidade, lote, disponibilidade..."></textarea>
+                </div>
+
+                <div>
+                    <label class="wf-label">Categoria</label>
+                    <input id="category" class="wf-input form-control" type="text" maxlength="100" placeholder="Frutas">
+                </div>
+
+                <div>
+                    <label class="wf-label">Unidade</label>
+                    <input id="unit" class="wf-input form-control" type="text" maxlength="50" placeholder="kg" value="kg" required>
+                </div>
+
+                <div>
+                    <label class="wf-label">Quantidade</label>
+                    <input id="quantity" class="wf-input form-control" type="number" min="0.01" step="0.01" required>
+                </div>
+
+                <div>
+                    <label class="wf-label">Preço (R$)</label>
+                    <input id="price" class="wf-input form-control" type="number" min="0.01" step="0.01" required>
+                </div>
+
+                <div>
+                    <label class="wf-label">Localização</label>
+                    <input id="location" class="wf-input form-control" type="text" minlength="2" maxlength="150" placeholder="Cidade/UF" required>
+                </div>
+
+                <div>
+                    <label class="wf-label">Pedido mínimo</label>
+                    <input id="min_order" class="wf-input form-control" type="number" min="0.01" step="0.01" value="1">
+                </div>
+
+                <div class="full d-flex gap-2 flex-wrap mt-2">
+                    <button type="submit" id="submitOfferBtn" class="btn btn-wf-primary">Publicar oferta</button>
+                    <a href="/offers" class="btn btn-wf-secondary">Ver ofertas</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('newOfferForm').addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const token = localStorage.getItem('token');
+        if (!token) {
+            alert('Faça login para publicar uma oferta.');
+            window.location.href = '/login';
+            return;
+        }
+
+        const submitBtn = document.getElementById('submitOfferBtn');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Publicando...';
+
+        try {
+            const payload = {
+                product_name: document.getElementById('product_name').value,
+                description: document.getElementById('description').value || null,
+                category: document.getElementById('category').value || null,
+                unit: document.getElementById('unit').value,
+                quantity: Number(document.getElementById('quantity').value),
+                price: Number(document.getElementById('price').value),
+                location: document.getElementById('location').value,
+                min_order: Number(document.getElementById('min_order').value || 1),
+            };
+
+            const created = await apiRequest('/offers', 'POST', payload);
+            alert('Oferta criada com sucesso.');
+            window.location.href = `/offers/${created.id}`;
+        } catch (error) {
+            alert(error.message || 'Falha ao criar oferta.');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Publicar oferta';
+        }
+    });
+</script>
+{% endblock %}

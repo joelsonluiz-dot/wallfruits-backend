@@ -483,7 +483,8 @@
                 <div class="collapse navbar-collapse" id="navbarNav">
                     <div class="d-flex align-items-center gap-1 flex-wrap mt-3 mt-lg-0 ms-lg-auto wf-nav-mobile-menu">
                         <a class="nav-link" href="/offers" style="color:var(--wf-text-secondary);font-weight:500;font-size:0.9rem;padding:0.5rem 1rem;border-radius:var(--wf-radius-sm);transition:all 0.25s ease;">Ofertas</a>
-                        <a class="nav-link" href="/qa" style="color:var(--wf-text-secondary);font-weight:500;font-size:0.9rem;padding:0.5rem 1rem;border-radius:var(--wf-radius-sm);transition:all 0.25s ease;">QA Test</a>
+                        <a class="nav-link" href="/offers/new" id="navNewOffer" style="display:none;color:var(--wf-text-secondary);font-weight:500;font-size:0.9rem;padding:0.5rem 1rem;border-radius:var(--wf-radius-sm);transition:all 0.25s ease;">Nova Oferta</a>
+                        <a class="nav-link" href="/qa" id="navQa" style="display:none;color:var(--wf-text-secondary);font-weight:500;font-size:0.9rem;padding:0.5rem 1rem;border-radius:var(--wf-radius-sm);transition:all 0.25s ease;">QA Test</a>
                         <a class="nav-link" href="/me/profile" id="navMyProfile" style="display:none;color:var(--wf-text-secondary);font-weight:500;font-size:0.9rem;padding:0.5rem 1rem;border-radius:var(--wf-radius-sm);transition:all 0.25s ease;">Meu Perfil</a>
                         <a class="nav-link" href="/admin" id="navAdmin" style="display:none;color:var(--wf-text-secondary);font-weight:500;font-size:0.9rem;padding:0.5rem 1rem;border-radius:var(--wf-radius-sm);transition:all 0.25s ease;">Admin</a>
                         <a class="nav-link" href="#" id="navNotifications" style="display:none;color:var(--wf-text-secondary);font-weight:500;font-size:0.9rem;padding:0.5rem 1rem;border-radius:var(--wf-radius-sm);transition:all 0.25s ease;">
@@ -552,6 +553,8 @@
             document.getElementById('navMyProfile').style.display = isLogged ? '' : 'none';
             document.getElementById('navNotifications').style.display = isLogged ? '' : 'none';
             document.getElementById('navAdmin').style.display = isLogged && user?.role === 'admin' ? '' : 'none';
+            document.getElementById('navNewOffer').style.display = isLogged ? '' : 'none';
+            document.getElementById('navQa').style.display = isLogged && user?.role === 'admin' ? '' : 'none';
         }
 
         async function refreshUnreadNotifications() {

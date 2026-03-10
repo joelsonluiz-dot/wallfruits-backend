@@ -200,6 +200,12 @@ async def offers_page(request: Request, current_user: User = Depends(get_current
     return _render_template("offers.html", request, current_user=current_user)
 
 
+@app.get("/offers/new")
+async def create_offer_page(request: Request, current_user: User = Depends(get_current_user_optional)):
+    """Página oficial de criação de oferta."""
+    return _render_template("create_offer.html", request, current_user=current_user)
+
+
 @app.get("/offers/{offer_id}")
 async def offer_detail_page(
     offer_id: str,
