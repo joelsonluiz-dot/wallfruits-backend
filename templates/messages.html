@@ -1,0 +1,298 @@
+{% extends "base.html" %}
+
+{% block title %}Mensagens - WallFruits{% endblock %}
+
+{% block content %}
+<style>
+    .chat-layout { display: grid; grid-template-columns: 360px 1fr; gap: 1rem; min-height: 72vh; }
+    .chat-left { display: grid; gap: 1rem; align-content: start; }
+    .chat-list { display: grid; gap: 0.5rem; max-height: 320px; overflow: auto; }
+    .chat-item {
+        border: 1px solid var(--wf-border);
+        background: rgba(255,255,255,0.03);
+        border-radius: 10px;
+        padding: 0.65rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .chat-item:hover { border-color: rgba(0,212,170,0.25); }
+    .chat-item.active { border-color: rgba(0,212,170,0.4); background: rgba(0,212,170,0.08); }
+    .chat-item-title { font-weight: 700; }
+    .chat-item-last { color: var(--wf-text-secondary); font-size: 0.84rem; margin-top: 0.15rem; }
+
+    .offer-list { display: grid; gap: 0.5rem; max-height: 260px; overflow: auto; }
+    .offer-item {
+        border: 1px solid var(--wf-border);
+        background: rgba(255,255,255,0.03);
+        border-radius: 10px;
+        padding: 0.55rem;
+        cursor: pointer;
+        font-size: 0.86rem;
+    }
+    .offer-item:hover { border-color: rgba(255,255,255,0.2); }
+
+    .chat-main-card { display: grid; grid-template-rows: auto 1fr auto; min-height: 72vh; }
+    .chat-header { border-bottom: 1px solid var(--wf-border); padding-bottom: 0.65rem; margin-bottom: 0.65rem; }
+    .chat-messages { overflow: auto; max-height: 58vh; display: grid; gap: 0.6rem; padding-right: 0.2rem; }
+
+    .msg-bubble {
+        max-width: 78%;
+        border-radius: 14px;
+        padding: 0.6rem 0.8rem;
+        font-size: 0.9rem;
+        line-height: 1.35;
+        border: 1px solid var(--wf-border);
+    }
+    .msg-in {
+        justify-self: start;
+        background: rgba(255,255,255,0.05);
+    }
+    .msg-out {
+        justify-self: end;
+        background: rgba(0,212,170,0.17);
+        border-color: rgba(0,212,170,0.28);
+    }
+    .msg-time { color: var(--wf-text-secondary); font-size: 0.72rem; margin-top: 0.25rem; }
+
+    .chat-compose { display: grid; grid-template-columns: 1fr auto; gap: 0.5rem; margin-top: 0.8rem; }
+
+    @media (max-width: 980px) {
+        .chat-layout { grid-template-columns: 1fr; }
+        .chat-main-card { min-height: 60vh; }
+        .chat-messages { max-height: 46vh; }
+    }
+</style>
+
+<div class="chat-layout">
+    <aside class="chat-left">
+        <div class="wf-card">
+            <div class="card-header">Conversas Recentes</div>
+            <div class="card-body">
+                <div id="conversationsList" class="chat-list"></div>
+            </div>
+        </div>
+
+        <div class="wf-card">
+            <div class="card-header">Ofertas para Conversar</div>
+            <div class="card-body">
+                <div id="offersQuickList" class="offer-list"></div>
+            </div>
+        </div>
+    </aside>
+
+    <section class="wf-card chat-main-card">
+        <div class="card-body chat-header">
+            <div id="chatTargetName" style="font-weight:800; font-size:1rem;">Selecione uma conversa</div>
+            <div id="chatTargetMeta" style="color:var(--wf-text-secondary); font-size:0.85rem; margin-top:0.1rem;"></div>
+        </div>
+
+        <div class="card-body" style="padding-top:0;">
+            <div id="chatMessages" class="chat-messages"></div>
+        </div>
+
+        <div class="card-body" style="padding-top:0;">
+            <form id="chatComposeForm" class="chat-compose">
+                <input id="chatInput" class="wf-input form-control" type="text" maxlength="2000" placeholder="Digite sua mensagem..." required>
+                <button class="btn btn-wf-primary" type="submit">Enviar</button>
+            </form>
+        </div>
+    </section>
+</div>
+
+<script>
+    let me = null;
+    let conversations = [];
+    let selectedThreadId = null;
+    let selectedUserId = null;
+    let selectedOfferId = null;
+
+    function qParam(name) {
+        const params = new URLSearchParams(window.location.search);
+        return params.get(name);
+    }
+
+    function formatTime(iso) {
+        if (!iso) return '';
+        const d = new Date(iso);
+        return d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    }
+
+    function esc(text) {
+        const div = document.createElement('div');
+        div.textContent = text || '';
+        return div.innerHTML;
+    }
+
+    async function ensureAuth() {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/login';
+            return false;
+        }
+        me = await apiRequest('/auth/me');
+        return true;
+    }
+
+    function renderConversations() {
+        const list = document.getElementById('conversationsList');
+        if (!conversations.length) {
+            list.innerHTML = '<div class="wf-alert wf-alert-info">Sem conversas ainda.</div>';
+            return;
+        }
+
+        list.innerHTML = conversations.map((c) => {
+            const active = selectedThreadId && String(c.thread_id) === String(selectedThreadId);
+            return `
+                <article class="chat-item ${active ? 'active' : ''}" onclick="selectConversation('${c.thread_id}')">
+                    <div class="chat-item-title">${esc(c.other_user?.name || 'Usuário')}</div>
+                    <div class="chat-item-last">${esc(c.last_message?.content || '')}</div>
+                    <div class="msg-time">${formatTime(c.updated_at)} ${c.unread_count ? `• ${c.unread_count} não lida(s)` : ''}</div>
+                </article>
+            `;
+        }).join('');
+    }
+
+    function renderMessages(items) {
+        const box = document.getElementById('chatMessages');
+        if (!items.length) {
+            box.innerHTML = '<div class="wf-alert wf-alert-info">Envie a primeira mensagem desta conversa.</div>';
+            return;
+        }
+
+        box.innerHTML = items.map((m) => {
+            const mine = Number(m.sender_id) === Number(me.id);
+            return `
+                <article class="msg-bubble ${mine ? 'msg-out' : 'msg-in'}">
+                    <div>${esc(m.content)}</div>
+                    <div class="msg-time">${formatTime(m.created_at)}</div>
+                </article>
+            `;
+        }).join('');
+
+        box.scrollTop = box.scrollHeight;
+    }
+
+    async function loadThread(threadId) {
+        selectedThreadId = threadId;
+        const items = await apiRequest(`/messages/thread/${threadId}?mark_as_read=true`);
+        renderMessages(items || []);
+
+        const conv = conversations.find((c) => String(c.thread_id) === String(threadId));
+        if (conv) {
+            selectedUserId = conv.other_user?.id;
+            selectedOfferId = conv.last_message?.offer_id || null;
+            document.getElementById('chatTargetName').textContent = conv.other_user?.name || 'Conversa';
+            document.getElementById('chatTargetMeta').textContent = selectedOfferId ? `Sobre oferta ${selectedOfferId}` : 'Conversa direta';
+        }
+
+        renderConversations();
+    }
+
+    async function selectConversation(threadId) {
+        await loadThread(threadId);
+    }
+
+    async function loadConversations() {
+        conversations = await apiRequest('/messages/conversations');
+        renderConversations();
+    }
+
+    async function loadOffersQuickList() {
+        const data = await apiRequest('/offers?limit=12');
+        const offers = data?.offers || [];
+        const list = document.getElementById('offersQuickList');
+
+        if (!offers.length) {
+            list.innerHTML = '<div class="wf-alert wf-alert-info">Sem ofertas ativas.</div>';
+            return;
+        }
+
+        list.innerHTML = offers.map((offer) => `
+            <article class="offer-item" onclick="prepareChatFromOffer(${offer.owner_data?.id || offer.user_id}, '${offer.id}', '${esc(offer.owner_data?.name || 'Produtor')}')">
+                <div style="font-weight:700;">${esc(offer.product_name)}</div>
+                <div style="color:var(--wf-text-secondary)">${esc(offer.owner_data?.name || 'Produtor')} · R$ ${Number(offer.price || 0).toFixed(2)}</div>
+            </article>
+        `).join('');
+    }
+
+    async function prepareChatFromOffer(userId, offerId, userName) {
+        if (Number(userId) === Number(me.id)) {
+            alert('Você não pode iniciar chat consigo mesmo.');
+            return;
+        }
+
+        selectedUserId = userId;
+        selectedOfferId = offerId;
+        selectedThreadId = null;
+
+        document.getElementById('chatTargetName').textContent = userName || 'Nova conversa';
+        document.getElementById('chatTargetMeta').textContent = `Sobre oferta ${offerId}`;
+        document.getElementById('chatMessages').innerHTML = '<div class="wf-alert wf-alert-info">Nova conversa. Digite sua mensagem abaixo.</div>';
+
+        renderConversations();
+    }
+
+    async function handleInitialParams() {
+        const threadId = qParam('thread_id');
+        const userId = qParam('user_id');
+        const offerId = qParam('offer_id');
+
+        if (threadId) {
+            await loadThread(threadId);
+            return;
+        }
+
+        if (userId) {
+            prepareChatFromOffer(Number(userId), offerId || null, 'Nova conversa');
+        }
+    }
+
+    document.getElementById('chatComposeForm').addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const input = document.getElementById('chatInput');
+        const content = input.value.trim();
+        if (!content) return;
+
+        if (!selectedUserId) {
+            alert('Selecione uma conversa ou uma oferta para enviar mensagem.');
+            return;
+        }
+
+        await apiRequest('/messages', 'POST', {
+            receiver_id: Number(selectedUserId),
+            offer_id: selectedOfferId,
+            message_type: selectedOfferId ? 'offer_inquiry' : 'direct',
+            subject: selectedOfferId ? `Interesse em oferta ${selectedOfferId}` : 'Conversa direta',
+            content,
+        });
+
+        input.value = '';
+        await loadConversations();
+
+        const conv = conversations.find((c) => Number(c.other_user?.id) === Number(selectedUserId));
+        if (conv) {
+            await loadThread(conv.thread_id);
+        }
+    });
+
+    async function initChatPage() {
+        const ok = await ensureAuth();
+        if (!ok) return;
+
+        await Promise.all([
+            loadConversations(),
+            loadOffersQuickList(),
+        ]);
+
+        await handleInitialParams();
+    }
+
+    window.selectConversation = selectConversation;
+    window.prepareChatFromOffer = prepareChatFromOffer;
+
+    initChatPage().catch((error) => {
+        alert(error.message || 'Erro ao carregar chat');
+    });
+</script>
+{% endblock %}

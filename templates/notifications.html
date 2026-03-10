@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block title %}Notificações - WallFruits{% endblock %}
+
+{% block content %}
+<style>
+    .notif-layout { display: grid; grid-template-columns: 240px 1fr; gap: 1rem; }
+    .notif-filters { display: grid; gap: 0.55rem; align-content: start; }
+    .notif-filter-btn { text-align: left; }
+    .notif-item {
+        border: 1px solid var(--wf-border);
+        border-radius: 12px;
+        padding: 0.9rem;
+        background: rgba(255,255,255,0.03);
+        display: grid;
+        grid-template-columns: 42px 1fr auto;
+        gap: 0.8rem;
+        align-items: start;
+        cursor: pointer;
+        transition: all 0.25s ease;
+    }
+    .notif-item:hover { border-color: rgba(0,212,170,0.25); transform: translateY(-1px); }
+    .notif-item.unread { border-color: rgba(0,212,170,0.4); background: rgba(0,212,170,0.08); }
+    .notif-avatar {
+        width: 42px; height: 42px; border-radius: 50%; object-fit: cover;
+        background: rgba(255,255,255,0.08); border: 1px solid var(--wf-border);
+    }
+    .notif-avatar-fallback {
+        width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        background: var(--wf-accent-glow); color: var(--wf-accent); font-weight: 700;
+    }
+    .notif-title { font-weight: 700; }
+    .notif-message { color: var(--wf-text-secondary); font-size: 0.92rem; margin-top: 0.12rem; }
+    .notif-time { color: var(--wf-text-secondary); font-size: 0.78rem; white-space: nowrap; }
+    .notif-list { display: grid; gap: 0.75rem; }
+    .notif-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+    @media (max-width: 900px) { .notif-layout { grid-template-columns: 1fr; } }
+</style>
+
+<div class="wf-card mb-3">
+    <div class="card-header">Feed de Notificações</div>
+    <div class="card-body">
+        <div class="notif-actions">
+            <button class="btn btn-wf-primary" onclick="markAllRead()">Marcar tudo como lido</button>
+            <button class="btn btn-wf-secondary" onclick="loadNotifications()">Atualizar</button>
+        </div>
+    </div>
+</div>
+
+<div class="notif-layout">
+    <aside class="wf-card">
+        <div class="card-body notif-filters">
+            <button class="btn btn-wf-secondary notif-filter-btn" data-filter="all" onclick="setFilter('all')">Tudo</button>
+            <button class="btn btn-wf-secondary notif-filter-btn" data-filter="message" onclick="setFilter('message')">Mensagens</button>
+            <button class="btn btn-wf-secondary notif-filter-btn" data-filter="favorite" onclick="setFilter('favorite')">Curtidas</button>
+            <button class="btn btn-wf-secondary notif-filter-btn" data-filter="reservation" onclick="setFilter('reservation')">Reservas</button>
+            <button class="btn btn-wf-secondary notif-filter-btn" data-filter="follow" onclick="setFilter('follow')">Seguidores</button>
+            <button class="btn btn-wf-secondary notif-filter-btn" data-filter="unread" onclick="setFilter('unread')">Não lidas</button>
+        </div>
+    </aside>
+
+    <section class="wf-card">
+        <div class="card-body">
+            <div id="notifList" class="notif-list"></div>
+            <div id="notifEmpty" class="wf-alert wf-alert-info" style="display:none;">Sem notificações para este filtro.</div>
+        </div>
+    </section>
+</div>
+
+<script>
+    let notifStore = [];
+    let currentFilter = 'all';
+
+    function initials(name) {
+        return (name || 'U').split(' ').filter(Boolean).slice(0, 2).map((p) => p[0].toUpperCase()).join('') || 'U';
+    }
+
+    function avatarHtml(actor) {
+        const image = actor?.profile_image;
+        if (image) {
+            const src = image.startsWith('http') || image.startsWith('/') ? image : `/api/uploads/profiles/${image}`;
+            return `<img class="notif-avatar" src="${src}" alt="avatar">`;
+        }
+        return `<div class="notif-avatar-fallback">${initials(actor?.name)}</div>`;
+    }
+
+    function relativeTime(isoDate) {
+        const d = new Date(isoDate);
+        const diffSec = Math.max(1, Math.floor((Date.now() - d.getTime()) / 1000));
+        if (diffSec < 60) return 'agora';
+        if (diffSec < 3600) return `há ${Math.floor(diffSec / 60)} min`;
+        if (diffSec < 86400) return `há ${Math.floor(diffSec / 3600)} h`;
+        return `há ${Math.floor(diffSec / 86400)} dia(s)`;
+    }
+
+    function openNotification(item) {
+        if (item.resource_type === 'offer' && item.resource_id) {
+            window.location.href = `/offers/${item.resource_id}`;
+            return;
+        }
+        if (item.resource_type === 'thread' && item.resource_id) {
+            window.location.href = `/messages?thread_id=${item.resource_id}`;
+            return;
+        }
+        if (item.resource_type === 'transaction' && item.resource_id) {
+            window.location.href = '/me/profile';
+            return;
+        }
+        if (item.resource_type === 'user' && item.resource_id) {
+            window.location.href = `/users/${item.resource_id}`;
+            return;
+        }
+    }
+
+    function filteredItems() {
+        if (currentFilter === 'all') return notifStore;
+        if (currentFilter === 'unread') return notifStore.filter((n) => !n.is_read);
+        return notifStore.filter((n) => n.notification_type === currentFilter);
+    }
+
+    function renderFilters() {
+        document.querySelectorAll('.notif-filter-btn').forEach((btn) => {
+            if (btn.dataset.filter === currentFilter) {
+                btn.classList.remove('btn-wf-secondary');
+                btn.classList.add('btn-wf-primary');
+            } else {
+                btn.classList.remove('btn-wf-primary');
+                btn.classList.add('btn-wf-secondary');
+            }
+        });
+    }
+
+    async function markRead(item, event) {
+        event.stopPropagation();
+        await apiRequest(`/notifications/${item.id}/read`, 'POST');
+        item.is_read = true;
+        renderNotifications();
+    }
+
+    function renderNotifications() {
+        renderFilters();
+        const listEl = document.getElementById('notifList');
+        const emptyEl = document.getElementById('notifEmpty');
+
+        const items = filteredItems();
+        if (!items.length) {
+            listEl.innerHTML = '';
+            emptyEl.style.display = 'block';
+            return;
+        }
+
+        emptyEl.style.display = 'none';
+        listEl.innerHTML = items.map((item) => `
+            <article class="notif-item ${item.is_read ? '' : 'unread'}" onclick='openNotification(${JSON.stringify(item).replace(/'/g, "&#39;")})'>
+                <div>${avatarHtml(item.actor)}</div>
+                <div>
+                    <div class="notif-title">${item.title}</div>
+                    <div class="notif-message">${item.message}</div>
+                </div>
+                <div>
+                    <div class="notif-time">${relativeTime(item.created_at)}</div>
+                    ${item.is_read ? '' : `<button class="btn btn-wf-ghost" style="margin-top:0.5rem;" onclick='markRead(${JSON.stringify(item).replace(/'/g, "&#39;")}, event)'>Ler</button>`}
+                </div>
+            </article>
+        `).join('');
+    }
+
+    function setFilter(filter) {
+        currentFilter = filter;
+        renderNotifications();
+    }
+
+    async function markAllRead() {
+        await apiRequest('/notifications/read-all', 'POST');
+        notifStore = notifStore.map((n) => ({ ...n, is_read: true }));
+        renderNotifications();
+    }
+
+    async function loadNotifications() {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/login';
+            return;
+        }
+
+        notifStore = await apiRequest('/notifications?limit=120');
+        renderNotifications();
+    }
+
+    loadNotifications().catch((error) => alert(error.message || 'Erro ao carregar notificações'));
+</script>
+{% endblock %}

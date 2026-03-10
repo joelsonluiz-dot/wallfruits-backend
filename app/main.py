@@ -216,6 +216,18 @@ async def offer_detail_page(
     return _render_template("offer_detail.html", request, current_user=current_user, offer_id=offer_id)
 
 
+@app.get("/messages")
+async def messages_page(request: Request, current_user: User = Depends(get_current_user_optional)):
+    """Página de mensagens em formato chat."""
+    return _render_template("messages.html", request, current_user=current_user)
+
+
+@app.get("/notifications")
+async def notifications_page(request: Request, current_user: User = Depends(get_current_user_optional)):
+    """Página de feed de notificações."""
+    return _render_template("notifications.html", request, current_user=current_user)
+
+
 @app.get("/me/profile")
 async def my_profile_page(request: Request, current_user: User = Depends(get_current_user_optional)):
     """Página de perfil do usuário logado."""

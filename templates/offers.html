@@ -279,6 +279,45 @@
         color: var(--wf-text-secondary);
     }
 
+        .messages-float-btn {
+            position: fixed;
+            right: 22px;
+            bottom: 22px;
+            width: 58px;
+            height: 58px;
+            border-radius: 50%;
+            background: var(--wf-accent);
+            color: #0a0a0f;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            box-shadow: 0 10px 30px rgba(0, 212, 170, 0.45);
+            z-index: 1300;
+        }
+
+        .messages-float-btn .material-symbols-outlined {
+            font-size: 27px;
+        }
+
+        .messages-float-count {
+            position: absolute;
+            top: -4px;
+            right: -2px;
+            min-width: 22px;
+            height: 22px;
+            border-radius: 11px;
+            background: #ff4d6a;
+            color: #fff;
+            font-size: 0.75rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 6px;
+            border: 2px solid #0a0a0f;
+        }
+
     .skeleton-card {
         min-height: 220px;
         border-radius: 8px;
@@ -329,6 +368,11 @@
         }
     }
 </style>
+
+<a href="/messages" class="messages-float-btn" title="Minhas mensagens">
+    <span class="material-symbols-outlined">chat</span>
+    <span id="messagesFloatCount" class="messages-float-count" style="display:none;">0</span>
+</a>
 
 <div class="offers-header">
     <div>
@@ -537,18 +581,7 @@
             return;
         }
 
-        try {
-            await apiRequest('/messages', 'POST', {
-                receiver_id: receiverId,
-                offer_id: offer.id,
-                message_type: 'offer_inquiry',
-                subject: `Interesse na oferta: ${offer.product_name}`,
-                content: `Ola! Tenho interesse na oferta ${offer.product_name}. Pode me informar disponibilidade e condicoes de reserva?`,
-            });
-            alert('Mensagem enviada para o produtor.');
-        } catch (error) {
-            alert(error.message || 'Nao foi possivel enviar a mensagem.');
-        }
+        window.location.href = `/messages?user_id=${receiverId}&offer_id=${offer.id}`;
     }
 
     async function reserveOffer(offerId, event) {
@@ -635,20 +668,21 @@
             return;
         }
 
-        const message = prompt('Digite a mensagem para o produtor:');
-        if (!message) return;
+        window.location.href = `/messages?user_id=${offer.owner_data.id}&offer_id=${offer.id}`;
+    }
 
-        apiRequest('/messages', 'POST', {
-            receiver_id: offer.owner_data?.id,
-            offer_id: offer.id,
-            message_type: 'offer_inquiry',
-            subject: `Chat da oferta: ${offer.product_name}`,
-            content: message,
-        }).then(() => {
-            alert('Mensagem enviada no chat.');
-        }).catch((error) => {
-            alert(error.message || 'Nao foi possivel enviar no chat.');
-        });
+    async function loadMessagesBadge() {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        try {
+            const me = await apiRequest('/auth/me');
+            const count = Number(me?.unread_messages || 0);
+            const badge = document.getElementById('messagesFloatCount');
+            badge.textContent = String(count);
+            badge.style.display = count > 0 ? 'inline-block' : 'none';
+        } catch {
+            // ignora falhas do badge de mensagens
+        }
     }
 
     function bindCardOpenBehavior() {
@@ -692,5 +726,6 @@
     }
 
     loadOffers();
+    loadMessagesBadge();
 </script>
 {% endblock %}

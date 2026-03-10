@@ -487,9 +487,10 @@
                         <a class="nav-link" href="/qa" id="navQa" style="display:none;color:var(--wf-text-secondary);font-weight:500;font-size:0.9rem;padding:0.5rem 1rem;border-radius:var(--wf-radius-sm);transition:all 0.25s ease;">QA Test</a>
                         <a class="nav-link" href="/me/profile" id="navMyProfile" style="display:none;color:var(--wf-text-secondary);font-weight:500;font-size:0.9rem;padding:0.5rem 1rem;border-radius:var(--wf-radius-sm);transition:all 0.25s ease;">Meu Perfil</a>
                         <a class="nav-link" href="/admin" id="navAdmin" style="display:none;color:var(--wf-text-secondary);font-weight:500;font-size:0.9rem;padding:0.5rem 1rem;border-radius:var(--wf-radius-sm);transition:all 0.25s ease;">Admin</a>
-                        <a class="nav-link" href="#" id="navNotifications" style="display:none;color:var(--wf-text-secondary);font-weight:500;font-size:0.9rem;padding:0.5rem 1rem;border-radius:var(--wf-radius-sm);transition:all 0.25s ease;">
+                        <a class="nav-link" href="/notifications" id="navNotifications" style="display:none;color:var(--wf-text-secondary);font-weight:500;font-size:0.9rem;padding:0.5rem 1rem;border-radius:var(--wf-radius-sm);transition:all 0.25s ease;">
                             Notificações <span id="navNotifBadge" style="display:none;background:var(--wf-danger);color:#fff;padding:1px 6px;border-radius:999px;font-size:0.75rem;">0</span>
                         </a>
+                        <a class="nav-link" href="/messages" id="navMessages" style="display:none;color:var(--wf-text-secondary);font-weight:500;font-size:0.9rem;padding:0.5rem 1rem;border-radius:var(--wf-radius-sm);transition:all 0.25s ease;">Mensagens</a>
                         <a class="nav-link" href="/login" id="navLogin" style="color:var(--wf-text-secondary);font-weight:500;font-size:0.9rem;padding:0.5rem 1rem;border-radius:var(--wf-radius-sm);transition:all 0.25s ease;">Entrar</a>
                         <a class="nav-link wf-nav-btn ms-2" href="/register" id="navRegister">Criar Conta</a>
                         <a class="nav-link" href="#" id="navLogout" style="display:none;color:var(--wf-text-secondary);font-weight:500;font-size:0.9rem;padding:0.5rem 1rem;border-radius:var(--wf-radius-sm);transition:all 0.25s ease;">Sair</a>
@@ -552,6 +553,7 @@
             document.getElementById('navLogout').style.display = isLogged ? '' : 'none';
             document.getElementById('navMyProfile').style.display = isLogged ? '' : 'none';
             document.getElementById('navNotifications').style.display = isLogged ? '' : 'none';
+            document.getElementById('navMessages').style.display = isLogged ? '' : 'none';
             document.getElementById('navAdmin').style.display = isLogged && user?.role === 'admin' ? '' : 'none';
             document.getElementById('navNewOffer').style.display = isLogged ? '' : 'none';
             document.getElementById('navQa').style.display = isLogged && user?.role === 'admin' ? '' : 'none';
@@ -575,24 +577,6 @@
             event.preventDefault();
             clearSessionToken();
             window.location.href = '/login';
-        });
-
-        document.getElementById('navNotifications').addEventListener('click', async (event) => {
-            event.preventDefault();
-            try {
-                const items = await apiRequest('/notifications?limit=8');
-                if (!items?.length) {
-                    alert('Você não possui notificações no momento.');
-                    return;
-                }
-
-                const text = items.map((n) => `• ${n.title}: ${n.message}`).join('\n');
-                alert(text);
-                await apiRequest('/notifications/read-all', 'POST');
-                refreshUnreadNotifications();
-            } catch (e) {
-                alert(e.message || 'Erro ao carregar notificações');
-            }
         });
 
         setNavAuthState();
