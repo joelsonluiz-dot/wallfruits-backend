@@ -183,7 +183,7 @@ class OfferResponse(BaseModel):
     visibility: str
     unit: str
 
-    location: str
+    location: Optional[str] = None
     latitude: Optional[Decimal]
     longitude: Optional[Decimal]
 
