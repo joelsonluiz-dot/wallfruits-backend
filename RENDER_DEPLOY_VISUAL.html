@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WallFruits Deploy no Render - Guia Visual</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .step {
+            margin-bottom: 40px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-left: 5px solid #667eea;
+            border-radius: 8px;
+        }
+        
+        .step-number {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            line-height: 40px;
+            text-align: center;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+        
+        .step h2 {
+            color: #333;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .step-content {
+            margin: 15px 0 15px 55px;
+            line-height: 1.8;
+        }
+        
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            overflow-x: auto;
+        }
+        
+        .env-var {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+            border-left: 4px solid #ffc107;
+        }
+        
+        .env-var strong {
+            color: #856404;
+        }
+        
+        .env-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+        }
+        
+        .env-table th {
+            background: #667eea;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+        
+        .env-table td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .env-table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .link-button {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 6px;
+            text-decoration: none;
+            margin: 10px 10px 10px 0;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        
+        .link-button:hover {
+            background: #764ba2;
+        }
+        
+        .success-box {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+        
+        .warning-box {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+        
+        .checkpoint {
+            background: #e7f3ff;
+            border: 2px solid #667eea;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        
+        .emoji {
+            font-size: 1.3em;
+            margin-right: 8px;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            background: #f8f9fa;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .copy-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            float: right;
+        }
+
+        .copy-btn:hover {
+            background: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🍎 WallFruits Backend Deploy</h1>
+            <p>Guia passo a passo para fazer deploy no Render</p>
+        </div>
+        
+        <div class="content">
+            <!-- STEP 1 -->
+            <div class="step">
+                <h2><span class="step-number">1</span> Preparação: Supabase</h2>
+                <div class="step-content">
+                    <p>Primeiro, você precisa ter as credenciais do Supabase. Vamos coletar 4 informações importantes:</p>
+                    
+                    <div class="checkpoint">
+                        <strong>📋 Passo 1a: Encontre DATABASE_URL</strong>
+                        <ol style="margin: 10px 0 0 20px;">
+                            <li>Acesse: <a href="https://supabase.com/dashboard" target="_blank" class="link-button">Supabase Dashboard</a></li>
+                            <li>Clique em seu projeto</li>
+                            <li>Vá em <strong>Settings → Database</strong></li>
+                            <li>Copie a <strong>Connection String</strong> (a que começa com <code>postgresql://</code>)</li>
+                            <li>A URL deve ter formato: <code>postgresql://postgres.xxxxx:senha@aws-0-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require</code></li>
+                        </ol>
+                    </div>
+                    
+                    <div class="checkpoint">
+                        <strong>📋 Passo 1b: Encontre SUPABASE_URL</strong>
+                        <ol style="margin: 10px 0 0 20px;">
+                            <li>Ainda em <strong>Settings → Database</strong></li>
+                            <li>Procure por <strong>"Project URL"</strong></li>
+                            <li>Copie a URL (formato: <code>https://seu-projeto.supabase.co</code>)</li>
+                        </ol>
+                    </div>
+                    
+                    <div class="checkpoint">
+                        <strong>📋 Passo 1c & 1d: Encontre as KEYS</strong>
+                        <ol style="margin: 10px 0 0 20px;">
+                            <li>Vá em <strong>Settings → API</strong></li>
+                            <li>Copie <strong>"anon public"</strong> → isso é sua <code>SUPABASE_ANON_KEY</code></li>
+                            <li>Copie <strong>"service_role secret"</strong> → isso é sua <code>SUPABASE_SERVICE_ROLE_KEY</code></li>
+                        </ol>
+                    </div>
+                    
+                    <div class="env-table">
+                        <th colspan="2" style="text-align: center; background: #667eea;">Valores que você deve ter agora:</th>
+                        <tr>
+                            <td><strong>DATABASE_URL</strong></td>
+                            <td><code>postgresql://...</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>SUPABASE_URL</strong></td>
+                            <td><code>https://seu-projeto.supabase.co</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>SUPABASE_ANON_KEY</strong></td>
+                            <td><code>eyJhbGc...</code> (string longa)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>SUPABASE_SERVICE_ROLE_KEY</strong></td>
+                            <td><code>eyJhbGc...</code> (string longa, diferente da anterior)</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- STEP 2 -->
+            <div class="step">
+                <h2><span class="step-number">2</span> Acesse o Render Dashboard</h2>
+                <div class="step-content">
+                    <p>Agora vamos configurar essas variáveis no Render:</p>
+                    
+                    <div class="checkpoint">
+                        <ol style="margin: 10px 0 0 20px;">
+                            <li>Acesse: <a href="https://dashboard.render.com" target="_blank" class="link-button">Render Dashboard</a></li>
+                            <li>Você está logado? ✓ Perfeito!</li>
+                            <li>Localize o serviço <strong>"wallfruits-api"</strong></li>
+                            <li>Clique nele para abrir</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- STEP 3 -->
+            <div class="step">
+                <h2><span class="step-number">3</span> Configurar Variáveis de Ambiente</h2>
+                <div class="step-content">
+                    <p>No painel do serviço, procure pela aba <strong>"Environment"</strong> ou <strong>"Environment Variables"</strong></p>
+                    
+                    <div class="warning-box">
+                        <span class="emoji">⚠️</span>
+                        <strong>Cuidado:</strong> Não compartilhe suas KEYS com ninguém! Elas são secrets!
+                    </div>
+                    
+                    <p style="margin-top: 20px;"><strong>Clique em "Add Environment Variable" e configure cada uma:</strong></p>
+                    
+                    <div class="env-var">
+                        <strong>Variável 1:</strong><br>
+                        Key: <code>DATABASE_URL</code><br>
+                        Value: Cole aqui o <code>postgresql://...</code> do Supabase
+                    </div>
+                    
+                    <div class="env-var">
+                        <strong>Variável 2:</strong><br>
+                        Key: <code>SUPABASE_URL</code><br>
+                        Value: <code>https://seu-projeto.supabase.co</code>
+                    </div>
+                    
+                    <div class="env-var">
+                        <strong>Variável 3:</strong><br>
+                        Key: <code>SUPABASE_ANON_KEY</code><br>
+                        Value: Cole a "anon public" do Supabase
+                    </div>
+                    
+                    <div class="env-var">
+                        <strong>Variável 4:</strong><br>
+                        Key: <code>SUPABASE_SERVICE_ROLE_KEY</code><br>
+                        Value: Cole a "service_role secret" do Supabase
+                    </div>
+                    
+                    <div class="env-var">
+                        <strong>Variável 5:</strong><br>
+                        Key: <code>SUPABASE_AUTH_ENABLED</code><br>
+                        Value: <code>true</code>
+                    </div>
+                    
+                    <div class="env-var">
+                        <strong>Variável 6:</strong><br>
+                        Key: <code>DEBUG</code><br>
+                        Value: <code>false</code>
+                    </div>
+                    
+                    <div class="env-var">
+                        <strong>Variável 7:</strong><br>
+                        Key: <code>REDIS_ENABLED</code><br>
+                        Value: <code>false</code>
+                    </div>
+                    
+                    <div class="checkpoint" style="margin-top: 20px;">
+                        <strong>✅ Depois de preencher TODAS as 7 variáveis:</strong>
+                        <ol style="margin: 10px 0 0 20px;">
+                            <li>Clique em <strong>"Save Changes"</strong> (botão no final da página)</li>
+                            <li>Aguarde a página recarregar</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- STEP 4 -->
+            <div class="step">
+                <h2><span class="step-number">4</span> Fazer Deploy</h2>
+                <div class="step-content">
+                    <p>Agora vamos deploiar o código com essas variáveis:</p>
+                    
+                    <div class="checkpoint">
+                        <ol style="margin: 10px 0 0 20px;">
+                            <li>No painel do serviço, procure o botão <strong>"Manual Deploy"</strong> (ou "Deploy")</li>
+                            <li>Clique nele</li>
+                            <li>Selecione <strong>"Deploy latest commit"</strong></li>
+                            <li>Aguarde o build (vai mostrar logs)</li>
+                        </ol>
+                    </div>
+                    
+                    <div class="warning-box" style="margin-top: 20px;">
+                        <span class="emoji">⏱️</span>
+                        <strong>Tempo de espera:</strong> O build leva entre <strong>3-7 minutos</strong>. Não feche a página!
+                    </div>
+                    
+                    <p style="margin-top: 20px;"><strong>Você vai ver:</strong></p>
+                    <ul style="margin-left: 20px;">
+                        <li>Logs de build (muitas linhas de texto)</li>
+                        <li>Um ponto colorido em cima do serviço passando por: <code>updating</code> → <code>deploying</code> → <code>Live</code> ✅</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- STEP 5 -->
+            <div class="step">
+                <h2><span class="step-number">5</span> Testar o Deploy</h2>
+                <div class="step-content">
+                    <p>Quando o status ficar <strong>"Live"</strong> (verde), teste sua API:</p>
+                    
+                    <div class="checkpoint">
+                        <strong>Teste 1: Health Check</strong><br>
+                        Abra no navegador:
+                        <div class="code-block">
+                            https://wallfruits-api.onrender.com/health
+                        </div>
+                        <p style="margin-top: 10px;"><strong>Resultado esperado:</strong> Uma página com <code>{"status":"ok"}</code></p>
+                    </div>
+                    
+                    <div class="checkpoint">
+                        <strong>Teste 2: Swagger API Docs</strong><br>
+                        Abra no navegador:
+                        <div class="code-block">
+                            https://wallfruits-api.onrender.com/docs
+                        </div>
+                        <p style="margin-top: 10px;"><strong>Resultado esperado:</strong> Interface Swagger com todos seus endpoints</p>
+                    </div>
+                    
+                    <div class="success-box" style="margin-top: 30px;">
+                        <span class="emoji">🎉</span>
+                        <strong>Parabéns!</strong> Se ambas as URLs funcionaram, sua API está no ar e pronta para usar!
+                    </div>
+                </div>
+            </div>
+            
+            <!-- TROUBLESHOOTING -->
+            <div class="step">
+                <h2><span class="step-number">❓</span> Dúvidas Comuns</h2>
+                <div class="step-content">
+                    <div class="checkpoint">
+                        <strong>P: O deploy deu erro de "DATABASE_URL"</strong><br>
+                        R: Copie a URL com <strong>?sslmode=require</strong> no final. Não esqueça desta parte!
+                    </div>
+                    
+                    <div class="checkpoint">
+                        <strong>P: Os logs mostram "ConnectionError"</strong><br>
+                        R: Verifique se a DATABASE_URL está correta e se o PostgreSQL do Supabase está rodando.
+                    </div>
+                    
+                    <div class="checkpoint">
+                        <strong>P: A página /docs carrega mas está vazia</strong><br>
+                        R: Pode ser cache do navegador. Tente Ctrl+F5 ou abra em modo anônimo.
+                    </div>
+                    
+                    <div class="checkpoint">
+                        <strong>P: Quero fazer outro deploy após atualizar código</strong><br>
+                        R: Faça git push no GitHub, depois clique "Manual Deploy" → "Deploy latest commit" no Render.
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>WallFruits Backend Deploy Guide | Última atualização: Março 2026</p>
+            <p>Para mais informações: <a href="https://render.com/docs" style="color: #667eea;">Documentação Render</a></p>
+        </div>
+    </div>
+</body>
+</html>
