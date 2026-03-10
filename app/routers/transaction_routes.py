@@ -12,6 +12,7 @@ from app.database.connection import get_db
 from app.models import Offer, Transaction, User
 from app.schemas import TransactionCreate, TransactionResponse, TransactionUpdate
 from app.services.profile_service import ProfileService
+from app.services.notification_service import create_notification
 
 router = APIRouter(
     prefix="/transactions",
@@ -74,6 +75,18 @@ def create_transaction(
     )
 
     db.add(new_transaction)
+
+    create_notification(
+        db,
+        user_id=offer.user_id,
+        actor_user_id=current_user.id,
+        notification_type="reservation",
+        title="Nova reserva recebida",
+        message=f"{current_user.name} reservou {transaction.quantity} {offer.unit} de {offer.product_name}.",
+        resource_type="transaction",
+        resource_id=str(new_transaction.id),
+    )
+
     db.commit()
     db.refresh(new_transaction)
 

@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Admin - WallFruits{% endblock %}
+
+{% block content %}
+<style>
+    .admin-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.9rem; }
+    .admin-kpi { background: rgba(255,255,255,0.04); border: 1px solid var(--wf-border); border-radius: 12px; padding: 1rem; }
+    .admin-kpi h4 { margin: 0; font-size: 0.8rem; color: var(--wf-text-secondary); }
+    .admin-kpi .val { margin-top: 0.5rem; font-size: 1.35rem; font-weight: 800; }
+    @media (max-width: 900px) { .admin-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 520px) { .admin-grid { grid-template-columns: 1fr; } }
+</style>
+
+<div class="wf-card mb-3">
+    <div class="card-header">Painel Admin</div>
+    <div class="card-body">
+        <p style="color:var(--wf-text-secondary); margin-bottom:0;">Visão geral da plataforma em tempo real.</p>
+    </div>
+</div>
+
+<div class="admin-grid" id="adminKpis"></div>
+
+<div class="wf-card mt-3">
+    <div class="card-header">Top Produtos</div>
+    <div class="card-body">
+        <div id="topProducts"></div>
+    </div>
+</div>
+
+<script>
+    function numberFmt(n) { return Number(n || 0).toLocaleString('pt-BR'); }
+    function money(v) { return `R$ ${Number(v || 0).toFixed(2)}`; }
+
+    async function loadAdmin() {
+        const me = await apiRequest('/auth/me');
+        if (!me || me.role !== 'admin') {
+            alert('Acesso restrito ao administrador.');
+            window.location.href = '/';
+            return;
+        }
+
+        const data = await apiRequest('/dashboard/admin');
+        const ov = data.overview || {};
+
+        document.getElementById('adminKpis').innerHTML = `
+            <div class="admin-kpi"><h4>Usuários</h4><div class="val">${numberFmt(ov.total_users)}</div></div>
+            <div class="admin-kpi"><h4>Ofertas</h4><div class="val">${numberFmt(ov.total_offers)}</div></div>
+            <div class="admin-kpi"><h4>Transações</h4><div class="val">${numberFmt(ov.total_transactions)}</div></div>
+            <div class="admin-kpi"><h4>Receita</h4><div class="val">${money(ov.total_revenue)}</div></div>
+        `;
+
+        const products = data.top_products || [];
+        if (!products.length) {
+            document.getElementById('topProducts').innerHTML = '<div class="wf-alert wf-alert-info">Sem dados de vendas ainda.</div>';
+            return;
+        }
+
+        document.getElementById('topProducts').innerHTML = products.map((item, i) => `
+            <div style="display:flex;justify-content:space-between;gap:1rem;padding:0.7rem 0;border-bottom:1px solid var(--wf-border);">
+                <div><b>#${i + 1}</b> ${item.product_name}</div>
+                <div style="color:var(--wf-text-secondary);">${item.sales_count} vendas · ${money(item.total_revenue)}</div>
+            </div>
+        `).join('');
+    }
+
+    loadAdmin().catch((err) => {
+        alert(err.message || 'Erro ao carregar painel admin');
+    });
+</script>
+{% endblock %}

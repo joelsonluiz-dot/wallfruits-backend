@@ -121,6 +121,10 @@
                             <input type="text" class="wf-input form-control" id="location" placeholder="Cidade/UF">
                         </div>
                     </div>
+                    <div class="mb-3">
+                        <label for="profileImage" class="wf-label">Imagem de perfil (URL)</label>
+                        <input type="url" class="wf-input form-control" id="profileImage" placeholder="https://exemplo.com/minha-foto.jpg">
+                    </div>
                     <div class="mb-4">
                         <label class="wf-label">Tipo de conta</label>
                         <div class="role-selector">
@@ -167,6 +171,7 @@
         const phone = document.getElementById('phone').value;
         const location = document.getElementById('location').value;
         const roleEl = document.querySelector('input[name="role"]:checked');
+        const profileImage = document.getElementById('profileImage').value;
 
         // Validações básicas no client
         if (!name || !email || !password) {
@@ -197,6 +202,7 @@
                 password,
                 phone: phone || null,
                 location: location || null,
+                profile_image: profileImage || null,
                 role: roleEl.value
             });
 

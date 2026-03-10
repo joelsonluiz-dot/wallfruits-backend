@@ -55,7 +55,8 @@ def _login_response(db_user: User, access_token: str) -> dict:
             "id": db_user.id,
             "name": db_user.name,
             "email": db_user.email,
-            "role": db_user.role
+            "role": db_user.role,
+            "profile_image": db_user.profile_image,
         }
     }
 
@@ -228,7 +229,8 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
         role=user.role,
         phone=user.phone,
         location=user.location,
-        bio=user.bio
+        bio=user.bio,
+        profile_image=user.profile_image,
     )
 
     try:

@@ -7,6 +7,7 @@ from app.database.connection import get_db
 from app.models import Favorite, Offer, User
 from app.schemas import FavoriteCreate, FavoriteResponse, FavoriteUpdate
 from app.core.auth_middleware import get_current_user
+from app.services.notification_service import create_notification
 
 router = APIRouter(
     prefix="/favorites",
@@ -49,6 +50,18 @@ def add_to_favorites(
 
     # Incrementar contador de favoritos da oferta
     offer.favorites_count += 1
+
+    if offer.user_id != current_user.id:
+        create_notification(
+            db,
+            user_id=offer.user_id,
+            actor_user_id=current_user.id,
+            notification_type="favorite",
+            title="Nova curtida na oferta",
+            message=f"{current_user.name} curtiu sua oferta {offer.product_name}.",
+            resource_type="offer",
+            resource_id=str(offer.id),
+        )
 
     db.commit()
     db.refresh(new_favorite)

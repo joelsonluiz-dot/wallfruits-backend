@@ -11,3 +11,4 @@ from .wallet_schema import *
 from .negotiation_schema import *
 from .reputation_schema import *
 from .report_schema import *
+from .social_schema import *

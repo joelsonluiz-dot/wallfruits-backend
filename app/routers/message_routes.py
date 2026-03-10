@@ -7,6 +7,7 @@ from app.database.connection import get_db, SessionLocal
 from app.models import Message, User, Offer
 from app.schemas import MessageCreate, MessageResponse, ConversationResponse
 from app.core.auth_middleware import get_current_user, get_user_from_token
+from app.services.notification_service import create_notification
 
 router = APIRouter(
     prefix="/messages",
@@ -88,6 +89,18 @@ async def send_message(
         )
 
         db.add(new_message)
+
+        create_notification(
+            db,
+            user_id=message.receiver_id,
+            actor_user_id=current_user.id,
+            notification_type="message",
+            title="Nova mensagem",
+            message=f"{current_user.name} enviou uma mensagem para você.",
+            resource_type="thread",
+            resource_id=str(thread_id),
+        )
+
         db.commit()
         db.refresh(new_message)
 

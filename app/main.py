@@ -34,12 +34,14 @@ from app.routers import (
     gamification_routes,
     message_routes,
     negotiation_routes,
+    notification_routes,
     offer_routes,
     payment_routes,
     profile_routes,
     report_routes,
     reputation_routes,
     review_routes,
+    social_routes,
     transaction_routes,
     upload_routes,
     wallet_routes,
@@ -171,6 +173,8 @@ app.include_router(reputation_routes.router, prefix=API_PREFIX)
 app.include_router(report_routes.router, prefix=API_PREFIX)
 app.include_router(gamification_routes.router, prefix=API_PREFIX)
 app.include_router(payment_routes.router, prefix=API_PREFIX)
+app.include_router(social_routes.router, prefix=API_PREFIX)
+app.include_router(notification_routes.router, prefix=API_PREFIX)
 
 @app.get("/")
 async def home(request: Request, current_user: User = Depends(get_current_user_optional)):
@@ -204,6 +208,28 @@ async def offer_detail_page(
 ):
     """Página de detalhes de uma oferta específica."""
     return _render_template("offer_detail.html", request, current_user=current_user, offer_id=offer_id)
+
+
+@app.get("/me/profile")
+async def my_profile_page(request: Request, current_user: User = Depends(get_current_user_optional)):
+    """Página de perfil do usuário logado."""
+    return _render_template("profile.html", request, current_user=current_user, viewed_user_id=None)
+
+
+@app.get("/users/{user_id}")
+async def public_profile_page(
+    user_id: int,
+    request: Request,
+    current_user: User = Depends(get_current_user_optional),
+):
+    """Página de perfil público de usuário."""
+    return _render_template("profile.html", request, current_user=current_user, viewed_user_id=user_id)
+
+
+@app.get("/admin")
+async def admin_page(request: Request, current_user: User = Depends(get_current_user_optional)):
+    """Painel administrativo web da plataforma."""
+    return _render_template("admin.html", request, current_user=current_user)
 
 
 @app.get("/qa")

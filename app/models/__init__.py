@@ -24,6 +24,8 @@ from .point_transaction import PointTransaction
 from .badge import Badge, UserBadge
 from .review_contestation import ReviewContestation
 from .auth_token import AuthToken
+from .follow import Follow
+from .notification import Notification
 
 __all__ = [
     "User",
@@ -52,4 +54,6 @@ __all__ = [
     "UserBadge",
     "ReviewContestation",
     "AuthToken",
+    "Follow",
+    "Notification",
 ]

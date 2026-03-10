@@ -385,7 +385,11 @@
 
     function getOwnerAvatar(offer) {
         if (offer.owner_data?.profile_image) {
-            return `<img class="produtor-avatar" src="${escapeHtml(offer.owner_data.profile_image)}" alt="Avatar do produtor">`;
+            const image = offer.owner_data.profile_image;
+            const src = image.startsWith('http://') || image.startsWith('https://') || image.startsWith('/')
+                ? image
+                : `/api/uploads/profiles/${image}`;
+            return `<img class="produtor-avatar" src="${escapeHtml(src)}" alt="Avatar do produtor">`;
         }
 
         const name = offer.owner_data?.name || 'Produtor';
@@ -397,6 +401,11 @@
             .join('');
 
         return `<span class="produtor-avatar-fallback">${escapeHtml(initials || 'PR')}</span>`;
+    }
+
+    function ownerProfileUrl(offer) {
+        const ownerId = offer.owner_data?.id || offer.user_id;
+        return `/users/${ownerId}`;
     }
 
     function getBookmarks() {
@@ -461,11 +470,13 @@
                 <div class="produto-content">
                     <div>
                         <div class="produtor-box">
-                            ${getOwnerAvatar(offer)}
-                            <div class="produtor-info">
-                                <div class="produtor-nome">${escapeHtml(offer.owner_data?.name || 'Produtor')}</div>
-                                <div class="produtor-username">${escapeHtml(getOwnerUsername(offer))}</div>
-                            </div>
+                            <a href="${ownerProfileUrl(offer)}" onclick="event.stopPropagation()" style="display:flex;align-items:center;gap:0.65rem;text-decoration:none;color:inherit;">
+                                ${getOwnerAvatar(offer)}
+                                <div class="produtor-info">
+                                    <div class="produtor-nome">${escapeHtml(offer.owner_data?.name || 'Produtor')}</div>
+                                    <div class="produtor-username">${escapeHtml(getOwnerUsername(offer))}</div>
+                                </div>
+                            </a>
                         </div>
 
                         <h3 class="fruta-nome">${escapeHtml(offer.product_name)}</h3>

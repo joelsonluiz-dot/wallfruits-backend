@@ -1,6 +1,7 @@
 from .negotiation_service import NegotiationService
 from .negotiation_policy_service import NegotiationPolicyService
 from .profile_service import ProfileService
+from .notification_service import create_notification
 from .report_service import ReportService
 from .reputation_service import ReputationService
 from .wallet_service import WalletService
@@ -12,4 +13,5 @@ __all__ = [
 	"ReportService",
 	"ReputationService",
 	"WalletService",
+	"create_notification",
 ]
