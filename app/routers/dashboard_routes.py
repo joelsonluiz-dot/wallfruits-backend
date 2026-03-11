@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 
 from app.database.connection import get_db
 from app.database.connection import Base
-from app.models import User, Offer, Transaction, Review, Favorite, Message
+from app.models import User, Offer, Transaction, Review, Favorite, Message, Negotiation
 from app.core.auth_middleware import get_current_user
 from app.services.profile_service import ProfileService
 
@@ -503,4 +503,67 @@ def get_strategy_center(
             ],
         },
         "recommendations": recommendations,
+    }
+
+
+@router.get("/funnel")
+def get_commercial_funnel(
+    days: int = Query(30, ge=1, le=365),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Funil comercial oficial: visitante -> mensagem -> negociação -> transação concluída."""
+    if current_user.role != "admin" and not current_user.is_superuser:
+        raise HTTPException(status_code=403, detail="Acesso restrito")
+
+    since = datetime.utcnow() - timedelta(days=days)
+
+    visitors = db.query(func.sum(Offer.views)).filter(Offer.created_at >= since).scalar() or 0
+
+    messages = db.query(func.count(Message.id)).filter(
+        Message.created_at >= since,
+        Message.offer_id.isnot(None),
+    ).scalar() or 0
+
+    negotiations = db.query(func.count(Negotiation.id)).filter(
+        Negotiation.created_at >= since,
+    ).scalar() or 0
+
+    completed_transactions = db.query(func.count(Transaction.id)).filter(
+        Transaction.created_at >= since,
+        Transaction.status == "completed",
+    ).scalar() or 0
+
+    def _rate(current: int, previous: int) -> float:
+        if previous <= 0:
+            return 0.0
+        return round((current / previous) * 100, 2)
+
+    conv_visit_to_msg = _rate(messages, visitors)
+    conv_msg_to_neg = _rate(negotiations, messages)
+    conv_neg_to_tx = _rate(completed_transactions, negotiations)
+    conv_total = _rate(completed_transactions, visitors)
+
+    stage_pairs = [
+        ("visitante->mensagem", conv_visit_to_msg),
+        ("mensagem->negociacao", conv_msg_to_neg),
+        ("negociacao->conclusao", conv_neg_to_tx),
+    ]
+    bottleneck = min(stage_pairs, key=lambda item: item[1])[0]
+
+    return {
+        "window_days": days,
+        "stages": {
+            "visitors": int(visitors),
+            "messages": int(messages),
+            "negotiations": int(negotiations),
+            "completed_transactions": int(completed_transactions),
+        },
+        "conversion": {
+            "visit_to_message": conv_visit_to_msg,
+            "message_to_negotiation": conv_msg_to_neg,
+            "negotiation_to_completed": conv_neg_to_tx,
+            "visitor_to_completed": conv_total,
+        },
+        "bottleneck": bottleneck,
     }

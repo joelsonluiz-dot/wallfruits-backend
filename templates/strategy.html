@@ -33,6 +33,44 @@
         gap: 1rem;
         margin-top: 1rem;
     }
+    .funnel-wrap {
+        margin-top: 1rem;
+    }
+    .funnel-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.75rem;
+    }
+    .funnel-stage {
+        border: 1px solid var(--wf-border);
+        border-radius: 12px;
+        background: var(--wf-card);
+        padding: 0.8rem;
+    }
+    .funnel-stage .name {
+        font-size: 0.75rem;
+        color: var(--wf-text-secondary);
+        text-transform: uppercase;
+    }
+    .funnel-stage .value {
+        font-size: 1.3rem;
+        font-weight: 800;
+        margin-top: 0.35rem;
+    }
+    .funnel-conv {
+        margin-top: 0.8rem;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.55rem;
+    }
+    .funnel-conv-item {
+        border: 1px dashed var(--wf-border);
+        border-radius: 10px;
+        padding: 0.55rem;
+        font-size: 0.82rem;
+        color: var(--wf-text-secondary);
+        background: rgba(255,255,255,0.03);
+    }
     .strategy-list-item {
         padding: 0.6rem 0;
         border-bottom: 1px solid var(--wf-border);
@@ -51,9 +89,11 @@
     @media (max-width: 980px) {
         .strategy-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         .strategy-columns { grid-template-columns: 1fr; }
+        .funnel-grid, .funnel-conv { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
     @media (max-width: 580px) {
         .strategy-grid { grid-template-columns: 1fr; }
+        .funnel-grid, .funnel-conv { grid-template-columns: 1fr; }
     }
 </style>
 
@@ -66,6 +106,15 @@
 </div>
 
 <div class="strategy-grid" id="northStar"></div>
+
+<div class="wf-card funnel-wrap">
+    <div class="card-header">Funil Comercial</div>
+    <div class="card-body">
+        <div id="funnelStages" class="funnel-grid"></div>
+        <div id="funnelConversion" class="funnel-conv"></div>
+        <div id="funnelBottleneck" style="margin-top:0.85rem;"></div>
+    </div>
+</div>
 
 <div class="strategy-columns">
     <div class="wf-card">
@@ -117,9 +166,14 @@
             return;
         }
 
-        const data = await apiRequest('/dashboard/strategy');
+        const [data, funnel] = await Promise.all([
+            apiRequest('/dashboard/strategy'),
+            apiRequest('/dashboard/funnel?days=30')
+        ]);
         const ns = data.north_star || {};
         const ra = data.recent_activity || {};
+        const stages = funnel.stages || {};
+        const conv = funnel.conversion || {};
 
         document.getElementById('healthScore').innerHTML = `
             <span class="score-badge">Score de Saúde: ${fmtNum(ns.health_score)} / 100 (${healthLabel(Number(ns.health_score || 0))})</span>
@@ -130,6 +184,24 @@
             <div class="strategy-kpi"><h4>Ofertas ativas</h4><div class="val">${fmtNum(ns.active_offers)}</div></div>
             <div class="strategy-kpi"><h4>Conversão</h4><div class="val">${fmtNum(ns.conversion_rate)}%</div></div>
             <div class="strategy-kpi"><h4>Receita</h4><div class="val">${fmtMoney(ns.total_revenue)}</div></div>
+        `;
+
+        document.getElementById('funnelStages').innerHTML = `
+            <div class="funnel-stage"><div class="name">Visitantes</div><div class="value">${fmtNum(stages.visitors)}</div></div>
+            <div class="funnel-stage"><div class="name">Mensagens</div><div class="value">${fmtNum(stages.messages)}</div></div>
+            <div class="funnel-stage"><div class="name">Negociações</div><div class="value">${fmtNum(stages.negotiations)}</div></div>
+            <div class="funnel-stage"><div class="name">Transações concluídas</div><div class="value">${fmtNum(stages.completed_transactions)}</div></div>
+        `;
+
+        document.getElementById('funnelConversion').innerHTML = `
+            <div class="funnel-conv-item"><b>Visitante → Mensagem</b><div>${fmtNum(conv.visit_to_message)}%</div></div>
+            <div class="funnel-conv-item"><b>Mensagem → Negociação</b><div>${fmtNum(conv.message_to_negotiation)}%</div></div>
+            <div class="funnel-conv-item"><b>Negociação → Conclusão</b><div>${fmtNum(conv.negotiation_to_completed)}%</div></div>
+            <div class="funnel-conv-item"><b>Visitante → Conclusão</b><div>${fmtNum(conv.visitor_to_completed)}%</div></div>
+        `;
+
+        document.getElementById('funnelBottleneck').innerHTML = `
+            <span class="score-badge">Gargalo principal: ${String(funnel.bottleneck || '-').replace('->', ' -> ')}</span>
         `;
 
         renderList(
