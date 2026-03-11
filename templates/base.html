@@ -588,6 +588,13 @@
             </div>
 
             <div class="wf-nav-group">
+                <div class="wf-group-title">Módulos</div>
+                <a class="wf-nav-link" href="/gamification" id="navGamification" style="display:none;">Gamificação</a>
+                <a class="wf-nav-link" href="/reputation" id="navReputation" style="display:none;">Reputação</a>
+                <a class="wf-nav-link" href="/intermediation" id="navIntermediation" style="display:none;">Mediação</a>
+            </div>
+
+            <div class="wf-nav-group">
                 <div class="wf-group-title">Conta</div>
                 <a class="wf-nav-link" href="/me/profile" id="navMyProfile" style="display:none;">Meu perfil</a>
                 <a class="wf-nav-link" href="/admin" id="navAdmin" style="display:none;">Painel admin</a>
@@ -673,6 +680,9 @@
             document.getElementById('navSidebarNewOffer').style.display = isLogged ? '' : 'none';
             document.getElementById('navTopMessages').style.display = isLogged ? '' : 'none';
             document.getElementById('navTopNewOffer').style.display = isLogged ? '' : 'none';
+            document.getElementById('navGamification').style.display = isLogged ? '' : 'none';
+            document.getElementById('navReputation').style.display = isLogged ? '' : 'none';
+            document.getElementById('navIntermediation').style.display = isLogged ? '' : 'none';
 
             // Solicitação do usuário: após login, ocultar menu superior e usar navegação lateral.
             const topbar = document.querySelector('.wf-topbar');

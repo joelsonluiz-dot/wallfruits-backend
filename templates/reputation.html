@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Reputação - WallFruits{% endblock %}
+
+{% block content %}
+<div class="wf-card mb-3">
+    <div class="card-header">Reputação e Contestação</div>
+    <div class="card-body">
+        <p style="color:var(--wf-text-secondary);margin-bottom:0;">Gerencie avaliações recebidas, acompanhe contestação e moderação administrativa.</p>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="wf-card h-100">
+            <div class="card-header">Avaliações Recebidas</div>
+            <div class="card-body" id="receivedReviews"></div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="wf-card h-100">
+            <div class="card-header">Minhas Contestações</div>
+            <div class="card-body" id="myContestations"></div>
+        </div>
+    </div>
+</div>
+
+<div class="wf-card mt-3" id="adminContestationsCard" style="display:none;">
+    <div class="card-header">Contestação pendente (Admin)</div>
+    <div class="card-body" id="pendingContestations"></div>
+</div>
+
+<div class="wf-card mt-3" id="adminReportsCard" style="display:none;">
+    <div class="card-header">Denúncias pendentes (Admin)</div>
+    <div class="card-body" id="pendingReports"></div>
+</div>
+
+<script>
+    function emptyBox(message) {
+        return `<div class="wf-alert wf-alert-info">${message}</div>`;
+    }
+
+    function line(title, subtitle = '', right = '') {
+        return `<div style="display:flex;justify-content:space-between;gap:0.8rem;padding:0.55rem 0;border-bottom:1px solid var(--wf-border);"><div><b>${title}</b><div style="color:var(--wf-text-secondary);font-size:0.85rem;">${subtitle}</div></div><div style="color:var(--wf-text-secondary);">${right}</div></div>`;
+    }
+
+    async function loadReputation() {
+        const me = await apiRequest('/auth/me');
+
+        const [received, mine] = await Promise.all([
+            apiRequest('/reputation/my/received?limit=30'),
+            apiRequest('/reputation/my/contestations?limit=30')
+        ]);
+
+        document.getElementById('receivedReviews').innerHTML = received.length
+            ? received.map((item) => line(`Nota ${item.rating}/5`, item.comment || 'Sem comentário', item.created_at ? new Date(item.created_at).toLocaleDateString('pt-BR') : '')).join('')
+            : emptyBox('Você ainda não recebeu avaliações.');
+
+        document.getElementById('myContestations').innerHTML = mine.length
+            ? mine.map((item) => line(`Status: ${item.status}`, item.reason || 'Sem motivo informado', item.created_at ? new Date(item.created_at).toLocaleDateString('pt-BR') : '')).join('')
+            : emptyBox('Nenhuma contestação registrada.');
+
+        if (me.role === 'admin') {
+            document.getElementById('adminContestationsCard').style.display = '';
+            document.getElementById('adminReportsCard').style.display = '';
+
+            const [pendingContestations, pendingReports] = await Promise.all([
+                apiRequest('/reputation/admin/contestations?limit=30'),
+                apiRequest('/reports?status=pending&limit=30')
+            ]);
+
+            document.getElementById('pendingContestations').innerHTML = pendingContestations.length
+                ? pendingContestations.map((item) => line(`Status: ${item.status}`, item.reason || 'Sem motivo informado', item.reviewed_at ? new Date(item.reviewed_at).toLocaleDateString('pt-BR') : 'Pendente')).join('')
+                : emptyBox('Sem contestações pendentes.');
+
+            document.getElementById('pendingReports').innerHTML = pendingReports.length
+                ? pendingReports.map((item) => line(`Denúncia ${item.status}`, item.reason || 'Sem motivo informado', item.created_at ? new Date(item.created_at).toLocaleDateString('pt-BR') : '')).join('')
+                : emptyBox('Sem denúncias pendentes.');
+        }
+    }
+
+    loadReputation().catch((err) => {
+        alert(err.message || 'Erro ao carregar reputação. Faça login novamente.');
+        window.location.href = '/login';
+    });
+</script>
+{% endblock %}

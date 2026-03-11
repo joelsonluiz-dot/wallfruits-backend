@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Mediação - WallFruits{% endblock %}
+
+{% block content %}
+<div class="wf-card mb-3">
+    <div class="card-header">Mediação e Contratos</div>
+    <div class="card-body">
+        <p style="color:var(--wf-text-secondary);margin-bottom:0;">Acompanhe negociações com mediação, solicitações e contratos versionados.</p>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="wf-card h-100">
+            <div class="card-header">Negociações com mediação</div>
+            <div class="card-body" id="intermediatedNegotiations"></div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="wf-card h-100">
+            <div class="card-header">Solicitações de mediação (Admin)</div>
+            <div class="card-body" id="adminIntermediationRequests"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function emptyState(msg) {
+        return `<div class="wf-alert wf-alert-info">${msg}</div>`;
+    }
+
+    function rowLine(left, right = '') {
+        return `<div style="display:flex;justify-content:space-between;gap:0.8rem;padding:0.55rem 0;border-bottom:1px solid var(--wf-border);"><div>${left}</div><div style="color:var(--wf-text-secondary);">${right}</div></div>`;
+    }
+
+    async function loadIntermediation() {
+        const me = await apiRequest('/auth/me');
+
+        const negotiations = await apiRequest('/negotiations/my?limit=40');
+        const intermediated = negotiations.filter((n) => n.is_intermediated);
+
+        document.getElementById('intermediatedNegotiations').innerHTML = intermediated.length
+            ? intermediated.map((n) => {
+                const product = n.offer?.product_name || 'Oferta';
+                const status = n.status || 'open';
+                return rowLine(`<b>${product}</b><div style="color:var(--wf-text-secondary);font-size:0.85rem;">Status: ${status}</div>`, `Qtd ${Number(n.quantity || 0).toLocaleString('pt-BR')}`);
+            }).join('')
+            : emptyState('Nenhuma negociação intermediada encontrada para sua conta.');
+
+        const adminBox = document.getElementById('adminIntermediationRequests');
+        if (me.role !== 'admin') {
+            adminBox.innerHTML = emptyState('Apenas administradores visualizam solicitações globais de mediação.');
+            return;
+        }
+
+        const requests = await apiRequest('/negotiations/intermediation/requests?limit=40');
+        adminBox.innerHTML = requests.length
+            ? requests.map((req) => rowLine(`<b>Status: ${req.status}</b><div style="color:var(--wf-text-secondary);font-size:0.85rem;">${req.notes || 'Sem observações'}</div>`, req.created_at ? new Date(req.created_at).toLocaleDateString('pt-BR') : '')).join('')
+            : emptyState('Sem solicitações de mediação no momento.');
+    }
+
+    loadIntermediation().catch((err) => {
+        alert(err.message || 'Erro ao carregar mediação. Faça login novamente.');
+        window.location.href = '/login';
+    });
+</script>
+{% endblock %}

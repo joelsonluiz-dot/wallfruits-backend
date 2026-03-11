@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Gamificação - WallFruits{% endblock %}
+
+{% block content %}
+<div class="wf-card mb-3">
+    <div class="card-header">Gamificação</div>
+    <div class="card-body">
+        <p style="color:var(--wf-text-secondary);margin-bottom:0;">Acompanhe pontos, badges e ranking da comunidade.</p>
+    </div>
+</div>
+
+<div class="row g-3 mb-3" id="gamificationStats"></div>
+
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="wf-card h-100">
+            <div class="card-header">Meus Badges</div>
+            <div class="card-body" id="myBadges"></div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="wf-card h-100">
+            <div class="card-header">Leaderboard</div>
+            <div class="card-body" id="leaderboard"></div>
+        </div>
+    </div>
+</div>
+
+<div class="wf-card mt-3">
+    <div class="card-header">Histórico de Pontos</div>
+    <div class="card-body" id="pointHistory"></div>
+</div>
+
+<script>
+    function num(v) { return Number(v || 0).toLocaleString('pt-BR'); }
+
+    function badgeEmpty(text) {
+        return `<div class="wf-alert wf-alert-info">${text}</div>`;
+    }
+
+    async function loadGamification() {
+        const [profile, badges, leaderboard, points] = await Promise.all([
+            apiRequest('/gamification/me'),
+            apiRequest('/gamification/me/badges'),
+            apiRequest('/gamification/leaderboard?limit=10'),
+            apiRequest('/gamification/me/points?limit=25')
+        ]);
+
+        document.getElementById('gamificationStats').innerHTML = `
+            <div class="col-md-4"><div class="wf-card"><div class="card-body"><div style="color:var(--wf-text-secondary);font-size:0.85rem;">Nível</div><div style="font-size:1.5rem;font-weight:800;">${num(profile.level)}</div></div></div></div>
+            <div class="col-md-4"><div class="wf-card"><div class="card-body"><div style="color:var(--wf-text-secondary);font-size:0.85rem;">Pontos totais</div><div style="font-size:1.5rem;font-weight:800;">${num(profile.total_points)}</div></div></div></div>
+            <div class="col-md-4"><div class="wf-card"><div class="card-body"><div style="color:var(--wf-text-secondary);font-size:0.85rem;">Streak</div><div style="font-size:1.5rem;font-weight:800;">${num(profile.current_streak_days)} dias</div></div></div></div>
+        `;
+
+        const badgesEl = document.getElementById('myBadges');
+        badgesEl.innerHTML = badges.length
+            ? badges.map((b) => `<div style="padding:0.55rem 0;border-bottom:1px solid var(--wf-border);"><b>${b.badge_name}</b><div style="color:var(--wf-text-secondary);font-size:0.85rem;">${b.badge_description || 'Sem descrição'}</div></div>`).join('')
+            : badgeEmpty('Você ainda não possui badges.');
+
+        const rankingEl = document.getElementById('leaderboard');
+        rankingEl.innerHTML = leaderboard.length
+            ? leaderboard.map((item, idx) => `<div style="display:flex;justify-content:space-between;gap:0.8rem;padding:0.55rem 0;border-bottom:1px solid var(--wf-border);"><div><b>#${idx + 1}</b> ${item.user_name || 'Usuário'}</div><div style="color:var(--wf-text-secondary);">${num(item.total_points)} pts</div></div>`).join('')
+            : badgeEmpty('Ainda não há dados no ranking.');
+
+        const pointsEl = document.getElementById('pointHistory');
+        pointsEl.innerHTML = points.length
+            ? points.map((p) => `<div style="display:flex;justify-content:space-between;gap:0.8rem;padding:0.55rem 0;border-bottom:1px solid var(--wf-border);"><div><b>${p.source}</b><div style="color:var(--wf-text-secondary);font-size:0.85rem;">${p.description || ''}</div></div><div>${num(p.amount)} pts</div></div>`).join('')
+            : badgeEmpty('Sem movimentações de pontos até o momento.');
+    }
+
+    loadGamification().catch((err) => {
+        alert(err.message || 'Erro ao carregar gamificação. Faça login novamente.');
+        window.location.href = '/login';
+    });
+</script>
+{% endblock %}

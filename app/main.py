@@ -13,7 +13,7 @@ from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -250,10 +250,22 @@ async def admin_page(request: Request, current_user: User = Depends(get_current_
     return _render_template("admin.html", request, current_user=current_user)
 
 
-@app.get("/qa")
-async def qa_page(request: Request):
-    """Redireciona a antiga rota de QA para o fluxo oficial de criação de oferta."""
-    return RedirectResponse(url="/offers/new", status_code=302)
+@app.get("/gamification")
+async def gamification_page(request: Request, current_user: User = Depends(get_current_user_optional)):
+    """Página oficial de gamificação."""
+    return _render_template("gamification.html", request, current_user=current_user)
+
+
+@app.get("/reputation")
+async def reputation_page(request: Request, current_user: User = Depends(get_current_user_optional)):
+    """Página oficial de reputação e contestação."""
+    return _render_template("reputation.html", request, current_user=current_user)
+
+
+@app.get("/intermediation")
+async def intermediation_page(request: Request, current_user: User = Depends(get_current_user_optional)):
+    """Página oficial de mediação e contratos."""
+    return _render_template("intermediation.html", request, current_user=current_user)
 
 
 @app.get("/health")
