@@ -32,6 +32,7 @@ from app.routers import (
     dashboard_routes,
     favorite_routes,
     gamification_routes,
+    growth_routes,
     message_routes,
     negotiation_routes,
     notification_routes,
@@ -172,6 +173,7 @@ app.include_router(negotiation_routes.router, prefix=API_PREFIX)
 app.include_router(reputation_routes.router, prefix=API_PREFIX)
 app.include_router(report_routes.router, prefix=API_PREFIX)
 app.include_router(gamification_routes.router, prefix=API_PREFIX)
+app.include_router(growth_routes.router, prefix=API_PREFIX)
 app.include_router(payment_routes.router, prefix=API_PREFIX)
 app.include_router(social_routes.router, prefix=API_PREFIX)
 app.include_router(notification_routes.router, prefix=API_PREFIX)

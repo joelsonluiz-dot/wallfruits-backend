@@ -138,6 +138,17 @@
     </div>
 </div>
 
+<div class="strategy-columns">
+    <div class="wf-card">
+        <div class="card-header">Operação de Crescimento e Confiança</div>
+        <div class="card-body" id="growthOpsKpis"></div>
+    </div>
+    <div class="wf-card">
+        <div class="card-header">Plano de Ação Prioritário</div>
+        <div class="card-body" id="growthOpsActions"></div>
+    </div>
+</div>
+
 <script>
     function fmtNum(v) { return Number(v || 0).toLocaleString('pt-BR'); }
     function fmtMoney(v) { return `R$ ${Number(v || 0).toFixed(2)}`; }
@@ -166,9 +177,10 @@
             return;
         }
 
-        const [data, funnel] = await Promise.all([
+        const [data, funnel, growth] = await Promise.all([
             apiRequest('/dashboard/strategy'),
-            apiRequest('/dashboard/funnel?days=30')
+            apiRequest('/dashboard/funnel?days=30'),
+            apiRequest('/growth/ops?days=30')
         ]);
         const ns = data.north_star || {};
         const ra = data.recent_activity || {};
@@ -229,6 +241,23 @@
             (data.opportunities && data.opportunities.popular_products) || [],
             (item) => `<div class="strategy-list-item"><b>${item.product_name}</b><div style="color:var(--wf-text-secondary);">${fmtNum(item.total_views)} visualizações · Preço médio ${fmtMoney(item.avg_price)}</div></div>`,
             'Sem dados de produtos populares suficientes.'
+        );
+
+        const g = growth.kpis || {};
+        document.getElementById('growthOpsKpis').innerHTML = `
+            <div class="strategy-list-item"><b>Score de confiança</b><div style="color:var(--wf-text-secondary);">${fmtNum(g.confidence_score)} / 100</div></div>
+            <div class="strategy-list-item"><b>Conclusão transacional</b><div style="color:var(--wf-text-secondary);">${fmtNum(g.completed_rate)}%</div></div>
+            <div class="strategy-list-item"><b>Taxa de cancelamento</b><div style="color:var(--wf-text-secondary);">${fmtNum(g.cancel_rate)}%</div></div>
+            <div class="strategy-list-item"><b>Taxa de disputa</b><div style="color:var(--wf-text-secondary);">${fmtNum(g.dispute_rate)}%</div></div>
+            <div class="strategy-list-item"><b>Progressão mensagem→negociação</b><div style="color:var(--wf-text-secondary);">${fmtNum(g.negotiation_progress_rate)}%</div></div>
+        `;
+
+        const actions = [...(growth.alerts || []), ...(growth.actions || [])];
+        renderList(
+            'growthOpsActions',
+            actions,
+            (item, idx) => `<div class="strategy-list-item"><b>#${idx + 1}</b> ${item}</div>`,
+            'Sem ações pendentes no momento.'
         );
     }
 
