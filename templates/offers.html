@@ -33,6 +33,30 @@
         gap: 1rem;
     }
 
+    .offers-filters {
+        display: grid;
+        grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr auto;
+        gap: 0.55rem;
+        margin-bottom: 0.9rem;
+    }
+
+    .offers-search-wrap {
+        position: relative;
+    }
+
+    .offers-search-wrap .material-symbols-outlined {
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 18px;
+        color: var(--wf-text-secondary);
+    }
+
+    .offers-search-input {
+        padding-left: 2rem !important;
+    }
+
     .produto-card {
         display: flex;
         min-height: 220px;
@@ -341,6 +365,10 @@
             grid-template-columns: 1fr;
         }
 
+        .offers-filters {
+            grid-template-columns: 1fr 1fr;
+        }
+
         .card-side {
             flex-direction: row;
             justify-content: flex-start;
@@ -366,6 +394,10 @@
         .mini-meta-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
         }
+
+        .offers-filters {
+            grid-template-columns: 1fr;
+        }
     }
 </style>
 
@@ -380,6 +412,18 @@
         <div class="offers-count" id="offersCount"></div>
     </div>
     <a href="/offers/new" class="btn btn-wf-secondary">+ Criar oferta</a>
+</div>
+
+<div class="offers-filters">
+    <div class="offers-search-wrap">
+        <span class="material-symbols-outlined">search</span>
+        <input id="filterSearch" class="wf-input form-control offers-search-input" type="text" placeholder="Buscar ofertas, produtor ou localização">
+    </div>
+    <input id="filterCategory" class="wf-input form-control" type="text" placeholder="Categoria">
+    <input id="filterLocation" class="wf-input form-control" type="text" placeholder="Localização">
+    <input id="filterMinPrice" class="wf-input form-control" type="number" min="0" step="0.01" placeholder="Preço mín">
+    <input id="filterMaxPrice" class="wf-input form-control" type="number" min="0" step="0.01" placeholder="Preço máx">
+    <button class="btn btn-wf-secondary" type="button" onclick="applyFilters()">Filtrar</button>
 </div>
 
 <div class="offers-list wf-stagger" id="offersContainer">
@@ -699,10 +743,28 @@
         });
     }
 
+    function buildOffersQuery() {
+        const search = document.getElementById('filterSearch').value.trim();
+        const category = document.getElementById('filterCategory').value.trim();
+        const location = document.getElementById('filterLocation').value.trim();
+        const minPrice = document.getElementById('filterMinPrice').value;
+        const maxPrice = document.getElementById('filterMaxPrice').value;
+
+        const params = new URLSearchParams();
+        params.set('limit', '12');
+        if (search) params.set('search', search);
+        if (category) params.set('category', category);
+        if (location) params.set('location', location);
+        if (minPrice) params.set('min_price', minPrice);
+        if (maxPrice) params.set('max_price', maxPrice);
+
+        return `/offers?${params.toString()}`;
+    }
+
     async function loadOffers() {
         const container = document.getElementById('offersContainer');
         try {
-            const data = await apiRequest('/offers?limit=12');
+            const data = await apiRequest(buildOffersQuery());
             const offers = data.offers || [];
 
             document.getElementById('offersCount').textContent = `${offers.length} oferta${offers.length === 1 ? '' : 's'} encontrada${offers.length === 1 ? '' : 's'}`;
@@ -724,6 +786,20 @@
             container.innerHTML = `<div class="wf-alert wf-alert-error">${escapeHtml(error.message || 'Falha ao carregar ofertas')}</div>`;
         }
     }
+
+    function applyFilters() {
+        loadOffers();
+    }
+
+    ['filterSearch', 'filterCategory', 'filterLocation', 'filterMinPrice', 'filterMaxPrice'].forEach((id) => {
+        const el = document.getElementById(id);
+        el.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                loadOffers();
+            }
+        });
+    });
 
     loadOffers();
     loadMessagesBadge();

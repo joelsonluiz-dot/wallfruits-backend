@@ -673,6 +673,12 @@
             document.getElementById('navSidebarNewOffer').style.display = isLogged ? '' : 'none';
             document.getElementById('navTopMessages').style.display = isLogged ? '' : 'none';
             document.getElementById('navTopNewOffer').style.display = isLogged ? '' : 'none';
+
+            // Solicitação do usuário: após login, ocultar menu superior e usar navegação lateral.
+            const topbar = document.querySelector('.wf-topbar');
+            if (topbar) {
+                topbar.style.display = isLogged ? 'none' : 'flex';
+            }
         }
 
         async function refreshUnreadNotifications() {

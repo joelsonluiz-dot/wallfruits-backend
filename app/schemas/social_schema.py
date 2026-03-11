@@ -63,3 +63,12 @@ class NotificationResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class ActiveAccountItem(BaseModel):
+    id: int
+    name: str
+    username: str
+    role: str
+    location: Optional[str]
+    profile_image: Optional[str]

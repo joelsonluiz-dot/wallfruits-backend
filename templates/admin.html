@@ -28,6 +28,22 @@
     </div>
 </div>
 
+<div class="wf-card mt-3">
+    <div class="card-header">Limpeza de Dados</div>
+    <div class="card-body">
+        <p style="color:var(--wf-text-secondary); margin-bottom:0.8rem;">
+            Ação irreversível para apagar dados cadastrados. Use com extremo cuidado.
+        </p>
+        <div style="display:flex; gap:0.7rem; flex-wrap:wrap; align-items:center;">
+            <label style="display:flex; gap:0.45rem; align-items:center; color:var(--wf-text-secondary);">
+                <input type="checkbox" id="keepAdmins" checked>
+                Manter contas admin
+            </label>
+            <button id="purgeDataBtn" class="btn btn-wf-danger">Apagar dados cadastrados</button>
+        </div>
+    </div>
+</div>
+
 <script>
     function numberFmt(n) { return Number(n || 0).toLocaleString('pt-BR'); }
     function money(v) { return `R$ ${Number(v || 0).toFixed(2)}`; }
@@ -66,6 +82,23 @@
 
     loadAdmin().catch((err) => {
         alert(err.message || 'Erro ao carregar painel admin');
+    });
+
+    document.getElementById('purgeDataBtn').addEventListener('click', async () => {
+        const phrase = prompt('Digite exatamente APAGAR TUDO para confirmar a limpeza:');
+        if (!phrase) return;
+
+        const keepAdmins = document.getElementById('keepAdmins').checked;
+
+        try {
+            const result = await apiRequest(`/dashboard/admin/purge?confirmation=${encodeURIComponent(phrase)}&keep_admins=${keepAdmins}`, {
+                method: 'POST'
+            });
+            alert(result.message || 'Limpeza concluída.');
+            loadAdmin();
+        } catch (err) {
+            alert(err.message || 'Falha ao limpar dados.');
+        }
     });
 </script>
 {% endblock %}

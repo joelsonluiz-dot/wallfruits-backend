@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import func, desc, and_, or_
+from sqlalchemy import func, desc, and_, or_, text
 from typing import Dict, List
 from datetime import datetime, timedelta
 
 from app.database.connection import get_db
+from app.database.connection import Base
 from app.models import User, Offer, Transaction, Review, Favorite, Message
 from app.core.auth_middleware import get_current_user
 from app.services.profile_service import ProfileService
@@ -240,6 +241,41 @@ def get_admin_dashboard(
                 "total_revenue": float(revenue or 0)
             } for product, count, revenue in top_products
         ]
+    }
+
+
+@router.post("/admin/purge")
+def purge_platform_data(
+    confirmation: str = Query(..., description="Digite APAGAR TUDO para confirmar"),
+    keep_admins: bool = Query(True, description="Mantém contas admin ativas"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Apaga dados da plataforma de forma irreversível (somente admin)."""
+    if current_user.role != "admin":
+        raise HTTPException(403, "Acesso negado")
+
+    if confirmation.strip().upper() != "APAGAR TUDO":
+        raise HTTPException(400, "Confirmação inválida. Digite exatamente: APAGAR TUDO")
+
+    users_deleted = 0
+    with db.begin():
+        # Remove registros de todas as tabelas aplicando ordem reversa para respeitar FKs.
+        for table in reversed(Base.metadata.sorted_tables):
+            if table.name in {"alembic_version"}:
+                continue
+
+            if keep_admins and table.name == "users":
+                result = db.execute(text("DELETE FROM users WHERE role <> 'admin'"))
+                users_deleted = int(result.rowcount or 0)
+                continue
+
+            db.execute(table.delete())
+
+    return {
+        "message": "Limpeza concluída com sucesso.",
+        "keep_admins": keep_admins,
+        "users_deleted": users_deleted,
     }
 
 

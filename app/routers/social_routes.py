@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
 from app.core.auth_middleware import get_current_user, get_current_user_optional
 from app.database.connection import get_db
 from app.models import Follow, Offer, User
-from app.schemas.social_schema import FollowActionResponse, PublicUserProfileResponse
+from app.schemas.social_schema import ActiveAccountItem, FollowActionResponse, PublicUserProfileResponse
 from app.services.notification_service import create_notification
 
 router = APIRouter(prefix="/social", tags=["social"])
@@ -41,6 +41,40 @@ def get_public_user_profile(
         .limit(limit)
         .all()
     )
+
+
+@router.get("/users/search", response_model=list[ActiveAccountItem])
+def search_active_accounts(
+    q: str = Query("", min_length=0, max_length=80),
+    limit: int = Query(20, ge=1, le=100),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    query = db.query(User).filter(User.is_active.is_(True), User.id != current_user.id)
+
+    if q.strip():
+        term = f"%{q.strip()}%"
+        query = query.filter(
+            or_(
+                User.name.ilike(term),
+                User.email.ilike(term),
+                User.location.ilike(term),
+            )
+        )
+
+    rows = query.order_by(User.created_at.desc()).limit(limit).all()
+
+    return [
+        ActiveAccountItem(
+            id=user.id,
+            name=user.name,
+            username=_username_from_email(user.email, user.id),
+            role=user.role,
+            location=user.location,
+            profile_image=user.profile_image,
+        )
+        for user in rows
+    ]
 
     followers_count = db.query(func.count(Follow.id)).filter(Follow.followed_id == user.id).scalar() or 0
     following_count = db.query(func.count(Follow.id)).filter(Follow.follower_id == user.id).scalar() or 0
