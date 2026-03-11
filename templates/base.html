@@ -253,6 +253,196 @@
         }
 
         /* Cards */
+                /* Action Bar (Mobile) */
+                .wf-action-bar {
+                    display: none;
+                    position: fixed;
+                    bottom: 120px;
+                    left: 0;
+                    right: 0;
+                    z-index: 90;
+                    background: var(--wf-glass);
+                    backdrop-filter: blur(20px);
+                    border-top: 1px solid var(--wf-border);
+                    padding: 0.75rem 1rem;
+                    gap: 0.6rem;
+                    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.08);
+                }
+
+                .wf-action-bar.mobile-visible {
+                    display: flex;
+                    flex-direction: row;
+                    align-items: center;
+                    justify-content: space-between;
+                }
+
+                .wf-action-btn {
+                    background: rgba(94, 127, 44, 0.08);
+                    color: var(--wf-text) !important;
+                    border: 1px solid rgba(94, 127, 44, 0.12);
+                    padding: 0.6rem !important;
+                    min-width: 38px;
+                    height: 38px;
+                    border-radius: 12px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 1rem;
+                    font-weight: 600;
+                    transition: all 0.25s ease;
+                    position: relative;
+                    text-decoration: none;
+                }
+
+                .wf-action-btn:hover {
+                    background: rgba(94, 127, 44, 0.14);
+                    border-color: rgba(94, 127, 44, 0.24);
+                    transform: translateY(-1px);
+                }
+
+                .wf-action-btn:active {
+                    transform: translateY(0);
+                }
+
+                .wf-action-btn-primary {
+                    background: linear-gradient(135deg, var(--wf-accent), #6b8e33);
+                    color: #f8f4e8 !important;
+                    border: none;
+                    box-shadow: 0 4px 12px rgba(94, 127, 44, 0.24);
+                }
+
+                .wf-action-btn-primary:hover {
+                    background: linear-gradient(135deg, #6b8e33, var(--wf-accent));
+                    transform: translateY(-2px);
+                    box-shadow: 0 6px 20px rgba(94, 127, 44, 0.32);
+                }
+
+                /* Sidebar direita (ações secundárias) */
+                .wf-sidebar-right {
+                    display: none;
+                    position: fixed;
+                    right: 0;
+                    top: 0;
+                    bottom: 0;
+                    width: 280px;
+                    background: var(--wf-glass);
+                    backdrop-filter: blur(20px);
+                    border-left: 1px solid var(--wf-border);
+                    z-index: 120;
+                    overflow-y: auto;
+                    box-shadow: -8px 0 32px rgba(0, 0, 0, 0.12);
+                    animation: slideInRight 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+                }
+
+                .wf-sidebar-right.active {
+                    display: flex;
+                    flex-direction: column;
+                }
+
+                @keyframes slideInRight {
+                    from { transform: translateX(100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+
+                .wf-sidebar-right-header {
+                    padding: 1.5rem 1.25rem;
+                    border-bottom: 1px solid var(--wf-border);
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                }
+
+                .wf-sidebar-right-title {
+                    font-size: 0.95rem;
+                    font-weight: 700;
+                    color: var(--wf-text);
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                }
+
+                .wf-sidebar-right-close {
+                    background: none;
+                    border: none;
+                    font-size: 1.4rem;
+                    cursor: pointer;
+                    color: var(--wf-text-secondary);
+                    transition: all 0.2s ease;
+                    padding: 0;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 32px;
+                    height: 32px;
+                }
+
+                .wf-sidebar-right-close:hover {
+                    color: var(--wf-text);
+                    background: rgba(94, 127, 44, 0.08);
+                    border-radius: 8px;
+                }
+
+                .wf-sidebar-right-content {
+                    flex: 1;
+                    padding: 1rem;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 0.75rem;
+                }
+
+                .wf-sidebar-right-section {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 0.5rem;
+                }
+
+                .wf-sidebar-right-section-title {
+                    font-size: 0.75rem;
+                    text-transform: uppercase;
+                    letter-spacing: 0.12em;
+                    color: var(--wf-text-secondary);
+                    font-weight: 700;
+                    padding: 0.5rem 0.75rem 0.25rem;
+                }
+
+                .wf-sidebar-right-item {
+                    color: var(--wf-text-secondary) !important;
+                    font-weight: 500;
+                    font-size: 0.88rem;
+                    padding: 0.75rem 0.95rem !important;
+                    border-radius: 12px;
+                    transition: all 0.2s ease;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.75rem;
+                    background: transparent;
+                    border: none;
+                    text-decoration: none;
+                    cursor: pointer;
+                }
+
+                .wf-sidebar-right-item:hover {
+                    color: var(--wf-text) !important;
+                    background: rgba(94, 127, 44, 0.08);
+                }
+
+                .wf-sidebar-right-item:active {
+                    background: rgba(94, 127, 44, 0.12);
+                }
+
+                .wf-sidebar-right-overlay {
+                    display: none;
+                    position: fixed;
+                    inset: 0;
+                    background: rgba(0, 0, 0, 0.4);
+                    z-index: 115;
+                    backdrop-filter: blur(4px);
+                }
+
+                .wf-sidebar-right.active ~ .wf-sidebar-right-overlay {
+                    display: block;
+                    animation: fadeIn 0.25s ease;
+                }
+
         .wf-card {
             background: var(--wf-card);
             border: 1px solid var(--wf-border);
@@ -596,6 +786,15 @@
             }
             .wf-topbar { padding: 0.95rem 1rem; }
             .wf-container { padding: 1.25rem 1rem 1.8rem; }
+
+                    /* Action bar mobile */
+                    .wf-action-bar.mobile-visible {
+                        display: flex;
+                    }
+
+                    .wf-shell-main {
+                        padding-bottom: 180px;
+                    }
         }
 
         @media (max-width: 768px) {
@@ -628,6 +827,15 @@
             }
         }
 
+            .wf-shell-main {
+                padding-bottom: 160px;
+            }
+
+            .wf-action-bar.mobile-visible {
+                bottom: 100px;
+            }
+        }
+
         @media (max-width: 480px) {
             .wf-section-title { font-size: 1.2rem; }
             .wf-container { padding: 1rem 0.65rem; }
@@ -652,6 +860,23 @@
             .wf-sidebar-footer {
                 padding-left: 0.4rem;
                 gap: 0.3rem;
+
+                        .wf-shell-main {
+                            padding-bottom: 150px;
+                        }
+
+                        .wf-action-bar.mobile-visible {
+                            bottom: 90px;
+                            padding: 0.5rem 0.6rem;
+                        }
+
+                        .wf-action-btn {
+                            min-width: 36px;
+                            height: 36px;
+                            padding: 0.5rem !important;
+                            font-size: 0.9rem;
+                        }
+                    }
             }
         }
 
@@ -799,6 +1024,25 @@
             const topbar = document.querySelector('.wf-topbar');
             if (topbar) {
                 topbar.style.display = isLogged ? 'none' : 'flex';
+
+                        // Sincronizar estado com ação bar e menu lateral direito
+                        document.getElementById('actionNewOffer').style.display = isLogged ? '' : 'none';
+                        document.getElementById('actionMessages').style.display = isLogged ? '' : 'none';
+                        document.getElementById('actionNotifications').style.display = isLogged ? '' : 'none';
+                        document.getElementById('notificationsSection').style.display = isLogged ? '' : 'none';
+                        document.getElementById('rightNavProfile').style.display = isLogged ? '' : 'none';
+                        document.getElementById('rightNavLogout').style.display = isLogged ? '' : 'none';
+                        document.getElementById('rightNavLogin').style.display = isLogged ? 'none' : '';
+                        document.getElementById('rightNavRegister').style.display = isLogged ? 'none' : '';
+                        document.getElementById('adminSection').style.display = isLogged && user?.role === 'admin' ? '' : 'none';
+
+                        // Atualizar visibilidade da action bar
+                        const actionBar = document.getElementById('actionBar');
+                        if (actionBar && isLogged) {
+                            actionBar.classList.add('mobile-visible');
+                        } else if (actionBar) {
+                            actionBar.classList.remove('mobile-visible');
+                        }
             }
         }
 
@@ -821,6 +1065,42 @@
             clearSessionToken();
             window.location.href = '/login';
         });
+        // Gerenciar menu lateral direito
+        const sidebarRight = document.getElementById('sidebarRight');
+        const sidebarRightOverlay = document.getElementById('sidebarRightOverlay');
+        const btnToggleMenuRight = document.getElementById('btnToggleMenuRight');
+        const btnCloseSidebarRight = document.getElementById('btnCloseSidebarRight');
+
+        function closeSidebarRight() {
+            sidebarRight.classList.remove('active');
+        }
+
+        function openSidebarRight() {
+            sidebarRight.classList.add('active');
+        }
+
+        function toggleSidebarRight() {
+            sidebarRight.classList.toggle('active');
+        }
+
+        btnToggleMenuRight.addEventListener('click', toggleSidebarRight);
+        btnCloseSidebarRight.addEventListener('click', closeSidebarRight);
+        sidebarRightOverlay.addEventListener('click', closeSidebarRight);
+
+        // Fechar menu lateral ao clicar em um item
+        document.querySelectorAll('.wf-sidebar-right-item').forEach(item => {
+            if (item.getAttribute('href') && item.getAttribute('href') !== '#') {
+                item.addEventListener('click', closeSidebarRight);
+            }
+        });
+
+        // Código para sair do menu lateral
+        document.getElementById('rightNavLogout').addEventListener('click', (event) => {
+            event.preventDefault();
+            clearSessionToken();
+            window.location.href = '/login';
+        });
+
 
         setNavAuthState();
         refreshUnreadNotifications();
@@ -839,5 +1119,64 @@
     </div>
 </main>
 </div>
+
+            <!-- Bottom Action Bar (Mobile) -->
+            <div class="wf-action-bar" id="actionBar">
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <a href="/offers/new" class="wf-action-btn wf-action-btn-primary" id="actionNewOffer" style="display:none;" title="Nova oferta">➕</a>
+                    <a href="/messages" class="wf-action-btn" id="actionMessages" style="display:none;" title="Mensagens">💬</a>
+                    <a href="/notifications" class="wf-action-btn" id="actionNotifications" style="display:none;" title="Notificações">🔔</a>
+                </div>
+                <button class="wf-action-btn" id="btnToggleMenuRight" title="Menu de ações" style="margin-left: auto;">⋮</button>
+            </div>
+
+            <!-- Sidebar direita (ações secundárias) -->
+            <div class="wf-sidebar-right" id="sidebarRight">
+                <div class="wf-sidebar-right-header">
+                    <span class="wf-sidebar-right-title">Mais opções</span>
+                    <button class="wf-sidebar-right-close" id="btnCloseSidebarRight">×</button>
+                </div>
+                <div class="wf-sidebar-right-content">
+                    <!-- Notificações Section -->
+                    <div class="wf-sidebar-right-section" id="notificationsSection" style="display:none;">
+                        <div class="wf-sidebar-right-section-title">Notificações</div>
+                        <a href="/notifications" class="wf-sidebar-right-item" id="rightNavNotifications">
+                            <span>🔔</span>
+                            <span>Notificações</span>
+                        </a>
+                    </div>
+
+                    <!-- Conta Section -->
+                    <div class="wf-sidebar-right-section">
+                        <div class="wf-sidebar-right-section-title">Conta</div>
+                        <a href="/me/profile" class="wf-sidebar-right-item" id="rightNavProfile" style="display:none;">
+                            <span>👤</span>
+                            <span>Meu perfil</span>
+                        </a>
+                        <a href="#" class="wf-sidebar-right-item" id="rightNavLogout" style="display:none;">
+                            <span>🚪</span>
+                            <span>Sair</span>
+                        </a>
+                        <a href="/login" class="wf-sidebar-right-item" id="rightNavLogin">
+                            <span>🔐</span>
+                            <span>Entrar</span>
+                        </a>
+                        <a href="/register" class="wf-sidebar-right-item" id="rightNavRegister">
+                            <span>✍️</span>
+                            <span>Criar conta</span>
+                        </a>
+                    </div>
+
+                    <!-- Admin Section -->
+                    <div class="wf-sidebar-right-section" id="adminSection" style="display:none;">
+                        <div class="wf-sidebar-right-section-title">Administração</div>
+                        <a href="/admin" class="wf-sidebar-right-item" id="rightNavAdmin">
+                            <span>⚙️</span>
+                            <span>Painel admin</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="wf-sidebar-right-overlay" id="sidebarRightOverlay"></div>
 </body>
 </html>
