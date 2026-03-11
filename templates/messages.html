@@ -4,7 +4,7 @@
 
 {% block content %}
 <style>
-    .chat-layout { display: grid; grid-template-columns: 400px 1fr; gap: 1rem; min-height: 72vh; }
+    .chat-layout { display: grid; grid-template-columns: minmax(300px, 400px) 1fr; gap: 1rem; min-height: 72vh; }
     .chat-left { display: grid; gap: 1rem; align-content: start; }
     .chat-list { display: grid; gap: 0.5rem; max-height: 320px; overflow: auto; }
     .chat-item {
@@ -18,7 +18,7 @@
     .chat-item:hover { border-color: rgba(0,212,170,0.25); }
     .chat-item.active { border-color: rgba(0,212,170,0.4); background: rgba(0,212,170,0.08); }
     .chat-item-title { font-weight: 700; }
-    .chat-item-last { color: var(--wf-text-secondary); font-size: 0.84rem; margin-top: 0.15rem; }
+    .chat-item-last { color: var(--wf-text-secondary); font-size: 0.84rem; margin-top: 0.15rem; overflow-wrap: anywhere; }
 
     .offer-list, .accounts-list { display: grid; gap: 0.5rem; max-height: 240px; overflow: auto; }
     .offer-item {
@@ -93,6 +93,22 @@
         .chat-layout { grid-template-columns: 1fr; }
         .chat-main-card { min-height: 60vh; }
         .chat-messages { max-height: 46vh; }
+    }
+
+    @media (max-width: 480px) {
+        .accounts-search,
+        .chat-compose {
+            grid-template-columns: 1fr;
+        }
+
+        .accounts-search .btn,
+        .chat-compose .btn {
+            width: 100%;
+        }
+
+        .msg-bubble {
+            max-width: 92%;
+        }
     }
 </style>
 
