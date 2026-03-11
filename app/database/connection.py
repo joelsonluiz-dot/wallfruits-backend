@@ -181,6 +181,9 @@ def ensure_auth_schema_compatibility() -> None:
 def check_database_connection() -> tuple[bool, str]:
     """Executa ping no banco para uso em health check e startup."""
     timeout_seconds = max(settings.HEALTHCHECK_TIMEOUT_SECONDS, 0.1)
+    if IS_SUPABASE:
+        # Supabase pode ter latência maior no cold start; evita falso negativo no boot.
+        timeout_seconds = max(timeout_seconds, 8.0)
 
     def _ping_db() -> None:
         with engine.connect() as conn:
