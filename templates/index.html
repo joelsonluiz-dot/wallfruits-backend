@@ -379,7 +379,7 @@
             container.querySelectorAll('.home-offer-card').forEach((card) => {
                 card.addEventListener('click', () => {
                     const offerId = card.dataset.offerId;
-                    window.open(`/offers/${offerId}`, '_blank', 'noopener');
+                    window.location.href = `/offers/${offerId}`;
                 });
             });
         } catch (error) {

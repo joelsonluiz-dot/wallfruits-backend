@@ -13,7 +13,7 @@ from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -252,8 +252,8 @@ async def admin_page(request: Request, current_user: User = Depends(get_current_
 
 @app.get("/qa")
 async def qa_page(request: Request):
-    """Página para testes manuais via navegador."""
-    return _render_template("qa_tester.html", request)
+    """Redireciona a antiga rota de QA para o fluxo oficial de criação de oferta."""
+    return RedirectResponse(url="/offers/new", status_code=302)
 
 
 @app.get("/health")

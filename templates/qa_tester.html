@@ -549,7 +549,7 @@
         const createdOffer = await run('Criar oferta', () => apiRequest('/offers', 'POST', payload));
         if (createdOffer?.id) {
             document.getElementById('targetOfferId').value = createdOffer.id;
-            window.open(`/offers/${createdOffer.id}`, '_blank', 'noopener');
+            window.location.href = `/offers/${createdOffer.id}`;
         }
     });
 

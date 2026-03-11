@@ -379,7 +379,7 @@
         <h1>Ofertas <span class="wf-gradient-text">Disponíveis</span></h1>
         <div class="offers-count" id="offersCount"></div>
     </div>
-    <a href="/qa" class="btn btn-wf-secondary">+ Criar oferta</a>
+    <a href="/offers/new" class="btn btn-wf-secondary">+ Criar oferta</a>
 </div>
 
 <div class="offers-list wf-stagger" id="offersContainer">
@@ -694,7 +694,7 @@
                 const offerId = card.dataset.offerId;
                 if (!offerId) return;
 
-                window.open(`/offers/${offerId}`, '_blank', 'noopener');
+                window.location.href = `/offers/${offerId}`;
             });
         });
     }
@@ -711,7 +711,7 @@
                 container.innerHTML = `
                     <div class="empty-state">
                         <p>Nenhuma oferta cadastrada ainda.</p>
-                        <a href="/qa" class="btn btn-wf-primary">Criar primeira oferta</a>
+                        <a href="/offers/new" class="btn btn-wf-primary">Criar primeira oferta</a>
                     </div>
                 `;
                 return;
