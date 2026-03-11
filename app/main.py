@@ -268,6 +268,12 @@ async def intermediation_page(request: Request, current_user: User = Depends(get
     return _render_template("intermediation.html", request, current_user=current_user)
 
 
+@app.get("/strategy")
+async def strategy_page(request: Request, current_user: User = Depends(get_current_user_optional)):
+    """Página da central estratégica para gestão de crescimento."""
+    return _render_template("strategy.html", request, current_user=current_user)
+
+
 @app.get("/health")
 def health():
     """Health check profundo da aplicação."""

@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block title %}Central Estratégica - WallFruits{% endblock %}
+
+{% block content %}
+<style>
+    .strategy-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.9rem;
+    }
+    .strategy-kpi {
+        background: var(--wf-card);
+        border: 1px solid var(--wf-border);
+        border-radius: 14px;
+        padding: 1rem;
+    }
+    .strategy-kpi h4 {
+        margin: 0;
+        font-size: 0.78rem;
+        color: var(--wf-text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    .strategy-kpi .val {
+        margin-top: 0.45rem;
+        font-size: 1.35rem;
+        font-weight: 800;
+    }
+    .strategy-columns {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    .strategy-list-item {
+        padding: 0.6rem 0;
+        border-bottom: 1px solid var(--wf-border);
+    }
+    .score-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        border-radius: 999px;
+        padding: 0.35rem 0.75rem;
+        font-size: 0.8rem;
+        font-weight: 700;
+        background: rgba(94, 127, 44, 0.12);
+        color: var(--wf-accent);
+    }
+    @media (max-width: 980px) {
+        .strategy-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .strategy-columns { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 580px) {
+        .strategy-grid { grid-template-columns: 1fr; }
+    }
+</style>
+
+<div class="wf-card mb-3">
+    <div class="card-header">Central Estratégica</div>
+    <div class="card-body">
+        <p style="margin-bottom:0.7rem;color:var(--wf-text-secondary);">Painel de decisões para crescimento, conversão e eficiência operacional.</p>
+        <div id="healthScore"></div>
+    </div>
+</div>
+
+<div class="strategy-grid" id="northStar"></div>
+
+<div class="strategy-columns">
+    <div class="wf-card">
+        <div class="card-header">Recomendações de alto impacto</div>
+        <div class="card-body" id="recommendations"></div>
+    </div>
+    <div class="wf-card">
+        <div class="card-header">Atividade das últimas 24h</div>
+        <div class="card-body" id="recentActivity"></div>
+    </div>
+</div>
+
+<div class="strategy-columns">
+    <div class="wf-card">
+        <div class="card-header">Oportunidade por categoria</div>
+        <div class="card-body" id="categoriesOp"></div>
+    </div>
+    <div class="wf-card">
+        <div class="card-header">Produtos com maior interesse</div>
+        <div class="card-body" id="productsOp"></div>
+    </div>
+</div>
+
+<script>
+    function fmtNum(v) { return Number(v || 0).toLocaleString('pt-BR'); }
+    function fmtMoney(v) { return `R$ ${Number(v || 0).toFixed(2)}`; }
+
+    function healthLabel(score) {
+        if (score >= 80) return 'Excelente';
+        if (score >= 60) return 'Bom';
+        if (score >= 40) return 'Atenção';
+        return 'Crítico';
+    }
+
+    function renderList(containerId, items, mapper, emptyText) {
+        const el = document.getElementById(containerId);
+        if (!items || !items.length) {
+            el.innerHTML = `<div class="wf-alert wf-alert-info">${emptyText}</div>`;
+            return;
+        }
+        el.innerHTML = items.map(mapper).join('');
+    }
+
+    async function loadStrategy() {
+        const me = await apiRequest('/auth/me');
+        if (!me || me.role !== 'admin') {
+            alert('Acesso restrito ao administrador.');
+            window.location.href = '/';
+            return;
+        }
+
+        const data = await apiRequest('/dashboard/strategy');
+        const ns = data.north_star || {};
+        const ra = data.recent_activity || {};
+
+        document.getElementById('healthScore').innerHTML = `
+            <span class="score-badge">Score de Saúde: ${fmtNum(ns.health_score)} / 100 (${healthLabel(Number(ns.health_score || 0))})</span>
+        `;
+
+        document.getElementById('northStar').innerHTML = `
+            <div class="strategy-kpi"><h4>Usuários</h4><div class="val">${fmtNum(ns.total_users)}</div></div>
+            <div class="strategy-kpi"><h4>Ofertas ativas</h4><div class="val">${fmtNum(ns.active_offers)}</div></div>
+            <div class="strategy-kpi"><h4>Conversão</h4><div class="val">${fmtNum(ns.conversion_rate)}%</div></div>
+            <div class="strategy-kpi"><h4>Receita</h4><div class="val">${fmtMoney(ns.total_revenue)}</div></div>
+        `;
+
+        renderList(
+            'recommendations',
+            data.recommendations || [],
+            (item, idx) => `<div class="strategy-list-item"><b>#${idx + 1}</b> ${item}</div>`,
+            'Sem recomendações no momento.'
+        );
+
+        document.getElementById('recentActivity').innerHTML = `
+            <div class="strategy-list-item"><b>Novas ofertas</b><div style="color:var(--wf-text-secondary);">${fmtNum(ra.new_offers_24h)} nas últimas 24h</div></div>
+            <div class="strategy-list-item"><b>Novas transações</b><div style="color:var(--wf-text-secondary);">${fmtNum(ra.new_transactions_24h)} nas últimas 24h</div></div>
+            <div class="strategy-list-item"><b>Uso de oferta</b><div style="color:var(--wf-text-secondary);">${fmtNum(ns.offer_utilization)}%</div></div>
+        `;
+
+        renderList(
+            'categoriesOp',
+            (data.opportunities && data.opportunities.categories) || [],
+            (item) => `<div class="strategy-list-item"><b>${item.category}</b><div style="color:var(--wf-text-secondary);">Preço médio ${fmtMoney(item.avg_price)} · ${fmtNum(item.offer_count)} ofertas</div></div>`,
+            'Sem dados de categoria suficientes.'
+        );
+
+        renderList(
+            'productsOp',
+            (data.opportunities && data.opportunities.popular_products) || [],
+            (item) => `<div class="strategy-list-item"><b>${item.product_name}</b><div style="color:var(--wf-text-secondary);">${fmtNum(item.total_views)} visualizações · Preço médio ${fmtMoney(item.avg_price)}</div></div>`,
+            'Sem dados de produtos populares suficientes.'
+        );
+    }
+
+    loadStrategy().catch((err) => {
+        alert(err.message || 'Erro ao carregar central estratégica.');
+    });
+</script>
+{% endblock %}

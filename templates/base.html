@@ -592,6 +592,7 @@
                 <a class="wf-nav-link" href="/gamification" id="navGamification" style="display:none;">Gamificação</a>
                 <a class="wf-nav-link" href="/reputation" id="navReputation" style="display:none;">Reputação</a>
                 <a class="wf-nav-link" href="/intermediation" id="navIntermediation" style="display:none;">Mediação</a>
+                <a class="wf-nav-link" href="/strategy" id="navStrategy" style="display:none;">Central estratégica</a>
             </div>
 
             <div class="wf-nav-group">
@@ -683,6 +684,7 @@
             document.getElementById('navGamification').style.display = isLogged ? '' : 'none';
             document.getElementById('navReputation').style.display = isLogged ? '' : 'none';
             document.getElementById('navIntermediation').style.display = isLogged ? '' : 'none';
+            document.getElementById('navStrategy').style.display = isLogged && user?.role === 'admin' ? '' : 'none';
 
             // Solicitação do usuário: após login, ocultar menu superior e usar navegação lateral.
             const topbar = document.querySelector('.wf-topbar');

@@ -404,3 +404,103 @@ def get_market_insights(db: Session = Depends(get_db)):
             "new_transactions_24h": new_transactions_24h
         }
     }
+
+
+@router.get("/strategy")
+def get_strategy_center(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Resumo estratégico para tomada de decisão operacional e de crescimento."""
+    if current_user.role != "admin" and not current_user.is_superuser:
+        raise HTTPException(status_code=403, detail="Acesso restrito")
+
+    total_users = db.query(func.count(User.id)).scalar() or 0
+    total_offers = db.query(func.count(Offer.id)).scalar() or 0
+    active_offers = db.query(func.count(Offer.id)).filter(Offer.status == "active").scalar() or 0
+    total_transactions = db.query(func.count(Transaction.id)).scalar() or 0
+    completed_transactions = db.query(func.count(Transaction.id)).filter(Transaction.status == "completed").scalar() or 0
+    total_revenue = db.query(func.sum(Transaction.total_price)).filter(Transaction.status == "completed").scalar() or 0
+
+    yesterday = datetime.utcnow() - timedelta(days=1)
+    new_offers_24h = db.query(func.count(Offer.id)).filter(Offer.created_at >= yesterday).scalar() or 0
+    new_transactions_24h = db.query(func.count(Transaction.id)).filter(Transaction.created_at >= yesterday).scalar() or 0
+
+    avg_prices_by_category = db.query(
+        Offer.category,
+        func.avg(Offer.price).label("avg_price"),
+        func.count(Offer.id).label("offer_count"),
+    ).filter(
+        Offer.category.isnot(None),
+        Offer.status == "active",
+    ).group_by(Offer.category).order_by(desc("offer_count")).limit(8).all()
+
+    popular_products = db.query(
+        Offer.product_name,
+        func.sum(Offer.views).label("total_views"),
+        func.avg(Offer.price).label("avg_price"),
+    ).filter(
+        Offer.status == "active",
+    ).group_by(Offer.product_name).order_by(desc("total_views")).limit(8).all()
+
+    conversion_rate = (completed_transactions / total_transactions * 100) if total_transactions else 0.0
+    offer_utilization = (completed_transactions / active_offers * 100) if active_offers else 0.0
+
+    health_score = min(
+        100.0,
+        round(
+            min(active_offers * 2.5, 25)
+            + min(conversion_rate * 1.2, 35)
+            + min((new_transactions_24h * 4), 20)
+            + min((new_offers_24h * 2), 20),
+            2,
+        ),
+    )
+
+    recommendations = []
+    if active_offers < 10:
+        recommendations.append("Aumentar base ativa de ofertas para melhorar liquidez do marketplace.")
+    if conversion_rate < 30:
+        recommendations.append("Melhorar conversão com respostas mais rápidas em mensagens e negociação.")
+    if new_transactions_24h < 3:
+        recommendations.append("Executar campanha comercial diária para acelerar volume transacional.")
+    if total_users > 0 and (active_offers / max(total_users, 1)) < 0.35:
+        recommendations.append("Ativar produtores inativos com incentivo de publicação e destaque inicial.")
+    if not recommendations:
+        recommendations.append("Operação saudável. Priorize expansão regional e parcerias B2B para escala.")
+
+    return {
+        "north_star": {
+            "total_users": int(total_users),
+            "active_offers": int(active_offers),
+            "total_transactions": int(total_transactions),
+            "completed_transactions": int(completed_transactions),
+            "total_revenue": float(total_revenue),
+            "conversion_rate": round(conversion_rate, 2),
+            "offer_utilization": round(offer_utilization, 2),
+            "health_score": health_score,
+        },
+        "recent_activity": {
+            "new_offers_24h": int(new_offers_24h),
+            "new_transactions_24h": int(new_transactions_24h),
+        },
+        "opportunities": {
+            "categories": [
+                {
+                    "category": category or "Sem categoria",
+                    "avg_price": float(avg_price or 0),
+                    "offer_count": int(count or 0),
+                }
+                for category, avg_price, count in avg_prices_by_category
+            ],
+            "popular_products": [
+                {
+                    "product_name": product,
+                    "total_views": int(views or 0),
+                    "avg_price": float(avg_price or 0),
+                }
+                for product, views, avg_price in popular_products
+            ],
+        },
+        "recommendations": recommendations,
+    }
