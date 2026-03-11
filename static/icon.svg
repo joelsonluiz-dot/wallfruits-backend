@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="WallFruits">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#5e7f2c"/>
+      <stop offset="100%" stop-color="#b88333"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="120" fill="url(#bg)"/>
+  <circle cx="182" cy="198" r="72" fill="#fff3d4" opacity="0.95"/>
+  <circle cx="318" cy="312" r="86" fill="#fef8e6" opacity="0.95"/>
+  <path d="M168 126c22-20 52-31 84-29-14 26-36 44-65 53-7-8-13-16-19-24z" fill="#d9f2a2"/>
+  <text x="256" y="458" text-anchor="middle" font-family="Arial, sans-serif" font-weight="700" font-size="48" fill="#2d331f">WF</text>
+</svg>

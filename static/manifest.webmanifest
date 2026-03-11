@@ -1,0 +1,20 @@
+{
+  "name": "WallFruits",
+  "short_name": "WallFruits",
+  "description": "Marketplace agro com negociação, chat e gestão estratégica.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f4efdf",
+  "theme_color": "#5e7f2c",
+  "orientation": "portrait-primary",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "/static/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
