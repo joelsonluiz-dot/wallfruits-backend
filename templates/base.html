@@ -179,6 +179,15 @@
             border-color: rgba(94, 127, 44, 0.14);
         }
 
+        @media (max-width: 992px) {
+            .wf-nav-link:hover {
+                transform: translateY(-2px);
+            }
+            .wf-nav-link:active {
+                transform: translateY(0);
+            }
+        }
+
         .wf-nav-btn {
             background: var(--wf-accent) !important;
             color: #f8f4e8 !important;
@@ -465,6 +474,15 @@
             background: rgba(100, 93, 61, 0.3);
         }
 
+        @media (max-width: 992px) {
+            .wf-sidebar::-webkit-scrollbar {
+                height: 4px;
+            }
+            .wf-sidebar::-webkit-scrollbar-thumb {
+                background: rgba(100, 93, 61, 0.12);
+            }
+        }
+
         /* Animations */
         .wf-fade-in {
             animation: fadeIn 0.6s ease forwards;
@@ -519,12 +537,62 @@
         /* Responsive */
         @media (max-width: 992px) {
             .wf-section-title { font-size: 1.6rem; }
-            .wf-app-shell { grid-template-columns: 1fr; }
+            .wf-app-shell { 
+                grid-template-columns: 1fr;
+                grid-template-rows: 1fr auto;
+                min-height: 100vh;
+            }
             .wf-sidebar {
-                position: static;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                width: 100%;
                 height: auto;
+                z-index: 100;
                 border-right: none;
-                border-bottom: 1px solid var(--wf-border);
+                border-top: 1px solid var(--wf-border);
+                border-bottom: none;
+                padding: 0.75rem 1rem;
+                flex-direction: row;
+                overflow-x: auto;
+                overflow-y: hidden;
+                max-height: 120px;
+            }
+            .wf-shell-main {
+                padding-bottom: 120px;
+            }
+            .wf-sidebar-header {
+                display: none;
+            }
+            .wf-nav-group {
+                display: flex;
+                flex-direction: row;
+                gap: 0;
+                flex-shrink: 0;
+            }
+            .wf-group-title {
+                display: none;
+            }
+            .wf-nav-link {
+                padding: 0.7rem 0.75rem !important;
+                font-size: 0.8rem !important;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+                white-space: nowrap;
+            }
+            .wf-sidebar-footer {
+                display: flex;
+                flex-direction: row;
+                gap: 0.4rem;
+                border-top: none;
+                border-left: 1px solid var(--wf-border);
+                padding-left: 0.6rem;
+            }
+            .wf-nav-btn {
+                display: none;
             }
             .wf-topbar { padding: 0.95rem 1rem; }
             .wf-container { padding: 1.25rem 1rem 1.8rem; }
@@ -546,6 +614,18 @@
             .wf-label { font-size: 0.75rem; }
             .wf-topbar { flex-direction: column; align-items: flex-start; }
             .wf-topbar-actions { width: 100%; }
+            .wf-sidebar {
+                max-height: none;
+                height: auto;
+                padding: 0.5rem 0.6rem;
+            }
+            .wf-shell-main {
+                padding-bottom: 100px;
+            }
+            .wf-nav-link {
+                padding: 0.6rem 0.6rem !important;
+                font-size: 0.75rem !important;
+            }
         }
 
         @media (max-width: 480px) {
@@ -557,6 +637,21 @@
                 font-size: 0.72rem;
                 flex-wrap: wrap;
                 gap: 0.4rem;
+            }
+            .wf-sidebar {
+                padding: 0.4rem 0.5rem;
+                max-height: 90px;
+            }
+            .wf-shell-main {
+                padding-bottom: 90px;
+            }
+            .wf-nav-link {
+                padding: 0.5rem 0.5rem !important;
+                font-size: 0.7rem !important;
+            }
+            .wf-sidebar-footer {
+                padding-left: 0.4rem;
+                gap: 0.3rem;
             }
         }
 
@@ -570,6 +665,12 @@
                 gap: 0.5rem;
                 width: 100%;
                 flex-wrap: wrap;
+            }
+            #navNotifBadge {
+                position: absolute;
+                top: 0;
+                right: 0;
+                transform: translate(30%, -30%);
             }
         }
     </style>
