@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WallFruits - Simulador Mobile</title>
+    <style>
+        :root {
+            --bg: #f4efdf;
+            --surface: #fff9ef;
+            --card: #fffdf7;
+            --text: #2d331f;
+            --text-soft: #6e725b;
+            --accent: #5e7f2c;
+            --accent-soft: rgba(94, 127, 44, 0.12);
+            --border: rgba(92, 76, 45, 0.18);
+            --shadow: 0 14px 32px rgba(78, 66, 40, 0.14);
+            --device-width: 390px;
+            --device-height: 844px;
+            --device-scale: 1;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Manrope, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background:
+                radial-gradient(circle at 15% 20%, rgba(94, 127, 44, 0.16), transparent 38%),
+                radial-gradient(circle at 85% 15%, rgba(184, 131, 51, 0.14), transparent 35%),
+                var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 1.1rem;
+        }
+
+        .preview-shell {
+            max-width: 1300px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: minmax(320px, 440px) minmax(0, 1fr);
+            gap: 1.1rem;
+            align-items: start;
+        }
+
+        .panel,
+        .stage {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            box-shadow: var(--shadow);
+        }
+
+        .panel {
+            padding: 1rem;
+            position: sticky;
+            top: 1rem;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.25rem;
+            letter-spacing: -0.03em;
+        }
+
+        .subtitle {
+            margin: 0.4rem 0 1rem;
+            color: var(--text-soft);
+            font-size: 0.88rem;
+            line-height: 1.45;
+        }
+
+        .label {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-soft);
+            font-weight: 700;
+            margin: 0.9rem 0 0.35rem;
+            display: block;
+        }
+
+        .url-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 0.55rem;
+        }
+
+        .toolbar {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.55rem;
+        }
+
+        .toolbar-full {
+            grid-column: 1 / -1;
+        }
+
+        input,
+        select,
+        button {
+            width: 100%;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: #fff;
+            color: var(--text);
+            font-size: 0.9rem;
+            padding: 0.7rem 0.8rem;
+            min-height: 42px;
+        }
+
+        input:focus,
+        select:focus,
+        button:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-soft);
+        }
+
+        button {
+            cursor: pointer;
+            font-weight: 700;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent), #739b36);
+            color: #f5f8ea;
+            border: none;
+        }
+
+        .btn-secondary {
+            background: #f6f2e6;
+        }
+
+        .hint {
+            margin-top: 0.85rem;
+            font-size: 0.8rem;
+            color: var(--text-soft);
+            line-height: 1.45;
+        }
+
+        .external-link {
+            margin-top: 0.5rem;
+            display: inline-flex;
+            text-decoration: none;
+            color: var(--accent);
+            font-weight: 700;
+            font-size: 0.86rem;
+        }
+
+        .scale-wrap {
+            display: flex;
+            gap: 0.55rem;
+            align-items: center;
+        }
+
+        .scale-wrap input[type="range"] {
+            min-height: 38px;
+            padding: 0;
+        }
+
+        .scale-value {
+            min-width: 52px;
+            text-align: right;
+            font-size: 0.84rem;
+            color: var(--text-soft);
+            font-weight: 700;
+        }
+
+        .stage {
+            padding: 1rem;
+            min-height: calc(100vh - 2.2rem);
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .stage-head {
+            font-size: 0.88rem;
+            color: var(--text-soft);
+            font-weight: 700;
+            letter-spacing: 0.02em;
+        }
+
+        .device-zone {
+            flex: 1;
+            border: 1px dashed rgba(92, 76, 45, 0.25);
+            border-radius: 14px;
+            background: rgba(252, 247, 236, 0.78);
+            display: grid;
+            place-items: center;
+            overflow: auto;
+            padding: 1rem;
+        }
+
+        .device {
+            width: var(--device-width);
+            height: var(--device-height);
+            border-radius: 28px;
+            border: 8px solid #1f1f1f;
+            background: #111;
+            box-shadow: 0 20px 44px rgba(20, 20, 20, 0.34);
+            overflow: hidden;
+            transform: scale(var(--device-scale));
+            transform-origin: top center;
+            position: relative;
+        }
+
+        .device::before {
+            content: "";
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 115px;
+            height: 18px;
+            border-radius: 999px;
+            background: #0b0b0b;
+            z-index: 3;
+        }
+
+        .device iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: #fff;
+        }
+
+        @media (max-width: 1024px) {
+            .preview-shell {
+                grid-template-columns: 1fr;
+            }
+
+            .panel {
+                position: static;
+            }
+
+            .stage {
+                min-height: auto;
+            }
+
+            body {
+                padding: 0.8rem;
+            }
+        }
+
+        @media (max-width: 620px) {
+            .toolbar {
+                grid-template-columns: 1fr;
+            }
+
+            .url-row {
+                grid-template-columns: 1fr;
+            }
+
+            .device {
+                border-radius: 22px;
+                border-width: 6px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="preview-shell">
+        <aside class="panel">
+            <h1>Simulador Mobile</h1>
+            <p class="subtitle">Cole uma URL e visualize no formato de celular ou tablet sem sair do VS Code.</p>
+
+            <label class="label" for="urlInput">URL do site</label>
+            <div class="url-row">
+                <input id="urlInput" type="url" placeholder="https://exemplo.com" value="{{ preview_url|e }}">
+                <button id="openBtn" class="btn-primary">Abrir</button>
+            </div>
+
+            <div class="toolbar" style="margin-top: 0.7rem;">
+                <div>
+                    <label class="label" for="deviceSelect">Dispositivo</label>
+                    <select id="deviceSelect">
+                        <option value="iphone14">iPhone 14 (390x844)</option>
+                        <option value="pixel8">Pixel 8 (412x915)</option>
+                        <option value="galaxyS20">Galaxy S20 (360x800)</option>
+                        <option value="ipad">iPad (820x1180)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="label" for="orientationSelect">Orientacao</label>
+                    <select id="orientationSelect">
+                        <option value="portrait">Retrato</option>
+                        <option value="landscape">Paisagem</option>
+                    </select>
+                </div>
+                <div class="toolbar-full">
+                    <label class="label" for="scaleRange">Escala</label>
+                    <div class="scale-wrap">
+                        <input id="scaleRange" type="range" min="55" max="100" step="5" value="100">
+                        <span id="scaleValue" class="scale-value">100%</span>
+                    </div>
+                </div>
+            </div>
+
+            <p class="hint">Se a URL bloquear iframe por seguranca, use o link abaixo para abrir em nova aba.</p>
+            <a id="externalLink" class="external-link" href="#" target="_blank" rel="noopener">Abrir URL em nova aba</a>
+        </aside>
+
+        <section class="stage">
+            <div id="stageHead" class="stage-head">iPhone 14 - Retrato</div>
+            <div class="device-zone">
+                <div id="deviceFrame" class="device">
+                    <iframe id="previewFrame" title="Preview mobile" loading="eager"></iframe>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        const presets = {
+            iphone14: { name: 'iPhone 14', width: 390, height: 844 },
+            pixel8: { name: 'Pixel 8', width: 412, height: 915 },
+            galaxyS20: { name: 'Galaxy S20', width: 360, height: 800 },
+            ipad: { name: 'iPad', width: 820, height: 1180 }
+        };
+
+        const urlInput = document.getElementById('urlInput');
+        const openBtn = document.getElementById('openBtn');
+        const previewFrame = document.getElementById('previewFrame');
+        const deviceSelect = document.getElementById('deviceSelect');
+        const orientationSelect = document.getElementById('orientationSelect');
+        const scaleRange = document.getElementById('scaleRange');
+        const scaleValue = document.getElementById('scaleValue');
+        const stageHead = document.getElementById('stageHead');
+        const externalLink = document.getElementById('externalLink');
+
+        function normalizeUrl(rawUrl) {
+            const value = (rawUrl || '').trim();
+            if (!value) return '';
+            if (/^https?:\/\//i.test(value)) return value;
+            return `https://${value}`;
+        }
+
+        function updateDevice() {
+            const selected = presets[deviceSelect.value] || presets.iphone14;
+            const orientation = orientationSelect.value;
+            const width = orientation === 'portrait' ? selected.width : selected.height;
+            const height = orientation === 'portrait' ? selected.height : selected.width;
+            const scale = Number(scaleRange.value) / 100;
+
+            document.documentElement.style.setProperty('--device-width', `${width}px`);
+            document.documentElement.style.setProperty('--device-height', `${height}px`);
+            document.documentElement.style.setProperty('--device-scale', String(scale));
+            scaleValue.textContent = `${scaleRange.value}%`;
+            stageHead.textContent = `${selected.name} - ${orientation === 'portrait' ? 'Retrato' : 'Paisagem'}`;
+        }
+
+        function openPreview() {
+            const normalized = normalizeUrl(urlInput.value);
+            if (!normalized) return;
+
+            urlInput.value = normalized;
+            previewFrame.src = normalized;
+            externalLink.href = normalized;
+
+            const nextUrl = `/mobile-preview?url=${encodeURIComponent(normalized)}`;
+            window.history.replaceState({}, '', nextUrl);
+        }
+
+        openBtn.addEventListener('click', openPreview);
+        urlInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                openPreview();
+            }
+        });
+
+        deviceSelect.addEventListener('change', updateDevice);
+        orientationSelect.addEventListener('change', updateDevice);
+        scaleRange.addEventListener('input', updateDevice);
+
+        updateDevice();
+        openPreview();
+    </script>
+</body>
+</html>

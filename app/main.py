@@ -276,6 +276,13 @@ async def strategy_page(request: Request, current_user: User = Depends(get_curre
     return _render_template("strategy.html", request, current_user=current_user)
 
 
+@app.get("/mobile-preview")
+async def mobile_preview_page(request: Request, url: str | None = None):
+    """Simulador visual de dispositivos móveis para validar responsividade por URL."""
+    preview_url = (url or "https://wallfruits-backend.onrender.com/").strip()
+    return _render_template("mobile_preview.html", request, preview_url=preview_url)
+
+
 @app.get("/health")
 def health():
     """Health check profundo da aplicação."""
