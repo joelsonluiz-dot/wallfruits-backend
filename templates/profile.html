@@ -4,103 +4,572 @@
 
 {% block content %}
 <style>
-    .profile-wrap { display: grid; gap: 1rem; }
-    .profile-header { display: grid; grid-template-columns: 120px 1fr auto; gap: 1rem; align-items: center; }
-    .profile-avatar {
-        width: 110px; height: 110px; border-radius: 50%; object-fit: cover;
-        border: 2px solid var(--wf-border); background: rgba(255,255,255,0.06);
+    :root {
+        --pf-primary: #f3a550;
+        --pf-secondary: #1fb88f;
+        --pf-accent: #f9d28c;
+        --pf-text: #f5f8ff;
+        --pf-muted: rgba(236, 244, 255, 0.75);
+        --pf-card: rgba(8, 22, 31, 0.56);
+        --pf-border: rgba(255, 255, 255, 0.18);
+        --pf-shadow: 0 18px 45px rgba(0, 0, 0, 0.3);
+        --pf-bg: linear-gradient(140deg, #123242 0%, #1d4450 42%, #2f5b43 100%);
+        --pf-bg-night: linear-gradient(140deg, #1e2438 0%, #23324a 50%, #122f31 100%);
     }
-    .profile-avatar-fallback {
-        width: 110px; height: 110px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-        font-size: 2rem; font-weight: 800; background: var(--wf-accent-glow); color: var(--wf-accent);
-        border: 2px solid rgba(0,212,170,0.25);
+
+    .profile-page {
+        position: relative;
+        min-height: 82vh;
+        border-radius: 24px;
+        overflow: hidden;
+        padding: 1.2rem;
+        background: var(--pf-bg);
+        transition: background 0.35s ease;
     }
-    .profile-name { font-size: 1.5rem; font-weight: 800; margin: 0; }
-    .profile-username { color: var(--wf-text-secondary); margin-top: 0.15rem; }
-    .profile-meta { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.5rem; color: var(--wf-text-secondary); }
-    .profile-stats { display: flex; gap: 1rem; flex-wrap: wrap; }
-    .profile-stat { background: rgba(255,255,255,0.04); border: 1px solid var(--wf-border); border-radius: 12px; padding: 0.5rem 0.8rem; }
-    .profile-stat b { color: var(--wf-text); }
-    .offers-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
-    .offer-mini { cursor: pointer; }
-    .offer-mini img { width: 100%; height: 180px; object-fit: cover; border-radius: 10px; }
-    .offer-mini .mini-body { padding-top: 0.55rem; }
-    .settings-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
-    @media (max-width: 860px) {
-        .profile-header { grid-template-columns: 1fr; }
-        .offers-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-        .settings-grid { grid-template-columns: 1fr; }
+
+    .profile-page.night-mode {
+        background: var(--pf-bg-night);
     }
-    @media (max-width: 520px) {
-        .offers-grid { grid-template-columns: 1fr; }
+
+    .profile-page::before,
+    .profile-page::after {
+        content: '';
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(1px);
+        pointer-events: none;
+    }
+
+    .profile-page::before {
+        width: 320px;
+        height: 320px;
+        background: radial-gradient(circle, rgba(255, 204, 130, 0.25) 0%, rgba(255, 204, 130, 0) 72%);
+        top: -90px;
+        right: -70px;
+        animation: floatBall 8s ease-in-out infinite;
+    }
+
+    .profile-page::after {
+        width: 360px;
+        height: 360px;
+        background: radial-gradient(circle, rgba(84, 255, 197, 0.18) 0%, rgba(84, 255, 197, 0) 74%);
+        left: -130px;
+        bottom: -140px;
+        animation: floatBall 9.5s ease-in-out infinite reverse;
+    }
+
+    @keyframes floatBall {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-18px); }
+    }
+
+    .glassmorphic-container {
+        position: relative;
+        z-index: 1;
+        max-width: 1060px;
+        margin: 0 auto;
+    }
+
+    .profile-card {
+        border-radius: 24px;
+        border: 1px solid var(--pf-border);
+        background: var(--pf-card);
+        backdrop-filter: blur(14px);
+        box-shadow: var(--pf-shadow);
+        overflow: hidden;
+        color: var(--pf-text);
+    }
+
+    .profile-top {
+        padding: 1.2rem 1.2rem 0.8rem;
+        border-bottom: 1px solid rgba(255,255,255,0.15);
+    }
+
+    .profile-header {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .profile-picture-container {
+        width: 110px;
+        height: 110px;
+        border-radius: 999px;
+        border: 3px solid rgba(255,255,255,0.35);
+        overflow: hidden;
+        box-shadow: 0 10px 24px rgba(0,0,0,0.28);
+        background: rgba(255,255,255,0.16);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        color: var(--pf-text);
+    }
+
+    .profile-picture {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .profile-picture-fallback {
+        font-size: 2rem;
+        font-weight: 800;
+        color: #102126;
+        background: linear-gradient(135deg, var(--pf-primary), var(--pf-accent));
+        width: 100%;
+        height: 100%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .profile-status {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: #36d08d;
+        border: 2px solid rgba(0,0,0,0.32);
+        position: absolute;
+        right: 8px;
+        bottom: 8px;
+    }
+
+    .profile-picture-wrap {
+        position: relative;
+        width: 110px;
+        height: 110px;
+    }
+
+    .profile-info .username {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 800;
+        line-height: 1.1;
+    }
+
+    .profile-info .user-bio {
+        margin: 0.35rem 0 0;
+        color: var(--pf-muted);
+        font-size: 0.9rem;
+        line-height: 1.4;
+    }
+
+    .profile-meta {
+        display: flex;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+        margin-top: 0.55rem;
+    }
+
+    .meta-pill {
+        border-radius: 999px;
+        border: 1px solid rgba(255,255,255,0.2);
+        padding: 0.22rem 0.6rem;
+        font-size: 0.74rem;
+        color: var(--pf-muted);
+        background: rgba(0,0,0,0.2);
+    }
+
+    .profile-quick-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .btn-profile {
+        border: 1px solid rgba(255,255,255,0.24);
+        color: var(--pf-text);
+        background: rgba(255,255,255,0.07);
+        border-radius: 999px;
+        padding: 0.46rem 0.9rem;
+        font-size: 0.78rem;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-profile:hover {
+        transform: translateY(-1px);
+        border-color: rgba(255,255,255,0.45);
+    }
+
+    .btn-profile.primary {
+        background: linear-gradient(135deg, var(--pf-primary), #f6be73);
+        color: #1c2731;
+        border-color: transparent;
+        font-weight: 700;
+    }
+
+    .btn-profile.secondary {
+        background: linear-gradient(135deg, rgba(31,184,143,0.3), rgba(31,184,143,0.18));
+        border-color: rgba(94, 255, 214, 0.35);
+    }
+
+    .stats {
+        margin-top: 0.9rem;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.55rem;
+    }
+
+    .stat {
+        border-radius: 14px;
+        padding: 0.62rem;
+        background: rgba(0,0,0,0.2);
+        border: 1px solid rgba(255,255,255,0.15);
+        text-align: center;
+    }
+
+    .stat-value {
+        font-size: 1.2rem;
+        font-weight: 800;
+        color: var(--pf-accent);
+        line-height: 1.1;
+    }
+
+    .stat-label {
+        margin-top: 0.15rem;
+        font-size: 0.72rem;
+        color: var(--pf-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .profile-body {
+        padding: 0.95rem 1.2rem 1.2rem;
+    }
+
+    .nav-links {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.5rem;
+    }
+
+    .nav-link {
+        border-radius: 12px;
+        border: 1px solid rgba(255,255,255,0.15);
+        text-decoration: none;
+        color: var(--pf-muted);
+        padding: 0.6rem 0.75rem;
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 0.82rem;
+        font-weight: 700;
+        background: rgba(0,0,0,0.2);
+        transition: all 0.22s ease;
+    }
+
+    .nav-link.active,
+    .nav-link:hover {
+        background: rgba(255,255,255,0.15);
+        border-color: rgba(255,255,255,0.4);
+        color: #fff;
+    }
+
+    .content-sections {
+        margin-top: 0.8rem;
+    }
+
+    .content-section {
+        display: none;
+        border-radius: 14px;
+        border: 1px solid rgba(255,255,255,0.16);
+        background: rgba(0,0,0,0.2);
+        padding: 0.9rem;
+    }
+
+    .content-section.active {
+        display: block;
+        animation: fadeInUp 0.26s ease;
+    }
+
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(6px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .section-title {
+        margin: 0 0 0.65rem;
+        font-size: 1rem;
+        font-weight: 800;
+    }
+
+    .offer-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.7rem;
+    }
+
+    .offer-card {
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid rgba(255,255,255,0.15);
+        background: rgba(0,0,0,0.25);
+        cursor: pointer;
+        transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .offer-card:hover {
+        transform: translateY(-2px);
+        border-color: rgba(255,255,255,0.4);
+    }
+
+    .offer-image {
+        width: 100%;
+        height: 130px;
+        object-fit: cover;
+        display: block;
+    }
+
+    .offer-body {
+        padding: 0.55rem 0.62rem 0.66rem;
+    }
+
+    .offer-title {
+        margin: 0;
+        font-size: 0.88rem;
+        font-weight: 700;
+    }
+
+    .offer-meta {
+        margin-top: 0.18rem;
+        font-size: 0.77rem;
+        color: var(--pf-muted);
+    }
+
+    .profile-details {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.55rem;
+    }
+
+    .detail-item {
+        border-radius: 10px;
+        border: 1px solid rgba(255,255,255,0.12);
+        padding: 0.56rem 0.62rem;
+        background: rgba(255,255,255,0.04);
+    }
+
+    .detail-label {
+        font-size: 0.72rem;
+        color: var(--pf-muted);
+        margin-bottom: 0.14rem;
+    }
+
+    .detail-value {
+        font-size: 0.86rem;
+        color: #fff;
+        overflow-wrap: anywhere;
+    }
+
+    .settings-form {
+        display: grid;
+        gap: 0.8rem;
+    }
+
+    .settings-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.6rem;
+    }
+
+    .wf-label {
+        color: var(--pf-muted);
+    }
+
+    .wf-input {
+        border-color: rgba(255,255,255,0.2);
+        background: rgba(255,255,255,0.06);
+        color: #fff;
+    }
+
+    .settings-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .logout-box {
+        display: grid;
+        gap: 0.6rem;
+        text-align: center;
+    }
+
+    .helper-text {
+        color: var(--pf-muted);
+        font-size: 0.78rem;
+    }
+
+    .hidden {
+        display: none !important;
+    }
+
+    @media (max-width: 980px) {
+        .profile-header {
+            grid-template-columns: 1fr;
+            text-align: center;
+        }
+
+        .profile-picture-wrap,
+        .profile-picture-container {
+            margin: 0 auto;
+        }
+
+        .profile-quick-actions {
+            justify-content: center;
+        }
+
+        .stats {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .nav-links {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .offer-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 600px) {
+        .profile-page {
+            padding: 0.65rem;
+            border-radius: 16px;
+        }
+
+        .profile-top,
+        .profile-body {
+            padding-left: 0.72rem;
+            padding-right: 0.72rem;
+        }
+
+        .offer-grid,
+        .profile-details,
+        .settings-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .stats {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .settings-actions {
+            flex-direction: column;
+        }
     }
 </style>
 
-<div class="profile-wrap" id="profilePageRoot" data-viewed-user-id="{{ viewed_user_id if viewed_user_id is not none else '' }}">
-    <div class="wf-card">
-        <div class="card-body">
-            <div class="profile-header">
-                <div id="profileAvatar"></div>
+<div id="profilePage" class="profile-page" data-viewed-user-id="{{ viewed_user_id if viewed_user_id is not none else '' }}">
+    <div class="glassmorphic-container">
+        <div class="profile-card">
+            <div class="profile-top">
+                <div class="profile-header">
+                    <div class="profile-picture-wrap">
+                        <a href="#" class="profile-picture-container" id="profileAvatarLink">
+                            <div id="profileAvatarNode" class="profile-picture-fallback">U</div>
+                        </a>
+                        <div class="profile-status"></div>
+                    </div>
 
-                <div>
-                    <h1 class="profile-name" id="profileName">Perfil</h1>
-                    <div class="profile-username" id="profileUsername"></div>
-                    <div class="profile-meta" id="profileMeta"></div>
-                    <p id="profileBio" style="margin-top:0.6rem; margin-bottom:0;"></p>
+                    <div class="profile-info">
+                        <h2 class="username" id="profileName">Perfil</h2>
+                        <p class="user-bio" id="profileBio">Carregando dados do perfil...</p>
+                        <div class="profile-meta" id="profileMeta"></div>
+                    </div>
+
+                    <div class="profile-quick-actions" id="profileQuickActions">
+                        <button class="btn-profile" type="button" id="modeSwitchBtn">Modo Noturno</button>
+                    </div>
                 </div>
 
-                <div class="d-flex flex-column gap-2" id="profileActions"></div>
+                <div class="stats" id="profileStats"></div>
             </div>
 
-            <div class="profile-stats mt-3" id="profileStats"></div>
-        </div>
-    </div>
+            <div class="profile-body">
+                <ul class="nav-links">
+                    <li><a href="#" class="nav-link active" data-section="home">Home</a></li>
+                    <li><a href="#" class="nav-link" data-section="profile">Perfil</a></li>
+                    <li><a href="#" class="nav-link" data-section="settings" id="settingsTab">Configurações</a></li>
+                    <li><a href="#" class="nav-link" data-section="logout" id="logoutTab">Sair</a></li>
+                </ul>
 
-    <div class="wf-card" id="mySettingsCard" style="display:none;">
-        <div class="card-header">Configurações do Meu Perfil</div>
-        <div class="card-body">
-            <form id="profileSettingsForm" class="d-grid gap-3">
-                <div class="settings-grid">
-                    <div>
-                        <label class="wf-label">Nome</label>
-                        <input id="editName" class="wf-input form-control" type="text" minlength="2" maxlength="150">
-                    </div>
-                    <div>
-                        <label class="wf-label">Localização</label>
-                        <input id="editLocation" class="wf-input form-control" type="text" maxlength="150">
-                    </div>
-                    <div style="grid-column: 1 / -1;">
-                        <label class="wf-label">Bio</label>
-                        <textarea id="editBio" class="wf-input form-control" maxlength="500" rows="3"></textarea>
-                    </div>
+                <div class="content-sections">
+                    <section class="content-section active" id="home-section">
+                        <h3 class="section-title">Ofertas publicadas</h3>
+                        <div class="offer-grid" id="offersGrid"></div>
+                        <div id="emptyOffers" class="helper-text" style="margin-top:0.5rem;display:none;">Nenhuma oferta publicada ainda.</div>
+                    </section>
+
+                    <section class="content-section" id="profile-section">
+                        <h3 class="section-title">Detalhes do perfil</h3>
+                        <div class="profile-details" id="profileDetails"></div>
+                    </section>
+
+                    <section class="content-section" id="settings-section">
+                        <h3 class="section-title">Configurações</h3>
+                        <div id="settingsLocked" class="helper-text hidden">Somente o dono deste perfil pode editar as configurações.</div>
+
+                        <form id="profileSettingsForm" class="settings-form hidden">
+                            <div class="settings-grid">
+                                <div>
+                                    <label class="wf-label" for="editName">Nome</label>
+                                    <input id="editName" class="wf-input form-control" type="text" minlength="2" maxlength="150">
+                                </div>
+                                <div>
+                                    <label class="wf-label" for="editLocation">Localização</label>
+                                    <input id="editLocation" class="wf-input form-control" type="text" maxlength="150">
+                                </div>
+                                <div style="grid-column: 1 / -1;">
+                                    <label class="wf-label" for="editBio">Bio</label>
+                                    <textarea id="editBio" class="wf-input form-control" maxlength="500" rows="3"></textarea>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="wf-label" for="profileImageFile">Imagem de perfil (upload)</label>
+                                <input id="profileImageFile" class="wf-input form-control" type="file" accept="image/*">
+                            </div>
+
+                            <div class="settings-actions">
+                                <button class="btn-profile primary" type="submit">Salvar perfil</button>
+                                <button class="btn-profile" type="button" id="refreshProfileBtn">Atualizar dados</button>
+                                <button class="btn-profile secondary" type="button" id="becomeAdminBtn">Tornar-me Admin Geral</button>
+                            </div>
+                        </form>
+                    </section>
+
+                    <section class="content-section" id="logout-section">
+                        <div class="logout-box" id="logoutBox">
+                            <h3 class="section-title" style="margin-bottom:0;">Encerrar sessão</h3>
+                            <p class="helper-text">Deseja sair da sua conta neste dispositivo?</p>
+                            <div class="settings-actions" style="justify-content:center;">
+                                <button class="btn-profile" type="button" id="cancelLogoutBtn">Cancelar</button>
+                                <button class="btn-profile primary" type="button" id="confirmLogoutBtn">Sim, sair</button>
+                            </div>
+                        </div>
+                        <div id="logoutLocked" class="helper-text hidden">Esta seção está disponível apenas para o dono do perfil.</div>
+                    </section>
                 </div>
-
-                <div>
-                    <label class="wf-label">Imagem de Perfil (upload)</label>
-                    <input id="profileImageFile" class="wf-input form-control" type="file" accept="image/*">
-                </div>
-
-                <div class="d-flex gap-2 flex-wrap">
-                    <button class="btn btn-wf-primary" type="submit">Salvar perfil</button>
-                    <button class="btn btn-wf-secondary" type="button" onclick="loadProfile()">Atualizar</button>
-                    <button class="btn btn-wf-danger" type="button" id="becomeAdminBtn">Tornar-me Admin Geral</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <div class="wf-card">
-        <div class="card-header">Ofertas Publicadas</div>
-        <div class="card-body">
-            <div class="offers-grid" id="offersGrid"></div>
-            <div id="emptyOffers" class="wf-alert wf-alert-info" style="display:none; margin-top:0.8rem;">Nenhuma oferta publicada ainda.</div>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-    const viewedUserIdRaw = document.getElementById('profilePageRoot').dataset.viewedUserId;
+    const viewedUserIdRaw = document.getElementById('profilePage').dataset.viewedUserId;
     const viewedUserId = viewedUserIdRaw ? Number(viewedUserIdRaw) : null;
+
+    let currentUser = null;
+    let profileData = null;
+    let isOwnerProfile = false;
 
     function resolveAvatar(url) {
         if (!url) return null;
@@ -112,6 +581,12 @@
         return (name || 'U').split(' ').filter(Boolean).slice(0, 2).map(p => p[0].toUpperCase()).join('') || 'U';
     }
 
+    function esc(text) {
+        const div = document.createElement('div');
+        div.textContent = text || '';
+        return div.innerHTML;
+    }
+
     function currency(v) {
         if (v === null || v === undefined) return 'R$ -';
         return `R$ ${Number(v).toFixed(2)}`;
@@ -120,7 +595,11 @@
     async function getCurrentUser() {
         const token = localStorage.getItem('token');
         if (!token) return null;
-        try { return await apiRequest('/auth/me'); } catch { return null; }
+        try {
+            return await apiRequest('/auth/me');
+        } catch {
+            return null;
+        }
     }
 
     async function uploadProfileImage(file) {
@@ -147,6 +626,48 @@
         await loadProfile();
     }
 
+    function setActiveSection(sectionId) {
+        document.querySelectorAll('.nav-link').forEach((link) => {
+            link.classList.toggle('active', link.dataset.section === sectionId);
+        });
+        document.querySelectorAll('.content-section').forEach((section) => {
+            section.classList.toggle('active', section.id === `${sectionId}-section`);
+        });
+    }
+
+    function setThemeMode() {
+        const page = document.getElementById('profilePage');
+        const current = localStorage.getItem('wf_profile_theme') || 'day';
+        const night = current === 'night';
+        page.classList.toggle('night-mode', night);
+        document.getElementById('modeSwitchBtn').textContent = night ? 'Modo Claro' : 'Modo Noturno';
+    }
+
+    function toggleThemeMode() {
+        const current = localStorage.getItem('wf_profile_theme') || 'day';
+        localStorage.setItem('wf_profile_theme', current === 'night' ? 'day' : 'night');
+        setThemeMode();
+    }
+
+    function renderAvatar(name, image) {
+        const node = document.getElementById('profileAvatarNode');
+        const url = resolveAvatar(image);
+        if (url) {
+            node.outerHTML = `<img id="profileAvatarNode" class="profile-picture" src="${esc(url)}" alt="Avatar de ${esc(name)}">`;
+        } else {
+            node.outerHTML = `<div id="profileAvatarNode" class="profile-picture-fallback">${esc(initials(name))}</div>`;
+        }
+    }
+
+    function renderStats(data) {
+        document.getElementById('profileStats').innerHTML = `
+            <div class="stat"><div class="stat-value">${Number(data.total_offers || 0)}</div><div class="stat-label">Ofertas</div></div>
+            <div class="stat"><div class="stat-value">${Number(data.followers_count || 0)}</div><div class="stat-label">Seguidores</div></div>
+            <div class="stat"><div class="stat-value">${Number(data.following_count || 0)}</div><div class="stat-label">Seguindo</div></div>
+            <div class="stat"><div class="stat-value">${(data.role || '-').toUpperCase()}</div><div class="stat-label">Tipo</div></div>
+        `;
+    }
+
     function renderOffers(offers) {
         const grid = document.getElementById('offersGrid');
         const empty = document.getElementById('emptyOffers');
@@ -159,22 +680,117 @@
 
         empty.style.display = 'none';
         grid.innerHTML = offers.map((offer) => {
-            const image = offer.images && offer.images.length ? offer.images[0] : 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="500" height="280"><rect width="100%" height="100%" fill="%231a1a23"/></svg>';
+            const image = offer.images && offer.images.length
+                ? offer.images[0]
+                : 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="420" height="240"><rect width="100%" height="100%" fill="%23172530"/><text x="50%" y="50%" fill="%23e7f0ff" dominant-baseline="middle" text-anchor="middle" font-size="20">Oferta</text></svg>';
             const safeImage = image.startsWith('/') || image.startsWith('http') ? image : `/api/uploads/offers/${image}`;
             return `
-                <article class="offer-mini" onclick="window.location.href='/offers/${offer.id}'">
-                    <img src="${safeImage}" alt="${offer.product_name}">
-                    <div class="mini-body">
-                        <div style="font-weight:700;">${offer.product_name}</div>
-                        <div style="color:var(--wf-text-secondary);font-size:0.9rem;">${currency(offer.price)} / ${offer.unit || 'kg'}</div>
+                <article class="offer-card" onclick="window.location.href='/offers/${offer.id}'">
+                    <img class="offer-image" src="${esc(safeImage)}" alt="${esc(offer.product_name)}">
+                    <div class="offer-body">
+                        <p class="offer-title">${esc(offer.product_name)}</p>
+                        <div class="offer-meta">${currency(offer.price)} / ${esc(offer.unit || 'kg')}</div>
                     </div>
                 </article>
             `;
         }).join('');
     }
 
+    function renderDetails(data) {
+        document.getElementById('profileDetails').innerHTML = `
+            <div class="detail-item"><div class="detail-label">Nome</div><div class="detail-value">${esc(data.name || '-')}</div></div>
+            <div class="detail-item"><div class="detail-label">Email</div><div class="detail-value">${esc(data.email || '-')}</div></div>
+            <div class="detail-item"><div class="detail-label">Usuário</div><div class="detail-value">${esc(data.username || '-')}</div></div>
+            <div class="detail-item"><div class="detail-label">Perfil</div><div class="detail-value">${esc(data.role || '-')}</div></div>
+            <div class="detail-item"><div class="detail-label">Localização</div><div class="detail-value">${esc(data.location || 'Não informada')}</div></div>
+            <div class="detail-item"><div class="detail-label">Bio</div><div class="detail-value">${esc(data.bio || 'Sem bio informada')}</div></div>
+        `;
+    }
+
+    function renderQuickActions(data) {
+        const actions = document.getElementById('profileQuickActions');
+        const canInteract = Boolean(currentUser);
+
+        if (isOwnerProfile) {
+            actions.innerHTML = `
+                <button class="btn-profile" type="button" id="modeSwitchBtn">Modo Noturno</button>
+                <a class="btn-profile primary" href="/offers/new">Nova oferta</a>
+            `;
+            document.getElementById('modeSwitchBtn').addEventListener('click', toggleThemeMode);
+            return;
+        }
+
+        actions.innerHTML = `
+            <button class="btn-profile" type="button" id="modeSwitchBtn">Modo Noturno</button>
+            <button class="btn-profile ${canInteract && data.is_following ? 'secondary' : 'primary'}" type="button" id="followBtn">${canInteract ? (data.is_following ? 'Seguindo (deixar)' : 'Seguir') : 'Entrar para seguir'}</button>
+            <a class="btn-profile" href="${canInteract ? `/messages?user_id=${data.id}` : '/login'}">Mensagem</a>
+        `;
+
+        document.getElementById('modeSwitchBtn').addEventListener('click', toggleThemeMode);
+        document.getElementById('followBtn').addEventListener('click', async () => {
+            if (!canInteract) {
+                window.location.href = '/login';
+                return;
+            }
+            try {
+                await followUser(data.id, !data.is_following);
+            } catch (error) {
+                alert(error.message || 'Não foi possível atualizar o follow.');
+            }
+        });
+    }
+
+    function setupOwnerSections(data) {
+        const settingsForm = document.getElementById('profileSettingsForm');
+        const settingsLocked = document.getElementById('settingsLocked');
+        const logoutBox = document.getElementById('logoutBox');
+        const logoutLocked = document.getElementById('logoutLocked');
+        const settingsTab = document.getElementById('settingsTab');
+        const logoutTab = document.getElementById('logoutTab');
+
+        if (isOwnerProfile) {
+            settingsForm.classList.remove('hidden');
+            settingsLocked.classList.add('hidden');
+            logoutBox.classList.remove('hidden');
+            logoutLocked.classList.add('hidden');
+            settingsTab.classList.remove('hidden');
+            logoutTab.classList.remove('hidden');
+
+            document.getElementById('editName').value = data.name || '';
+            document.getElementById('editLocation').value = data.location || '';
+            document.getElementById('editBio').value = data.bio || '';
+        } else {
+            settingsForm.classList.add('hidden');
+            settingsLocked.classList.remove('hidden');
+            logoutBox.classList.add('hidden');
+            logoutLocked.classList.remove('hidden');
+            settingsTab.classList.add('hidden');
+            logoutTab.classList.add('hidden');
+
+            if (document.querySelector('.nav-link.active')?.dataset.section === 'settings' || document.querySelector('.nav-link.active')?.dataset.section === 'logout') {
+                setActiveSection('home');
+            }
+        }
+    }
+
+    function setupProfileHeader(data) {
+        const avatarLink = document.getElementById('profileAvatarLink');
+        avatarLink.href = isOwnerProfile ? '/me/profile' : `/users/${data.id}`;
+
+        document.getElementById('profileName').textContent = data.name || 'Perfil';
+        document.getElementById('profileBio').textContent = data.bio || 'Sem bio informada.';
+
+        document.getElementById('profileMeta').innerHTML = `
+            <span class="meta-pill">${esc(data.username || '@usuario')}</span>
+            <span class="meta-pill">${esc(data.location || 'Sem localização')}</span>
+            <span class="meta-pill">${esc(data.role || '-')}</span>
+        `;
+
+        renderAvatar(data.name, data.profile_image);
+    }
+
     async function loadProfile() {
-        const currentUser = await getCurrentUser();
+        currentUser = await getCurrentUser();
         const targetUserId = viewedUserId || currentUser?.id;
 
         if (!targetUserId) {
@@ -182,58 +798,41 @@
             return;
         }
 
-        const data = await apiRequest(`/social/users/${targetUserId}`);
+        profileData = await apiRequest(`/social/users/${targetUserId}`);
+        isOwnerProfile = currentUser && Number(currentUser.id) === Number(profileData.id);
 
-        const avatarEl = document.getElementById('profileAvatar');
-        const avatarUrl = resolveAvatar(data.profile_image);
-        avatarEl.innerHTML = avatarUrl
-            ? `<img class="profile-avatar" src="${avatarUrl}" alt="Avatar">`
-            : `<div class="profile-avatar-fallback">${initials(data.name)}</div>`;
+        setupProfileHeader(profileData);
+        renderStats(profileData);
+        renderDetails(profileData);
+        renderOffers(profileData.offers || []);
+        renderQuickActions(profileData);
+        setupOwnerSections(profileData);
 
-        document.getElementById('profileName').textContent = data.name;
-        document.getElementById('profileUsername').textContent = data.username;
-        document.getElementById('profileMeta').innerHTML = `
-            <span>${data.role}</span>
-            <span>${data.location || 'Sem localização'}</span>
-            <span>${data.email}</span>
-        `;
-        document.getElementById('profileBio').textContent = data.bio || 'Sem bio informada.';
-
-        document.getElementById('profileStats').innerHTML = `
-            <div class="profile-stat"><b>${data.total_offers}</b> ofertas</div>
-            <div class="profile-stat"><b>${data.followers_count}</b> seguidores</div>
-            <div class="profile-stat"><b>${data.following_count}</b> seguindo</div>
-        `;
-
-        const isMe = currentUser && Number(currentUser.id) === Number(data.id);
-        const actionsEl = document.getElementById('profileActions');
-
-        if (isMe) {
-            actionsEl.innerHTML = `<a class="btn btn-wf-primary" href="/me/profile">Meu perfil</a>`;
-            document.getElementById('mySettingsCard').style.display = 'block';
-            document.getElementById('editName').value = data.name || '';
-            document.getElementById('editLocation').value = data.location || '';
-            document.getElementById('editBio').value = data.bio || '';
-
-            const userRaw = localStorage.getItem('user');
-            const localUser = userRaw ? JSON.parse(userRaw) : {};
-            if (localUser?.role === 'admin') {
-                document.getElementById('becomeAdminBtn').style.display = 'none';
-            }
+        const userRaw = localStorage.getItem('user');
+        const localUser = userRaw ? JSON.parse(userRaw) : {};
+        if (!isOwnerProfile || localUser?.role === 'admin') {
+            document.getElementById('becomeAdminBtn').classList.add('hidden');
         } else {
-            actionsEl.innerHTML = `
-                <button class="btn ${data.is_following ? 'btn-wf-secondary' : 'btn-wf-primary'}" onclick="followUser(${data.id}, ${!data.is_following})">
-                    ${data.is_following ? 'Seguindo (clique para deixar)' : 'Seguir'}
-                </button>
-            `;
-            document.getElementById('mySettingsCard').style.display = 'none';
+            document.getElementById('becomeAdminBtn').classList.remove('hidden');
         }
 
-        renderOffers(data.offers || []);
+        setThemeMode();
     }
 
-    document.getElementById('profileSettingsForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
+    document.querySelectorAll('.nav-link').forEach((link) => {
+        link.addEventListener('click', (event) => {
+            event.preventDefault();
+            const section = link.dataset.section;
+            if ((section === 'settings' || section === 'logout') && !isOwnerProfile) {
+                return;
+            }
+            setActiveSection(section);
+        });
+    });
+
+    document.getElementById('profileSettingsForm').addEventListener('submit', async (event) => {
+        event.preventDefault();
+
         const payload = {
             name: document.getElementById('editName').value,
             location: document.getElementById('editLocation').value || null,
@@ -251,6 +850,12 @@
         await loadProfile();
     });
 
+    document.getElementById('refreshProfileBtn').addEventListener('click', () => {
+        loadProfile().catch((error) => {
+            alert(error.message || 'Erro ao atualizar perfil.');
+        });
+    });
+
     document.getElementById('becomeAdminBtn').addEventListener('click', async () => {
         try {
             const result = await apiRequest('/auth/bootstrap-admin', 'POST');
@@ -266,8 +871,18 @@
         }
     });
 
-    loadProfile().catch((err) => {
-        alert(err.message || 'Erro ao carregar perfil');
+    document.getElementById('confirmLogoutBtn').addEventListener('click', () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+    });
+
+    document.getElementById('cancelLogoutBtn').addEventListener('click', () => {
+        setActiveSection('home');
+    });
+
+    loadProfile().catch((error) => {
+        alert(error.message || 'Erro ao carregar perfil');
     });
 </script>
 {% endblock %}

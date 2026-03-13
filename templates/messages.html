@@ -3,118 +3,480 @@
 {% block title %}Mensagens - WallFruits{% endblock %}
 
 {% block content %}
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;700;800&display=swap">
 <style>
-    .chat-layout { display: grid; grid-template-columns: minmax(300px, 400px) 1fr; gap: 1rem; min-height: 72vh; }
-    .chat-left { display: grid; gap: 1rem; align-content: start; }
-    .chat-list { display: grid; gap: 0.5rem; max-height: 320px; overflow: auto; }
-    .chat-item {
-        border: 1px solid var(--wf-border);
-        background: rgba(255,255,255,0.03);
-        border-radius: 10px;
-        padding: 0.65rem;
-        cursor: pointer;
-        transition: all 0.2s ease;
+    .chat-layout {
+        display: grid;
+        grid-template-columns: minmax(300px, 360px) 1fr;
+        gap: 1rem;
+        min-height: 74vh;
+        font-family: 'Noto Sans', sans-serif;
     }
-    .chat-item:hover { border-color: rgba(0,212,170,0.25); }
-    .chat-item.active { border-color: rgba(0,212,170,0.4); background: rgba(0,212,170,0.08); }
-    .chat-item-title { font-weight: 700; }
-    .chat-item-last { color: var(--wf-text-secondary); font-size: 0.84rem; margin-top: 0.15rem; overflow-wrap: anywhere; }
 
-    .offer-list, .accounts-list { display: grid; gap: 0.5rem; max-height: 240px; overflow: auto; }
-    .offer-item {
-        border: 1px solid var(--wf-border);
-        background: rgba(255,255,255,0.03);
-        border-radius: 10px;
-        padding: 0.55rem;
-        cursor: pointer;
-        font-size: 0.86rem;
+    .chat-left {
+        display: grid;
+        gap: 1rem;
+        align-content: start;
     }
-    .offer-item:hover { border-color: rgba(255,255,255,0.2); }
+
+    .panel-card .card-body {
+        display: grid;
+        gap: 0.7rem;
+    }
 
     .accounts-search {
         display: grid;
         grid-template-columns: 1fr auto;
-        gap: 0.5rem;
-        margin-bottom: 0.7rem;
+        gap: 0.55rem;
+    }
+
+    .accounts-list,
+    .chat-list,
+    .offer-list {
+        display: grid;
+        gap: 0.55rem;
+        max-height: 210px;
+        overflow: auto;
+        padding-right: 0.1rem;
+    }
+
+    .account-item,
+    .chat-item,
+    .offer-item {
+        border: 1px solid var(--wf-border);
+        background: rgba(255,255,255,0.03);
+        border-radius: 12px;
+        padding: 0.62rem;
+        cursor: pointer;
+        transition: border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
+    }
+
+    .account-item:hover,
+    .chat-item:hover,
+    .offer-item:hover {
+        border-color: rgba(255,255,255,0.28);
+        transform: translateY(-1px);
+    }
+
+    .chat-item.active {
+        border-color: rgba(25, 147, 147, 0.7);
+        background: rgba(25, 147, 147, 0.15);
     }
 
     .account-item {
-        border: 1px solid var(--wf-border);
-        background: rgba(255,255,255,0.03);
-        border-radius: 10px;
-        padding: 0.55rem;
-        cursor: pointer;
         display: grid;
-        grid-template-columns: 36px 1fr;
-        gap: 0.55rem;
+        grid-template-columns: 38px 1fr;
+        gap: 0.62rem;
         align-items: center;
     }
 
-    .account-item:hover { border-color: rgba(0,212,170,0.25); }
-
-    .account-avatar {
-        width: 36px; height: 36px; border-radius: 50%; object-fit: cover;
-        border: 1px solid var(--wf-border);
+    .chat-item-top {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        justify-content: space-between;
     }
 
-    .account-avatar-fallback {
-        width: 36px; height: 36px; border-radius: 50%;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 0.75rem; font-weight: 700;
-        background: var(--wf-accent-glow); color: var(--wf-accent);
+    .chat-contact-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+        color: inherit;
     }
 
-    .chat-main-card { display: grid; grid-template-rows: auto 1fr auto; min-height: 72vh; }
-    .chat-header { border-bottom: 1px solid var(--wf-border); padding-bottom: 0.65rem; margin-bottom: 0.65rem; }
-    .chat-messages { overflow: auto; max-height: 58vh; display: grid; gap: 0.6rem; padding-right: 0.2rem; }
+    .chat-item-last {
+        color: var(--wf-text-secondary);
+        font-size: 0.82rem;
+        margin-top: 0.2rem;
+        overflow-wrap: anywhere;
+    }
 
-    .msg-bubble {
-        max-width: 78%;
-        border-radius: 14px;
-        padding: 0.6rem 0.8rem;
-        font-size: 0.9rem;
+    .chat-item-meta {
+        color: var(--wf-text-secondary);
+        font-size: 0.74rem;
+        margin-top: 0.2rem;
+    }
+
+    .wf-badge {
+        min-width: 20px;
+        height: 20px;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 6px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: #132127;
+        background: linear-gradient(135deg, #f3a550, #f9d28c);
+    }
+
+    .account-avatar,
+    .chat-avatar,
+    .thread-avatar,
+    .target-avatar {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 1px solid rgba(255,255,255,0.2);
+        background: rgba(255,255,255,0.08);
+    }
+
+    .thread-avatar,
+    .target-avatar {
+        width: 44px;
+        height: 44px;
+    }
+
+    .avatar-fallback {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.74rem;
+        font-weight: 800;
+        color: #0c1318;
+        background: linear-gradient(135deg, #e9be61, #f5dd97);
+        border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .avatar-fallback.target,
+    .avatar-fallback.thread {
+        width: 44px;
+        height: 44px;
+    }
+
+    .assistant-card {
+        background: linear-gradient(165deg, rgba(42,55,78,0.45), rgba(16,22,34,0.72));
+    }
+
+    .assistant-log {
+        max-height: 185px;
+        overflow: auto;
+        display: grid;
+        gap: 0.45rem;
+        padding-right: 0.2rem;
+    }
+
+    .assistant-msg {
+        border-radius: 10px;
+        padding: 0.5rem 0.58rem;
+        font-size: 0.82rem;
         line-height: 1.35;
-        border: 1px solid var(--wf-border);
+        border: 1px solid rgba(255,255,255,0.1);
+        white-space: pre-line;
     }
-    .msg-in {
-        justify-self: start;
-        background: rgba(255,255,255,0.05);
-    }
-    .msg-out {
-        justify-self: end;
-        background: rgba(0,212,170,0.17);
-        border-color: rgba(0,212,170,0.28);
-    }
-    .msg-time { color: var(--wf-text-secondary); font-size: 0.72rem; margin-top: 0.25rem; }
 
-    .chat-compose { display: grid; grid-template-columns: 1fr auto; gap: 0.5rem; margin-top: 0.8rem; }
+    .assistant-msg.agent {
+        background: rgba(19, 121, 172, 0.18);
+        border-color: rgba(81, 188, 255, 0.35);
+        color: #cbeeff;
+    }
+
+    .assistant-msg.user {
+        background: rgba(237,164,76,0.14);
+        border-color: rgba(237,164,76,0.36);
+        color: #ffd8ae;
+        justify-self: end;
+        max-width: 95%;
+    }
+
+    .assistant-form {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 0.5rem;
+    }
+
+    .assistant-tip {
+        font-size: 0.72rem;
+        color: var(--wf-text-secondary);
+    }
+
+    .chat-main-card {
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        min-height: 74vh;
+        overflow: hidden;
+    }
+
+    .chat-header {
+        border-bottom: 1px solid var(--wf-border);
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 0.8rem;
+        align-items: center;
+    }
+
+    .chat-target-empty {
+        font-weight: 700;
+        color: var(--wf-text-secondary);
+    }
+
+    .chat-target-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.7rem;
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .chat-target-name {
+        font-weight: 800;
+        font-size: 1rem;
+        line-height: 1.1;
+    }
+
+    .chat-target-meta {
+        color: var(--wf-text-secondary);
+        font-size: 0.8rem;
+        margin-top: 0.12rem;
+    }
+
+    .theme-picker {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.36rem;
+        padding: 0.3rem 0.44rem;
+        border-radius: 999px;
+        border: 1px solid var(--wf-border);
+        background: rgba(0,0,0,0.2);
+    }
+
+    .theme-btn {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        border: 2px solid rgba(255,255,255,0.18);
+        cursor: pointer;
+        transition: transform 0.18s ease, border-color 0.18s ease;
+    }
+
+    .theme-btn:hover {
+        transform: scale(1.08);
+    }
+
+    .theme-btn.active {
+        border-color: #fff;
+        box-shadow: 0 0 0 2px rgba(255,255,255,0.22);
+    }
+
+    .theme-btn.theme-forest { background: linear-gradient(135deg, #044f48, #2a7561); }
+    .theme-btn.theme-ocean { background: linear-gradient(135deg, #183850, #22254c); }
+    .theme-btn.theme-sunset { background: linear-gradient(135deg, #5a2f2f, #b85f34); }
+    .theme-btn.theme-slate { background: linear-gradient(135deg, #2a2f3f, #404b67); }
+    .theme-btn.theme-aurora { background: linear-gradient(135deg, #1d3759, #3a5f3f); }
+
+    .chat-surface {
+        position: relative;
+        border-radius: 14px;
+        overflow: hidden;
+        border: 1px solid rgba(255,255,255,0.08);
+        min-height: 52vh;
+    }
+
+    .chat-surface::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: var(--chat-bg);
+        opacity: 0.95;
+    }
+
+    .chat-surface::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(circle at 18% 22%, rgba(255,255,255,0.18), transparent 34%),
+                          radial-gradient(circle at 88% 0%, rgba(255,255,255,0.16), transparent 30%),
+                          linear-gradient(transparent 74%, rgba(255,255,255,0.08) 75%, transparent 76%);
+        background-size: auto, auto, 100% 32px;
+        opacity: 0.4;
+        pointer-events: none;
+    }
+
+    .chat-surface.theme-forest { --chat-bg: linear-gradient(135deg, #044f48 0%, #2a7561 100%); }
+    .chat-surface.theme-ocean { --chat-bg: linear-gradient(135deg, #183850 0%, #192c46 55%, #22254c 100%); }
+    .chat-surface.theme-sunset { --chat-bg: linear-gradient(135deg, #573029 0%, #7f3f2c 48%, #c06d42 100%); }
+    .chat-surface.theme-slate { --chat-bg: linear-gradient(135deg, #2a2f3f 0%, #3d4460 50%, #575f78 100%); }
+    .chat-surface.theme-aurora { --chat-bg: linear-gradient(135deg, #1d3759 0%, #2d4f61 45%, #3a5f3f 100%); }
+
+    .chat-thread {
+        position: relative;
+        z-index: 1;
+        margin: 0;
+        padding: 1rem 0.95rem 0.75rem;
+        list-style: none;
+        overflow-y: auto;
+        height: 100%;
+        max-height: 52vh;
+        display: grid;
+        gap: 0.68rem;
+    }
+
+    .chat-thread-empty {
+        border: 1px dashed rgba(255,255,255,0.3);
+        border-radius: 12px;
+        padding: 0.8rem;
+        color: rgba(255,255,255,0.8);
+        font-size: 0.86rem;
+        backdrop-filter: blur(3px);
+        background: rgba(0,0,0,0.16);
+    }
+
+    .thread-row {
+        display: grid;
+        gap: 0.42rem;
+        max-width: 86%;
+    }
+
+    .thread-row.incoming {
+        justify-self: start;
+        grid-template-columns: 44px 1fr;
+        align-items: end;
+    }
+
+    .thread-row.outgoing {
+        justify-self: end;
+        max-width: 78%;
+    }
+
+    .thread-avatar-link {
+        text-decoration: none;
+        align-self: end;
+    }
+
+    .thread-bubble {
+        border-radius: 14px;
+        border: 1px solid rgba(255,255,255,0.26);
+        padding: 0.58rem 0.72rem;
+        line-height: 1.35;
+        font-size: 0.88rem;
+        backdrop-filter: blur(4px);
+        box-shadow: 0 3px 12px rgba(0,0,0,0.18);
+    }
+
+    .thread-row.incoming .thread-bubble {
+        background: rgba(0,0,0,0.28);
+        color: #eaf9ff;
+    }
+
+    .thread-row.outgoing .thread-bubble {
+        background: rgba(34, 187, 152, 0.28);
+        color: #eafffa;
+        border-color: rgba(124, 255, 226, 0.42);
+    }
+
+    .thread-bubble-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.6rem;
+        margin-bottom: 0.22rem;
+        font-size: 0.73rem;
+    }
+
+    .thread-author-link {
+        color: #d5f9ff;
+        text-decoration: none;
+        font-weight: 700;
+    }
+
+    .thread-time {
+        color: rgba(255,255,255,0.7);
+        white-space: nowrap;
+    }
+
+    .chat-window {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 0.58rem;
+        align-items: center;
+    }
+
+    .chat-window-message {
+        border-radius: 12px;
+        border: 1px solid var(--wf-border);
+        background: rgba(255,255,255,0.04);
+        color: var(--wf-text);
+        padding: 0.68rem 0.78rem;
+        outline: none;
+    }
+
+    .chat-window-message:focus {
+        border-color: rgba(25, 147, 147, 0.6);
+        box-shadow: 0 0 0 2px rgba(25,147,147,0.22);
+    }
+
+    .quick-actions {
+        display: inline-flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+        margin-top: 0.4rem;
+    }
+
+    .quick-btn {
+        border: 1px solid rgba(255,255,255,0.16);
+        background: rgba(255,255,255,0.04);
+        color: var(--wf-text-secondary);
+        border-radius: 999px;
+        padding: 0.26rem 0.58rem;
+        font-size: 0.7rem;
+        cursor: pointer;
+    }
+
+    .quick-btn:hover {
+        border-color: rgba(255,255,255,0.4);
+        color: var(--wf-text);
+    }
 
     @media (max-width: 980px) {
-        .chat-layout { grid-template-columns: 1fr; }
-        .chat-main-card { min-height: 60vh; }
-        .chat-messages { max-height: 46vh; }
+        .chat-layout {
+            grid-template-columns: 1fr;
+            min-height: auto;
+        }
+
+        .chat-main-card {
+            min-height: 64vh;
+        }
+
+        .chat-thread {
+            max-height: 45vh;
+        }
+
+        .chat-surface {
+            min-height: 45vh;
+        }
     }
 
-    @media (max-width: 480px) {
+    @media (max-width: 560px) {
         .accounts-search,
-        .chat-compose {
+        .assistant-form,
+        .chat-window {
             grid-template-columns: 1fr;
         }
 
-        .accounts-search .btn,
-        .chat-compose .btn {
-            width: 100%;
+        .chat-header {
+            grid-template-columns: 1fr;
         }
 
-        .msg-bubble {
-            max-width: 92%;
+        .theme-picker {
+            justify-self: start;
+        }
+
+        .thread-row,
+        .thread-row.outgoing {
+            max-width: 96%;
         }
     }
 </style>
 
 <div class="chat-layout">
     <aside class="chat-left">
-        <div class="wf-card">
+        <div class="wf-card panel-card">
             <div class="card-header">Nova conversa</div>
             <div class="card-body">
                 <div class="accounts-search">
@@ -125,34 +487,64 @@
             </div>
         </div>
 
-        <div class="wf-card">
-            <div class="card-header">Conversas Recentes</div>
+        <div class="wf-card panel-card">
+            <div class="card-header">Conversas recentes</div>
             <div class="card-body">
                 <div id="conversationsList" class="chat-list"></div>
             </div>
         </div>
 
-        <div class="wf-card">
-            <div class="card-header">Ofertas para Conversar</div>
+        <div class="wf-card panel-card">
+            <div class="card-header">Ofertas para conversar</div>
             <div class="card-body">
                 <div id="offersQuickList" class="offer-list"></div>
+            </div>
+        </div>
+
+        <div class="wf-card assistant-card">
+            <div class="card-header">Central de Ajuda WallFruits</div>
+            <div class="card-body">
+                <div id="assistantLog" class="assistant-log"></div>
+                <div class="quick-actions">
+                    <button class="quick-btn" type="button" onclick="askAssistantPreset('Não consigo entrar na conta')">Acesso/Login</button>
+                    <button class="quick-btn" type="button" onclick="askAssistantPreset('Como publicar uma oferta')">Publicar oferta</button>
+                    <button class="quick-btn" type="button" onclick="askAssistantPreset('Como usar notificações')">Notificações</button>
+                    <button class="quick-btn" type="button" onclick="askAssistantPreset('Como usar meu perfil e configurações')">Perfil</button>
+                    <button class="quick-btn" type="button" onclick="askAssistantPreset('Quais funções da minha conta')">Minha conta</button>
+                    <button class="quick-btn" type="button" onclick="askAssistantPreset('Estou com erro de usabilidade')">Resolver erro</button>
+                </div>
+                <form id="assistantForm" class="assistant-form">
+                    <input id="assistantInput" class="wf-input form-control" type="text" placeholder="Descreva sua dúvida de uso ou problema de acesso" maxlength="280" autocomplete="off">
+                    <button class="btn btn-wf-primary" type="submit">Perguntar</button>
+                </form>
+                <div class="assistant-tip">Este agente responde apenas instruções de uso da plataforma, acesso e resolução de problemas de usabilidade. Dica: cite a tela (ex.: /offers, /messages, /admin).</div>
             </div>
         </div>
     </aside>
 
     <section class="wf-card chat-main-card">
         <div class="card-body chat-header">
-            <div id="chatTargetName" style="font-weight:800; font-size:1rem;">Selecione uma conversa</div>
-            <div id="chatTargetMeta" style="color:var(--wf-text-secondary); font-size:0.85rem; margin-top:0.1rem;"></div>
+            <div id="chatTargetIdentity" class="chat-target-empty">Selecione uma conversa ou escolha uma oferta para iniciar.</div>
+            <div class="theme-picker" aria-label="Escolher cor de fundo do chat">
+                <button type="button" class="theme-btn theme-forest" data-theme="theme-forest" title="Verde floresta"></button>
+                <button type="button" class="theme-btn theme-ocean" data-theme="theme-ocean" title="Azul oceano"></button>
+                <button type="button" class="theme-btn theme-sunset" data-theme="theme-sunset" title="Pôr do sol"></button>
+                <button type="button" class="theme-btn theme-slate" data-theme="theme-slate" title="Cinza ardósia"></button>
+                <button type="button" class="theme-btn theme-aurora" data-theme="theme-aurora" title="Aurora"></button>
+            </div>
         </div>
 
         <div class="card-body" style="padding-top:0;">
-            <div id="chatMessages" class="chat-messages"></div>
+            <div id="chatSurface" class="chat-surface theme-ocean">
+                <ul class="chat-thread" id="chatMessages">
+                    <li class="chat-thread-empty">Nenhuma mensagem carregada ainda.</li>
+                </ul>
+            </div>
         </div>
 
         <div class="card-body" style="padding-top:0;">
-            <form id="chatComposeForm" class="chat-compose">
-                <input id="chatInput" class="wf-input form-control" type="text" maxlength="2000" placeholder="Digite sua mensagem..." required>
+            <form id="chatComposeForm" class="chat-window">
+                <input id="chatInput" class="chat-window-message" name="chat-window-message" type="text" maxlength="2000" placeholder="Digite sua mensagem..." autocomplete="off" autofocus required>
                 <button class="btn btn-wf-primary" type="submit">Enviar</button>
             </form>
         </div>
@@ -164,8 +556,14 @@
     let conversations = [];
     let selectedThreadId = null;
     let selectedUserId = null;
+    let selectedUserName = '';
+    let selectedUserImage = null;
     let selectedOfferId = null;
     let accountsStore = [];
+    const quickOffersStore = new Map();
+
+    const CHAT_THEME_KEY = 'wf_chat_theme';
+    const chatThemes = ['theme-forest', 'theme-ocean', 'theme-sunset', 'theme-slate', 'theme-aurora'];
 
     function qParam(name) {
         const params = new URLSearchParams(window.location.search);
@@ -188,6 +586,72 @@
         return (name || 'U').split(' ').filter(Boolean).slice(0, 2).map((p) => p[0].toUpperCase()).join('') || 'U';
     }
 
+    function normalizeText(value) {
+        return (value || '')
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '');
+    }
+
+    function resolveAvatar(url) {
+        if (!url) return null;
+        if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/')) return url;
+        return `/api/uploads/profiles/${url}`;
+    }
+
+    function profileUrl(userId) {
+        return Number(userId) === Number(me?.id) ? '/me/profile' : `/users/${userId}`;
+    }
+
+    function avatarMarkup(url, name, cssClass = 'account-avatar', fallbackClass = 'avatar-fallback') {
+        const resolved = resolveAvatar(url);
+        if (resolved) {
+            return `<img class="${cssClass}" src="${esc(resolved)}" alt="Avatar de ${esc(name || 'usuário')}">`;
+        }
+        return `<span class="${fallbackClass}">${esc(initials(name))}</span>`;
+    }
+
+    function setTheme(theme) {
+        const safeTheme = chatThemes.includes(theme) ? theme : 'theme-ocean';
+        const surface = document.getElementById('chatSurface');
+        surface.classList.remove(...chatThemes);
+        surface.classList.add(safeTheme);
+        localStorage.setItem(CHAT_THEME_KEY, safeTheme);
+
+        document.querySelectorAll('.theme-btn').forEach((btn) => {
+            btn.classList.toggle('active', btn.dataset.theme === safeTheme);
+        });
+    }
+
+    function initThemePicker() {
+        const savedTheme = localStorage.getItem(CHAT_THEME_KEY) || 'theme-ocean';
+        setTheme(savedTheme);
+
+        document.querySelectorAll('.theme-btn').forEach((btn) => {
+            btn.addEventListener('click', () => setTheme(btn.dataset.theme));
+        });
+    }
+
+    function renderChatTargetIdentity() {
+        const box = document.getElementById('chatTargetIdentity');
+        if (!selectedUserId) {
+            box.className = 'chat-target-empty';
+            box.textContent = 'Selecione uma conversa ou escolha uma oferta para iniciar.';
+            return;
+        }
+
+        box.className = '';
+        box.innerHTML = `
+            <a class="chat-target-link" href="${profileUrl(selectedUserId)}">
+                ${avatarMarkup(selectedUserImage, selectedUserName, 'target-avatar', 'avatar-fallback target')}
+                <div>
+                    <div class="chat-target-name">${esc(selectedUserName || 'Usuário')}</div>
+                    <div class="chat-target-meta">${selectedOfferId ? `Conversa sobre oferta ${esc(String(selectedOfferId))}` : 'Conversa direta'}</div>
+                </div>
+            </a>
+        `;
+    }
+
     async function ensureAuth() {
         const token = localStorage.getItem('token');
         if (!token) {
@@ -207,11 +671,19 @@
 
         list.innerHTML = conversations.map((c) => {
             const active = selectedThreadId && String(c.thread_id) === String(selectedThreadId);
+            const other = c.other_user || {};
+            const unread = Number(c.unread_count || 0);
             return `
                 <article class="chat-item ${active ? 'active' : ''}" onclick="selectConversation('${c.thread_id}')">
-                    <div class="chat-item-title">${esc(c.other_user?.name || 'Usuário')}</div>
+                    <div class="chat-item-top">
+                        <a class="chat-contact-link" href="${profileUrl(other.id)}" onclick="event.stopPropagation()">
+                            ${avatarMarkup(other.profile_image, other.name, 'chat-avatar', 'avatar-fallback')}
+                            <strong>${esc(other.name || 'Usuário')}</strong>
+                        </a>
+                        ${unread > 0 ? `<span class="wf-badge">${unread}</span>` : ''}
+                    </div>
                     <div class="chat-item-last">${esc(c.last_message?.content || '')}</div>
-                    <div class="msg-time">${formatTime(c.updated_at)} ${c.unread_count ? `• ${c.unread_count} não lida(s)` : ''}</div>
+                    <div class="chat-item-meta">${formatTime(c.updated_at)}</div>
                 </article>
             `;
         }).join('');
@@ -220,36 +692,71 @@
     function renderMessages(items) {
         const box = document.getElementById('chatMessages');
         if (!items.length) {
-            box.innerHTML = '<div class="wf-alert wf-alert-info">Envie a primeira mensagem desta conversa.</div>';
+            box.innerHTML = '<li class="chat-thread-empty">Envie a primeira mensagem desta conversa.</li>';
             return;
         }
 
+        const otherHref = selectedUserId ? profileUrl(selectedUserId) : '#';
         box.innerHTML = items.map((m) => {
             const mine = Number(m.sender_id) === Number(me.id);
+            if (mine) {
+                return `
+                    <li class="thread-row outgoing">
+                        <div class="thread-bubble">
+                            <div class="thread-bubble-head">
+                                <span>Você</span>
+                                <span class="thread-time">${formatTime(m.created_at)}</span>
+                            </div>
+                            <div>${esc(m.content)}</div>
+                        </div>
+                    </li>
+                `;
+            }
+
             return `
-                <article class="msg-bubble ${mine ? 'msg-out' : 'msg-in'}">
-                    <div>${esc(m.content)}</div>
-                    <div class="msg-time">${formatTime(m.created_at)}</div>
-                </article>
+                <li class="thread-row incoming">
+                    <a class="thread-avatar-link" href="${otherHref}">
+                        ${avatarMarkup(selectedUserImage, selectedUserName, 'thread-avatar', 'avatar-fallback thread')}
+                    </a>
+                    <div class="thread-bubble">
+                        <div class="thread-bubble-head">
+                            <a class="thread-author-link" href="${otherHref}">${esc(selectedUserName || 'Usuário')}</a>
+                            <span class="thread-time">${formatTime(m.created_at)}</span>
+                        </div>
+                        <div>${esc(m.content)}</div>
+                    </div>
+                </li>
             `;
         }).join('');
 
         box.scrollTop = box.scrollHeight;
     }
 
+    async function hydrateSelectedUser(userId) {
+        if (!userId) return;
+        try {
+            const data = await apiRequest(`/social/users/${userId}`);
+            selectedUserName = data.name || selectedUserName;
+            selectedUserImage = data.profile_image || selectedUserImage;
+        } catch {
+            // fallback silencioso para manter chat utilizável
+        }
+    }
+
     async function loadThread(threadId) {
         selectedThreadId = threadId;
         const items = await apiRequest(`/messages/thread/${threadId}?mark_as_read=true`);
-        renderMessages(items || []);
 
         const conv = conversations.find((c) => String(c.thread_id) === String(threadId));
         if (conv) {
             selectedUserId = conv.other_user?.id;
+            selectedUserName = conv.other_user?.name || 'Usuário';
+            selectedUserImage = conv.other_user?.profile_image || null;
             selectedOfferId = conv.last_message?.offer_id || null;
-            document.getElementById('chatTargetName').textContent = conv.other_user?.name || 'Conversa';
-            document.getElementById('chatTargetMeta').textContent = selectedOfferId ? `Sobre oferta ${selectedOfferId}` : 'Conversa direta';
         }
 
+        renderChatTargetIdentity();
+        renderMessages(items || []);
         renderConversations();
     }
 
@@ -269,23 +776,24 @@
             return;
         }
 
-        list.innerHTML = accountsStore.map((acc) => {
-            const img = acc.profile_image
-                ? (acc.profile_image.startsWith('http') || acc.profile_image.startsWith('/') ? acc.profile_image : `/api/uploads/profiles/${acc.profile_image}`)
-                : null;
+        list.innerHTML = accountsStore.map((acc) => `
+            <article class="account-item" onclick="startConversationWithAccountById(${acc.id})">
+                <div>${avatarMarkup(acc.profile_image, acc.name, 'account-avatar', 'avatar-fallback')}</div>
+                <div>
+                    <div style="font-weight:700;">${esc(acc.name)}</div>
+                    <div style="color:var(--wf-text-secondary);font-size:0.78rem;">${esc(acc.username)} · ${esc(acc.role)}</div>
+                </div>
+            </article>
+        `).join('');
+    }
 
-            return `
-                <article class="account-item" onclick="startConversationWithAccount(${acc.id}, '${esc(acc.name)}')">
-                    <div>
-                        ${img ? `<img class="account-avatar" src="${img}" alt="avatar">` : `<div class="account-avatar-fallback">${initials(acc.name)}</div>`}
-                    </div>
-                    <div>
-                        <div style="font-weight:700;">${esc(acc.name)}</div>
-                        <div style="color:var(--wf-text-secondary);font-size:0.78rem;">${esc(acc.username)} · ${esc(acc.role)}</div>
-                    </div>
-                </article>
-            `;
-        }).join('');
+    function startConversationWithAccountById(userId) {
+        const account = accountsStore.find((item) => Number(item.id) === Number(userId));
+        if (!account) {
+            startConversationWithAccount(Number(userId), 'Usuário', null);
+            return;
+        }
+        startConversationWithAccount(Number(userId), account.name || 'Usuário', account.profile_image || null);
     }
 
     async function searchAccounts() {
@@ -299,44 +807,65 @@
         const data = await apiRequest('/offers?limit=12');
         const offers = data?.offers || [];
         const list = document.getElementById('offersQuickList');
+        quickOffersStore.clear();
 
         if (!offers.length) {
             list.innerHTML = '<div class="wf-alert wf-alert-info">Sem ofertas ativas.</div>';
             return;
         }
 
+        offers.forEach((offer) => quickOffersStore.set(String(offer.id), offer));
+
         list.innerHTML = offers.map((offer) => `
-            <article class="offer-item" onclick="prepareChatFromOffer(${offer.owner_data?.id || offer.user_id}, '${offer.id}', '${esc(offer.owner_data?.name || 'Produtor')}')">
+            <article class="offer-item" onclick="prepareChatFromOfferById('${offer.id}')">
                 <div style="font-weight:700;">${esc(offer.product_name)}</div>
-                <div style="color:var(--wf-text-secondary)">${esc(offer.owner_data?.name || 'Produtor')} · R$ ${Number(offer.price || 0).toFixed(2)}</div>
+                <div style="color:var(--wf-text-secondary);font-size:0.8rem;">${esc(offer.owner_data?.name || 'Produtor')} · R$ ${Number(offer.price || 0).toFixed(2)}</div>
             </article>
         `).join('');
     }
 
-    async function prepareChatFromOffer(userId, offerId, userName) {
+    function prepareChatFromOfferById(offerId) {
+        const offer = quickOffersStore.get(String(offerId));
+        if (!offer) return;
+
+        prepareChatFromOffer(
+            offer.owner_data?.id || offer.user_id,
+            offer.id,
+            offer.owner_data?.name || 'Produtor',
+            offer.owner_data?.profile_image || null,
+        );
+    }
+
+    async function prepareChatFromOffer(userId, offerId, userName, userImage) {
         if (Number(userId) === Number(me.id)) {
             alert('Você não pode iniciar chat consigo mesmo.');
             return;
         }
 
-        selectedUserId = userId;
+        selectedUserId = Number(userId);
+        selectedUserName = userName || 'Usuário';
+        selectedUserImage = userImage || null;
         selectedOfferId = offerId;
         selectedThreadId = null;
 
-        document.getElementById('chatTargetName').textContent = userName || 'Nova conversa';
-        document.getElementById('chatTargetMeta').textContent = `Sobre oferta ${offerId}`;
-        document.getElementById('chatMessages').innerHTML = '<div class="wf-alert wf-alert-info">Nova conversa. Digite sua mensagem abaixo.</div>';
+        await hydrateSelectedUser(selectedUserId);
 
+        renderChatTargetIdentity();
+        document.getElementById('chatMessages').innerHTML = '<li class="chat-thread-empty">Nova conversa. Digite sua primeira mensagem.</li>';
         renderConversations();
     }
 
-    async function startConversationWithAccount(userId, userName) {
+    async function startConversationWithAccount(userId, userName, userImage) {
         selectedUserId = Number(userId);
+        selectedUserName = userName || 'Usuário';
+        selectedUserImage = userImage || null;
         selectedOfferId = null;
         selectedThreadId = null;
-        document.getElementById('chatTargetName').textContent = userName || 'Nova conversa';
-        document.getElementById('chatTargetMeta').textContent = 'Conversa direta';
-        document.getElementById('chatMessages').innerHTML = '<div class="wf-alert wf-alert-info">Nova conversa. Digite sua mensagem abaixo.</div>';
+
+        await hydrateSelectedUser(selectedUserId);
+
+        renderChatTargetIdentity();
+        document.getElementById('chatMessages').innerHTML = '<li class="chat-thread-empty">Nova conversa direta. Digite sua mensagem.</li>';
         renderConversations();
     }
 
@@ -352,9 +881,9 @@
 
         if (userId) {
             if (offerId) {
-                prepareChatFromOffer(Number(userId), offerId || null, 'Nova conversa');
+                await prepareChatFromOffer(Number(userId), offerId || null, 'Nova conversa', '');
             } else {
-                startConversationWithAccount(Number(userId), 'Nova conversa');
+                await startConversationWithAccount(Number(userId), 'Nova conversa', '');
             }
         }
     }
@@ -385,25 +914,294 @@
         const conv = conversations.find((c) => Number(c.other_user?.id) === Number(selectedUserId));
         if (conv) {
             await loadThread(conv.thread_id);
+        } else {
+            document.getElementById('chatMessages').insertAdjacentHTML('beforeend', '<li class="chat-thread-empty">Mensagem enviada. Aguarde resposta para criar thread.</li>');
         }
+    });
+
+    function getNormalizedRole() {
+        const role = normalizeText(me?.role || 'buyer');
+        if (role === 'admin') return 'admin';
+        if (role === 'producer') return 'producer';
+        return 'buyer';
+    }
+
+    function getRoleLabel(role) {
+        if (role === 'admin') return 'Administrador';
+        if (role === 'producer') return 'Produtor';
+        return 'Comprador';
+    }
+
+    const roleTipsByIntent = {
+        buyer: {
+            default: 'Como comprador, priorize busca de ofertas, chat com produtores e acompanhamento de notificacoes.',
+            publish_offer: 'Se sua conta for focada em compras, use /offers para comparar e negociar com produtores antes de reservar.',
+            offers_explore: 'Use filtros por localizacao e preco para reduzir tempo de busca e facilitar comparacao.',
+            finance: 'Antes de reservar, valide quantidade, preco final e status da oferta para evitar retrabalho.',
+            account_capabilities: 'Conta comprador: explorar ofertas, conversar com produtores, reservar/acompanhar transacoes e gerenciar perfil.'
+        },
+        producer: {
+            default: 'Como produtor, mantenha ofertas atualizadas, respostas rapidas no chat e consistencia de entrega.',
+            publish_offer: 'Para converter mais, publique oferta com fotos claras, estoque real e preco competitivo.',
+            profile: 'Seu perfil precisa estar completo para gerar confianca: foto, bio e localizacao atualizadas.',
+            reputation: 'Responda rapidamente e cumpra combinados para elevar reputacao e recorrencia de vendas.',
+            account_capabilities: 'Conta produtor: publicar ofertas, negociar com compradores, acompanhar reputacao e gerenciar operacao de venda.'
+        },
+        admin: {
+            default: 'Como admin, voce tem visao de controle operacional e governanca da plataforma.',
+            admin: 'Use /admin para moderacao, validacoes e acompanhamento de operacao em tempo real.',
+            strategy: 'Acompanhe /strategy para diagnosticar gargalos e decidir ajustes de produto/processo.',
+            usability: 'Quando receber incidente, padronize coleta: rota, passos, horario, perfil afetado e mensagem de erro.',
+            account_capabilities: 'Conta admin: acesso a painel administrativo, estrategia, validacoes e configuracoes de operacao.'
+        }
+    };
+
+    function roleTipFor(intent) {
+        const role = getNormalizedRole();
+        const roleTips = roleTipsByIntent[role] || roleTipsByIntent.buyer;
+        return roleTips[intent] || roleTips.default || '';
+    }
+
+    function buildRoleAwareAnswer(baseAnswer, intent) {
+        const role = getNormalizedRole();
+        const roleLabel = getRoleLabel(role);
+        const tip = roleTipFor(intent);
+        if (!tip) return baseAnswer;
+
+        return `${baseAnswer}\n\nContexto da sua conta (${roleLabel}):\n${tip}`;
+    }
+
+    const assistantRules = [
+        {
+            intent: 'access',
+            keywords: ['/login', 'login', 'entrar', 'acesso', 'senha', 'token', 'autentica', 'nao consigo entrar'],
+            answer:
+`Tela /login - Acesso:
+1. Abra /login.
+2. Informe email e senha e confirme o envio.
+3. Verifique se a sessao foi criada (token no navegador).
+4. Se retornar para login sozinho, saia e entre novamente para renovar a sessao.
+5. Se continuar falhando, envie a mensagem de erro exibida.`
+        },
+        {
+            intent: 'register',
+            keywords: ['/register', 'cadastro', 'registrar', 'criar conta', 'nova conta'],
+            answer:
+`Tela /register - Criacao de conta:
+1. Preencha nome, email, senha e tipo de conta.
+2. Envie a imagem de perfil por upload do dispositivo.
+3. Finalize o cadastro e depois acesse /login.
+4. Se der erro no envio da foto, teste com JPG/PNG ate 5MB.`
+        },
+        {
+            intent: 'publish_offer',
+            keywords: ['/offers/new', 'publicar oferta', 'nova oferta', 'anunciar', 'vender'],
+            answer:
+`Tela /offers/new - Publicar oferta:
+1. Informe produto, categoria, preco, quantidade, unidade e localizacao.
+2. Adicione imagens para melhorar visibilidade.
+3. Revise os dados antes de salvar.
+4. Depois valide em /offers se o card apareceu corretamente.`
+        },
+        {
+            intent: 'offer_detail',
+            keywords: ['/offers/', 'detalhe da oferta', 'detalhes oferta', 'oferta especifica'],
+            answer:
+`Tela /offers/{id} - Detalhe da oferta:
+1. Confirme preco, quantidade, produtor e imagens.
+2. Use as acoes de contato/reserva conforme necessidade.
+3. Se abrir pagina vazia, recarregue e confirme se o ID da oferta existe.`
+        },
+        {
+            intent: 'offers_explore',
+            keywords: ['/offers', 'explorar ofertas', 'buscar ofertas', 'filtro', 'filtrar'],
+            answer:
+`Tela /offers - Exploracao e filtros:
+1. Use busca por produto, produtor ou localizacao.
+2. Aplique filtros de categoria e faixa de preco.
+3. Clique no card para abrir detalhes.
+4. Se o filtro nao retornar itens, limpe filtros e tente novamente.`
+        },
+        {
+            intent: 'chat',
+            keywords: ['/messages', 'chat', 'mensagem', 'conversa', 'falar com usuario'],
+            answer:
+`Tela /messages - Conversas:
+1. Escolha uma conta ativa ou uma oferta para iniciar chat.
+2. Clique no nome/avatar para abrir o perfil da outra pessoa.
+3. Digite no campo inferior e envie.
+4. Se nao enviar, confirme login ativo e se uma conversa foi selecionada.`
+        },
+        {
+            intent: 'notifications',
+            keywords: ['/notifications', 'notificacao', 'alerta'],
+            answer:
+`Tela /notifications - Alertas:
+1. Abra o painel de notificacoes.
+2. Verifique itens novos e acesse o recurso relacionado.
+3. Se o contador nao atualizar, recarregue a pagina para sincronizar.`
+        },
+        {
+            intent: 'profile',
+            keywords: ['/me/profile', '/users/', 'perfil', 'foto', 'bio', 'configuracao perfil'],
+            answer:
+`Tela de perfil - /me/profile ou /users/{id}:
+1. Em /me/profile, use a aba Configuracoes para editar dados.
+2. Atualize nome, localizacao, bio e imagem.
+3. Clique em Salvar perfil e depois em Atualizar dados.
+4. Para perfil de outro usuario, use /users/{id}.`
+        },
+        {
+            intent: 'reputation',
+            keywords: ['/reputation', 'reputacao', 'avaliacao', 'nota'],
+            answer:
+`Tela /reputation - Confianca e avaliacoes:
+1. Consulte notas e feedbacks recebidos.
+2. Resolva contestacoes abertas quando houver.
+3. Para subir reputacao, mantenha respostas rapidas e acordos cumpridos.`
+        },
+        {
+            intent: 'gamification',
+            keywords: ['/gamification', 'gamificacao', 'pontuacao', 'badge'],
+            answer:
+`Tela /gamification - Progresso:
+1. Veja pontos, niveis e badges.
+2. Complete acoes da plataforma para evoluir ranking.
+3. Se o progresso nao mudar, atualize a pagina apos concluir a acao.`
+        },
+        {
+            intent: 'intermediation',
+            keywords: ['/intermediation', 'mediacao', 'negociacao', 'contrato'],
+            answer:
+`Tela /intermediation - Mediacao e contratos:
+1. Consulte solicitacoes e status de mediacao.
+2. Revise contratos e etapas pendentes.
+3. Em conflito, mantenha registro claro no chat e no processo de mediacao.`
+        },
+        {
+            intent: 'strategy',
+            keywords: ['/strategy', 'estrategia', 'metricas', 'dashboard estrategico'],
+            answer:
+`Tela /strategy - Analise estrategica:
+1. Acompanhe indicadores de conversao e funil.
+2. Compare desempenho por periodo.
+3. Use os dados para ajustar preco, estoque e abordagem comercial.`
+        },
+        {
+            intent: 'admin',
+            keywords: ['/admin', 'admin', 'painel admin', 'administrador', 'permissao'],
+            answer:
+`Tela /admin - Administracao:
+1. Disponivel apenas para contas com permissao admin.
+2. Gerencie operacao, validacoes e moderacao.
+3. Se nao aparecer menu admin, revise o papel da conta logada.`
+        },
+        {
+            intent: 'finance',
+            keywords: ['carteira', 'wallet', 'saldo', 'pagamento', 'transacao', 'reserva', 'compra'],
+            answer:
+`Fluxo financeiro - carteira/pagamentos:
+1. Confirme dados da oferta e quantidade antes de reservar.
+2. Revise metodo de pagamento e status da transacao.
+3. Se o status travar, recarregue e consulte novamente o historico.`
+        },
+        {
+            intent: 'usability',
+            keywords: ['erro', 'bug', 'travou', 'nao funciona', 'lento', 'usabilidade', 'problema', 'carrega'],
+            answer:
+`Checklist de usabilidade:
+1. Recarregue a tela e repita a acao.
+2. Confira se o login esta ativo.
+3. Teste em outra tela para isolar o problema.
+4. Registre: rota (URL), botao clicado, mensagem de erro, horario.
+5. Com esses dados, o suporte resolve mais rapido.`
+        },
+        {
+            intent: 'account_capabilities',
+            keywords: ['funcoes da minha conta', 'minha conta', 'o que posso fazer', 'quais funcoes', 'permissoes da conta'],
+            answer:
+`Funcoes da conta:
+1. As permissoes mudam conforme seu papel (comprador, produtor ou admin).
+2. Recursos comuns: perfil, mensagens, notificacoes e navegacao de ofertas.
+3. Recursos avancados aparecem conforme tipo de conta e autorizacao.`
+        }
+    ];
+
+    function appendAssistantMessage(text, fromAgent = true) {
+        const log = document.getElementById('assistantLog');
+        const div = document.createElement('div');
+        div.className = `assistant-msg ${fromAgent ? 'agent' : 'user'}`;
+        div.textContent = text;
+        log.appendChild(div);
+        log.scrollTop = log.scrollHeight;
+    }
+
+    function getAssistantAnswer(question) {
+        const normalized = normalizeText(question);
+        for (const rule of assistantRules) {
+            if (rule.keywords.some((k) => normalized.includes(normalizeText(k)))) {
+                return buildRoleAwareAnswer(rule.answer, rule.intent);
+            }
+        }
+
+        const role = getNormalizedRole();
+        const roleLabel = getRoleLabel(role);
+        const roleDefaultTip = roleTipFor('account_capabilities');
+
+        return `Sou a Central de Ajuda do WallFruits e respondo instruções de uso da plataforma.
+    Envie sua dúvida com este formato:
+    1. Tela (ex.: /messages)
+    2. Ação realizada (botão/fluxo)
+3. Erro ou comportamento inesperado
+
+Perfil detectado: ${roleLabel}.
+${roleDefaultTip}`;
+    }
+
+    function askAssistantPreset(question) {
+        document.getElementById('assistantInput').value = question;
+        document.getElementById('assistantForm').dispatchEvent(new Event('submit', { cancelable: true }));
+    }
+
+    document.getElementById('assistantForm').addEventListener('submit', (event) => {
+        event.preventDefault();
+        const input = document.getElementById('assistantInput');
+        const question = input.value.trim();
+        if (!question) return;
+
+        appendAssistantMessage(question, false);
+        input.value = '';
+
+        setTimeout(() => {
+            appendAssistantMessage(getAssistantAnswer(question), true);
+        }, 240);
     });
 
     async function initChatPage() {
         const ok = await ensureAuth();
         if (!ok) return;
 
+        initThemePicker();
+        renderChatTargetIdentity();
+
         await Promise.all([
             loadConversations(),
             loadOffersQuickList(),
+            searchAccounts(),
         ]);
 
+        const roleLabel = getRoleLabel(getNormalizedRole());
+        appendAssistantMessage(`Olá! Sou a Central de Ajuda do WallFruits. Posso orientar uso por tela, acesso ao sistema e resolução de problemas de usabilidade em todo o software.\n\nPerfil detectado: ${roleLabel}.`);
         await handleInitialParams();
     }
 
     window.selectConversation = selectConversation;
     window.prepareChatFromOffer = prepareChatFromOffer;
+    window.prepareChatFromOfferById = prepareChatFromOfferById;
     window.startConversationWithAccount = startConversationWithAccount;
+    window.startConversationWithAccountById = startConversationWithAccountById;
     window.searchAccounts = searchAccounts;
+    window.askAssistantPreset = askAssistantPreset;
 
     initChatPage().catch((error) => {
         alert(error.message || 'Erro ao carregar chat');
@@ -415,7 +1213,5 @@
             searchAccounts();
         }
     });
-
-    searchAccounts();
 </script>
 {% endblock %}

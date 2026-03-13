@@ -113,6 +113,26 @@ async def upload_profile_image(
 
 
 # -----------------------------
+# PUBLIC PROFILE IMAGE UPLOAD
+# -----------------------------
+@router.post("/public-profile-image", response_model=dict)
+async def upload_public_profile_image(
+    file: UploadFile = File(...),
+):
+    """Upload público usado no cadastro inicial da conta."""
+    if not validate_image(file):
+        raise HTTPException(400, "Arquivo inválido. Use apenas imagens JPG, PNG, GIF ou WebP até 5MB")
+
+    filename = save_upload_file(file, PROFILES_DIR)
+
+    return {
+        "filename": filename,
+        "url": f"/api/uploads/profiles/{filename}",
+        "message": "Imagem enviada com sucesso"
+    }
+
+
+# -----------------------------
 # UPLOAD OFFER IMAGES
 # -----------------------------
 @router.post("/offer-images", response_model=dict)

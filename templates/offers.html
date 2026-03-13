@@ -62,8 +62,8 @@
         min-height: 220px;
         border-radius: 8px;
         border: 1px solid var(--wf-border);
-        background: var(--wf-card);
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.18);
+        background: linear-gradient(135deg, rgba(17, 32, 43, 0.95) 0%, rgba(26, 47, 60, 0.92) 48%, rgba(27, 56, 47, 0.9) 100%);
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.24);
         overflow: hidden;
         cursor: pointer;
         transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
@@ -71,8 +71,8 @@
 
     .produto-card:hover {
         transform: translateY(-2px);
-        border-color: rgba(237, 164, 76, 0.35);
-        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
+        border-color: rgba(255, 208, 145, 0.56);
+        box-shadow: 0 15px 34px rgba(0, 0, 0, 0.32);
     }
 
     .produto-img-wrap {
@@ -80,7 +80,7 @@
         min-width: 75px;
         min-height: 220px;
         border-right: 1px solid rgba(255, 255, 255, 0.06);
-        background: rgba(255, 255, 255, 0.04);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.02));
     }
 
     .produto-img {
@@ -144,7 +144,8 @@
     .fruta-nome {
         font-size: 1.08rem;
         font-weight: 800;
-        color: #eda44c;
+        color: #ffd9a4;
+        text-shadow: 0 0 18px rgba(255, 201, 130, 0.22);
         letter-spacing: -0.3px;
         margin: 0.35rem 0 0.45rem;
     }
@@ -153,8 +154,8 @@
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 0.35rem;
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: linear-gradient(135deg, rgba(255, 182, 92, 0.12), rgba(98, 208, 173, 0.1));
+        border: 1px solid rgba(255, 224, 186, 0.28);
         border-radius: 10px;
         padding: 0.45rem;
         margin-bottom: 0.45rem;
@@ -181,7 +182,7 @@
     .price-val {
         font-size: 0.82rem;
         font-weight: 700;
-        color: var(--wf-text);
+        color: #fff5dd;
     }
 
     .mini-meta-grid {
@@ -192,8 +193,8 @@
 
     .mini-meta-card {
         border-radius: 8px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
         padding: 0.3rem 0.35rem;
         min-height: 42px;
     }
@@ -245,9 +246,14 @@
     }
 
     .action-primary {
-        background: rgba(237, 164, 76, 0.2);
-        border-color: rgba(237, 164, 76, 0.45);
-        color: #f9d09b;
+        background: linear-gradient(135deg, rgba(247, 179, 88, 0.4), rgba(255, 213, 153, 0.32));
+        border-color: rgba(255, 214, 160, 0.62);
+        color: #fff8ec;
+    }
+
+    .action-secondary {
+        background: linear-gradient(135deg, rgba(61, 189, 151, 0.26), rgba(61, 189, 151, 0.14));
+        border-color: rgba(123, 255, 218, 0.34);
     }
 
     .action-secondary:hover,
@@ -276,15 +282,15 @@
     }
 
     .action-side.active-like {
-        color: #ff7a92;
-        border-color: rgba(255, 122, 146, 0.35);
-        background: rgba(255, 122, 146, 0.12);
+        color: #ff9cb0;
+        border-color: rgba(255, 156, 176, 0.42);
+        background: rgba(255, 156, 176, 0.2);
     }
 
     .action-side.active-bookmark {
-        color: #78d6ff;
-        border-color: rgba(120, 214, 255, 0.35);
-        background: rgba(120, 214, 255, 0.12);
+        color: #8fe6ff;
+        border-color: rgba(143, 230, 255, 0.42);
+        background: rgba(143, 230, 255, 0.2);
     }
 
     .open-tip {

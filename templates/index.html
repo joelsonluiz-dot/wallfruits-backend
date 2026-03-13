@@ -254,7 +254,7 @@
         <a href="/offers/new" class="btn btn-wf-secondary btn-lg px-4">
             Criar Oferta
         </a>
-        <a href="/login" class="btn btn-wf-secondary btn-lg px-4">
+        <a href="/login" class="btn btn-wf-secondary btn-lg px-4" id="heroLoginBtn">
             Entrar
         </a>
     </div>
@@ -398,6 +398,16 @@
             document.getElementById('tx24h').textContent = '0';
         }
     }
+
+    function updateHeroAuthActions() {
+        const loginBtn = document.getElementById('heroLoginBtn');
+        if (!loginBtn) return;
+
+        const token = localStorage.getItem('token');
+        loginBtn.style.display = token ? 'none' : '';
+    }
+
+    updateHeroAuthActions();
     loadHomeOffers();
     loadStats();
 </script>

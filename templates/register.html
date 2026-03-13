@@ -79,6 +79,16 @@
     .role-option:hover .role-option-label {
         border-color: rgba(255,255,255,0.12);
     }
+    .profile-upload-preview {
+        margin-top: 0.6rem;
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        border: 1px solid var(--wf-border);
+        background: rgba(255,255,255,0.04);
+        object-fit: cover;
+        display: none;
+    }
     @media (max-width: 480px) {
         .auth-card { max-width: 100%; }
         .auth-header h1 { font-size: 1.5rem; }
@@ -122,8 +132,9 @@
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label for="profileImage" class="wf-label">Imagem de perfil (URL)</label>
-                        <input type="url" class="wf-input form-control" id="profileImage" placeholder="https://exemplo.com/minha-foto.jpg">
+                        <label for="profileImageFile" class="wf-label">Imagem de perfil (upload do dispositivo)</label>
+                        <input type="file" class="wf-input form-control" id="profileImageFile" accept="image/*">
+                        <img id="profileImagePreview" class="profile-upload-preview" alt="Pré-visualização da imagem de perfil">
                     </div>
                     <div class="mb-4">
                         <label class="wf-label">Tipo de conta</label>
@@ -161,6 +172,46 @@
 </div>
 
 <script>
+    async function uploadPublicProfileImage(file) {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await fetch('/api/uploads/public-profile-image', {
+            method: 'POST',
+            body: formData,
+        });
+
+        const payload = await response.json();
+        if (!response.ok) {
+            throw new Error(payload?.detail || 'Erro ao enviar imagem de perfil');
+        }
+
+        return payload;
+    }
+
+    const profileImageInput = document.getElementById('profileImageFile');
+    const profileImagePreview = document.getElementById('profileImagePreview');
+
+    profileImageInput.addEventListener('change', () => {
+        const file = profileImageInput.files && profileImageInput.files[0];
+        if (!file) {
+            profileImagePreview.style.display = 'none';
+            profileImagePreview.removeAttribute('src');
+            return;
+        }
+
+        if (!file.type.startsWith('image/')) {
+            alert('Selecione um arquivo de imagem válido.');
+            profileImageInput.value = '';
+            profileImagePreview.style.display = 'none';
+            profileImagePreview.removeAttribute('src');
+            return;
+        }
+
+        profileImagePreview.src = URL.createObjectURL(file);
+        profileImagePreview.style.display = 'block';
+    });
+
     document.getElementById('registerForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const msgDiv = document.getElementById('registerMsg');
@@ -171,7 +222,7 @@
         const phone = document.getElementById('phone').value;
         const location = document.getElementById('location').value;
         const roleEl = document.querySelector('input[name="role"]:checked');
-        const profileImage = document.getElementById('profileImage').value;
+        const profileImageFile = profileImageInput.files && profileImageInput.files[0];
 
         // Validações básicas no client
         if (!name || !email || !password) {
@@ -196,13 +247,22 @@
         msgDiv.style.display = 'none';
 
         try {
+            let profileImageFilename = null;
+
+            if (profileImageFile) {
+                btn.innerHTML = '<span style="display:inline-block;width:1rem;height:1rem;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:0.5rem;"></span> Enviando imagem...';
+                const uploaded = await uploadPublicProfileImage(profileImageFile);
+                profileImageFilename = uploaded.filename || null;
+                btn.innerHTML = '<span style="display:inline-block;width:1rem;height:1rem;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:0.5rem;"></span> Criando conta...';
+            }
+
             await apiRequest('/auth/register', 'POST', {
                 name,
                 email,
                 password,
                 phone: phone || null,
                 location: location || null,
-                profile_image: profileImage || null,
+                profile_image: profileImageFilename,
                 role: roleEl.value
             });
 
