@@ -40,6 +40,88 @@
         margin-bottom: 0.9rem;
     }
 
+    .offers-store-featured {
+        border: 1px solid var(--wf-border);
+        border-radius: 10px;
+        background: rgba(255,255,255,0.03);
+        padding: 0.62rem;
+        margin-bottom: 0.95rem;
+    }
+
+    .offers-store-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.6rem;
+        margin-bottom: 0.45rem;
+        flex-wrap: wrap;
+    }
+
+    .offers-store-title {
+        margin: 0;
+        font-size: 0.88rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+    }
+
+    .offers-store-row {
+        display: flex;
+        gap: 0.62rem;
+        overflow-x: auto;
+        padding-bottom: 0.2rem;
+    }
+
+    .offers-store-card {
+        min-width: 192px;
+        max-width: 192px;
+        border: 1px solid rgba(255,255,255,0.16);
+        border-radius: 9px;
+        background: rgba(255,255,255,0.05);
+        overflow: hidden;
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .offers-store-media {
+        height: 90px;
+        background: rgba(255,255,255,0.04);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .offers-store-media img {
+        max-width: 92%;
+        max-height: 92%;
+        object-fit: contain;
+    }
+
+    .offers-store-body {
+        padding: 0.5rem;
+        display: grid;
+        gap: 0.2rem;
+    }
+
+    .offers-store-cat {
+        font-size: 0.62rem;
+        color: var(--wf-text-secondary);
+        text-transform: uppercase;
+        font-weight: 700;
+    }
+
+    .offers-store-name {
+        margin: 0;
+        font-size: 0.72rem;
+        font-weight: 800;
+        color: #ffe0b4;
+        min-height: 1.7rem;
+    }
+
+    .offers-store-price {
+        font-size: 0.72rem;
+        font-weight: 800;
+    }
+
     .offers-search-wrap {
         position: relative;
     }
@@ -432,6 +514,14 @@
     <button class="btn btn-wf-secondary" type="button" onclick="applyFilters()">Filtrar</button>
 </div>
 
+<section class="offers-store-featured" aria-label="Produtos em destaque da loja">
+    <div class="offers-store-head">
+        <h2 class="offers-store-title">Anúncios de produtos em destaque</h2>
+        <a href="/store" class="btn btn-wf-secondary" style="padding:0.34rem 0.75rem;font-size:0.73rem;">Ver loja</a>
+    </div>
+    <div id="offersFeaturedStore" class="offers-store-row"></div>
+</section>
+
 <div class="offers-list wf-stagger" id="offersContainer">
     <div class="skeleton-card"></div>
     <div class="skeleton-card"></div>
@@ -466,6 +556,10 @@
             return offer.images[0];
         }
         return fallbackImageSvg(offer.product_name);
+    }
+
+    function getStoreProductImage(product) {
+        return product.image || fallbackImageSvg(product.name || 'Produto');
     }
 
     function getOwnerUsername(offer) {
@@ -793,6 +887,37 @@
         }
     }
 
+    async function loadFeaturedStoreProducts() {
+        const container = document.getElementById('offersFeaturedStore');
+        if (!container) return;
+
+        try {
+            const resp = await fetch('/api/store/featured?limit=6');
+            const data = await resp.json();
+            const products = Array.isArray(data?.products) ? data.products : [];
+
+            if (!products.length) {
+                container.innerHTML = '<div class="wf-alert wf-alert-info" style="min-width:100%;">Sem produtos em destaque no momento.</div>';
+                return;
+            }
+
+            container.innerHTML = products.map((product) => `
+                <a href="/store/product/${encodeURIComponent(product.slug)}" class="offers-store-card">
+                    <div class="offers-store-media">
+                        <img src="${escapeHtml(getStoreProductImage(product))}" alt="${escapeHtml(product.name || 'Produto')}" loading="lazy">
+                    </div>
+                    <div class="offers-store-body">
+                        <span class="offers-store-cat">${escapeHtml(product.category || 'Categoria')}</span>
+                        <h3 class="offers-store-name">${escapeHtml(product.name || 'Produto')}</h3>
+                        <span class="offers-store-price">R$ ${Number(product.price || 0).toFixed(2)}</span>
+                    </div>
+                </a>
+            `).join('');
+        } catch {
+            container.innerHTML = '<div class="wf-alert wf-alert-error" style="min-width:100%;">Falha ao carregar anúncios da loja.</div>';
+        }
+    }
+
     function applyFilters() {
         loadOffers();
     }
@@ -808,6 +933,7 @@
     });
 
     loadOffers();
+    loadFeaturedStoreProducts();
     loadMessagesBadge();
 </script>
 {% endblock %}

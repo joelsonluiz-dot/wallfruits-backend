@@ -158,6 +158,90 @@
         margin-top: 0.4rem;
     }
 
+    .ag-row-section {
+        margin-top: 0.35rem;
+    }
+
+    .ag-row-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.8rem;
+        margin-bottom: 0.55rem;
+        flex-wrap: wrap;
+    }
+
+    .ag-row-title {
+        margin: 0;
+        color: #0f2f60;
+        font-size: 0.96rem;
+        font-weight: 900;
+        letter-spacing: -0.01em;
+    }
+
+    .ag-row-strip {
+        display: flex;
+        gap: 0.72rem;
+        overflow-x: auto;
+        padding: 0.18rem 0.08rem 0.35rem;
+        scroll-snap-type: x proximity;
+    }
+
+    .ag-row-item {
+        min-width: 228px;
+        max-width: 228px;
+        scroll-snap-align: start;
+        text-decoration: none;
+        border: 1px solid rgba(17, 53, 105, 0.12);
+        border-radius: 14px;
+        background: #fff;
+        overflow: hidden;
+        box-shadow: 0 8px 18px rgba(14, 41, 83, 0.08);
+    }
+
+    .ag-row-media {
+        height: 112px;
+        background: linear-gradient(180deg, #f6fbff 0%, #edf4fb 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .ag-row-media img {
+        max-height: 92%;
+        max-width: 92%;
+        object-fit: contain;
+    }
+
+    .ag-row-body {
+        padding: 0.62rem;
+        display: grid;
+        gap: 0.28rem;
+    }
+
+    .ag-row-cat {
+        color: #5f728d;
+        font-size: 0.66rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .ag-row-name {
+        margin: 0;
+        color: #123568;
+        font-size: 0.76rem;
+        font-weight: 800;
+        line-height: 1.25;
+        min-height: 1.9rem;
+    }
+
+    .ag-row-price {
+        color: #0f2f60;
+        font-size: 0.82rem;
+        font-weight: 900;
+    }
+
     .ag-card {
         background: #fff;
         border: 1px solid rgba(17, 53, 105, 0.12);
@@ -317,6 +401,47 @@
         {% for cat in categories %}
         <a href="/store?category={{ cat.slug }}{% if search_query %}&q={{ search_query }}{% endif %}" class="ag-pill {% if active_category == cat.slug %}active{% endif %}">{{ cat.icon }} {{ cat.name }}</a>
         {% endfor %}
+    </section>
+
+    <section class="ag-row-section">
+        <div class="ag-row-head">
+            <h2 class="ag-row-title">Vitrine em destaque</h2>
+        </div>
+        <div class="ag-row-strip">
+            {% for product in products if product.is_featured %}
+            <a href="/store/product/{{ product.slug }}" class="ag-row-item">
+                <div class="ag-row-media">
+                    {% if product.images %}
+                    <img src="{{ product.images[0] }}" alt="{{ product.name }}">
+                    {% else %}
+                    <div style="font-size:2.2rem;">📦</div>
+                    {% endif %}
+                </div>
+                <div class="ag-row-body">
+                    <span class="ag-row-cat">{{ product.category.name }}</span>
+                    <h3 class="ag-row-name">{{ product.name }}</h3>
+                    <span class="ag-row-price">R$ {{ "%.2f"|format(product.price) }}</span>
+                </div>
+            </a>
+            {% else %}
+            {% for product in products[:8] %}
+            <a href="/store/product/{{ product.slug }}" class="ag-row-item">
+                <div class="ag-row-media">
+                    {% if product.images %}
+                    <img src="{{ product.images[0] }}" alt="{{ product.name }}">
+                    {% else %}
+                    <div style="font-size:2.2rem;">📦</div>
+                    {% endif %}
+                </div>
+                <div class="ag-row-body">
+                    <span class="ag-row-cat">{{ product.category.name }}</span>
+                    <h3 class="ag-row-name">{{ product.name }}</h3>
+                    <span class="ag-row-price">R$ {{ "%.2f"|format(product.price) }}</span>
+                </div>
+            </a>
+            {% endfor %}
+            {% endfor %}
+        </div>
     </section>
 
     <section class="ag-products-grid">

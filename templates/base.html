@@ -272,6 +272,32 @@
             flex-wrap: wrap;
         }
 
+        .wf-publish-global-btn {
+            position: fixed;
+            right: 1rem;
+            top: 0.9rem;
+            z-index: 140;
+            display: none;
+            align-items: center;
+            gap: 0.4rem;
+            border: 1px solid rgba(11, 46, 99, 0.24);
+            background: linear-gradient(135deg, #0b2e63, #1a4d9b);
+            color: #fff !important;
+            text-decoration: none;
+            font-weight: 800;
+            font-size: 0.76rem;
+            padding: 0.5rem 0.82rem;
+            border-radius: 999px;
+            box-shadow: 0 10px 24px rgba(11, 46, 99, 0.28);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .wf-publish-global-btn:hover {
+            color: #fff !important;
+            transform: translateY(-1px);
+            box-shadow: 0 14px 30px rgba(11, 46, 99, 0.34);
+        }
+
         /* Profile menu (inspirado no modelo de dropdown) */
         .wf-profile-menu {
             position: relative;
@@ -1165,10 +1191,26 @@
                 right: 0.45rem;
                 border-radius: 14px;
             }
+
+            .wf-publish-global-btn {
+                top: 0.65rem;
+                right: 0.65rem;
+                font-size: 0.7rem;
+                padding: 0.44rem 0.62rem;
+            }
+
+            .wf-publish-global-btn .wf-publish-label {
+                display: none;
+            }
         }
     </style>
 </head>
 <body>
+    <a href="/store/manage/dashboard" class="wf-publish-global-btn" id="globalPublishProductBtn" title="Publicar produto">
+        <span>+</span>
+        <span class="wf-publish-label">Publicar Produto</span>
+    </a>
+
     <div class="wf-app-shell">
         <aside class="wf-sidebar">
             <div class="wf-sidebar-header">
@@ -1388,6 +1430,7 @@
             setElementDisplay('rightNavLogin', !isLogged);
             setElementDisplay('rightNavRegister', !isLogged);
             setElementDisplay('adminSection', isAdmin);
+            setElementDisplay('globalPublishProductBtn', isStoreManager);
 
             const topbar = document.querySelector('.wf-topbar');
             if (topbar) {

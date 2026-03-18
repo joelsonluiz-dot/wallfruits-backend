@@ -366,6 +366,39 @@ async def view_cart(request: Request, current_user: User = Depends(get_current_u
     return _render_template("store/cart.html", request, current_user=current_user)
 
 
+@app.get("/api/store/featured")
+async def store_featured_products(limit: int = 8, db: Session = Depends(get_db)):
+    """Lista pública de produtos em destaque para vitrines horizontais."""
+    from app.models.store_models import Product, ProductStatus
+
+    safe_limit = max(1, min(limit, 20))
+    products = (
+        db.query(Product)
+        .filter(Product.status == ProductStatus.PUBLISHED)
+        .order_by(Product.is_featured.desc(), Product.created_at.desc())
+        .limit(safe_limit)
+        .all()
+    )
+
+    payload = []
+    for product in products:
+        payload.append(
+            {
+                "id": product.id,
+                "name": product.name,
+                "slug": product.slug,
+                "price": float(product.price or 0),
+                "is_featured": bool(product.is_featured),
+                "stock_quantity": int(product.stock_quantity or 0),
+                "category": product.category.name if product.category else "Categoria",
+                "supplier": product.supplier.name if product.supplier else "Fornecedor",
+                "image": product.images[0] if isinstance(product.images, list) and product.images else None,
+            }
+        )
+
+    return {"products": payload, "total": len(payload)}
+
+
 @app.get("/ai-agent")
 async def ai_agent_page(request: Request):
     """Interface web do assistente IA embutida no botão flutuante."""
