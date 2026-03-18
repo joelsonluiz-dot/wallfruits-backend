@@ -36,7 +36,7 @@
 
     .ag-store-title {
         margin: 0;
-        font-size: clamp(1.6rem, 3.1vw, 2.5rem);
+            font-size: clamp(1.2rem, 1.8vw, 1.65rem);
         line-height: 1.05;
         letter-spacing: -0.03em;
         color: #0b2e63;
@@ -47,7 +47,31 @@
         margin: 0.9rem 0 0;
         color: #123c79;
         font-weight: 600;
+            font-size: 0.88rem;
         max-width: 58ch;
+    }
+
+    .ag-hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.55rem;
+        margin-top: 0.9rem;
+    }
+
+    .ag-hero-btn {
+        text-decoration: none;
+        border-radius: 12px;
+        padding: 0.55rem 0.85rem;
+        font-size: 0.8rem;
+        font-weight: 800;
+        border: 1px solid #0b2e63;
+        color: #0b2e63;
+        background: rgba(255, 255, 255, 0.78);
+    }
+
+    .ag-hero-btn.primary {
+        background: #0b2e63;
+        color: #fff;
     }
 
     .ag-hero-kpis {
@@ -62,7 +86,7 @@
         padding: 0.75rem 0.9rem;
         color: #0b2e63;
         font-weight: 700;
-        font-size: 0.9rem;
+           font-size: 0.74rem;
     }
 
     .ag-search {
@@ -79,8 +103,9 @@
     .ag-search input {
         border: none;
         background: transparent;
-        padding: 0.6rem 0.8rem;
+        padding: 0.5rem 0.75rem;
         font-weight: 600;
+            font-size: 0.84rem;
         color: #163d77;
     }
 
@@ -91,9 +116,10 @@
     .ag-search button {
         border: none;
         border-radius: 12px;
-        padding: 0.58rem 1rem;
+        padding: 0.5rem 0.9rem;
         background: #0b2e63;
         color: #fff;
+            font-size: 0.78rem;
         font-weight: 700;
     }
 
@@ -108,12 +134,12 @@
     .ag-pill {
         white-space: nowrap;
         text-decoration: none;
-        padding: 0.55rem 0.95rem;
+        padding: 0.5rem 0.85rem;
         border-radius: 999px;
         border: 1px solid rgba(11, 46, 99, 0.14);
         background: #ffffff;
         color: #10386f;
-        font-size: 0.84rem;
+            font-size: 0.72rem;
         font-weight: 700;
         transition: all 0.2s ease;
     }
@@ -127,7 +153,7 @@
 
     .ag-products-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
         gap: 0.9rem;
         margin-top: 0.4rem;
     }
@@ -149,7 +175,7 @@
     .ag-card-media {
         position: relative;
         background: linear-gradient(180deg, #f6fbff 0%, #edf4fb 100%);
-        height: 190px;
+        height: 176px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -189,7 +215,7 @@
     .ag-card-title {
         margin: 0.35rem 0;
         color: #132f5d;
-        font-size: 0.97rem;
+            font-size: 0.84rem;
         font-weight: 800;
         display: -webkit-box;
         line-clamp: 2;
@@ -216,7 +242,7 @@
 
     .ag-price {
         color: #0f2f60;
-        font-size: 1.1rem;
+            font-size: 0.92rem;
         font-weight: 900;
         letter-spacing: -0.01em;
     }
@@ -246,6 +272,14 @@
         .ag-store-hero-content {
             grid-template-columns: 1fr;
         }
+
+        .ag-store-title {
+            font-size: 1.3rem;
+        }
+
+        .ag-store-subtitle {
+            font-size: 0.84rem;
+        }
     }
 </style>
 
@@ -255,6 +289,12 @@
             <div>
                 <h1 class="ag-store-title">Loja Agro Profissional: Insumos, Defensivos, Implementos, EPI e Ferramentas</h1>
                 <p class="ag-store-subtitle">Marketplace de compra para o agronegocio com foco em produtividade no campo. Aqui voce encontra produtos para operacao agricola, manutencao e protecao da equipe.</p>
+
+                <div class="ag-hero-actions">
+                    <a href="/store/manage/dashboard" class="ag-hero-btn primary" id="storeCreateProductBtn" style="display:none;">Cadastrar novo produto</a>
+                    <a href="/store/manage/dashboard" class="ag-hero-btn" id="storeManageBtn" style="display:none;">Gerenciar loja</a>
+                    <span class="ag-hero-btn" id="storeSupplierTip">Para publicar produtos, entre como Fornecedor ou Admin.</span>
+                </div>
 
                 <form class="ag-search" method="GET" action="/store">
                     <input type="text" name="q" value="{{ search_query or '' }}" placeholder="Busque por adubo, inseticida, pulverizador, EPI, ferramenta...">
@@ -315,5 +355,29 @@
         {% endfor %}
     </section>
 </div>
+
+<script>
+    (function setupStoreActions() {
+        const createBtn = document.getElementById('storeCreateProductBtn');
+        const manageBtn = document.getElementById('storeManageBtn');
+        const supplierTip = document.getElementById('storeSupplierTip');
+
+        let user = null;
+        try {
+            user = JSON.parse(localStorage.getItem('user') || 'null');
+        } catch {
+            user = null;
+        }
+
+        const role = user?.role || '';
+        const canManageStore = ['admin', 'supplier', 'producer'].includes(role);
+
+        if (canManageStore) {
+            if (createBtn) createBtn.style.display = 'inline-flex';
+            if (manageBtn) manageBtn.style.display = 'inline-flex';
+            if (supplierTip) supplierTip.style.display = 'none';
+        }
+    })();
+</script>
 
 {% endblock %}

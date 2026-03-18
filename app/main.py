@@ -341,19 +341,24 @@ async def product_detail(slug: str, request: Request, db: Session = Depends(get_
     return _render_template("store/product_detail.html", request, product=product, related_products=related, current_user=current_user)
 
 @app.get("/store/manage/dashboard")
-async def supplier_dashboard(request: Request, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    """Dashboard do fornecedor para gerenciar produtos."""
+async def supplier_dashboard(request: Request, db: Session = Depends(get_db), current_user: User = Depends(get_current_user_optional)):
+    """Dashboard da loja para admin/fornecedor gerenciar produtos."""
     from app.models.store_models import Product, ProductCategory
 
     _ensure_store_categories(db)
-    
-    if current_user.role not in ["admin", "supplier", "producer"]:
-        raise HTTPException(status_code=403, detail="Acesso negado")
-        
-    my_products = db.query(Product).filter(Product.supplier_id == current_user.id).all()
+
+    can_manage_store = bool(current_user and current_user.role in ["admin", "supplier", "producer"])
+    my_products = db.query(Product).filter(Product.supplier_id == current_user.id).all() if can_manage_store else []
     categories = db.query(ProductCategory).all()
-    
-    return _render_template("store/dashboard.html", request, products=my_products, categories=categories, current_user=current_user)
+
+    return _render_template(
+        "store/dashboard.html",
+        request,
+        products=my_products,
+        categories=categories,
+        current_user=current_user,
+        can_manage_store=can_manage_store,
+    )
 
 @app.get("/store/cart")
 async def view_cart(request: Request, current_user: User = Depends(get_current_user_optional)):

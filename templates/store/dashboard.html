@@ -11,9 +11,12 @@
         border-radius: 18px;
         background: linear-gradient(120deg, #0b2e63 0%, #12489d 100%);
         color: #fff;
-        padding: 1.4rem;
+        padding: 1.1rem;
         border: 1px solid rgba(255, 255, 255, 0.18);
     }
+
+    .ag-manage-hero h1 { font-size: 1.2rem; }
+    .ag-manage-hero p { font-size: 0.9rem; }
 
     .ag-metrics {
         display: grid;
@@ -32,14 +35,14 @@
     .ag-metric h3 {
         margin: 0;
         color: #0d336a;
-        font-size: 1.4rem;
+        font-size: 1.2rem;
         font-weight: 900;
     }
 
     .ag-metric p {
         margin: 0.2rem 0 0;
         color: #577096;
-        font-size: 0.82rem;
+        font-size: 0.76rem;
         font-weight: 700;
     }
 
@@ -55,6 +58,7 @@
         color: #0b2e63;
         padding: 0.9rem 1rem;
         font-weight: 900;
+        font-size: 0.92rem;
         letter-spacing: 0.01em;
     }
 
@@ -65,12 +69,19 @@
     }
 
     .ag-field label {
-        font-size: 0.8rem;
+        font-size: 0.74rem;
         text-transform: uppercase;
         letter-spacing: 0.05em;
         font-weight: 800;
         color: #21497f;
         margin-bottom: 0.35rem;
+    }
+
+    .ag-auth-alert {
+        border: 1px solid rgba(11, 46, 99, 0.14);
+        border-radius: 14px;
+        background: #fff;
+        padding: 1rem;
     }
 
     .ag-table-wrap {
@@ -114,9 +125,10 @@
         </article>
     </section>
 
+    {% if can_manage_store %}
     <section class="ag-form-card">
         <div class="ag-form-head">Cadastrar produto para o agronegocio</div>
-        <form action="/store/manage/create" method="POST" class="ag-form-body">
+        <form id="storeCreateForm" action="/store/manage/create" method="POST" class="ag-form-body">
             <div class="row g-3">
                 <div class="col-md-6 ag-field">
                     <label for="name" class="form-label">Nome comercial</label>
@@ -251,5 +263,51 @@
             </table>
         </div>
     </section>
+    {% else %}
+    <section class="ag-auth-alert">
+        <h2 class="h6 mb-2">Acesso de publicação restrito</h2>
+        <p class="mb-2" style="font-size:0.92rem;color:#405e88;">Somente contas <b>Fornecedor</b>, <b>Produtor</b> e <b>Admin</b> podem publicar e gerenciar produtos da loja.</p>
+        <p class="mb-0" style="font-size:0.85rem;color:#4c6a93;">Se você já possui esse perfil, faça login novamente para atualizar a sessão.</p>
+    </section>
+    {% endif %}
 </div>
+
+<script>
+    (function setupStoreDashboardForm() {
+        const form = document.getElementById('storeCreateForm');
+        if (!form) return;
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('Faça login como fornecedor/admin para publicar produtos.');
+                window.location.href = '/login';
+                return;
+            }
+
+            const formData = new FormData(form);
+            try {
+                const response = await fetch('/store/manage/create', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                    },
+                    body: formData,
+                });
+
+                if (!response.ok) {
+                    const text = await response.text();
+                    throw new Error(text || `Erro HTTP ${response.status}`);
+                }
+
+                alert('Produto publicado com sucesso!');
+                window.location.href = '/store/manage/dashboard';
+            } catch (error) {
+                alert(`Não foi possível publicar o produto: ${error.message || 'erro inesperado'}`);
+            }
+        });
+    })();
+</script>
 {% endblock %}
