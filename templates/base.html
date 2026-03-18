@@ -14,6 +14,7 @@
     <title>{% block title %}WallFruits - Marketplace{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Merriweather:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <style>
         :root {
@@ -406,15 +407,15 @@
             border-radius: 0 0 12px 12px;
         }
 
-        /* Menu inferior mobile/tablet inspirado no segundo modelo */
+        /* Menu inferior mobile/tablet + popup de ações */
         .wf-mobile-wrap {
             display: none;
             position: fixed;
             left: 0;
             right: 0;
-            bottom: 0.65rem;
+            bottom: 0;
             z-index: 132;
-            padding: 0 0.75rem;
+            padding: 0;
             pointer-events: none;
         }
 
@@ -422,74 +423,75 @@
             animation: fadeIn 0.3s ease;
         }
 
-        .wf-mobile-dock {
-            max-width: 760px;
+        .wf-bottom-menu {
+            width: min(860px, 100%);
             margin: 0 auto;
-            padding: 0.45rem;
-            border-radius: 20px;
-            border: 1px solid var(--wf-border);
-            background: rgba(252, 247, 236, 0.95);
-            backdrop-filter: blur(22px);
-            -webkit-backdrop-filter: blur(22px);
-            box-shadow: 0 18px 36px rgba(94, 82, 48, 0.18);
-            display: flex;
-            align-items: center;
-            gap: 0.45rem;
+            background: rgba(252, 247, 236, 0.84);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border-top: 1px solid rgba(92, 76, 45, 0.18);
+            box-shadow: 0 -6px 24px rgba(58, 46, 24, 0.18);
             pointer-events: auto;
         }
 
-        .wf-mobile-dock-items {
+        .wf-bottom-menu-list {
             display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 0.4rem;
-            flex: 1;
-            min-width: 0;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            align-items: center;
+            list-style: none;
+            margin: 0;
+            padding: 0.35rem 0.25rem calc(0.35rem + env(safe-area-inset-bottom));
+            min-height: 74px;
+        }
+
+        .wf-mobile-nav-slot {
+            position: relative;
+            display: flex;
+            justify-content: center;
         }
 
         .wf-mobile-nav-item {
+            position: relative;
             text-decoration: none;
             color: var(--wf-text-secondary) !important;
-            background: rgba(94, 127, 44, 0.07);
-            border: 1px solid rgba(94, 127, 44, 0.14);
-            border-radius: 14px;
-            min-height: 54px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 0.2rem;
-            transition: all 0.24s ease;
-            position: relative;
+            gap: 0.08rem;
+            min-height: 54px;
+            padding: 0.2rem 0.35rem;
+            border-radius: 12px;
+            transition: all 0.22s ease;
+            width: 100%;
+            max-width: 92px;
             text-align: center;
-            padding: 0.25rem;
         }
 
         .wf-mobile-nav-item:hover,
-        .wf-mobile-nav-item:active {
+        .wf-mobile-nav-item:active,
+        .wf-mobile-nav-item.active {
             color: var(--wf-text) !important;
             background: rgba(94, 127, 44, 0.14);
-            border-color: rgba(94, 127, 44, 0.24);
-            transform: translateY(-1px);
         }
 
-        .wf-mobile-nav-icon {
-            font-size: 0.98rem;
+        .wf-mobile-nav-icon.material-icons {
+            font-size: 1.35rem;
             line-height: 1;
         }
 
         .wf-mobile-nav-label {
-            font-size: 0.62rem;
+            font-size: 0.68rem;
             font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-            line-height: 1;
+            letter-spacing: 0.01em;
+            line-height: 1.1;
             white-space: nowrap;
         }
 
         .wf-mobile-notif-badge {
             position: absolute;
             top: 2px;
-            right: 4px;
+            right: 14px;
             min-width: 16px;
             height: 16px;
             border-radius: 999px;
@@ -503,30 +505,145 @@
             padding: 0 4px;
         }
 
-        .wf-mobile-toggle {
-            width: 48px;
-            min-width: 48px;
-            height: 54px;
-            border-radius: 14px;
-            border: none;
-            background: linear-gradient(135deg, var(--wf-accent), #6b8e33);
-            color: #f8f4e8;
-            font-size: 1.5rem;
-            line-height: 1;
+        .wf-mobile-center-slot {
             display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 74px;
+        }
+
+        .wf-mobile-center-button {
+            border: none;
+            background: linear-gradient(135deg, #2196f3, #00bcd4);
+            color: #fff;
+            width: clamp(52px, 12vw, 64px);
+            height: clamp(52px, 12vw, 64px);
+            border-radius: 50%;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 10px 22px rgba(94, 127, 44, 0.3);
-            transition: transform 0.25s ease, box-shadow 0.25s ease;
+            margin-top: -28px;
+            box-shadow: 0 9px 20px rgba(0, 0, 0, 0.28);
+            transition: transform 0.2s ease;
             cursor: pointer;
         }
 
-        .wf-mobile-toggle.is-open {
-            transform: rotate(45deg);
-            box-shadow: 0 12px 26px rgba(94, 127, 44, 0.38);
+        .wf-mobile-center-button:active {
+            transform: scale(0.92);
         }
 
-        /* Painel de ações secundárias */
+        .wf-mobile-center-button .material-icons {
+            font-size: 1.85rem;
+        }
+
+        .wf-popup-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.32);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 148;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .wf-popup-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .wf-popup-content {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: min(860px, 100%);
+            margin: 0 auto;
+            max-height: 72vh;
+            background: var(--wf-surface);
+            border-radius: 22px 22px 0 0;
+            border: 1px solid var(--wf-border);
+            border-bottom: none;
+            padding: 0.95rem 0.9rem calc(0.95rem + env(safe-area-inset-bottom));
+            transform: translateY(108%);
+            transition: transform 0.35s cubic-bezier(.25,.8,.25,1);
+            overflow-y: auto;
+            overscroll-behavior: contain;
+        }
+
+        .wf-popup-overlay.show .wf-popup-content {
+            transform: translateY(0);
+        }
+
+        .wf-popup-drag-handle {
+            width: 44px;
+            height: 5px;
+            border-radius: 999px;
+            background: rgba(92, 76, 45, 0.3);
+            margin: 0 auto 0.9rem;
+        }
+
+        .wf-popup-items {
+            display: grid;
+            gap: 0.55rem;
+        }
+
+        .wf-popup-item {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            width: 100%;
+            border: 1px solid rgba(92, 76, 45, 0.12);
+            border-radius: 12px;
+            background: rgba(94, 127, 44, 0.07);
+            color: var(--wf-text);
+            font-weight: 700;
+            text-decoration: none;
+            padding: 0.88rem 0.92rem;
+        }
+
+        .wf-popup-item .material-icons {
+            font-size: 1.15rem;
+            color: var(--wf-accent);
+        }
+
+        .wf-popup-close {
+            width: 100%;
+            margin-top: 0.7rem;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #2196f3, #00bcd4);
+            color: #fff;
+            font-weight: 700;
+            padding: 0.84rem 0.95rem;
+        }
+
+        .wf-menu-toggle {
+            position: fixed;
+            top: 0.9rem;
+            right: 0.9rem;
+            width: 44px;
+            height: 44px;
+            border: 1px solid rgba(92, 76, 45, 0.22);
+            border-radius: 12px;
+            background: rgba(252, 247, 236, 0.84);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: var(--wf-text);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 152;
+            cursor: pointer;
+            box-shadow: 0 8px 18px rgba(58, 46, 24, 0.18);
+        }
+
+        .wf-menu-toggle .material-icons {
+            font-size: 1.35rem;
+        }
+
+        /* Painel lateral direito */
         .wf-sidebar-right {
             display: flex;
             flex-direction: column;
@@ -534,61 +651,54 @@
             right: 0;
             top: 0;
             bottom: 0;
-            width: min(360px, 92vw);
-            background: rgba(252, 247, 236, 0.96);
-            backdrop-filter: blur(22px);
-            -webkit-backdrop-filter: blur(22px);
+            width: min(340px, 78vw);
+            background: #fff;
             border-left: 1px solid var(--wf-border);
             z-index: 150;
             overflow-y: auto;
-            box-shadow: -8px 0 32px rgba(58, 46, 24, 0.16);
-            transform: translateX(104%);
-            opacity: 0;
-            pointer-events: none;
-            transition: transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.24s ease;
+            box-shadow: -2px 0 15px rgba(0, 0, 0, 0.24);
+            transform: translateX(105%);
+            transition: transform 0.28s ease;
         }
 
         .wf-sidebar-right.active {
             transform: translateX(0);
-            opacity: 1;
-            pointer-events: auto;
         }
 
         .wf-sidebar-right-header {
-            padding: 1.25rem 1.05rem;
-            border-bottom: 1px solid var(--wf-border);
+            padding: 1rem;
+            background: linear-gradient(135deg, #2196f3, #00bcd4);
+            color: #fff;
             display: flex;
             align-items: center;
             justify-content: space-between;
         }
 
         .wf-sidebar-right-title {
-            font-size: 0.88rem;
+            font-size: 0.94rem;
             font-weight: 800;
-            color: #6f7659;
+            color: #fff;
             text-transform: uppercase;
-            letter-spacing: 0.08em;
+            letter-spacing: 0.06em;
         }
 
         .wf-sidebar-right-close {
-            background: none;
+            background: rgba(255, 255, 255, 0.16);
             border: none;
-            font-size: 1.4rem;
+            border-radius: 9px;
+            font-size: 1.2rem;
             cursor: pointer;
-            color: var(--wf-text-secondary);
+            color: #fff;
             transition: all 0.2s ease;
-            padding: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             width: 32px;
             height: 32px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .wf-sidebar-right-close:hover {
-            color: var(--wf-text);
-            background: rgba(94, 127, 44, 0.08);
-            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.28);
         }
 
         .wf-sidebar-right-content {
@@ -642,17 +752,17 @@
         .wf-sidebar-right-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(40, 31, 16, 0.38);
-            z-index: 145;
-            backdrop-filter: blur(4px);
+            background: rgba(0, 0, 0, 0.3);
+            z-index: 149;
             opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.25s ease;
+            visibility: hidden;
+            transition: 0.3s;
+            backdrop-filter: blur(3px);
         }
 
-        .wf-sidebar-right.active ~ .wf-sidebar-right-overlay {
+        .wf-sidebar-right-overlay.show {
             opacity: 1;
-            pointer-events: auto;
+            visibility: visible;
         }
 
         .wf-card {
@@ -968,6 +1078,10 @@
                 display: block;
             }
 
+            .wf-menu-toggle {
+                display: inline-flex;
+            }
+
             .wf-mobile-quick-actions {
                 display: flex;
                 gap: 0.5rem;
@@ -976,19 +1090,7 @@
             }
 
             .wf-sidebar-right {
-                left: 0.75rem;
-                right: 0.75rem;
-                bottom: 5.3rem;
-                top: auto;
-                width: auto;
-                max-height: min(70vh, 580px);
-                border: 1px solid var(--wf-border);
-                border-radius: 18px;
-                transform: translateY(18px) scale(0.98);
-            }
-
-            .wf-sidebar-right.active {
-                transform: translateY(0) scale(1);
+                width: min(340px, 82vw);
             }
 
             #navNotifBadge {
@@ -1046,83 +1148,23 @@
             }
 
             .wf-shell-main {
-                padding-bottom: 116px;
-            }
-
-            /* 🚤 REVOLUTIONARY MOBILE DOCK */
-            .wf-mobile-wrap {
-                bottom: 1.5rem;
-                padding: 0 1rem;
-                z-index: 1000;
-            }
-
-            .wf-mobile-dock {
-                border-radius: 24px;
-                padding: 0.5rem;
-                background: rgba(255, 255, 255, 0.65);
-                backdrop-filter: blur(20px);
-                -webkit-backdrop-filter: blur(20px);
-                box-shadow: 
-                    0 20px 40px -10px rgba(0,0,0,0.15),
-                    inset 0 0 0 1px rgba(255,255,255,0.4);
-                border: 1px solid rgba(255,255,255,0.5);
-                transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-            }
-
-            .wf-mobile-dock:hover {
-                transform: translateY(-5px);
-            }
-
-            .wf-mobile-dock-items {
-                gap: 0.5rem;
-                justify-content: space-around;
-            }
-
-            .wf-mobile-nav-item {
-                min-height: 60px;
-                min-width: 60px;
-                border-radius: 18px;
-                background: rgba(255, 255, 255, 0.4);
-                border: 1px solid rgba(255, 255, 255, 0.2);
-                transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); /* Bouncy effect */
-            }
-
-            .wf-mobile-nav-item:active {
-                transform: scale(0.92);
-            }
-
-            .wf-mobile-nav-item.active {
-                background: var(--wf-accent);
-                color: #fff !important;
-                box-shadow: 0 8px 16px rgba(94, 127, 44, 0.3);
-            }
-            
-            .wf-mobile-nav-item.active .wf-mobile-nav-label {
-                color: #fff;
+                padding-bottom: 112px;
             }
 
             .wf-mobile-nav-label {
-                font-size: 0.65rem;
-                letter-spacing: 0.03em;
-                margin-top: 2px;
-                font-weight: 700;
+                font-size: 0.64rem;
             }
 
-            .wf-mobile-toggle {
-                width: 60px;
-                min-width: 60px;
-                height: 60px;
-                border-radius: 18px;
-                background: linear-gradient(135deg, var(--wf-accent), #8db64d);
-                box-shadow: 0 10px 20px rgba(94, 127, 44, 0.3);
+            .wf-mobile-center-slot {
+                height: 68px;
             }
 
-            .wf-sidebar-right {
-                bottom: 8rem; /* Move up to not cover dock */
-                left: 1rem;
-                right: 1rem;
-                border-radius: 24px;
-                background: rgba(255, 255, 255, 0.9);
+            .wf-mobile-center-button {
+                margin-top: -24px;
+            }
+
+            .wf-popup-content {
+                max-height: 70vh;
             }
         }
 
@@ -1147,49 +1189,59 @@
             }
 
             .wf-shell-main {
-                padding-bottom: 108px;
+                padding-bottom: 104px;
             }
 
             .wf-mobile-wrap {
-                bottom: 0.5rem;
-                padding: 0 0.45rem;
+                padding: 0;
             }
 
-            .wf-mobile-dock {
-                border-radius: 16px;
-                padding: 0.33rem;
-                gap: 0.26rem;
-            }
-
-            .wf-mobile-dock-items {
-                gap: 0.26rem;
+            .wf-bottom-menu-list {
+                min-height: 68px;
+                padding: 0.22rem 0.15rem calc(0.22rem + env(safe-area-inset-bottom));
             }
 
             .wf-mobile-nav-item {
-                min-height: 46px;
+                min-height: 50px;
+                padding: 0.18rem 0.2rem;
             }
 
-            .wf-mobile-nav-icon {
-                font-size: 0.9rem;
+            .wf-mobile-nav-icon.material-icons {
+                font-size: 1.2rem;
             }
 
             .wf-mobile-nav-label {
-                font-size: 0.54rem;
+                font-size: 0.59rem;
             }
 
-            .wf-mobile-toggle {
+            .wf-mobile-center-slot {
+                height: 64px;
+            }
+
+            .wf-mobile-center-button {
+                width: 52px;
+                height: 52px;
+                margin-top: -20px;
+            }
+
+            .wf-mobile-notif-badge {
+                right: 8px;
+            }
+
+            .wf-menu-toggle {
                 width: 40px;
-                min-width: 40px;
-                height: 46px;
-                font-size: 1.28rem;
-                border-radius: 12px;
+                height: 40px;
+                top: 0.7rem;
+                right: 0.7rem;
             }
 
             .wf-sidebar-right {
-                bottom: 4.45rem;
-                left: 0.45rem;
-                right: 0.45rem;
-                border-radius: 14px;
+                width: min(320px, 88vw);
+            }
+
+            .wf-popup-content {
+                border-radius: 18px 18px 0 0;
+                padding: 0.8rem 0.7rem calc(0.8rem + env(safe-area-inset-bottom));
             }
 
             .wf-publish-global-btn {
@@ -1421,12 +1473,16 @@
             setElementDisplay('navIntermediation', isLogged);
             setElementDisplay('navStrategy', isAdmin);
 
-            setElementDisplay('actionExplore', !isLogged);
+            setElementDisplay('actionExplore', true);
             setElementDisplay('actionNewOffer', isLogged);
             setElementDisplay('actionMessages', isLogged);
             setElementDisplay('actionHelp', isLogged);
             setElementDisplay('actionNotifications', isLogged);
-            setElementDisplay('actionProfile', isLogged);
+            setElementDisplay('actionProfile', true);
+            setElementDisplay('actionPopupHelp', isLogged);
+            setElementDisplay('actionPopupNewOffer', isLogged);
+            setElementDisplay('actionPopupCreateProduct', isStoreManager);
+            setElementDisplay('actionPopupFeatured', isAdmin);
             setElementDisplay('notificationsSection', isLogged);
             setElementDisplay('rightNavStoreManage', isStoreManager);
             setElementDisplay('rightNavStoreCart', isLogged);
@@ -1441,7 +1497,15 @@
             setElementDisplay('rightNavLogin', !isLogged);
             setElementDisplay('rightNavRegister', !isLogged);
             setElementDisplay('adminSection', isAdmin);
+            setElementDisplay('rightNavAdmin', isAdmin);
             setElementDisplay('globalPublishProductBtn', isStoreManager);
+
+            const actionProfileLink = document.getElementById('actionProfileLink');
+            const actionProfileLabel = document.getElementById('actionProfileLabel');
+            if (actionProfileLink && actionProfileLabel) {
+                actionProfileLink.href = isLogged ? '/me/profile' : '/login';
+                actionProfileLabel.textContent = isLogged ? 'Perfil' : 'Entrar';
+            }
 
             const topbar = document.querySelector('.wf-topbar');
             if (topbar) {
@@ -1450,7 +1514,7 @@
 
             const actionBar = document.getElementById('actionBar');
             if (actionBar) {
-                actionBar.classList.toggle('mobile-visible', isLogged);
+                actionBar.classList.toggle('mobile-visible', true);
             }
 
             if (!isLogged) {
@@ -1493,6 +1557,9 @@
             const sidebarRight = document.getElementById('sidebarRight');
             if (sidebarRight) sidebarRight.classList.remove('active');
 
+            const sidebarRightOverlay = document.getElementById('sidebarRightOverlay');
+            if (sidebarRightOverlay) sidebarRightOverlay.classList.remove('show');
+
             const btnToggleMenuRight = document.getElementById('btnToggleMenuRight');
             if (btnToggleMenuRight) btnToggleMenuRight.classList.remove('is-open');
         }
@@ -1502,8 +1569,23 @@
             if (!sidebarRight) return;
 
             const isOpen = sidebarRight.classList.toggle('active');
+            const sidebarRightOverlay = document.getElementById('sidebarRightOverlay');
+            if (sidebarRightOverlay) sidebarRightOverlay.classList.toggle('show', isOpen);
+
             const btnToggleMenuRight = document.getElementById('btnToggleMenuRight');
             if (btnToggleMenuRight) btnToggleMenuRight.classList.toggle('is-open', isOpen);
+        }
+
+        function openDrawer() {
+            const sidebarRight = document.getElementById('sidebarRight');
+            if (!sidebarRight) return;
+
+            sidebarRight.classList.add('active');
+            const sidebarRightOverlay = document.getElementById('sidebarRightOverlay');
+            if (sidebarRightOverlay) sidebarRightOverlay.classList.add('show');
+
+            const btnToggleMenuRight = document.getElementById('btnToggleMenuRight');
+            if (btnToggleMenuRight) btnToggleMenuRight.classList.add('is-open');
         }
 
         function setupSidebarRight() {
@@ -1523,6 +1605,76 @@
 
             document.addEventListener('keydown', (event) => {
                 if (event.key === 'Escape') closeSidebarRight();
+            });
+        }
+
+        function openPopup() {
+            const popup = document.getElementById('mobileActionPopup');
+            if (!popup) return;
+            popup.classList.add('show');
+        }
+
+        function closePopup() {
+            const popup = document.getElementById('mobileActionPopup');
+            if (!popup) return;
+            popup.classList.remove('show');
+        }
+
+        function setupMobilePopup() {
+            const popup = document.getElementById('mobileActionPopup');
+            const popupContent = document.getElementById('popupContent');
+            const centerButton = document.getElementById('actionCenterButton');
+            const popupClose = document.getElementById('popupCloseBtn');
+
+            if (!popup || !popupContent || !centerButton) return;
+
+            let startY = 0;
+            let currentY = 0;
+            let isDragging = false;
+
+            centerButton.addEventListener('click', openPopup);
+            popup.addEventListener('click', (event) => {
+                if (event.target === popup) closePopup();
+            });
+
+            if (popupClose) popupClose.addEventListener('click', closePopup);
+
+            popup.querySelectorAll('.wf-popup-item').forEach((item) => {
+                item.addEventListener('click', closePopup);
+            });
+
+            popupContent.addEventListener('touchstart', (event) => {
+                startY = event.touches[0].clientY;
+                currentY = startY;
+                isDragging = true;
+            }, { passive: true });
+
+            popupContent.addEventListener('touchmove', (event) => {
+                if (!isDragging) return;
+                currentY = event.touches[0].clientY;
+                const diff = currentY - startY;
+
+                if (diff > 0) {
+                    popupContent.style.transform = `translateY(${diff}px)`;
+                }
+            }, { passive: true });
+
+            popupContent.addEventListener('touchend', () => {
+                if (!isDragging) return;
+                isDragging = false;
+
+                if (currentY - startY > 100) {
+                    closePopup();
+                }
+
+                popupContent.style.transform = '';
+            });
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape') {
+                    closePopup();
+                    closeSidebarRight();
+                }
             });
         }
 
@@ -1581,6 +1733,7 @@
             bindLogoutHandler('navLogout');
             bindLogoutHandler('rightNavLogout');
             setupSidebarRight();
+            setupMobilePopup();
             setupProfileMenu();
             setNavAuthState();
             refreshUnreadNotifications();
@@ -1601,41 +1754,88 @@
 </main>
 </div>
 
-            <!-- Dock inferior (mobile/tablet) -->
+            <!-- Botão menu lateral (mobile/tablet) -->
+            <button class="wf-menu-toggle" id="btnToggleMenuRight" title="Menu">
+                <span class="material-icons">menu</span>
+            </button>
+
+            <!-- Menu inferior (mobile/tablet) -->
             <div class="wf-mobile-wrap" id="actionBar">
-                <div class="wf-mobile-dock">
-                    <div class="wf-mobile-dock-items">
-                        <a href="/offers" class="wf-mobile-nav-item" id="actionExplore" title="Explorar ofertas">
-                            <span class="wf-mobile-nav-icon">🌾</span>
-                            <span class="wf-mobile-nav-label">Ofertas</span>
+                <nav class="wf-bottom-menu" aria-label="Menu inferior">
+                    <ul class="wf-bottom-menu-list">
+                        <li class="wf-mobile-nav-slot" id="actionHome">
+                            <a href="/" class="wf-mobile-nav-item" title="Início">
+                                <span class="material-icons wf-mobile-nav-icon">home</span>
+                                <span class="wf-mobile-nav-label">Início</span>
+                            </a>
+                        </li>
+                        <li class="wf-mobile-nav-slot" id="actionExplore">
+                            <a href="/offers" class="wf-mobile-nav-item" title="Ofertas">
+                                <span class="material-icons wf-mobile-nav-icon">local_offer</span>
+                                <span class="wf-mobile-notif-badge" id="dockNotifBadge">0</span>
+                                <span class="wf-mobile-nav-label">Ofertas</span>
+                            </a>
+                        </li>
+                        <li class="wf-mobile-center-slot">
+                            <button class="wf-mobile-center-button" id="actionCenterButton" type="button" title="Abrir ações rápidas">
+                                <span class="material-icons">add</span>
+                            </button>
+                        </li>
+                        <li class="wf-mobile-nav-slot" id="actionStore">
+                            <a href="/store" class="wf-mobile-nav-item" title="Loja">
+                                <span class="material-icons wf-mobile-nav-icon">shopping_bag</span>
+                                <span class="wf-mobile-nav-label">Loja</span>
+                            </a>
+                        </li>
+                        <li class="wf-mobile-nav-slot" id="actionProfile">
+                            <a href="/me/profile" class="wf-mobile-nav-item" id="actionProfileLink" title="Perfil">
+                                <span class="material-icons wf-mobile-nav-icon">person</span>
+                                <span class="wf-mobile-nav-label" id="actionProfileLabel">Perfil</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+
+            <!-- Popup de ações -->
+            <div class="wf-popup-overlay" id="mobileActionPopup">
+                <div class="wf-popup-content" id="popupContent">
+                    <div class="wf-popup-drag-handle"></div>
+                    <div class="wf-popup-items">
+                        <a href="/offers/new" class="wf-popup-item" id="actionPopupNewOffer" style="display:none;">
+                            <span class="material-icons">campaign</span>
+                            <span>Criar oferta</span>
                         </a>
-                        <a href="/store" class="wf-mobile-nav-item" id="actionStore" title="Loja Agro">
-                            <span class="wf-mobile-nav-icon">🛒</span>
-                            <span class="wf-mobile-nav-label">Loja</span>
+                        <a href="/store/manage/dashboard" class="wf-popup-item" id="actionPopupCreateProduct" style="display:none;">
+                            <span class="material-icons">inventory_2</span>
+                            <span>Criar produto</span>
                         </a>
-                        <a href="/messages" class="wf-mobile-nav-item" id="actionMessages" style="display:none;" title="Mensagens">
-                            <span class="wf-mobile-nav-icon">💬</span>
-                            <span class="wf-mobile-nav-label">Chats</span>
+                        <a href="/ai-agent" class="wf-popup-item" id="actionPopupHelp" style="display:none;">
+                            <span class="material-icons">help</span>
+                            <span>Ajuda</span>
                         </a>
-                        <a href="/ai-agent" class="wf-mobile-nav-item" id="actionHelp" style="display:none;" title="Ajuda">
-                            <span class="wf-mobile-nav-icon">❓</span>
-                            <span class="wf-mobile-nav-label">Ajuda</span>
+                        <a href="/strategy" class="wf-popup-item" id="actionPopupFeatured" style="display:none;">
+                            <span class="material-icons">star</span>
+                            <span>Criar destaque</span>
                         </a>
-                        <a href="/notifications" class="wf-mobile-nav-item" id="actionNotifications" style="display:none;" title="Notificações">
-                            <span class="wf-mobile-nav-icon">🔔</span>
-                            <span class="wf-mobile-nav-label">Alertas</span>
-                            <span class="wf-mobile-notif-badge" id="dockNotifBadge">0</span>
+                        <a href="/notifications" class="wf-popup-item" id="actionNotifications" style="display:none;">
+                            <span class="material-icons">notifications</span>
+                            <span>Notificações</span>
                         </a>
-                        <a href="/me/profile" class="wf-mobile-nav-item" id="actionProfile" style="display:none;" title="Perfil">
-                            <span class="wf-mobile-nav-icon">👤</span>
-                            <span class="wf-mobile-nav-label">Perfil</span>
+                        <a href="/messages" class="wf-popup-item" id="actionMessages" style="display:none;">
+                            <span class="material-icons">chat</span>
+                            <span>Mensagens</span>
                         </a>
-                        <a href="/offers/new" class="wf-mobile-nav-item" id="actionNewOffer" style="display:none;" title="Nova oferta">
-                            <span class="wf-mobile-nav-icon">➕</span>
-                            <span class="wf-mobile-nav-label">Nova</span>
+                        <a href="/offers/new" class="wf-popup-item" id="actionNewOffer" style="display:none;">
+                            <span class="material-icons">add_circle</span>
+                            <span>Nova oferta</span>
+                        </a>
+                        <a href="/ai-agent" class="wf-popup-item" id="actionHelp" style="display:none;">
+                            <span class="material-icons">support_agent</span>
+                            <span>Suporte IA</span>
                         </a>
                     </div>
-                    <button class="wf-mobile-toggle" id="btnToggleMenuRight" title="Menu de ações">+</button>
+                    <button class="wf-popup-close" id="popupCloseBtn" type="button">Fechar</button>
                 </div>
             </div>
 
