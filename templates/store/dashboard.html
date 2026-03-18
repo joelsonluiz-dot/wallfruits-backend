@@ -1,143 +1,255 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container my-5">
-    <div class="row mb-5">
-        <div class="col-md-12 text-center">
-            <h1 class="display-4 fw-bold">Painel do Vendedor 🚀</h1>
-            <p class="lead">Gerencie seus produtos e visualize suas vendas.</p>
-        </div>
-    </div>
-    
-    <!-- Quick Stats -->
-    <div class="row text-center mb-5 gx-4">
-        <div class="col-md-3 mb-3">
-            <div class="card h-100 border-0 shadow-sm tilt-card bg-primary text-white">
-                <div class="card-body py-4">
-                    <h2 class="display-4 fw-bold">{{ products|length }}</h2>
-                    <p class="mb-0">Produtos Ativos</p>
-                </div>
-            </div>
-        </div>
-         <div class="col-md-3 mb-3">
-            <div class="card h-100 border-0 shadow-sm tilt-card bg-success text-white">
-                <div class="card-body py-4">
-                    <h2 class="display-4 fw-bold">R$ 0,00</h2>
-                    <p class="mb-0">Vendas (Mês)</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3 mb-3">
-             <div class="card h-100 border-0 shadow-sm tilt-card bg-warning text-dark">
-                <div class="card-body py-4">
-                     <h2 class="display-4 fw-bold">0</h2>
-                     <p class="mb-0">Pedidos Pendentes</p>
-                 </div>
-             </div>
-         </div>
-    </div>
+<style>
+    .ag-manage-wrap {
+        display: grid;
+        gap: 1rem;
+    }
 
-    <!-- Create Product Form -->
-    <div class="card border-0 shadow-lg mb-5 overflow-hidden">
-        <div class="card-header bg-dark text-white p-4">
-            <h3 class="mb-0">Adicionar Novo Produto</h3>
-        </div>
-        <div class="card-body p-4 bg-light">
-            <form action="/store/manage/create" method="POST" enctype="multipart/form-data">
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <label for="name" class="form-label fw-bold">Nome do Produto</label>
-                        <input type="text" class="form-control form-control-lg" id="name" name="name" required placeholder="Ex: Trator John Deere 5075E">
-                    </div>
-                    <div class="col-md-3">
-                        <label for="category_id" class="form-label fw-bold">Categoria</label>
-                        <select class="form-select form-select-lg" id="category_id" name="category_id" required>
-                            <option selected disabled>Escolha...</option>
-                            {% for cat in categories %}
-                            <option value="{{ cat.id }}">{{ cat.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label for="price" class="form-label fw-bold">Preço (R$)</label>
-                        <input type="number" step="0.01" class="form-control form-control-lg" id="price" name="price" required placeholder="0.00">
-                    </div>
-                    
-                    <div class="col-12">
-                        <label for="description" class="form-label fw-bold">Descrição Detalhada</label>
-                        <textarea class="form-control" id="description" name="description" rows="4" placeholder="Descreva as características técnicas, garantia, etc."></textarea>
-                    </div>
-                    
-                    <div class="col-md-4">
-                        <label for="stock" class="form-label fw-bold">Estoque</label>
-                        <input type="number" class="form-control" id="stock" name="stock" value="1" min="0">
-                    </div>
-                     <div class="col-md-4">
-                        <label for="images" class="form-label fw-bold">Imagens (URLs por enquanto)</label>
-                        <input type="text" class="form-control" id="images" name="images" placeholder="http://...">
-                        <div class="form-text">Separe URLs por vírgula. Upload de arquivo em breve.</div>
-                    </div>
-                    <div class="col-md-4 pt-4">
-                        <div class="form-check form-switch mt-2">
-                            <input class="form-check-input" type="checkbox" id="is_featured" name="is_featured">
-                            <label class="form-check-label fw-bold" for="is_featured">Destaque na Loja?</label>
-                        </div>
-                    </div>
-                    
-                    <div class="col-12 text-end mt-4">
-                        <button type="submit" class="btn btn-wf-primary btn-lg px-5">🚀 Publicar Produto</button>
+    .ag-manage-hero {
+        border-radius: 18px;
+        background: linear-gradient(120deg, #0b2e63 0%, #12489d 100%);
+        color: #fff;
+        padding: 1.4rem;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+    }
+
+    .ag-metrics {
+        display: grid;
+        gap: 0.8rem;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    }
+
+    .ag-metric {
+        border-radius: 14px;
+        background: #fff;
+        border: 1px solid rgba(11, 46, 99, 0.13);
+        padding: 0.9rem;
+        box-shadow: 0 8px 20px rgba(11, 46, 99, 0.08);
+    }
+
+    .ag-metric h3 {
+        margin: 0;
+        color: #0d336a;
+        font-size: 1.4rem;
+        font-weight: 900;
+    }
+
+    .ag-metric p {
+        margin: 0.2rem 0 0;
+        color: #577096;
+        font-size: 0.82rem;
+        font-weight: 700;
+    }
+
+    .ag-form-card {
+        border-radius: 16px;
+        border: 1px solid rgba(11, 46, 99, 0.12);
+        overflow: hidden;
+        background: #fff;
+    }
+
+    .ag-form-head {
+        background: #ffdf00;
+        color: #0b2e63;
+        padding: 0.9rem 1rem;
+        font-weight: 900;
+        letter-spacing: 0.01em;
+    }
+
+    .ag-form-body {
+        padding: 1rem;
+        display: grid;
+        gap: 0.9rem;
+    }
+
+    .ag-field label {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 800;
+        color: #21497f;
+        margin-bottom: 0.35rem;
+    }
+
+    .ag-table-wrap {
+        border: 1px solid rgba(11, 46, 99, 0.12);
+        border-radius: 14px;
+        overflow: hidden;
+        background: #fff;
+    }
+
+    .ag-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.18rem 0.6rem;
+        border-radius: 999px;
+        border: 1px solid #d1dceb;
+        font-size: 0.72rem;
+        font-weight: 800;
+        color: #395b88;
+        background: #f4f8ff;
+    }
+</style>
+
+<div class="ag-manage-wrap">
+    <section class="ag-manage-hero">
+        <h1 class="h3 mb-1">Central do Fornecedor Agro</h1>
+        <p class="mb-0">Cadastre adubos, inseticidas, implementos, vestuario agricola, EPI e ferramentas com ficha tecnica obrigatoria.</p>
+    </section>
+
+    <section class="ag-metrics">
+        <article class="ag-metric">
+            <h3>{{ products|length }}</h3>
+            <p>Produtos publicados</p>
+        </article>
+        <article class="ag-metric">
+            <h3>{{ products | selectattr('is_featured', 'equalto', True) | list | length }}</h3>
+            <p>Produtos em destaque</p>
+        </article>
+        <article class="ag-metric">
+            <h3>{{ products | selectattr('stock_quantity', 'gt', 0) | list | length }}</h3>
+            <p>Com estoque ativo</p>
+        </article>
+    </section>
+
+    <section class="ag-form-card">
+        <div class="ag-form-head">Cadastrar produto para o agronegocio</div>
+        <form action="/store/manage/create" method="POST" class="ag-form-body">
+            <div class="row g-3">
+                <div class="col-md-6 ag-field">
+                    <label for="name" class="form-label">Nome comercial</label>
+                    <input type="text" class="form-control" id="name" name="name" required placeholder="Ex: Inseticida Sistemico 1L">
+                </div>
+                <div class="col-md-3 ag-field">
+                    <label for="category_id" class="form-label">Categoria</label>
+                    <select class="form-select" id="category_id" name="category_id" required>
+                        <option value="" selected disabled>Selecione</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat.id }}">{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3 ag-field">
+                    <label for="price" class="form-label">Preco (R$)</label>
+                    <input type="number" step="0.01" min="0" class="form-control" id="price" name="price" required>
+                </div>
+
+                <div class="col-md-4 ag-field">
+                    <label for="stock" class="form-label">Estoque disponivel</label>
+                    <input type="number" min="0" class="form-control" id="stock" name="stock" required>
+                </div>
+                <div class="col-md-4 ag-field">
+                    <label for="brand" class="form-label">Marca</label>
+                    <input type="text" class="form-control" id="brand" name="brand" required placeholder="Ex: Basf, Jacto, Tramontina">
+                </div>
+                <div class="col-md-4 ag-field">
+                    <label for="origin" class="form-label">Origem</label>
+                    <input type="text" class="form-control" id="origin" name="origin" required placeholder="Nacional ou Importado">
+                </div>
+
+                <div class="col-md-3 ag-field">
+                    <label for="unit" class="form-label">Unidade comercial</label>
+                    <input type="text" class="form-control" id="unit" name="unit" required placeholder="L, kg, un, kit">
+                </div>
+                <div class="col-md-3 ag-field">
+                    <label for="package_size" class="form-label">Volume/Embalagem</label>
+                    <input type="text" class="form-control" id="package_size" name="package_size" required placeholder="1L, 20kg, kit c/5">
+                </div>
+                <div class="col-md-3 ag-field">
+                    <label for="application_mode" class="form-label">Modo de aplicacao</label>
+                    <input type="text" class="form-control" id="application_mode" name="application_mode" required placeholder="Pulverizacao, manual">
+                </div>
+                <div class="col-md-3 ag-field">
+                    <label for="target_use" class="form-label">Uso indicado</label>
+                    <input type="text" class="form-control" id="target_use" name="target_use" required placeholder="Soja, milho, horta">
+                </div>
+
+                <div class="col-md-6 ag-field">
+                    <label for="crop_recommendation" class="form-label">Culturas recomendadas</label>
+                    <input type="text" class="form-control" id="crop_recommendation" name="crop_recommendation" required placeholder="Soja, Milho, Cafe">
+                </div>
+                <div class="col-md-6 ag-field">
+                    <label for="technical_sheet_url" class="form-label">Link da ficha tecnica</label>
+                    <input type="url" class="form-control" id="technical_sheet_url" name="technical_sheet_url" placeholder="https://...pdf">
+                </div>
+
+                <div class="col-md-4 ag-field">
+                    <label for="active_ingredient" class="form-label">Principio ativo (se houver)</label>
+                    <input type="text" class="form-control" id="active_ingredient" name="active_ingredient" placeholder="Ex: Imidacloprido">
+                </div>
+                <div class="col-md-4 ag-field">
+                    <label for="implement_compatibility" class="form-label">Compatibilidade de implementos</label>
+                    <input type="text" class="form-control" id="implement_compatibility" name="implement_compatibility" placeholder="Pulverizador costal, barra">
+                </div>
+                <div class="col-md-4 ag-field">
+                    <label for="ppe_size" class="form-label">Tamanho vestuario/EPI</label>
+                    <input type="text" class="form-control" id="ppe_size" name="ppe_size" placeholder="P, M, G, 42, 43">
+                </div>
+
+                <div class="col-12 ag-field">
+                    <label for="description" class="form-label">Descricao tecnica e comercial</label>
+                    <textarea class="form-control" id="description" name="description" rows="4" required placeholder="Informe beneficios, aplicacao, intervalo de seguranca, garantia e diferenciais de venda."></textarea>
+                </div>
+
+                <div class="col-md-8 ag-field">
+                    <label for="image_urls" class="form-label">URLs das imagens (separadas por virgula)</label>
+                    <input type="text" class="form-control" id="image_urls" name="image_urls" placeholder="https://img1..., https://img2...">
+                </div>
+                <div class="col-md-4 ag-field d-flex align-items-end">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="is_featured" name="is_featured">
+                        <label class="form-check-label fw-bold" for="is_featured">Marcar como destaque de vitrine</label>
                     </div>
                 </div>
-            </form>
-        </div>
-    </div>
-    
-    <!-- Product List -->
-    <div class="card border-0 shadow-sm">
-        <div class="card-header bg-white p-3 border-bottom">
-            <h4 class="mb-0">📦 Seus Produtos</h4>
-        </div>
+
+                <div class="col-12 text-end">
+                    <button type="submit" class="btn btn-wf-primary">Publicar no ecommerce agro</button>
+                </div>
+            </div>
+        </form>
+    </section>
+
+    <section class="ag-table-wrap">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
-                <thead class="bg-light">
+                <thead class="table-light">
                     <tr>
-                        <th scope="col" class="ps-4">Produto</th>
-                        <th scope="col">Categoria</th>
-                        <th scope="col">Preço</th>
-                        <th scope="col">Estoque</th>
-                        <th scope="col">Status</th>
-                        <th scope="col" class="text-end pe-4">Ações</th>
+                        <th class="ps-3">Produto</th>
+                        <th>Categoria</th>
+                        <th>Preco</th>
+                        <th>Estoque</th>
+                        <th>Status</th>
+                        <th class="text-end pe-3">Acoes</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for p in products %}
                     <tr>
-                        <td class="ps-4 fw-bold">{{ p.name }}</td>
-                        <td><span class="badge bg-secondary rounded-pill">{{ p.category.name }}</span></td>
+                        <td class="ps-3 fw-bold">{{ p.name }}</td>
+                        <td><span class="ag-badge">{{ p.category.name }}</span></td>
                         <td>R$ {{ "%.2f"|format(p.price) }}</td>
                         <td>{{ p.stock_quantity }}</td>
                         <td>
                             {% if p.stock_quantity > 0 %}
-                                <span class="badge bg-success">Ativo</span>
+                            <span class="badge text-bg-success">Disponivel</span>
                             {% else %}
-                                <span class="badge bg-danger">Esgotado</span>
+                            <span class="badge text-bg-danger">Sem estoque</span>
                             {% endif %}
                         </td>
-                        <td class="text-end pe-4">
-                            <a href="/store/product/{{ p.slug }}" class="btn btn-sm btn-outline-primary" target="_blank">Ver</a>
-                            <button class="btn btn-sm btn-outline-danger">Excluir</button>
+                        <td class="text-end pe-3">
+                            <a href="/store/product/{{ p.slug }}" target="_blank" class="btn btn-sm btn-outline-primary">Visualizar</a>
                         </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="6" class="text-center py-5 text-muted">
-                            Nenhum produto cadastrado ainda. Comece agora! 👆
-                        </td>
+                        <td colspan="6" class="text-center py-4 text-muted">Nenhum produto cadastrado no momento.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-    </div>
+    </section>
 </div>
 {% endblock %}

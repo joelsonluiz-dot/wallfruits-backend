@@ -1,105 +1,163 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container my-5">
-    <div class="row">
-        <!-- Main Image -->
-        <div class="col-md-6 mb-4">
-            <div class="card h-100 border-0 shadow-sm tilt-card">
-                {% if product.images %}
-                    <img src="{{ product.images[0] }}" class="img-fluid rounded-start" alt="{{ product.name }}" style="object-fit: contain; height: 500px;">
-                {% else %}
-                    <div class="d-flex align-items-center justify-content-center h-100 bg-light" style="min-height: 400px; font-size: 5rem;">
-                        🌾
-                    </div>
-                {% endif %}
-            </div>
-            
-            <div class="d-flex gap-2 mt-3 overflow-auto">
-                {% for img in product.images %}
-                    <img src="{{ img }}" class="img-thumbnail" style="width: 80px; height: 80px; object-fit: cover; cursor: pointer;">
-                {% endfor %}
+<style>
+    .ag-detail-shell {
+        display: grid;
+        gap: 1rem;
+    }
+
+    .ag-detail-card {
+        border-radius: 18px;
+        border: 1px solid rgba(11, 46, 99, 0.12);
+        background: #fff;
+        box-shadow: 0 12px 28px rgba(12, 38, 74, 0.12);
+    }
+
+    .ag-gallery-main {
+        height: 460px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(180deg, #f5f8fd 0%, #ecf3fb 100%);
+        border-radius: 16px;
+        border: 1px solid rgba(11, 46, 99, 0.09);
+    }
+
+    .ag-gallery-main img {
+        max-width: 92%;
+        max-height: 92%;
+        object-fit: contain;
+    }
+
+    .ag-thumb {
+        width: 74px;
+        height: 74px;
+        border-radius: 10px;
+        border: 1px solid rgba(11, 46, 99, 0.13);
+        object-fit: cover;
+    }
+
+    .ag-price-box {
+        background: #f7fbff;
+        border: 1px solid rgba(11, 46, 99, 0.12);
+        border-radius: 14px;
+        padding: 0.9rem;
+    }
+
+    .ag-price {
+        color: #0d3165;
+        font-size: 2rem;
+        font-weight: 900;
+        line-height: 1;
+    }
+
+    .ag-tech-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        gap: 0.5rem;
+    }
+
+    .ag-tech-item {
+        border: 1px solid rgba(11, 46, 99, 0.12);
+        border-radius: 10px;
+        background: #fff;
+        padding: 0.55rem 0.65rem;
+    }
+
+    .ag-tech-key {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #55729a;
+        font-weight: 800;
+        margin: 0;
+    }
+
+    .ag-tech-val {
+        margin: 0.2rem 0 0;
+        color: #15386d;
+        font-size: 0.84rem;
+        font-weight: 700;
+    }
+</style>
+
+<div class="ag-detail-shell">
+    <div class="row g-3">
+        <div class="col-lg-6">
+            <div class="ag-detail-card p-3">
+                <div class="ag-gallery-main">
+                    {% if product.images %}
+                    <img src="{{ product.images[0] }}" alt="{{ product.name }}">
+                    {% else %}
+                    <div style="font-size: 3.2rem;">📦</div>
+                    {% endif %}
+                </div>
+                <div class="d-flex gap-2 mt-2 overflow-auto">
+                    {% for img in product.images %}
+                    <img src="{{ img }}" class="ag-thumb" alt="Imagem {{ loop.index }}">
+                    {% endfor %}
+                </div>
             </div>
         </div>
-        
-        <!-- Details -->
-        <div class="col-md-6">
-            <h1 class="display-5 fw-bold mb-2">{{ product.name }}</h1>
-            <p class="text-muted mb-4">Categoria: <a href="/store?category={{ product.category.slug }}" class="text-primary text-decoration-none">{{ product.category.name }}</a></p>
-            
-            <div class="mb-4">
-                <span class="h2 text-success fw-bold">R$ {{ "%.2f"|format(product.price) }}</span>
-                {% if product.stock_quantity > 0 %}
-                    <span class="badge bg-success ms-2">Em estoque ({{ product.stock_quantity }})</span>
-                {% else %}
-                    <span class="badge bg-danger ms-2">Esgotado</span>
-                {% endif %}
-            </div>
-            
-            <p class="lead text-secondary mb-4">{{ product.description }}</p>
-            
-            <!-- Specifications -->
-            <div class="card mb-4 border-0 bg-light">
-                <div class="card-body">
-                    <h5 class="card-title mb-3">Especificações Técnicas</h5>
-                    <div class="row g-2">
-                        {% for key, value in product.specifications.items() %}
-                        <div class="col-6">
-                            <span class="fw-bold text-muted">{{ key }}:</span> {{ value }}
+
+        <div class="col-lg-6">
+            <div class="ag-detail-card p-3">
+                <p class="text-uppercase small fw-bold text-secondary mb-1">{{ product.category.name }}</p>
+                <h1 class="h3 fw-bold mb-2">{{ product.name }}</h1>
+                <p class="text-muted mb-3">Fornecido por {{ product.supplier.name }}</p>
+
+                <div class="ag-price-box mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="mb-1 text-muted small">Preco unitario</p>
+                            <div class="ag-price">R$ {{ "%.2f"|format(product.price) }}</div>
                         </div>
-                        {% endfor %}
+                        <div>
+                            {% if product.stock_quantity > 0 %}
+                            <span class="badge text-bg-success">Estoque: {{ product.stock_quantity }}</span>
+                            {% else %}
+                            <span class="badge text-bg-danger">Indisponivel</span>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
-            </div>
-            
-            <!-- Actions -->
-            <div class="d-grid gap-3 d-md-flex">
-                <button class="btn btn-wf-primary btn-lg flex-grow-1">
-                    🛒 Adicionar ao Carrinho
-                </button>
-                <button class="btn btn-outline-secondary btn-lg">
-                    ❤ Favoritar
-                </button>
-            </div>
-            
-            <div class="mt-4 p-3 border rounded-3 bg-white">
-                <div class="d-flex align-items-center">
-                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px;">
-                        🚚
-                    </div>
-                    <div>
-                        <h6 class="mb-0">Entrega Garantida WallFruits</h6>
-                        <small class="text-muted">Receba com segurança e rastreio.</small>
-                    </div>
-                </div>
-                <hr>
-                 <div class="d-flex align-items-center">
-                    <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px;">
-                        🛡️
-                    </div>
-                    <div>
-                        <h6 class="mb-0">Compra Protegida</h6>
-                        <small class="text-muted">Seu dinheiro seguro até o recebimento.</small>
-                    </div>
+
+                <p class="mb-3">{{ product.description }}</p>
+
+                <div class="d-grid gap-2 d-md-flex">
+                    <button class="btn btn-wf-primary">Adicionar ao carrinho</button>
+                    <button class="btn btn-outline-primary">Solicitar proposta por volume</button>
                 </div>
             </div>
         </div>
     </div>
-    
-    <!-- Related Products -->
+
+    <div class="ag-detail-card p-3">
+        <h2 class="h5 mb-3">Ficha tecnica do produto</h2>
+        <div class="ag-tech-grid">
+            {% for key, value in product.specifications.items() %}
+            <div class="ag-tech-item">
+                <p class="ag-tech-key">{{ key }}</p>
+                <p class="ag-tech-val">{{ value }}</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
     {% if related_products %}
-    <div class="mt-5 pt-5 border-top">
-        <h3 class="mb-4">Você também pode gostar</h3>
-        <div class="row row-cols-1 row-cols-md-4 g-4">
+    <div class="ag-detail-card p-3">
+        <h2 class="h5 mb-3">Produtos relacionados para a mesma operacao agricola</h2>
+        <div class="row g-3">
             {% for rel in related_products %}
-            <div class="col">
-                <div class="card h-100 border-0 shadow-sm">
-                    <div class="card-body">
-                        <h5 class="card-title">{{ rel.name }}</h5>
-                        <p class="card-text text-primary fw-bold">R$ {{ "%.2f"|format(rel.price) }}</p>
-                        <a href="/store/product/{{ rel.slug }}" class="btn btn-sm btn-outline-primary stretched-link">Ver detalhes</a>
+            <div class="col-12 col-md-6 col-lg-3">
+                <a href="/store/product/{{ rel.slug }}" class="text-decoration-none">
+                    <div class="border rounded-3 p-2 h-100 bg-white">
+                        <p class="small text-muted mb-1">{{ rel.category.name }}</p>
+                        <h3 class="h6 fw-bold text-dark">{{ rel.name }}</h3>
+                        <p class="mb-0 fw-bold text-primary">R$ {{ "%.2f"|format(rel.price) }}</p>
                     </div>
-                </div>
+                </a>
             </div>
             {% endfor %}
         </div>

@@ -161,6 +161,27 @@ def _render_template(template_name: str, request: Request, **context: Any):
 
 API_PREFIX = "/api"
 
+
+def _ensure_store_categories(db: Session) -> None:
+    from app.models.store_models import ProductCategory
+
+    existing_count = db.query(ProductCategory).count()
+    if existing_count > 0:
+        return
+
+    default_categories = [
+        {"name": "Adubos e Fertilizantes", "slug": "adubos-fertilizantes", "icon": "🧪", "description": "NPK, foliares, organominerais e corretivos."},
+        {"name": "Inseticidas e Defensivos", "slug": "inseticidas-defensivos", "icon": "🛡️", "description": "Controle de pragas, fungos e plantas daninhas."},
+        {"name": "Implementos Agricolas", "slug": "implementos-agricolas", "icon": "🚜", "description": "Pulverizadores, plantadeiras, grades e pecas."},
+        {"name": "Vestuario e EPI Agricola", "slug": "vestuario-epi-agricola", "icon": "🧤", "description": "Roupas de protecao, botas, luvas e mascaras."},
+        {"name": "Ferramentas Agricolas", "slug": "ferramentas-agricolas", "icon": "🛠️", "description": "Ferramentas manuais, kits e utilitarios rurais."},
+        {"name": "Irrigacao e Acessorios", "slug": "irrigacao-acessorios", "icon": "💧", "description": "Mangueiras, gotejamento, bombas e conexoes."},
+    ]
+
+    for item in default_categories:
+        db.add(ProductCategory(**item, is_active=True))
+    db.commit()
+
 app.include_router(auth_routes.router, prefix=API_PREFIX)
 app.include_router(offer_routes.router, prefix=API_PREFIX)
 app.include_router(transaction_routes.router, prefix=API_PREFIX)
@@ -285,6 +306,8 @@ async def strategy_page(request: Request, current_user: User = Depends(get_curre
 async def store_home(request: Request, category: str | None = None, q: str | None = None, db: Session = Depends(get_db), current_user: User = Depends(get_current_user_optional)):
     """Página da loja agrícola com filtros e categorias."""
     from app.models.store_models import Product, ProductCategory, ProductStatus
+
+    _ensure_store_categories(db)
     
     query = db.query(Product).filter(Product.status == ProductStatus.PUBLISHED)
     
@@ -320,6 +343,8 @@ async def product_detail(slug: str, request: Request, db: Session = Depends(get_
 async def supplier_dashboard(request: Request, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """Dashboard do fornecedor para gerenciar produtos."""
     from app.models.store_models import Product, ProductCategory
+
+    _ensure_store_categories(db)
     
     if current_user.role not in ["admin", "supplier", "producer"]:
         raise HTTPException(status_code=403, detail="Acesso negado")
