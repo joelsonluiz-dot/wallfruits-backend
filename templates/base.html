@@ -436,7 +436,7 @@
 
         .wf-bottom-menu-list {
             display: grid;
-            grid-template-columns: repeat(5, minmax(0, 1fr));
+            grid-template-columns: repeat(6, minmax(0, 1fr));
             align-items: center;
             list-style: none;
             margin: 0;
@@ -1277,6 +1277,7 @@
             <div class="wf-nav-group">
                 <div class="wf-group-title">Operação</div>
                 <a class="wf-nav-link" href="/">Início</a>
+                <a class="wf-nav-link" href="/community">Comunidade</a>
                 <a class="wf-nav-link" href="/store" style="color: var(--wf-accent) !important; font-weight: 700;">🛒 Loja Agrícola</a>
                 <a class="wf-nav-link" href="/store/manage/dashboard" id="navStoreManage" style="display:none;">Painel da Loja</a>
                 <a class="wf-nav-link" href="/store/cart" id="navStoreCart" style="display:none;">Carrinho</a>
@@ -1360,6 +1361,7 @@
                 </div>
                 <div class="wf-topbar-actions wf-mobile-quick-actions">
                     <a class="btn btn-wf-secondary" href="/offers">Ofertas</a>
+                    <a class="btn btn-wf-secondary" href="/community">Comunidade</a>
                     <a class="btn btn-wf-secondary" href="/messages" id="navTopMessages" style="display:none;">Mensagens</a>
                     <a class="btn btn-wf-primary" href="/offers/new" id="navTopNewOffer" style="display:none;">Nova oferta</a>
                 </div>
@@ -1769,6 +1771,12 @@
                                 <span class="wf-mobile-nav-label">Início</span>
                             </a>
                         </li>
+                        <li class="wf-mobile-nav-slot" id="actionCommunity">
+                            <a href="/community" class="wf-mobile-nav-item" title="Comunidade">
+                                <span class="material-icons wf-mobile-nav-icon">groups</span>
+                                <span class="wf-mobile-nav-label">Comunidade</span>
+                            </a>
+                        </li>
                         <li class="wf-mobile-nav-slot" id="actionExplore">
                             <a href="/offers" class="wf-mobile-nav-item" title="Ofertas">
                                 <span class="material-icons wf-mobile-nav-icon">local_offer</span>
@@ -1805,6 +1813,10 @@
                         <a href="/offers/new" class="wf-popup-item" id="actionPopupNewOffer" style="display:none;">
                             <span class="material-icons">campaign</span>
                             <span>Criar oferta</span>
+                        </a>
+                        <a href="/community" class="wf-popup-item" id="actionPopupCommunity">
+                            <span class="material-icons">groups</span>
+                            <span>Comunidade</span>
                         </a>
                         <a href="/store/manage/dashboard" class="wf-popup-item" id="actionPopupCreateProduct" style="display:none;">
                             <span class="material-icons">inventory_2</span>
@@ -1855,6 +1867,10 @@
                         <a href="/offers" class="wf-sidebar-right-item">
                             <span>🌾</span>
                             <span>Ofertas</span>
+                        </a>
+                        <a href="/community" class="wf-sidebar-right-item">
+                            <span>👥</span>
+                            <span>Comunidade</span>
                         </a>
                         <a href="/store/manage/dashboard" class="wf-sidebar-right-item" id="rightNavStoreManage" style="display:none;">
                             <span>🛒</span>

@@ -125,6 +125,27 @@
             grid-template-columns: 1fr;
         }
     }
+
+    @media (max-width: 640px) {
+        .cart-item {
+            grid-template-columns: 1fr;
+        }
+
+        .cart-item-media {
+            width: 100%;
+            height: 120px;
+        }
+
+        .cart-price {
+            text-align: left;
+            min-width: 0;
+        }
+
+        .cart-item-actions .btn,
+        .cart-item-actions .cart-qty {
+            width: 100%;
+        }
+    }
 </style>
 
 <div class="cart-shell">

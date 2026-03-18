@@ -1,0 +1,773 @@
+{% extends "base.html" %}
+
+{% block title %}Comunidade Agro - WallFruits{% endblock %}
+
+{% block content %}
+<style>
+    .community-wrap {
+        max-width: 860px;
+        margin: 0 auto;
+        display: grid;
+        gap: 0.8rem;
+    }
+
+    .community-header {
+        border-radius: 16px;
+        border: 1px solid rgba(11, 46, 99, 0.15);
+        background: linear-gradient(120deg, #2e7d32 0%, #3c9342 55%, #7fbf54 100%);
+        color: #fff;
+        padding: 1rem 1rem 0.95rem;
+        box-shadow: 0 12px 26px rgba(20, 76, 32, 0.24);
+    }
+
+    .community-header h1 {
+        margin: 0;
+        font-size: 1.34rem;
+        font-weight: 900;
+        letter-spacing: -0.01em;
+    }
+
+    .community-header p {
+        margin: 0.32rem 0 0;
+        font-size: 0.85rem;
+        color: rgba(255, 255, 255, 0.92);
+    }
+
+    .community-create {
+        display: grid;
+        gap: 0.7rem;
+        border-radius: 16px;
+        border: 1px solid rgba(11, 46, 99, 0.12);
+        background: #fff;
+        padding: 0.75rem;
+        box-shadow: 0 10px 24px rgba(16, 44, 90, 0.09);
+    }
+
+    .community-input {
+        border: 1px solid rgba(11, 46, 99, 0.16);
+        border-radius: 14px;
+        padding: 0.72rem 0.85rem;
+        font-size: 0.92rem;
+        font-weight: 600;
+        color: #223f67;
+        min-height: 92px;
+        resize: vertical;
+    }
+
+    .community-input:focus {
+        outline: none;
+        border-color: #2e7d32;
+        box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.16);
+    }
+
+    .community-create-actions {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+    }
+
+    .community-upload {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        border: 1px solid rgba(46, 125, 50, 0.22);
+        border-radius: 999px;
+        padding: 0.45rem 0.72rem;
+        color: #236228;
+        background: rgba(46, 125, 50, 0.08);
+        font-size: 0.8rem;
+        font-weight: 800;
+        cursor: pointer;
+    }
+
+    .community-upload input {
+        display: none;
+    }
+
+    .community-send-btn {
+        border: none;
+        border-radius: 999px;
+        padding: 0.48rem 0.86rem;
+        font-size: 0.8rem;
+        font-weight: 900;
+        background: #2e7d32;
+        color: #fff;
+        display: inline-flex;
+        gap: 0.28rem;
+        align-items: center;
+    }
+
+    .community-preview {
+        border: 1px dashed rgba(11, 46, 99, 0.2);
+        border-radius: 12px;
+        padding: 0.45rem;
+        display: none;
+        align-items: center;
+        gap: 0.6rem;
+    }
+
+    .community-preview img {
+        width: 70px;
+        height: 70px;
+        border-radius: 8px;
+        object-fit: cover;
+        border: 1px solid rgba(11, 46, 99, 0.16);
+    }
+
+    .community-preview small {
+        color: #40618e;
+        font-size: 0.76rem;
+        font-weight: 700;
+    }
+
+    .community-feed {
+        display: grid;
+        gap: 0.65rem;
+    }
+
+    .community-empty {
+        border: 1px dashed rgba(11, 46, 99, 0.24);
+        border-radius: 14px;
+        padding: 1.2rem 1rem;
+        background: #fff;
+        color: #3f5f8b;
+        text-align: center;
+        font-weight: 700;
+    }
+
+    .post-card {
+        border: 1px solid rgba(11, 46, 99, 0.12);
+        border-radius: 14px;
+        background: #fff;
+        box-shadow: 0 8px 22px rgba(16, 44, 90, 0.08);
+        overflow: hidden;
+    }
+
+    .post-main {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 0.65rem;
+        padding: 0.72rem;
+    }
+
+    .post-avatar {
+        width: 46px;
+        height: 46px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 1px solid rgba(11, 46, 99, 0.14);
+        background: #eef4fb;
+    }
+
+    .post-head {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+    }
+
+    .post-user {
+        margin: 0;
+        font-size: 0.86rem;
+        font-weight: 900;
+        color: #173e72;
+    }
+
+    .post-date {
+        color: #5b7598;
+        font-size: 0.68rem;
+        font-weight: 700;
+    }
+
+    .post-badge {
+        font-size: 0.63rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        border-radius: 999px;
+        padding: 0.14rem 0.52rem;
+        border: 1px solid rgba(46, 125, 50, 0.18);
+        background: rgba(46, 125, 50, 0.08);
+        color: #236228;
+    }
+
+    .post-text {
+        margin: 0.38rem 0 0;
+        color: #274a79;
+        font-size: 0.84rem;
+        line-height: 1.45;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    .post-image-wrap {
+        margin-top: 0.55rem;
+    }
+
+    .post-image {
+        width: 100%;
+        max-height: 390px;
+        object-fit: cover;
+        border-radius: 11px;
+        border: 1px solid rgba(11, 46, 99, 0.14);
+        cursor: zoom-in;
+    }
+
+    .post-actions {
+        display: flex;
+        gap: 0.38rem;
+        flex-wrap: wrap;
+        margin-top: 0.58rem;
+    }
+
+    .post-action-btn {
+        border: 1px solid rgba(11, 46, 99, 0.14);
+        border-radius: 999px;
+        background: #f4f9ff;
+        color: #1f4b85;
+        font-size: 0.72rem;
+        font-weight: 800;
+        padding: 0.34rem 0.56rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.2rem;
+        cursor: pointer;
+    }
+
+    .post-action-btn .material-icons {
+        font-size: 1rem;
+    }
+
+    .post-action-btn.liked {
+        border-color: rgba(203, 44, 73, 0.3);
+        background: rgba(203, 44, 73, 0.1);
+        color: #a9243e;
+    }
+
+    .post-comments {
+        margin-top: 0.58rem;
+        border: 1px solid rgba(11, 46, 99, 0.12);
+        border-radius: 10px;
+        padding: 0.48rem;
+        background: #f8fbff;
+        display: none;
+        gap: 0.4rem;
+    }
+
+    .post-comments.visible {
+        display: grid;
+    }
+
+    .post-comments-list {
+        display: grid;
+        gap: 0.32rem;
+        max-height: 230px;
+        overflow-y: auto;
+    }
+
+    .post-comment-item {
+        border: 1px solid rgba(11, 46, 99, 0.1);
+        border-radius: 9px;
+        background: #fff;
+        padding: 0.42rem 0.48rem;
+    }
+
+    .post-comment-meta {
+        font-size: 0.66rem;
+        color: #5d789c;
+        font-weight: 800;
+        margin-bottom: 0.12rem;
+    }
+
+    .post-comment-content {
+        margin: 0;
+        color: #234a7f;
+        font-size: 0.76rem;
+        line-height: 1.35;
+        white-space: pre-wrap;
+    }
+
+    .post-comment-form {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 0.35rem;
+    }
+
+    .post-comment-input {
+        border: 1px solid rgba(11, 46, 99, 0.18);
+        border-radius: 999px;
+        padding: 0.38rem 0.6rem;
+        font-size: 0.74rem;
+        background: #fff;
+    }
+
+    .post-comment-send {
+        border: none;
+        border-radius: 999px;
+        background: #2e7d32;
+        color: #fff;
+        font-size: 0.7rem;
+        font-weight: 800;
+        padding: 0.36rem 0.62rem;
+    }
+
+    .img-modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 2000;
+        background: rgba(0, 0, 0, 0.8);
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+    }
+
+    .img-modal img {
+        max-width: min(980px, 94vw);
+        max-height: 92vh;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    @media (max-width: 992px) {
+        .community-wrap {
+            max-width: 100%;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .community-header h1 {
+            font-size: 1.15rem;
+        }
+
+        .community-header p {
+            font-size: 0.8rem;
+        }
+
+        .community-create {
+            padding: 0.65rem;
+        }
+
+        .post-main {
+            grid-template-columns: 42px 1fr;
+            padding: 0.65rem;
+        }
+
+        .post-avatar {
+            width: 42px;
+            height: 42px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .community-create-actions {
+            align-items: stretch;
+        }
+
+        .community-upload,
+        .community-send-btn {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .post-actions {
+            gap: 0.32rem;
+        }
+
+        .post-action-btn {
+            flex: 1 1 auto;
+            justify-content: center;
+        }
+
+        .post-comment-form {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="community-wrap">
+    <header class="community-header">
+        <h1>Comunidade Agro</h1>
+        <p>Compartilhe produção, manejo e resultados com outros participantes do marketplace.</p>
+    </header>
+
+    <section class="community-create" aria-label="Criar publicação">
+        <textarea id="communityPostInput" class="community-input" placeholder="Compartilhe algo sobre sua produção..."></textarea>
+
+        <div id="communityPreview" class="community-preview">
+            <img id="communityPreviewImg" alt="Pré-visualização da imagem">
+            <small id="communityPreviewText"></small>
+        </div>
+
+        <div class="community-create-actions">
+            <label class="community-upload">
+                <span class="material-icons">image</span>
+                <span>Adicionar imagem</span>
+                <input type="file" id="communityImageInput" accept="image/*">
+            </label>
+
+            <button class="community-send-btn" id="communitySendBtn" type="button">
+                <span class="material-icons">send</span>
+                <span>Publicar</span>
+            </button>
+        </div>
+    </section>
+
+    <section id="communityFeed" class="community-feed" aria-live="polite"></section>
+</div>
+
+<div id="communityImgModal" class="img-modal" role="dialog" aria-modal="true" aria-label="Imagem ampliada">
+    <img id="communityModalImg" alt="Imagem do post em tamanho ampliado">
+</div>
+
+<script>
+    (function setupCommunityPage() {
+        const postInput = document.getElementById('communityPostInput');
+        const imageInput = document.getElementById('communityImageInput');
+        const sendBtn = document.getElementById('communitySendBtn');
+        const feed = document.getElementById('communityFeed');
+        const previewWrap = document.getElementById('communityPreview');
+        const previewImg = document.getElementById('communityPreviewImg');
+        const previewText = document.getElementById('communityPreviewText');
+
+        const modal = document.getElementById('communityImgModal');
+        const modalImg = document.getElementById('communityModalImg');
+
+        let pendingImage = null;
+        const commentsCache = new Map();
+        let postsCache = [];
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text ?? '';
+            return div.innerHTML;
+        }
+
+        function fmtDate(isoDate) {
+            const date = new Date(isoDate);
+            if (Number.isNaN(date.getTime())) return 'agora';
+            return date.toLocaleString('pt-BR', {
+                day: '2-digit',
+                month: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+            });
+        }
+
+        function requireAuth() {
+            if (localStorage.getItem('token')) return true;
+            window.location.href = '/login';
+            return false;
+        }
+
+        function normalizePostText(text) {
+            return (text || '').trim();
+        }
+
+        async function fetchPosts() {
+            const data = await apiRequest('/community/posts?limit=40');
+            postsCache = Array.isArray(data?.posts) ? data.posts : [];
+        }
+
+        async function fetchComments(postId) {
+            const comments = await apiRequest(`/community/posts/${postId}/comments?limit=100`);
+            commentsCache.set(postId, Array.isArray(comments) ? comments : []);
+        }
+
+        function renderComments(postId) {
+            const comments = commentsCache.get(postId) || [];
+            const list = document.querySelector(`[data-comments-list="${postId}"]`);
+            if (!list) return;
+
+            if (!comments.length) {
+                list.innerHTML = '<div class="post-comment-item"><p class="post-comment-content">Sem comentários ainda. Seja o primeiro a comentar.</p></div>';
+                return;
+            }
+
+            list.innerHTML = comments.map((item) => `
+                <article class="post-comment-item">
+                    <div class="post-comment-meta">${escapeHtml(item.author?.name || 'Usuário')} • ${escapeHtml(fmtDate(item.created_at))}</div>
+                    <p class="post-comment-content">${escapeHtml(item.content || '')}</p>
+                </article>
+            `).join('');
+        }
+
+        async function submitComment(postId, inputEl) {
+            if (!requireAuth()) return;
+
+            const content = (inputEl?.value || '').trim();
+            if (!content) return;
+
+            try {
+                const newComment = await apiRequest(`/community/posts/${postId}/comments`, 'POST', { content });
+                const comments = commentsCache.get(postId) || [];
+                comments.push(newComment);
+                commentsCache.set(postId, comments);
+                inputEl.value = '';
+                renderComments(postId);
+
+                const post = postsCache.find((item) => Number(item.id) === Number(postId));
+                if (post) {
+                    post.comments_count = Number(post.comments_count || 0) + 1;
+                    renderFeed();
+                }
+            } catch (error) {
+                alert(error.message || 'Não foi possível comentar agora.');
+            }
+        }
+
+        async function toggleLike(postId) {
+            if (!requireAuth()) return;
+
+            try {
+                const result = await apiRequest(`/community/posts/${postId}/like`, 'POST');
+                const post = postsCache.find((item) => Number(item.id) === Number(postId));
+                if (!post) return;
+
+                post.liked_by_me = Boolean(result.liked);
+                post.likes_count = Number(result.likes_count || 0);
+                renderFeed();
+            } catch (error) {
+                alert(error.message || 'Não foi possível atualizar a curtida.');
+            }
+        }
+
+        async function sharePost(postId) {
+            if (!requireAuth()) return;
+
+            try {
+                const result = await apiRequest(`/community/posts/${postId}/share`, 'POST');
+                const post = postsCache.find((item) => Number(item.id) === Number(postId));
+                if (post) {
+                    post.shares_count = Number(result.shares_count || 0);
+                }
+
+                const shareText = 'Veja este post na Comunidade Agro da WallFruits';
+                const shareUrl = result.share_url || `${window.location.origin}/community`;
+
+                if (navigator.share) {
+                    await navigator.share({ title: 'Comunidade Agro', text: shareText, url: shareUrl });
+                } else if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(shareUrl);
+                    alert('Link copiado para compartilhar.');
+                } else {
+                    alert(`Compartilhe este link: ${shareUrl}`);
+                }
+
+                renderFeed();
+            } catch (error) {
+                alert(error.message || 'Não foi possível compartilhar agora.');
+            }
+        }
+
+        async function toggleComments(postId) {
+            const wrapper = document.querySelector(`[data-comments-wrap="${postId}"]`);
+            if (!wrapper) return;
+
+            const willShow = !wrapper.classList.contains('visible');
+            wrapper.classList.toggle('visible', willShow);
+
+            if (!willShow) return;
+            if (!commentsCache.has(postId)) {
+                try {
+                    await fetchComments(postId);
+                } catch (error) {
+                    commentsCache.set(postId, []);
+                    alert(error.message || 'Não foi possível carregar comentários.');
+                }
+            }
+            renderComments(postId);
+        }
+
+        function renderFeed() {
+            const posts = postsCache;
+
+            if (!posts.length) {
+                feed.innerHTML = '<div class="community-empty">Ainda não há publicações. Seja o primeiro a compartilhar uma atualização.</div>';
+                return;
+            }
+
+            feed.innerHTML = posts.map((post) => {
+                const isLiked = Boolean(post.liked_by_me);
+                return `
+                    <article class="post-card" data-post-id="${escapeHtml(post.id)}">
+                        <div class="post-main">
+                            <img class="post-avatar" src="${escapeHtml(post.author?.profile_image || 'https://i.pravatar.cc/120?img=13')}" alt="Avatar de ${escapeHtml(post.author?.name || 'Usuário')}">
+
+                            <div>
+                                <div class="post-head">
+                                    <h2 class="post-user">${escapeHtml(post.author?.name || 'Produtor Rural')}</h2>
+                                    <span class="post-badge">${escapeHtml(post.author?.role || 'Membro')}</span>
+                                    <span class="post-date">${escapeHtml(fmtDate(post.created_at))}</span>
+                                </div>
+
+                                <p class="post-text">${escapeHtml(post.content || '')}</p>
+
+                                ${post.image_url ? `
+                                    <div class="post-image-wrap">
+                                        <img class="post-image" src="${escapeHtml(post.image_url)}" alt="Imagem publicada na comunidade" data-open-img="${escapeHtml(post.id)}">
+                                    </div>
+                                ` : ''}
+
+                                <div class="post-actions">
+                                    <button class="post-action-btn ${isLiked ? 'liked' : ''}" type="button" data-like-post="${escapeHtml(post.id)}">
+                                        <span class="material-icons">${isLiked ? 'favorite' : 'favorite_border'}</span>
+                                        <span>${Number(post.likes_count || 0)}</span>
+                                    </button>
+                                    <button class="post-action-btn" type="button" data-toggle-comments="${escapeHtml(post.id)}">
+                                        <span class="material-icons">chat_bubble_outline</span>
+                                        <span>${Number(post.comments_count || 0)}</span>
+                                    </button>
+                                    <button class="post-action-btn" type="button" data-share-post="${escapeHtml(post.id)}">
+                                        <span class="material-icons">share</span>
+                                        <span>${Number(post.shares_count || 0)}</span>
+                                    </button>
+                                </div>
+
+                                <div class="post-comments" data-comments-wrap="${escapeHtml(post.id)}">
+                                    <div class="post-comments-list" data-comments-list="${escapeHtml(post.id)}"></div>
+                                    <div class="post-comment-form">
+                                        <input class="post-comment-input" data-comment-input="${escapeHtml(post.id)}" type="text" maxlength="1200" placeholder="Comente algo...">
+                                        <button class="post-comment-send" data-comment-send="${escapeHtml(post.id)}" type="button">Comentar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+                `;
+            }).join('');
+
+            bindPostActions();
+        }
+
+        function bindPostActions() {
+            document.querySelectorAll('[data-like-post]').forEach((button) => {
+                button.addEventListener('click', () => {
+                    const postId = Number(button.getAttribute('data-like-post'));
+                    toggleLike(postId);
+                });
+            });
+
+            document.querySelectorAll('[data-share-post]').forEach((button) => {
+                button.addEventListener('click', () => {
+                    const postId = Number(button.getAttribute('data-share-post'));
+                    sharePost(postId);
+                });
+            });
+
+            document.querySelectorAll('[data-toggle-comments]').forEach((button) => {
+                button.addEventListener('click', () => {
+                    const postId = Number(button.getAttribute('data-toggle-comments'));
+                    toggleComments(postId);
+                });
+            });
+
+            document.querySelectorAll('[data-comment-send]').forEach((button) => {
+                button.addEventListener('click', () => {
+                    const postId = Number(button.getAttribute('data-comment-send'));
+                    const inputEl = document.querySelector(`[data-comment-input="${postId}"]`);
+                    submitComment(postId, inputEl);
+                });
+            });
+
+            document.querySelectorAll('[data-comment-input]').forEach((inputEl) => {
+                inputEl.addEventListener('keydown', (event) => {
+                    if (event.key !== 'Enter') return;
+                    event.preventDefault();
+                    const postId = Number(inputEl.getAttribute('data-comment-input'));
+                    submitComment(postId, inputEl);
+                });
+            });
+
+            document.querySelectorAll('[data-open-img]').forEach((img) => {
+                img.addEventListener('click', () => {
+                    const postId = Number(img.getAttribute('data-open-img'));
+                    const post = postsCache.find((item) => Number(item.id) === postId);
+                    if (!post || !post.image_url) return;
+                    modalImg.src = post.image_url;
+                    modal.style.display = 'flex';
+                });
+            });
+        }
+
+        function updatePreview(file, imageDataUrl) {
+            if (!file || !imageDataUrl) {
+                previewWrap.style.display = 'none';
+                previewImg.src = '';
+                previewText.textContent = '';
+                return;
+            }
+
+            previewWrap.style.display = 'flex';
+            previewImg.src = imageDataUrl;
+            previewText.textContent = `Imagem selecionada: ${file.name}`;
+        }
+
+        imageInput.addEventListener('change', () => {
+            const file = imageInput.files?.[0];
+            if (!file) {
+                pendingImage = null;
+                updatePreview(null, null);
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                pendingImage = event.target?.result || null;
+                updatePreview(file, pendingImage);
+            };
+            reader.readAsDataURL(file);
+        });
+
+        sendBtn.addEventListener('click', async () => {
+            if (!requireAuth()) return;
+
+            const text = normalizePostText(postInput.value || '');
+            if (!text && !pendingImage) return;
+
+            try {
+                await apiRequest('/community/posts', 'POST', {
+                    content: text,
+                    image_url: pendingImage,
+                });
+
+                postInput.value = '';
+                imageInput.value = '';
+                pendingImage = null;
+                updatePreview(null, null);
+
+                await fetchPosts();
+                renderFeed();
+            } catch (error) {
+                alert(error.message || 'Não foi possível publicar agora.');
+            }
+        });
+
+        postInput.addEventListener('keydown', (event) => {
+            if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+                sendBtn.click();
+            }
+        });
+
+        modal.addEventListener('click', () => {
+            modal.style.display = 'none';
+            modalImg.src = '';
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                modal.style.display = 'none';
+                modalImg.src = '';
+            }
+        });
+
+        fetchPosts()
+            .then(renderFeed)
+            .catch((error) => {
+                feed.innerHTML = `<div class="community-empty">Falha ao carregar a comunidade: ${escapeHtml(error.message || 'erro inesperado')}.</div>`;
+            });
+    })();
+</script>
+{% endblock %}

@@ -26,6 +26,7 @@ from .review_contestation import ReviewContestation
 from .auth_token import AuthToken
 from .follow import Follow
 from .notification import Notification
+from .community_post import CommunityPost, CommunityComment, CommunityLike, CommunityShare
 from .store_models import ProductCategory, Product, Order, OrderItem, QuoteRequest
 
 __all__ = [
@@ -57,6 +58,10 @@ __all__ = [
     "AuthToken",
     "Follow",
     "Notification",
+    "CommunityPost",
+    "CommunityComment",
+    "CommunityLike",
+    "CommunityShare",
     "ProductCategory",
     "Product",
     "Order",

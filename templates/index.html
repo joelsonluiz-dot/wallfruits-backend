@@ -96,6 +96,71 @@
         margin-top: 2.1rem;
     }
 
+    .home-community-section {
+        margin-top: 2.1rem;
+    }
+
+    .home-community-row {
+        display: flex;
+        gap: 0.7rem;
+        overflow-x: auto;
+        padding: 0.12rem 0.04rem 0.4rem;
+        scroll-snap-type: x proximity;
+    }
+
+    .home-community-card {
+        min-width: 236px;
+        max-width: 236px;
+        border-radius: 10px;
+        border: 1px solid var(--wf-border);
+        background: var(--wf-card);
+        box-shadow: 0 6px 18px rgba(0,0,0,0.14);
+        overflow: hidden;
+        text-decoration: none;
+        color: inherit;
+        scroll-snap-align: start;
+    }
+
+    .home-community-media {
+        height: 110px;
+        background: rgba(255,255,255,0.05);
+    }
+
+    .home-community-media img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .home-community-body {
+        padding: 0.62rem;
+        display: grid;
+        gap: 0.26rem;
+    }
+
+    .home-community-user {
+        font-size: 0.7rem;
+        color: var(--wf-text-secondary);
+        font-weight: 700;
+    }
+
+    .home-community-text {
+        margin: 0;
+        font-size: 0.76rem;
+        font-weight: 700;
+        line-height: 1.3;
+        color: var(--wf-text);
+        min-height: 2.9em;
+    }
+
+    .home-community-meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 0.68rem;
+        color: var(--wf-text-secondary);
+    }
+
     .home-products-row {
         display: flex;
         gap: 0.75rem;
@@ -314,6 +379,17 @@
     <div id="homeFeaturedProducts" class="home-products-row"></div>
 </section>
 
+<section class="home-community-section">
+    <div class="home-offers-head">
+        <div>
+            <h2 class="wf-section-title" style="font-size:1.35rem;margin:0;">Posts em <span class="wf-gradient-text">destaque</span></h2>
+            <p style="color:var(--wf-text-secondary);margin:0.2rem 0 0;font-size:0.83rem;">Atualizações recentes da Comunidade Agro com acesso rápido.</p>
+        </div>
+        <a href="/community" class="btn btn-wf-secondary">Abrir comunidade</a>
+    </div>
+    <div id="homeCommunityHighlights" class="home-community-row"></div>
+</section>
+
 <div class="stats-grid wf-stagger">
     <div class="stat-card">
         <div class="stat-value wf-gradient-text" id="activeOffers">--</div>
@@ -440,6 +516,52 @@
         }
     }
 
+    function truncateText(text, maxLen = 74) {
+        const value = String(text || '').trim();
+        if (value.length <= maxLen) return value;
+        return `${value.slice(0, maxLen - 1)}...`;
+    }
+
+    async function loadHomeCommunityHighlights() {
+        const container = document.getElementById('homeCommunityHighlights');
+        if (!container) return;
+
+        try {
+            const data = await apiRequest('/community/posts?limit=6');
+            const posts = Array.isArray(data?.posts) ? data.posts : [];
+
+            if (!posts.length) {
+                container.innerHTML = '<div class="wf-alert wf-alert-info" style="min-width:100%;">Ainda não há posts em destaque na comunidade.</div>';
+                return;
+            }
+
+            container.innerHTML = posts.map((post) => {
+                const postText = truncateText(post.content || 'Sem descrição');
+                const image = post.image_url || fallbackImageSvg('Comunidade');
+                const userName = post.author?.name || 'Produtor Rural';
+                const likes = Number(post.likes_count || 0);
+
+                return `
+                    <a href="/community" class="home-community-card" title="Abrir comunidade">
+                        <div class="home-community-media">
+                            <img src="${escapeHtml(image)}" alt="Post da comunidade" loading="lazy">
+                        </div>
+                        <div class="home-community-body">
+                            <span class="home-community-user">${escapeHtml(userName)}</span>
+                            <p class="home-community-text">${escapeHtml(postText || 'Atualização da comunidade')}</p>
+                            <div class="home-community-meta">
+                                <span>${likes} curtidas</span>
+                                <span>Ver post</span>
+                            </div>
+                        </div>
+                    </a>
+                `;
+            }).join('');
+        } catch {
+            container.innerHTML = '<div class="wf-alert wf-alert-error" style="min-width:100%;">Falha ao carregar posts da comunidade.</div>';
+        }
+    }
+
     async function loadStats() {
         try {
             const stats = await apiRequest('/dashboard/insights');
@@ -463,6 +585,7 @@
     updateHeroAuthActions();
     loadHomeOffers();
     loadHomeFeaturedProducts();
+    loadHomeCommunityHighlights();
     loadStats();
 </script>
 {% endblock %}

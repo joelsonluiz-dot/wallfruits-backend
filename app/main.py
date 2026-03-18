@@ -47,6 +47,7 @@ from app.routers import (
     reputation_routes,
     review_routes,
     social_routes,
+    community_routes,
     transaction_routes,
     upload_routes,
     wallet_routes,
@@ -201,6 +202,7 @@ app.include_router(gamification_routes.router, prefix=API_PREFIX)
 app.include_router(growth_routes.router, prefix=API_PREFIX)
 app.include_router(payment_routes.router, prefix=API_PREFIX)
 app.include_router(social_routes.router, prefix=API_PREFIX)
+app.include_router(community_routes.router, prefix=API_PREFIX)
 app.include_router(notification_routes.router, prefix=API_PREFIX)
 app.include_router(store_routes.router)  # Loja Agrícola (HTML + API)
 app.include_router(store_routes.router, prefix=API_PREFIX)  # Alias /api/store para chamadas JS
@@ -209,6 +211,12 @@ app.include_router(store_routes.router, prefix=API_PREFIX)  # Alias /api/store p
 async def home(request: Request, current_user: User = Depends(get_current_user_optional)):
     """Página inicial."""
     return _render_template("index.html", request, current_user=current_user)
+
+
+@app.get("/community")
+async def community_page(request: Request, current_user: User = Depends(get_current_user_optional)):
+    """Página da comunidade para publicações rápidas com imagem."""
+    return _render_template("community.html", request, current_user=current_user)
 
 
 @app.get("/login")
