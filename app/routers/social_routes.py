@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.core.auth_middleware import get_current_user, get_current_user_optional
 from app.database.connection import get_db
-from app.models import Follow, Offer, User
+from app.models import CommunityComment, CommunityLike, CommunityPost, CommunityShare, Follow, Offer, User
 from app.schemas.social_schema import ActiveAccountItem, FollowActionResponse, PublicUserProfileResponse
 from app.services.notification_service import create_notification
 
@@ -23,6 +23,14 @@ def _offer_images(offer: Offer) -> list[str]:
     return OfferResponse.parse_images(offer.images)
 
 
+def _normalize_profile_image(image: str | None) -> str | None:
+    if not image:
+        return None
+    if image.startswith("http://") or image.startswith("https://") or image.startswith("/"):
+        return image
+    return f"/api/uploads/profiles/{image}"
+
+
 @router.get("/users/{user_id}", response_model=PublicUserProfileResponse)
 def get_public_user_profile(
     user_id: int,
@@ -38,6 +46,38 @@ def get_public_user_profile(
         db.query(Offer)
         .filter(Offer.user_id == user.id)
         .order_by(Offer.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+
+    likes_subq = (
+        db.query(CommunityLike.post_id.label("post_id"), func.count(CommunityLike.id).label("likes_count"))
+        .group_by(CommunityLike.post_id)
+        .subquery()
+    )
+    comments_subq = (
+        db.query(CommunityComment.post_id.label("post_id"), func.count(CommunityComment.id).label("comments_count"))
+        .filter(CommunityComment.is_active.is_(True))
+        .group_by(CommunityComment.post_id)
+        .subquery()
+    )
+    shares_subq = (
+        db.query(CommunityShare.post_id.label("post_id"), func.count(CommunityShare.id).label("shares_count"))
+        .group_by(CommunityShare.post_id)
+        .subquery()
+    )
+    community_posts = (
+        db.query(
+            CommunityPost,
+            func.coalesce(likes_subq.c.likes_count, 0).label("likes_count"),
+            func.coalesce(comments_subq.c.comments_count, 0).label("comments_count"),
+            func.coalesce(shares_subq.c.shares_count, 0).label("shares_count"),
+        )
+        .outerjoin(likes_subq, likes_subq.c.post_id == CommunityPost.id)
+        .outerjoin(comments_subq, comments_subq.c.post_id == CommunityPost.id)
+        .outerjoin(shares_subq, shares_subq.c.post_id == CommunityPost.id)
+        .filter(CommunityPost.user_id == user.id, CommunityPost.is_active.is_(True))
+        .order_by(CommunityPost.created_at.desc())
         .limit(limit)
         .all()
     )
@@ -62,7 +102,7 @@ def get_public_user_profile(
         role=user.role,
         bio=user.bio,
         location=user.location,
-        profile_image=user.profile_image,
+        profile_image=_normalize_profile_image(user.profile_image),
         total_offers=len(offers),
         followers_count=followers_count,
         following_count=following_count,
@@ -79,6 +119,18 @@ def get_public_user_profile(
                 "created_at": offer.created_at,
             }
             for offer in offers
+        ],
+        community_posts=[
+            {
+                "id": post.id,
+                "content": post.content or "",
+                "image_url": post.image_url,
+                "created_at": post.created_at,
+                "likes_count": int(likes_count or 0),
+                "comments_count": int(comments_count or 0),
+                "shares_count": int(shares_count or 0),
+            }
+            for post, likes_count, comments_count, shares_count in community_posts
         ],
     )
 
@@ -111,7 +163,7 @@ def search_active_accounts(
             username=_username_from_email(user.email, user.id),
             role=user.role,
             location=user.location,
-            profile_image=user.profile_image,
+            profile_image=_normalize_profile_image(user.profile_image),
         )
         for user in rows
     ]

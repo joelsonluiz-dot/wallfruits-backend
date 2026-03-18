@@ -21,12 +21,20 @@ from app.services.notification_service import create_notification
 router = APIRouter(prefix="/community", tags=["community"])
 
 
+def _normalize_profile_image(image: str | None) -> str | None:
+    if not image:
+        return None
+    if image.startswith("http://") or image.startswith("https://") or image.startswith("/"):
+        return image
+    return f"/api/uploads/profiles/{image}"
+
+
 def _author_payload(user: User) -> dict:
     return {
         "id": user.id,
         "name": user.name,
         "role": user.role,
-        "profile_image": user.profile_image,
+        "profile_image": _normalize_profile_image(user.profile_image),
     }
 
 

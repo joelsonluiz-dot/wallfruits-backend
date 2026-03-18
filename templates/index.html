@@ -109,9 +109,9 @@
     }
 
     .home-community-card {
-        min-width: 236px;
-        max-width: 236px;
-        border-radius: 10px;
+        min-width: 248px;
+        max-width: 248px;
+        border-radius: 12px;
         border: 1px solid var(--wf-border);
         background: var(--wf-card);
         box-shadow: 0 6px 18px rgba(0,0,0,0.14);
@@ -119,10 +119,12 @@
         text-decoration: none;
         color: inherit;
         scroll-snap-align: start;
+        display: grid;
+        gap: 0;
     }
 
     .home-community-media {
-        height: 110px;
+        height: 94px;
         background: rgba(255,255,255,0.05);
     }
 
@@ -134,31 +136,70 @@
 
     .home-community-body {
         padding: 0.62rem;
-        display: grid;
-        gap: 0.26rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.33rem;
+    }
+
+    .home-community-head {
+        display: flex;
+        align-items: center;
+        gap: 0.44rem;
+    }
+
+    .home-community-avatar {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 1px solid rgba(255,255,255,0.2);
+        background: rgba(255,255,255,0.3);
     }
 
     .home-community-user {
-        font-size: 0.7rem;
+        font-size: 0.74rem;
         color: var(--wf-text-secondary);
-        font-weight: 700;
+        font-weight: 800;
+        text-decoration: none;
+        line-height: 1.2;
+    }
+
+    .home-community-user:hover {
+        text-decoration: underline;
+        text-underline-offset: 2px;
+    }
+
+    .home-community-role {
+        font-size: 0.64rem;
+        color: var(--wf-text-secondary);
+        opacity: 0.9;
     }
 
     .home-community-text {
         margin: 0;
-        font-size: 0.76rem;
+        font-size: 0.78rem;
         font-weight: 700;
-        line-height: 1.3;
+        line-height: 1.32;
         color: var(--wf-text);
-        min-height: 2.9em;
+        min-height: 2.62em;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
     }
 
     .home-community-meta {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        font-size: 0.68rem;
+        font-size: 0.66rem;
         color: var(--wf-text-secondary);
+    }
+
+    .home-community-open {
+        text-decoration: none;
+        color: inherit;
+        font-weight: 700;
     }
 
     .home-products-row {
@@ -264,8 +305,27 @@
         gap: 0.35rem;
     }
     .home-producer {
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
         font-size: 0.72rem;
         color: var(--wf-text-secondary);
+    }
+    .home-producer-avatar {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 1px solid var(--wf-border);
+    }
+    .home-producer-link {
+        color: inherit;
+        text-decoration: none;
+        font-weight: 700;
+    }
+    .home-producer-link:hover {
+        text-decoration: underline;
+        text-underline-offset: 2px;
     }
     .home-fruit {
         font-size: 0.98rem;
@@ -320,6 +380,10 @@
         .home-offers-section { margin-top: 2.5rem; }
         .hero-actions { flex-direction: column; align-items: center; }
         .hero-actions .btn { width: 100%; max-width: 300px; }
+        .home-community-card {
+            min-width: 220px;
+            max-width: 220px;
+        }
     }
     @media (max-width: 480px) {
         .hero-title { font-size: 1.75rem; letter-spacing: -0.8px; }
@@ -327,6 +391,10 @@
         .stats-grid { grid-template-columns: 1fr 1fr; gap: 0.6rem; }
         .stat-value { font-size: 1.4rem; }
         .hero-tag { font-size: 0.7rem; padding: 0.35rem 0.8rem; }
+        .home-community-card {
+            min-width: 206px;
+            max-width: 206px;
+        }
     }
 </style>
 
@@ -451,11 +519,20 @@
                 const min = offer.price_min_kg ?? offer.price_per_kg ?? offer.price;
                 const perKg = offer.price_per_kg ?? offer.price_avg_kg ?? offer.price;
                 const max = offer.price_max_kg ?? offer.price_per_kg ?? offer.price;
+                const ownerId = offer.owner_data?.id || offer.user_id || 0;
+                const ownerProfile = profileUrlByUserId(ownerId);
+                const ownerName = offer.owner_data?.name || 'Produtor';
+                const ownerAvatar = resolveAvatar(offer.owner_data?.profile_image || null);
                 return `
                     <article class="home-offer-card" data-offer-id="${offer.id}">
                         <img class="home-offer-image" src="${escapeHtml(getOfferImage(offer))}" alt="${escapeHtml(offer.product_name)}">
                         <div class="home-offer-body">
-                            <div class="home-producer">${escapeHtml(offer.owner_data?.name || 'Produtor')}</div>
+                            <div class="home-producer">
+                                <a href="${escapeHtml(ownerProfile)}" onclick="event.stopPropagation()" style="display:inline-flex;">
+                                    <img class="home-producer-avatar" src="${escapeHtml(ownerAvatar)}" alt="Avatar de ${escapeHtml(ownerName)}">
+                                </a>
+                                <a class="home-producer-link" href="${escapeHtml(ownerProfile)}" onclick="event.stopPropagation()">${escapeHtml(ownerName)}</a>
+                            </div>
                             <h3 class="home-fruit">${escapeHtml(offer.product_name)}</h3>
                             <div class="home-price-row">
                                 <div class="home-price-col"><span class="home-price-label">Min</span><span class="home-price-val">${toCurrency(min)}</span></div>
@@ -522,6 +599,21 @@
         return `${value.slice(0, maxLen - 1)}...`;
     }
 
+    function resolveAvatar(avatar) {
+        if (!avatar) {
+            return 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><rect width="100%" height="100%" fill="%23e5eef8"/><circle cx="60" cy="46" r="20" fill="%23638ab7"/><rect x="26" y="72" width="68" height="26" rx="13" fill="%23638ab7"/></svg>';
+        }
+        if (avatar.startsWith('http://') || avatar.startsWith('https://') || avatar.startsWith('/')) {
+            return avatar;
+        }
+        return `/api/uploads/profiles/${avatar}`;
+    }
+
+    function profileUrlByUserId(userId) {
+        if (!userId) return '/me/profile';
+        return `/users/${userId}`;
+    }
+
     async function loadHomeCommunityHighlights() {
         const container = document.getElementById('homeCommunityHighlights');
         if (!container) return;
@@ -537,24 +629,42 @@
 
             container.innerHTML = posts.map((post) => {
                 const postText = truncateText(post.content || 'Sem descrição');
-                const image = post.image_url || fallbackImageSvg('Comunidade');
+                const image = post.image_url ? post.image_url : '';
                 const userName = post.author?.name || 'Produtor Rural';
+                const userRole = post.author?.role || 'Membro';
                 const likes = Number(post.likes_count || 0);
+                const comments = Number(post.comments_count || 0);
+                const shares = Number(post.shares_count || 0);
+                const profileUrl = profileUrlByUserId(post.author?.id || 0);
+                const postUrl = `/community?post=${encodeURIComponent(post.id)}`;
 
                 return `
-                    <a href="/community" class="home-community-card" title="Abrir comunidade">
-                        <div class="home-community-media">
-                            <img src="${escapeHtml(image)}" alt="Post da comunidade" loading="lazy">
-                        </div>
+                    <article class="home-community-card">
+                        ${image ? `
+                            <a href="${postUrl}" class="home-community-open" title="Abrir post na comunidade">
+                                <div class="home-community-media">
+                                    <img src="${escapeHtml(image)}" alt="Post da comunidade" loading="lazy">
+                                </div>
+                            </a>
+                        ` : ''}
                         <div class="home-community-body">
-                            <span class="home-community-user">${escapeHtml(userName)}</span>
-                            <p class="home-community-text">${escapeHtml(postText || 'Atualização da comunidade')}</p>
+                            <div class="home-community-head">
+                                <a href="${escapeHtml(profileUrl)}" style="display:inline-flex;" onclick="event.stopPropagation()">
+                                    <img class="home-community-avatar" src="${escapeHtml(resolveAvatar(post.author?.profile_image))}" alt="Avatar de ${escapeHtml(userName)}" loading="lazy">
+                                </a>
+                                <div style="display:grid;gap:0.04rem;min-width:0;">
+                                    <a href="${escapeHtml(profileUrl)}" class="home-community-user" onclick="event.stopPropagation()">${escapeHtml(userName)}</a>
+                                    <span class="home-community-role">${escapeHtml(userRole)}</span>
+                                </div>
+                            </div>
+                            <a href="${postUrl}" class="home-community-open"><p class="home-community-text">${escapeHtml(postText || 'Atualização da comunidade')}</p></a>
                             <div class="home-community-meta">
                                 <span>${likes} curtidas</span>
-                                <span>Ver post</span>
+                                <span>${comments} comentários</span>
+                                <span>${shares} compartilhamentos</span>
                             </div>
                         </div>
-                    </a>
+                    </article>
                 `;
             }).join('');
         } catch {

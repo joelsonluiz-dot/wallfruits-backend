@@ -200,6 +200,13 @@
             border-color: rgba(94, 127, 44, 0.14);
         }
 
+        .wf-nav-link.active {
+            color: var(--wf-text) !important;
+            background: rgba(94, 127, 44, 0.14);
+            border-color: rgba(94, 127, 44, 0.26);
+            font-weight: 700;
+        }
+
         @media (max-width: 992px) {
             .wf-nav-link:hover {
                 transform: translateY(-2px);
@@ -475,6 +482,10 @@
             background: rgba(94, 127, 44, 0.14);
         }
 
+        .wf-mobile-nav-item.active .wf-mobile-nav-icon {
+            color: var(--wf-accent);
+        }
+
         .wf-mobile-nav-icon.material-icons {
             font-size: 1.35rem;
             line-height: 1;
@@ -601,6 +612,12 @@
             font-weight: 700;
             text-decoration: none;
             padding: 0.88rem 0.92rem;
+        }
+
+        .wf-popup-item.active {
+            background: rgba(94, 127, 44, 0.16);
+            border-color: rgba(94, 127, 44, 0.3);
+            color: var(--wf-text);
         }
 
         .wf-popup-item .material-icons {
@@ -747,6 +764,13 @@
             color: var(--wf-text) !important;
             background: rgba(94, 127, 44, 0.14);
             border-color: rgba(94, 127, 44, 0.24);
+        }
+
+        .wf-sidebar-right-item.active {
+            color: var(--wf-text) !important;
+            background: rgba(94, 127, 44, 0.18);
+            border-color: rgba(94, 127, 44, 0.28);
+            font-weight: 800;
         }
 
         .wf-sidebar-right-overlay {
@@ -1986,16 +2010,35 @@
                 });
             });
 
-            // 2. Active State for Mobile Dock
+            // 2. Active State for Navigation Links
             const currentPath = window.location.pathname;
-            const dockItems = document.querySelectorAll('.wf-mobile-nav-item');
-            
-            dockItems.forEach(item => {
-                const href = item.getAttribute('href');
-                if (currentPath === href || (href !== '/' && currentPath.startsWith(href))) {
-                    item.classList.add('active');
-                }
-            });
+
+            const normalizePath = (value) => {
+                if (!value) return '/';
+                return value.replace(/\/+$/, '') || '/';
+            };
+
+            const isPathMatch = (current, target) => {
+                const currentNorm = normalizePath(current);
+                const targetNorm = normalizePath(target);
+                if (targetNorm === '/') return currentNorm === '/';
+                if (targetNorm === '/me/profile') return currentNorm === '/me/profile' || currentNorm.startsWith('/users/');
+                return currentNorm === targetNorm || currentNorm.startsWith(`${targetNorm}/`);
+            };
+
+            const markActiveBySelector = (selector) => {
+                document.querySelectorAll(selector).forEach((item) => {
+                    const href = item.getAttribute('href');
+                    if (!href || href.startsWith('#') || href.startsWith('http')) return;
+                    item.classList.toggle('active', isPathMatch(currentPath, href));
+                });
+            };
+
+            markActiveBySelector('.wf-mobile-nav-item');
+            markActiveBySelector('.wf-nav-link');
+            markActiveBySelector('.wf-popup-item');
+            markActiveBySelector('.wf-sidebar-right-item');
+            markActiveBySelector('.wf-profile-link');
 
             // 3. Smooth Page Transitions
             document.querySelectorAll('a').forEach(link => {

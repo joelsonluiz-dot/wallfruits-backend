@@ -161,6 +161,14 @@
         background: #eef4fb;
     }
 
+        .post-avatar-link {
+            display: inline-flex;
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            text-decoration: none;
+        }
+
     .post-head {
         display: flex;
         align-items: center;
@@ -174,6 +182,18 @@
         font-weight: 900;
         color: #173e72;
     }
+
+        .post-user-link {
+            text-decoration: none;
+            color: inherit;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .post-user-link:hover .post-user {
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
 
     .post-date {
         color: #5b7598;
@@ -227,13 +247,14 @@
         border-radius: 999px;
         background: #f4f9ff;
         color: #1f4b85;
-        font-size: 0.72rem;
+        font-size: clamp(0.68rem, 1.9vw, 0.76rem);
         font-weight: 800;
-        padding: 0.34rem 0.56rem;
+        padding: clamp(0.3rem, 1.4vw, 0.4rem) clamp(0.5rem, 2.2vw, 0.62rem);
         display: inline-flex;
         align-items: center;
         gap: 0.2rem;
         cursor: pointer;
+        min-height: 34px;
     }
 
     .post-action-btn .material-icons {
@@ -336,9 +357,10 @@
         border-radius: 999px;
         background: #2e7d32;
         color: #fff;
-        font-size: 0.7rem;
+        font-size: clamp(0.68rem, 1.8vw, 0.74rem);
         font-weight: 800;
-        padding: 0.36rem 0.62rem;
+        padding: 0.4rem 0.68rem;
+        min-height: 34px;
     }
 
     .img-modal {
@@ -482,6 +504,21 @@
             return div.innerHTML;
         }
 
+        function profileUrlByUserId(userId) {
+            if (!userId) return '/me/profile';
+            return `/users/${userId}`;
+        }
+
+        function resolveAvatar(avatar) {
+            if (!avatar) {
+                return 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><rect width="100%" height="100%" fill="%23e5eef8"/><circle cx="60" cy="46" r="20" fill="%23638ab7"/><rect x="26" y="72" width="68" height="26" rx="13" fill="%23638ab7"/></svg>';
+            }
+            if (avatar.startsWith('http://') || avatar.startsWith('https://') || avatar.startsWith('/')) {
+                return avatar;
+            }
+            return `/api/uploads/profiles/${avatar}`;
+        }
+
         function fmtDate(isoDate) {
             const date = new Date(isoDate);
             if (Number.isNaN(date.getTime())) return 'agora';
@@ -534,7 +571,7 @@
 
             list.innerHTML = comments.map((item) => `
                 <article class="post-comment-item">
-                    <div class="post-comment-meta">${escapeHtml(item.author?.name || 'Usuário')} • ${escapeHtml(fmtDate(item.created_at))}</div>
+                    <div class="post-comment-meta"><a href="${escapeHtml(profileUrlByUserId(item.author?.id || 0))}" style="color:inherit;font-weight:900;text-decoration:none;" onclick="event.stopPropagation()">${escapeHtml(item.author?.name || 'Usuário')}</a> • ${escapeHtml(fmtDate(item.created_at))}</div>
                     <p class="post-comment-content">${escapeHtml(item.content || '')}</p>
                     ${isAdmin ? `
                         <div class="post-comment-actions">
@@ -744,11 +781,13 @@
                 return `
                     <article class="post-card ${focusPostId && Number(post.id) === Number(focusPostId) ? 'post-focus' : ''}" data-post-id="${escapeHtml(post.id)}">
                         <div class="post-main">
-                            <img class="post-avatar" src="${escapeHtml(post.author?.profile_image || 'https://i.pravatar.cc/120?img=13')}" alt="Avatar de ${escapeHtml(post.author?.name || 'Usuário')}">
+                            <a class="post-avatar-link" href="${escapeHtml(profileUrlByUserId(post.author?.id || 0))}" onclick="event.stopPropagation()">
+                                <img class="post-avatar" src="${escapeHtml(resolveAvatar(post.author?.profile_image))}" alt="Avatar de ${escapeHtml(post.author?.name || 'Usuário')}">
+                            </a>
 
                             <div>
                                 <div class="post-head">
-                                    <h2 class="post-user">${escapeHtml(post.author?.name || 'Produtor Rural')}</h2>
+                                    <a class="post-user-link" href="${escapeHtml(profileUrlByUserId(post.author?.id || 0))}" onclick="event.stopPropagation()"><span class="post-user">${escapeHtml(post.author?.name || 'Produtor Rural')}</span></a>
                                     <span class="post-badge">${escapeHtml(post.author?.role || 'Membro')}</span>
                                     <span class="post-date">${escapeHtml(fmtDate(post.created_at))}</span>
                                 </div>

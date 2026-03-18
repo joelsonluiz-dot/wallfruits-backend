@@ -20,6 +20,16 @@ class ProfileOfferItem(BaseModel):
         from_attributes = True
 
 
+class ProfileCommunityPostItem(BaseModel):
+    id: int
+    content: str
+    image_url: Optional[str]
+    created_at: datetime
+    likes_count: int
+    comments_count: int
+    shares_count: int
+
+
 class PublicUserProfileResponse(BaseModel):
     id: int
     name: str
@@ -36,6 +46,7 @@ class PublicUserProfileResponse(BaseModel):
     is_following: bool
 
     offers: list[ProfileOfferItem]
+    community_posts: list[ProfileCommunityPostItem]
 
 
 class FollowActionResponse(BaseModel):
