@@ -1,0 +1,243 @@
+<!-- 
+  Botão Flutuante para Agente IA
+  Inclua este arquivo com {% include 'components/ai_agent_button.html' %} em cada template
+  ou no base.html para que apareça em todas as páginas.
+-->
+
+<style>
+  /* Botão Flutuante IA */
+  .ai-agent-button {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    z-index: 999;
+    font-size: 28px;
+  }
+
+  .ai-agent-button:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 30px rgba(102, 126, 234, 0.6);
+  }
+
+  .ai-agent-button:active {
+    transform: scale(0.95);
+  }
+
+  /* Modal da IA */
+  .ai-agent-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.3s ease;
+  }
+
+  .ai-agent-modal.active {
+    display: flex;
+  }
+
+  .ai-agent-modal-content {
+    background: white;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .ai-agent-modal-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 16px 16px 0 0;
+  }
+
+  .ai-agent-modal-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+
+  .ai-agent-modal-close {
+    background: rgba(255, 255, 255, 0.3);
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+  }
+
+  .ai-agent-modal-close:hover {
+    background: rgba(255, 255, 255, 0.5);
+  }
+
+  .ai-agent-modal-body {
+    padding: 1.5rem;
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .ai-agent-iframe {
+    width: 100%;
+    height: 600px;
+    border: none;
+    border-radius: 8px;
+  }
+
+  .ai-agent-placeholder {
+    text-align: center;
+    padding: 2rem;
+    color: #999;
+  }
+
+  .ai-agent-placeholder svg {
+    width: 80px;
+    height: 80px;
+    margin: 1rem 0;
+    opacity: 0.3;
+  }
+
+  /* Responsivo em mobile */
+  @media (max-width: 768px) {
+    .ai-agent-button {
+      bottom: 1rem;
+      right: 1rem;
+      width: 50px;
+      height: 50px;
+      font-size: 24px;
+    }
+
+    .ai-agent-modal-content {
+      width: 95%;
+      max-height: 90vh;
+    }
+
+    .ai-agent-iframe {
+      height: 500px;
+    }
+  }
+
+  /* Animação de entrada */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .ai-agent-button-pulse {
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% {
+      box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+    }
+    50% {
+      box-shadow: 0 6px 30px rgba(102, 126, 234, 0.8);
+    }
+  }
+</style>
+
+<!-- Botão Flutuante -->
+<button class="ai-agent-button" id="aiAgentButton" title="Abrir Agente IA">
+  🤖
+</button>
+
+<!-- Modal da IA -->
+<div class="ai-agent-modal" id="aiAgentModal">
+  <div class="ai-agent-modal-content">
+    <div class="ai-agent-modal-header">
+      <h2>
+        🤖 Agente de IA WallFruits
+      </h2>
+      <button class="ai-agent-modal-close" id="aiAgentClose">✕</button>
+    </div>
+    <div class="ai-agent-modal-body">
+      <div class="ai-agent-placeholder">
+        <p>Carregando Agente de IA...</p>
+        <p style="font-size: 0.9rem; margin-top: 1rem;">
+          O assistente inteligente está sendo preparado para ajudá-lo com suas dúvidas sobre a plataforma WallFruits.
+        </p>
+      </div>
+      <!-- 
+        iframe será injetado aqui dinamicamente
+        Descomente e configure a URL conforme necessário:
+        <iframe class="ai-agent-iframe" src="/ai-agent/" title="Agente IA WallFruits"></iframe>
+      -->
+    </div>
+  </div>
+</div>
+
+<script>
+  // Elementos
+  const aiButton = document.getElementById('aiAgentButton');
+  const aiModal = document.getElementById('aiAgentModal');
+  const aiClose = document.getElementById('aiAgentClose');
+
+  // Abrir modal
+  aiButton.addEventListener('click', function() {
+    aiModal.classList.add('active');
+    // Adiciona pulse animation ao botão fechado
+    if (!aiButton.classList.contains('ai-agent-button-pulse')) {
+      aiButton.classList.add('ai-agent-button-pulse');
+    }
+  });
+
+  // Fechar modal
+  aiClose.addEventListener('click', function() {
+    aiModal.classList.remove('active');
+    aiButton.classList.remove('ai-agent-button-pulse');
+  });
+
+  // Fechar ao clicar fora
+  aiModal.addEventListener('click', function(e) {
+    if (e.target === aiModal) {
+      aiModal.classList.remove('active');
+      aiButton.classList.remove('ai-agent-button-pulse');
+    }
+  });
+
+  // Fechar com ESC
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      aiModal.classList.remove('active');
+      aiButton.classList.remove('ai-agent-button-pulse');
+    }
+  });
+</script>
