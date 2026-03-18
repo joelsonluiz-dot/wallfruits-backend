@@ -1233,6 +1233,7 @@
                 <a class="wf-nav-link" href="/offers">Explorar ofertas</a>
                 <a class="wf-nav-link" href="/offers/new" id="navNewOffer" style="display:none;">Nova oferta</a>
                 <a class="wf-nav-link" href="/messages" id="navMessages" style="display:none;">Mensagens</a>
+                <a class="wf-nav-link" href="/ai-agent" id="navHelp" style="display:none;">Ajuda</a>
                 <a class="wf-nav-link" href="/notifications" id="navNotifications" style="display:none;">Notificações <span id="navNotifBadge" style="display:none;background:var(--wf-danger);color:#fff;padding:1px 6px;border-radius:999px;font-size:0.75rem;">0</span></a>
             </div>
 
@@ -1405,6 +1406,7 @@
             setElementDisplay('navMyProfile', isLogged);
             setElementDisplay('navNotifications', isLogged);
             setElementDisplay('navMessages', isLogged);
+            setElementDisplay('navHelp', isLogged);
             setElementDisplay('navAdmin', isAdmin);
             setElementDisplay('navStoreManage', isStoreManager);
             setElementDisplay('navStoreCart', isLogged);
@@ -1422,10 +1424,9 @@
             setElementDisplay('actionExplore', !isLogged);
             setElementDisplay('actionNewOffer', isLogged);
             setElementDisplay('actionMessages', isLogged);
+            setElementDisplay('actionHelp', isLogged);
             setElementDisplay('actionNotifications', isLogged);
             setElementDisplay('actionProfile', isLogged);
-            setElementDisplay('actionLogin', !isLogged);
-            setElementDisplay('actionRegister', !isLogged);
             setElementDisplay('notificationsSection', isLogged);
             setElementDisplay('rightNavStoreManage', isStoreManager);
             setElementDisplay('rightNavStoreCart', isLogged);
@@ -1433,6 +1434,7 @@
             setElementDisplay('rightNavStoreProposals', isLogged);
             setElementDisplay('rightNavNewOffer', isLogged);
             setElementDisplay('rightNavMessages', isLogged);
+            setElementDisplay('rightNavHelp', isLogged);
             setElementDisplay('rightNavProfile', isLogged);
             setElementDisplay('rightNavSettings', isLogged);
             setElementDisplay('rightNavLogout', isLogged);
@@ -1448,7 +1450,7 @@
 
             const actionBar = document.getElementById('actionBar');
             if (actionBar) {
-                actionBar.classList.add('mobile-visible');
+                actionBar.classList.toggle('mobile-visible', isLogged);
             }
 
             if (!isLogged) {
@@ -1615,6 +1617,10 @@
                             <span class="wf-mobile-nav-icon">💬</span>
                             <span class="wf-mobile-nav-label">Chats</span>
                         </a>
+                        <a href="/ai-agent" class="wf-mobile-nav-item" id="actionHelp" style="display:none;" title="Ajuda">
+                            <span class="wf-mobile-nav-icon">❓</span>
+                            <span class="wf-mobile-nav-label">Ajuda</span>
+                        </a>
                         <a href="/notifications" class="wf-mobile-nav-item" id="actionNotifications" style="display:none;" title="Notificações">
                             <span class="wf-mobile-nav-icon">🔔</span>
                             <span class="wf-mobile-nav-label">Alertas</span>
@@ -1623,14 +1629,6 @@
                         <a href="/me/profile" class="wf-mobile-nav-item" id="actionProfile" style="display:none;" title="Perfil">
                             <span class="wf-mobile-nav-icon">👤</span>
                             <span class="wf-mobile-nav-label">Perfil</span>
-                        </a>
-                        <a href="/login" class="wf-mobile-nav-item" id="actionLogin" title="Entrar">
-                            <span class="wf-mobile-nav-icon">🔐</span>
-                            <span class="wf-mobile-nav-label">Entrar</span>
-                        </a>
-                        <a href="/register" class="wf-mobile-nav-item" id="actionRegister" title="Criar conta">
-                            <span class="wf-mobile-nav-icon">✍️</span>
-                            <span class="wf-mobile-nav-label">Conta</span>
                         </a>
                         <a href="/offers/new" class="wf-mobile-nav-item" id="actionNewOffer" style="display:none;" title="Nova oferta">
                             <span class="wf-mobile-nav-icon">➕</span>
@@ -1681,6 +1679,10 @@
                         <a href="/messages" class="wf-sidebar-right-item" id="rightNavMessages" style="display:none;">
                             <span>💬</span>
                             <span>Mensagens</span>
+                        </a>
+                        <a href="/ai-agent" class="wf-sidebar-right-item" id="rightNavHelp" style="display:none;">
+                            <span>❓</span>
+                            <span>Ajuda</span>
                         </a>
                         <a href="/me/profile" class="wf-sidebar-right-item" id="rightNavProfile" style="display:none;">
                             <span>👤</span>

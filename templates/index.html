@@ -22,6 +22,9 @@
         margin-bottom: 1.5rem;
         letter-spacing: 0.5px;
     }
+    .hero-tag-mobile {
+        display: none;
+    }
     .hero-tag-dot {
         width: 6px;
         height: 6px;
@@ -43,6 +46,9 @@
         margin: 0 auto 2.5rem;
         line-height: 1.6;
         font-weight: 400;
+    }
+    .hero-subtitle-mobile {
+        display: none;
     }
     .hero-actions {
         display: flex;
@@ -81,10 +87,6 @@
         font-weight: 500;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-    }
-    .features-section {
-        margin-top: 5rem;
-        padding-bottom: 2rem;
     }
     .home-offers-section {
         margin-top: 3.5rem;
@@ -238,63 +240,25 @@
         font-size: 0.68rem;
         color: var(--wf-text-secondary);
     }
-    .feature-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 1.25rem;
-        margin-top: 2rem;
-    }
-    .feature-item {
-        background: var(--wf-card);
-        border: 1px solid var(--wf-border);
-        border-radius: var(--wf-radius);
-        padding: 2rem 1.5rem;
-        transition: all 0.35s ease;
-    }
-    .feature-item:hover {
-        border-color: rgba(0,212,170,0.15);
-        transform: translateY(-2px);
-    }
-    .feature-icon {
-        width: 48px;
-        height: 48px;
-        background: var(--wf-accent-glow);
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-bottom: 1rem;
-        font-size: 1.4rem;
-    }
-    .feature-title {
-        font-weight: 700;
-        font-size: 1.05rem;
-        margin-bottom: 0.5rem;
-        letter-spacing: -0.3px;
-    }
-    .feature-desc {
-        color: var(--wf-text-secondary);
-        font-size: 0.88rem;
-        line-height: 1.5;
-    }
     @media (max-width: 768px) {
         .hero-title { font-size: 2.2rem; letter-spacing: -1px; }
         .hero-section { padding: 2.5rem 0 2rem; }
-        .hero-subtitle { font-size: 1rem; }
+        .hero-subtitle { display: none; }
+        .hero-subtitle-mobile { display: block; font-size: 0.9rem; color: var(--wf-text-secondary); margin: 0 auto 1.2rem; max-width: 360px; font-weight: 600; }
+        .hero-tag-desktop { display: none; }
+        .hero-tag-mobile { display: inline; }
+        .hero-title { margin-bottom: 0.65rem; }
         .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; margin-top: 2.5rem; }
         .stat-card { padding: 1.15rem; }
         .stat-value { font-size: 1.6rem; }
         .stat-label { font-size: 0.7rem; }
-        .features-section { margin-top: 3rem; }
         .home-offers-section { margin-top: 2.5rem; }
-        .feature-grid { grid-template-columns: 1fr; }
-        .feature-item { padding: 1.5rem 1.15rem; }
         .hero-actions { flex-direction: column; align-items: center; }
         .hero-actions .btn { width: 100%; max-width: 300px; }
     }
     @media (max-width: 480px) {
         .hero-title { font-size: 1.75rem; letter-spacing: -0.8px; }
-        .hero-subtitle { font-size: 0.92rem; }
+        .hero-subtitle-mobile { font-size: 0.84rem; margin-bottom: 1rem; }
         .stats-grid { grid-template-columns: 1fr 1fr; gap: 0.6rem; }
         .stat-value { font-size: 1.4rem; }
         .hero-tag { font-size: 0.7rem; padding: 0.35rem 0.8rem; }
@@ -304,15 +268,17 @@
 <section class="hero-section">
     <div class="hero-tag">
         <span class="hero-tag-dot"></span>
-        MARKETPLACE INTELIGENTE
+        <span class="hero-tag-desktop">MARKETPLACE INTELIGENTE</span>
+        <span class="hero-tag-mobile">AGRO DIRETO</span>
     </div>
     <h1 class="hero-title">
-        Conectando quem<br>
-        <span class="wf-gradient-text">produz</span> a quem <span class="wf-gradient-text">consome</span>
+        Agro sem<br>
+        <span class="wf-gradient-text">intermediarios</span>
     </h1>
     <p class="hero-subtitle">
-        Plataforma de próxima geração para negociação direta de produtos agrícolas. Sem intermediários. Sem limites.
+        Negociacao direta entre produtores, fornecedores e compradores com agilidade e seguranca.
     </p>
+    <p class="hero-subtitle-mobile">Compre e negocie rapido, direto no agro.</p>
     <div class="hero-actions">
         <a href="/offers" class="btn btn-wf-primary btn-lg px-4">
             Explorar Ofertas &rarr;
@@ -366,30 +332,6 @@
         <div class="stat-label">Latência API</div>
     </div>
 </div>
-
-<section class="features-section">
-    <div style="text-align:center;">
-        <h2 class="wf-section-title">Construído para <span class="wf-gradient-text">escalar</span></h2>
-        <p style="color:var(--wf-text-secondary);margin-top:0.5rem;font-size:1rem;">Tecnologia de ponta em cada camada</p>
-    </div>
-    <div class="feature-grid wf-stagger">
-        <div class="feature-item">
-            <div class="feature-icon">&#9889;</div>
-            <div class="feature-title">API Ultrarrápida</div>
-            <div class="feature-desc">FastAPI com async/await nativo. Respostas em tempo real via WebSocket.</div>
-        </div>
-        <div class="feature-item">
-            <div class="feature-icon">&#128274;</div>
-            <div class="feature-title">Segurança JWT</div>
-            <div class="feature-desc">Autenticação robusta com tokens JWT e hash bcrypt. Zero comprometimento.</div>
-        </div>
-        <div class="feature-item">
-            <div class="feature-icon">&#128640;</div>
-            <div class="feature-title">Deploy Instantâneo</div>
-            <div class="feature-desc">Docker + CI/CD pronto. Do commit ao deploy em segundos.</div>
-        </div>
-    </div>
-</section>
 
 <script>
     function escapeHtml(text) {
