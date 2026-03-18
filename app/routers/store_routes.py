@@ -6,10 +6,17 @@ from app.database.connection import get_db
 from app.core.auth_middleware import get_current_user_optional, get_current_user
 from app.models.user import User
 from app.models.store_models import Product, ProductCategory, ProductStatus
-from slugify import slugify
+import re
+import unicodedata
 import uuid
 
 router = APIRouter(prefix="/store", tags=["Store"])
+
+
+def _slugify(value: str) -> str:
+    normalized = unicodedata.normalize("NFKD", value).encode("ascii", "ignore").decode("ascii")
+    slug = re.sub(r"[^a-zA-Z0-9]+", "-", normalized).strip("-").lower()
+    return slug or uuid.uuid4().hex[:8]
 
 @router.post("/manage/create")
 async def create_product(
@@ -25,7 +32,7 @@ async def create_product(
     if current_user.role not in ["admin", "supplier", "producer"]:
         raise HTTPException(status_code=403, detail="Acesso negado")
         
-    slug = slugify(f"{name}-{uuid.uuid4().hex[:6]}")
+    slug = _slugify(f"{name}-{uuid.uuid4().hex[:6]}")
     
     new_product = Product(
         name=name,
