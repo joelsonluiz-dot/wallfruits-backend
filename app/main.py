@@ -19,13 +19,15 @@ from fastapi.templating import Jinja2Templates
 
 from app.auth import auth_routes
 from app.cache.redis_client import check_redis_connection
-from app.core.auth_middleware import get_current_user_optional
+from app.core.auth_middleware import get_current_user_optional, get_current_user
 from app.core.config import settings
 from app.database.connection import (
     check_database_connection,
     init_db,
     wait_for_database_ready,
+    get_db,
 )
+from sqlalchemy.orm import Session
 from app.models import Category, Favorite, Message, Offer, Review, Transaction, User
 from app.routers import (
     store_routes,
@@ -276,6 +278,61 @@ async def intermediation_page(request: Request, current_user: User = Depends(get
 async def strategy_page(request: Request, current_user: User = Depends(get_current_user_optional)):
     """Página da central estratégica para gestão de crescimento."""
     return _render_template("strategy.html", request, current_user=current_user)
+
+
+# === STORE ROUTES ===
+@app.get("/store")
+async def store_home(request: Request, category: str | None = None, q: str | None = None, db: Session = Depends(get_db), current_user: User = Depends(get_current_user_optional)):
+    """Página da loja agrícola com filtros e categorias."""
+    from app.models.store_models import Product, ProductCategory, ProductStatus
+    
+    query = db.query(Product).filter(Product.status == ProductStatus.PUBLISHED)
+    
+    if category:
+        query = query.join(ProductCategory).filter(ProductCategory.slug == category)
+        
+    if q:
+        query = query.filter(Product.name.ilike(f"%{q}%"))
+        
+    products = query.order_by(Product.is_featured.desc(), Product.created_at.desc()).all()
+    categories = db.query(ProductCategory).filter(ProductCategory.is_active == True).all()
+    
+    return _render_template("store/index.html", request, products=products, categories=categories, current_user=current_user, search_query=q, active_category=category)
+
+@app.get("/store/product/{slug}")
+async def product_detail(slug: str, request: Request, db: Session = Depends(get_db), current_user: User = Depends(get_current_user_optional)):
+    """Página de detalhes de um produto específico."""
+    from app.models.store_models import Product, ProductStatus
+    
+    product = db.query(Product).filter(Product.slug == slug).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Produto não encontrado")
+        
+    related = db.query(Product).filter(
+        Product.category_id == product.category_id,
+        Product.id != product.id,
+        Product.status == ProductStatus.PUBLISHED
+    ).limit(4).all()
+    
+    return _render_template("store/product_detail.html", request, product=product, related_products=related, current_user=current_user)
+
+@app.get("/store/manage/dashboard")
+async def supplier_dashboard(request: Request, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """Dashboard do fornecedor para gerenciar produtos."""
+    from app.models.store_models import Product, ProductCategory
+    
+    if current_user.role not in ["admin", "supplier", "producer"]:
+        raise HTTPException(status_code=403, detail="Acesso negado")
+        
+    my_products = db.query(Product).filter(Product.supplier_id == current_user.id).all()
+    categories = db.query(ProductCategory).all()
+    
+    return _render_template("store/dashboard.html", request, products=my_products, categories=categories, current_user=current_user)
+
+@app.get("/store/cart")
+async def view_cart(request: Request, current_user: User = Depends(get_current_user_optional)):
+    """Página do carrinho de compras."""
+    return _render_template("store/cart.html", request, current_user=current_user)
 
 
 @app.get("/mobile-preview")
