@@ -26,6 +26,7 @@ from .review_contestation import ReviewContestation
 from .auth_token import AuthToken
 from .follow import Follow
 from .notification import Notification
+from .store_models import ProductCategory, Product, Order, OrderItem
 
 __all__ = [
     "User",
@@ -56,4 +57,8 @@ __all__ = [
     "AuthToken",
     "Follow",
     "Notification",
+    "ProductCategory",
+    "Product",
+    "Order",
+    "OrderItem",
 ]

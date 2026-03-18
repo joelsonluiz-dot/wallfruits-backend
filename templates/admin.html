@@ -44,9 +44,47 @@
     </div>
 </div>
 
+<div class="wf-card mt-3">
+    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;gap:0.7rem;flex-wrap:wrap;">
+        <span>Gestão de Contas de Usuários</span>
+        <div style="display:flex;gap:0.45rem;">
+            <input id="adminUserSearch" class="wf-input" style="min-width:230px;" placeholder="Buscar por nome ou email">
+            <button id="adminReloadUsers" class="btn btn-wf-secondary">Atualizar</button>
+        </div>
+    </div>
+    <div class="card-body" style="padding:0;overflow-x:auto;">
+        <table class="table table-sm align-middle mb-0">
+            <thead>
+                <tr>
+                    <th style="padding-left:1rem;">Usuário</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Ativo</th>
+                    <th>Verificado</th>
+                    <th>Superuser</th>
+                    <th style="text-align:right;padding-right:1rem;">Ações</th>
+                </tr>
+            </thead>
+            <tbody id="adminUsersBody">
+                <tr><td colspan="7" style="padding:1rem;color:var(--wf-text-secondary);">Carregando usuários...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
 <script>
     function numberFmt(n) { return Number(n || 0).toLocaleString('pt-BR'); }
     function money(v) { return `R$ ${Number(v || 0).toFixed(2)}`; }
+
+    function esc(v) {
+        return String(v ?? '').replace(/[&<>"']/g, (char) => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        }[char]));
+    }
 
     async function loadAdmin() {
         const me = await apiRequest('/auth/me');
@@ -83,6 +121,69 @@
     loadAdmin().catch((err) => {
         alert(err.message || 'Erro ao carregar painel admin');
     });
+
+    async function loadAdminUsers(search = '') {
+        const body = document.getElementById('adminUsersBody');
+        body.innerHTML = '<tr><td colspan="7" style="padding:1rem;color:var(--wf-text-secondary);">Carregando usuários...</td></tr>';
+        try {
+            const query = search ? `?search=${encodeURIComponent(search)}&limit=300` : '?limit=300';
+            const data = await apiRequest(`/dashboard/admin/users${query}`);
+            const users = data.items || [];
+            if (!users.length) {
+                body.innerHTML = '<tr><td colspan="7" style="padding:1rem;color:var(--wf-text-secondary);">Nenhum usuário encontrado.</td></tr>';
+                return;
+            }
+
+            body.innerHTML = users.map((user) => `
+                <tr>
+                    <td style="padding-left:1rem;"><b>${esc(user.name)}</b></td>
+                    <td>${esc(user.email)}</td>
+                    <td>
+                        <select id="role-${user.id}" class="wf-select" style="min-width:120px;padding:0.4rem 0.5rem;">
+                            ${['buyer', 'producer', 'supplier', 'admin'].map((r) => `<option value="${r}" ${user.role === r ? 'selected' : ''}>${r}</option>`).join('')}
+                        </select>
+                    </td>
+                    <td><input id="active-${user.id}" type="checkbox" ${user.is_active ? 'checked' : ''}></td>
+                    <td><input id="verified-${user.id}" type="checkbox" ${user.is_verified ? 'checked' : ''}></td>
+                    <td><input id="super-${user.id}" type="checkbox" ${user.is_superuser ? 'checked' : ''}></td>
+                    <td style="text-align:right;padding-right:1rem;">
+                        <button class="btn btn-sm btn-wf-primary" onclick="saveUser(${user.id})">Salvar</button>
+                    </td>
+                </tr>
+            `).join('');
+        } catch (err) {
+            body.innerHTML = `<tr><td colspan="7" style="padding:1rem;color:#b4493f;">${esc(err.message || 'Erro ao carregar usuários')}</td></tr>`;
+        }
+    }
+
+    async function saveUser(userId) {
+        const payload = {
+            role: document.getElementById(`role-${userId}`).value,
+            is_active: document.getElementById(`active-${userId}`).checked,
+            is_verified: document.getElementById(`verified-${userId}`).checked,
+            is_superuser: document.getElementById(`super-${userId}`).checked,
+        };
+        try {
+            const result = await apiRequest(`/dashboard/admin/users/${userId}`, 'PATCH', payload);
+            alert(result.message || 'Conta atualizada com sucesso.');
+        } catch (err) {
+            alert(err.message || 'Erro ao atualizar conta.');
+        }
+    }
+
+    window.saveUser = saveUser;
+
+    document.getElementById('adminReloadUsers').addEventListener('click', () => {
+        loadAdminUsers(document.getElementById('adminUserSearch').value.trim());
+    });
+
+    document.getElementById('adminUserSearch').addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            loadAdminUsers(document.getElementById('adminUserSearch').value.trim());
+        }
+    });
+
+    loadAdminUsers();
 
     document.getElementById('purgeDataBtn').addEventListener('click', async () => {
         const phrase = prompt('Digite exatamente APAGAR TUDO para confirmar a limpeza:');

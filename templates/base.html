@@ -1268,13 +1268,36 @@
         async function apiRequest(url, method = 'GET', data = null) {
             const isAbsolute = url.startsWith('http://') || url.startsWith('https://');
             const apiUrl = isAbsolute || url.startsWith('/api') ? url : `/api${url.startsWith('/') ? url : `/${url}`}`;
+
+            let resolvedMethod = method;
+            let resolvedData = data;
+            let extraHeaders = {};
+
+            // Compatibilidade com chamadas no formato apiRequest(url, { method, data, headers })
+            if (typeof method === 'object' && method !== null) {
+                resolvedMethod = method.method || 'GET';
+                if (Object.prototype.hasOwnProperty.call(method, 'data')) {
+                    resolvedData = method.data;
+                } else if (Object.prototype.hasOwnProperty.call(method, 'body')) {
+                    resolvedData = method.body;
+                }
+                extraHeaders = method.headers || {};
+            }
+
             const config = {
-                method: method,
+                method: resolvedMethod,
                 headers: {
                     'Content-Type': 'application/json',
+                    ...extraHeaders,
                 }
             };
-            if (data) config.body = JSON.stringify(data);
+            if (resolvedData !== null && resolvedData !== undefined) {
+                if (typeof resolvedData === 'string') {
+                    config.body = resolvedData;
+                } else {
+                    config.body = JSON.stringify(resolvedData);
+                }
+            }
 
             const token = localStorage.getItem('token');
             if (token) config.headers['Authorization'] = `Bearer ${token}`;

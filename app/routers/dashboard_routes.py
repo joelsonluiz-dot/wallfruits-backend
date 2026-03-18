@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import func, desc, and_, or_, text
-from typing import Dict, List
+from typing import Any, Dict, List
 from datetime import datetime, timedelta
 
 from app.database.connection import get_db
@@ -276,6 +276,97 @@ def purge_platform_data(
         "message": "Limpeza concluída com sucesso.",
         "keep_admins": keep_admins,
         "users_deleted": users_deleted,
+    }
+
+
+@router.get("/admin/users")
+def list_users_for_admin(
+    search: str | None = Query(default=None, description="Filtro por nome/email"),
+    limit: int = Query(default=200, ge=1, le=1000),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Lista usuários para gestão administrativa."""
+    if current_user.role != "admin" and not current_user.is_superuser:
+        raise HTTPException(403, "Acesso negado")
+
+    query = db.query(User)
+    if search:
+        term = f"%{search.strip()}%"
+        query = query.filter(or_(User.name.ilike(term), User.email.ilike(term)))
+
+    users = query.order_by(desc(User.created_at)).limit(limit).all()
+    return {
+        "items": [
+            {
+                "id": user.id,
+                "name": user.name,
+                "email": user.email,
+                "role": user.role,
+                "is_active": bool(user.is_active),
+                "is_verified": bool(user.is_verified),
+                "is_superuser": bool(user.is_superuser),
+                "created_at": user.created_at,
+                "last_login": user.last_login,
+            }
+            for user in users
+        ]
+    }
+
+
+@router.patch("/admin/users/{user_id}")
+def update_user_by_admin(
+    user_id: int,
+    payload: Dict[str, Any] = Body(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Permite ao admin ajustar role e status de contas."""
+    if current_user.role != "admin" and not current_user.is_superuser:
+        raise HTTPException(403, "Acesso negado")
+
+    target_user = db.query(User).filter(User.id == user_id).first()
+    if not target_user:
+        raise HTTPException(404, "Usuário não encontrado")
+
+    allowed_roles = {"buyer", "producer", "supplier", "admin"}
+
+    if "role" in payload and payload["role"] is not None:
+        next_role = str(payload["role"]).strip().lower()
+        if next_role not in allowed_roles:
+            raise HTTPException(400, "Role inválida")
+        target_user.role = next_role
+        if next_role == "admin":
+            target_user.is_superuser = True
+
+    if "is_active" in payload and payload["is_active"] is not None:
+        next_is_active = bool(payload["is_active"])
+        if target_user.id == current_user.id and not next_is_active:
+            raise HTTPException(400, "Você não pode desativar sua própria conta admin")
+        target_user.is_active = next_is_active
+
+    if "is_verified" in payload and payload["is_verified"] is not None:
+        target_user.is_verified = bool(payload["is_verified"])
+
+    if "is_superuser" in payload and payload["is_superuser"] is not None:
+        target_user.is_superuser = bool(payload["is_superuser"])
+        if target_user.is_superuser:
+            target_user.role = "admin"
+
+    db.commit()
+    db.refresh(target_user)
+
+    return {
+        "message": "Conta atualizada com sucesso",
+        "user": {
+            "id": target_user.id,
+            "name": target_user.name,
+            "email": target_user.email,
+            "role": target_user.role,
+            "is_active": bool(target_user.is_active),
+            "is_verified": bool(target_user.is_verified),
+            "is_superuser": bool(target_user.is_superuser),
+        },
     }
 
 

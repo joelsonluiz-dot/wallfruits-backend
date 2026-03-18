@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 import logging
 import os
+import re
 import sys
 import time
 from typing import Any
@@ -358,6 +359,79 @@ async def supplier_dashboard(request: Request, db: Session = Depends(get_db), cu
 async def view_cart(request: Request, current_user: User = Depends(get_current_user_optional)):
     """Página do carrinho de compras."""
     return _render_template("store/cart.html", request, current_user=current_user)
+
+
+@app.get("/ai-agent")
+async def ai_agent_page(request: Request):
+    """Interface web do assistente IA embutida no botão flutuante."""
+    return _render_template("ai_agent.html", request)
+
+
+@app.post("/api/ai-agent/ask")
+async def ai_agent_ask(payload: dict[str, Any], db: Session = Depends(get_db)):
+    """Responde perguntas sobre os módulos da plataforma WallFruits."""
+    question = str(payload.get("question") or "").strip()
+    if not question:
+        raise HTTPException(400, "Pergunta não informada")
+
+    text_q = question.lower()
+
+    def has(*terms: str) -> bool:
+        return any(term in text_q for term in terms)
+
+    answer = (
+        "Posso ajudar com tudo da WallFruits: login, ofertas, loja agro, mensagens, notificações, "
+        "negociações, pagamentos, reputação, perfil e painel admin. Diga exatamente o que você precisa fazer."
+    )
+
+    if has("login", "entrar", "senha", "credencial", "acesso"):
+        answer = (
+            "Para acessar: vá em Login, informe e-mail e senha. Se aparecer credencial inválida, confirme se está no ambiente correto "
+            "(produção/local) e tente redefinir a senha. Se for admin, o painel fica em /admin após autenticar."
+        )
+    elif has("admin", "usuário", "usuario", "conta", "permiss", "role", "bloquear", "desativar"):
+        answer = (
+            "Como admin você pode gerenciar contas no painel /admin, seção Gestão de Contas de Usuários: "
+            "alterar role (buyer/producer/supplier/admin), ativar/desativar conta e marcar verificado/superuser."
+        )
+    elif has("loja", "ecommerce", "adubo", "insetic", "defensivo", "implemento", "epi", "ferrament"):
+        answer = (
+            "A Loja Agro está em /store com categorias técnicas: adubos, defensivos, implementos, vestuário/EPI, ferramentas e irrigação. "
+            "Fornecedores e admins publicam produtos em /store/manage/dashboard com ficha técnica completa."
+        )
+    elif has("oferta", "negocia", "negociação", "proposta", "contrato", "mediação"):
+        answer = (
+            "Fluxo comercial: criar oferta em /offers/new, negociar via mensagens e rotas de negociação, e usar mediação em /intermediation "
+            "quando necessário."
+        )
+    elif has("pagamento", "transa", "wallet", "carteira", "checkout"):
+        answer = (
+            "Pagamentos e transações são gerenciados pelos módulos de transaction/payment/wallet. "
+            "No ecommerce, o checkout está disponível em /store/checkout para evolução do fluxo de compra."
+        )
+    elif has("mensagem", "chat", "notifica", "alerta"):
+        answer = (
+            "Comunicação da plataforma: /messages para conversas, /notifications para alertas e feed de eventos. "
+            "A leitura e atualização de notificações ocorre pelas APIs de notificações."
+        )
+    elif has("dados", "quantos", "total", "estat", "resumo"):
+        total_users = db.query(User).count()
+        total_offers = db.query(Offer).count()
+        total_transactions = db.query(Transaction).count()
+        answer = (
+            "Resumo atual da plataforma: "
+            f"{total_users} usuários, {total_offers} ofertas e {total_transactions} transações registradas."
+        )
+    elif has("rota", "url", "onde", "acessar"):
+        answer = (
+            "Rotas principais: / (home), /offers, /messages, /notifications, /store, /store/manage/dashboard, /admin, /profile, /strategy."
+        )
+    elif re.search(r"(olá|oi|bom dia|boa tarde|boa noite)", text_q):
+        answer = (
+            "Olá! Posso te orientar em qualquer etapa da WallFruits: acesso, gestão de contas, loja agro, ofertas, transações e administração."
+        )
+
+    return {"answer": answer}
 
 
 @app.get("/mobile-preview")
