@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <!-- Main Image -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100 border-0 shadow-sm tilt-card">
+                {% if product.images %}
+                    <img src="{{ product.images[0] }}" class="img-fluid rounded-start" alt="{{ product.name }}" style="object-fit: contain; height: 500px;">
+                {% else %}
+                    <div class="d-flex align-items-center justify-content-center h-100 bg-light" style="min-height: 400px; font-size: 5rem;">
+                        🌾
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="d-flex gap-2 mt-3 overflow-auto">
+                {% for img in product.images %}
+                    <img src="{{ img }}" class="img-thumbnail" style="width: 80px; height: 80px; object-fit: cover; cursor: pointer;">
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Details -->
+        <div class="col-md-6">
+            <h1 class="display-5 fw-bold mb-2">{{ product.name }}</h1>
+            <p class="text-muted mb-4">Categoria: <a href="/store?category={{ product.category.slug }}" class="text-primary text-decoration-none">{{ product.category.name }}</a></p>
+            
+            <div class="mb-4">
+                <span class="h2 text-success fw-bold">R$ {{ "%.2f"|format(product.price) }}</span>
+                {% if product.stock_quantity > 0 %}
+                    <span class="badge bg-success ms-2">Em estoque ({{ product.stock_quantity }})</span>
+                {% else %}
+                    <span class="badge bg-danger ms-2">Esgotado</span>
+                {% endif %}
+            </div>
+            
+            <p class="lead text-secondary mb-4">{{ product.description }}</p>
+            
+            <!-- Specifications -->
+            <div class="card mb-4 border-0 bg-light">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Especificações Técnicas</h5>
+                    <div class="row g-2">
+                        {% for key, value in product.specifications.items() %}
+                        <div class="col-6">
+                            <span class="fw-bold text-muted">{{ key }}:</span> {{ value }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Actions -->
+            <div class="d-grid gap-3 d-md-flex">
+                <button class="btn btn-wf-primary btn-lg flex-grow-1">
+                    🛒 Adicionar ao Carrinho
+                </button>
+                <button class="btn btn-outline-secondary btn-lg">
+                    ❤ Favoritar
+                </button>
+            </div>
+            
+            <div class="mt-4 p-3 border rounded-3 bg-white">
+                <div class="d-flex align-items-center">
+                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px;">
+                        🚚
+                    </div>
+                    <div>
+                        <h6 class="mb-0">Entrega Garantida WallFruits</h6>
+                        <small class="text-muted">Receba com segurança e rastreio.</small>
+                    </div>
+                </div>
+                <hr>
+                 <div class="d-flex align-items-center">
+                    <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px;">
+                        🛡️
+                    </div>
+                    <div>
+                        <h6 class="mb-0">Compra Protegida</h6>
+                        <small class="text-muted">Seu dinheiro seguro até o recebimento.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Related Products -->
+    {% if related_products %}
+    <div class="mt-5 pt-5 border-top">
+        <h3 class="mb-4">Você também pode gostar</h3>
+        <div class="row row-cols-1 row-cols-md-4 g-4">
+            {% for rel in related_products %}
+            <div class="col">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ rel.name }}</h5>
+                        <p class="card-text text-primary fw-bold">R$ {{ "%.2f"|format(rel.price) }}</p>
+                        <a href="/store/product/{{ rel.slug }}" class="btn btn-sm btn-outline-primary stretched-link">Ver detalhes</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

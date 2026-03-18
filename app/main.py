@@ -28,6 +28,7 @@ from app.database.connection import (
 )
 from app.models import Category, Favorite, Message, Offer, Review, Transaction, User
 from app.routers import (
+from app.routers import store_routes
     category_routes,
     dashboard_routes,
     favorite_routes,
