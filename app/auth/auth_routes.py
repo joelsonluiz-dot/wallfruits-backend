@@ -42,7 +42,7 @@ bearer_security = HTTPBearer(auto_error=False)
 
 
 def _normalize_role(role: str | None) -> str:
-    if role in {"buyer", "producer", "admin"}:
+    if role in {"buyer", "producer", "supplier", "admin"}:
         return role
     return "buyer"
 
@@ -319,41 +319,50 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
 def login(user: UserLogin, db: Session = Depends(get_db)):
     ensure_auth_schema_ready()
 
+    should_try_local_login = True
+
     if supabase_password_auth_enabled():
         try:
             auth_data = sign_in_with_password(user.email, user.password)
         except SupabaseAuthError as exc:
             if exc.status_code in {400, 401, 422}:
-                raise HTTPException(401, "Credenciais inválidas")
-            raise HTTPException(exc.status_code, exc.message)
+                # Fallback: permite login de usuários locais (ex.: admin bootstrap)
+                should_try_local_login = True
+            else:
+                raise HTTPException(exc.status_code, exc.message)
+        else:
+            should_try_local_login = False
 
-        access_token = auth_data.get("access_token")
-        supabase_user = auth_data.get("user") or {}
-        supabase_user_id = supabase_user.get("id")
-        email = supabase_user.get("email") or user.email
-        metadata = supabase_user.get("user_metadata") or {}
+            access_token = auth_data.get("access_token")
+            supabase_user = auth_data.get("user") or {}
+            supabase_user_id = supabase_user.get("id")
+            email = supabase_user.get("email") or user.email
+            metadata = supabase_user.get("user_metadata") or {}
 
-        if not access_token or not supabase_user_id or not email:
-            raise HTTPException(502, "Resposta de login do Supabase incompleta")
+            if not access_token or not supabase_user_id or not email:
+                raise HTTPException(502, "Resposta de login do Supabase incompleta")
 
-        try:
-            db_user = _get_or_create_local_user_from_supabase(
-                db=db,
-                supabase_user_id=supabase_user_id,
-                email=email,
-                fallback_name=metadata.get("name") or email.split("@")[0],
-                fallback_role=metadata.get("role") or "buyer",
-                plaintext_password=user.password,
-            )
-        except SQLAlchemyError as e:
-            db.rollback()
-            logger.error(f"Erro ao sincronizar usuario local com Supabase: {e}", exc_info=True)
-            raise HTTPException(500, "Erro ao sincronizar usuário local")
+            try:
+                db_user = _get_or_create_local_user_from_supabase(
+                    db=db,
+                    supabase_user_id=supabase_user_id,
+                    email=email,
+                    fallback_name=metadata.get("name") or email.split("@")[0],
+                    fallback_role=metadata.get("role") or "buyer",
+                    plaintext_password=user.password,
+                )
+            except SQLAlchemyError as e:
+                db.rollback()
+                logger.error(f"Erro ao sincronizar usuario local com Supabase: {e}", exc_info=True)
+                raise HTTPException(500, "Erro ao sincronizar usuário local")
 
-        if not db_user.is_active:
-            raise HTTPException(403, "Conta desativada")
+            if not db_user.is_active:
+                raise HTTPException(403, "Conta desativada")
 
-        return _login_response(db_user, access_token)
+            return _login_response(db_user, access_token)
+
+    if not should_try_local_login:
+        raise HTTPException(401, "Credenciais inválidas")
 
     try:
         db_user = db.query(User).filter(User.email == user.email).first()

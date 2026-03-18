@@ -14,7 +14,7 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str = Field(..., min_length=6)
-    role: str = Field("buyer", pattern="^(buyer|producer)$")
+    role: str = Field("buyer", pattern="^(buyer|producer|supplier)$")
 
 
 class UserUpdate(BaseModel):
