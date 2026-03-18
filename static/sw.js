@@ -1,7 +1,9 @@
-const CACHE_NAME = 'wallfruits-shell-v1';
+const CACHE_NAME = 'wallfruits-shell-v2';
 const URLS_TO_CACHE = [
   '/',
   '/offers',
+  '/library',
+  '/reader',
   '/messages',
   '/notifications',
   '/strategy',

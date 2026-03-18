@@ -1,0 +1,329 @@
+{% extends "base.html" %}
+
+{% block title %}Biblioteca - WallFruits{% endblock %}
+
+{% block content %}
+<style>
+    .library-shell {
+        display: grid;
+        gap: 0.95rem;
+    }
+
+    .library-hero {
+        border-radius: 18px;
+        border: 1px solid rgba(46, 125, 50, 0.26);
+        background: linear-gradient(130deg, #f1f8ed 0%, #f5fbff 65%, #fffdf7 100%);
+        box-shadow: 0 12px 28px rgba(20, 78, 42, 0.12);
+        padding: 1rem 1.05rem;
+    }
+
+    .library-hero h1 {
+        margin: 0;
+        font-size: 1.35rem;
+        font-weight: 900;
+        color: #174f31;
+        letter-spacing: -0.02em;
+    }
+
+    .library-hero p {
+        margin: 0.35rem 0 0;
+        color: #3b5f84;
+        font-size: 0.84rem;
+        font-weight: 600;
+    }
+
+    .library-actions {
+        margin-top: 0.7rem;
+        display: flex;
+        gap: 0.45rem;
+        flex-wrap: wrap;
+    }
+
+    .library-btn {
+        border: 1px solid rgba(27, 78, 132, 0.25);
+        border-radius: 999px;
+        background: #ffffff;
+        color: #20528a;
+        font-size: 0.75rem;
+        font-weight: 800;
+        padding: 0.42rem 0.76rem;
+    }
+
+    .library-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.8rem;
+    }
+
+    .book-card {
+        border: 1px solid rgba(17, 73, 125, 0.18);
+        border-radius: 14px;
+        background: #fff;
+        box-shadow: 0 8px 20px rgba(19, 60, 109, 0.1);
+        overflow: hidden;
+        cursor: pointer;
+        transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+    }
+
+    .book-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 14px 28px rgba(22, 67, 121, 0.16);
+        border-color: rgba(46, 125, 50, 0.35);
+    }
+
+    .book-cover {
+        height: 168px;
+        background: linear-gradient(155deg, #f0f8ff, #f7fbf0);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    .book-cover img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .book-cover-fallback {
+        font-size: 2.1rem;
+        color: #2f6caa;
+    }
+
+    .book-body {
+        padding: 0.65rem;
+        display: grid;
+        gap: 0.22rem;
+    }
+
+    .book-title {
+        margin: 0;
+        font-size: 0.8rem;
+        font-weight: 800;
+        color: #16427b;
+        line-height: 1.32;
+        min-height: 2.1em;
+    }
+
+    .book-author {
+        font-size: 0.71rem;
+        color: #5c7699;
+        font-weight: 700;
+    }
+
+    .book-meta {
+        margin-top: 0.2rem;
+        display: flex;
+        justify-content: space-between;
+        gap: 0.35rem;
+        font-size: 0.65rem;
+        color: #4d698f;
+    }
+
+    .library-empty {
+        border: 1px dashed rgba(17, 73, 125, 0.24);
+        border-radius: 14px;
+        background: #fff;
+        text-align: center;
+        padding: 1.4rem 0.9rem;
+        color: #375b87;
+        font-weight: 700;
+    }
+
+    @media (max-width: 1200px) {
+        .library-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 900px) {
+        .library-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .book-cover {
+            height: 152px;
+        }
+    }
+
+    @media (max-width: 560px) {
+        .library-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .book-cover {
+            height: 180px;
+        }
+
+        .library-btn {
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="library-shell">
+    <section class="library-hero">
+        <h1>Biblioteca de Leitura</h1>
+        <p>Selecione um card para abrir o leitor completo no estilo app, com progresso automático, áudio e suporte offline.</p>
+
+        <div class="library-actions">
+            <button class="library-btn" type="button" id="seedBooksBtn">Adicionar livros de exemplo</button>
+            <button class="library-btn" type="button" id="clearBooksBtn">Limpar biblioteca local</button>
+        </div>
+    </section>
+
+    <section id="libraryGrid" class="library-grid"></section>
+</div>
+
+<script>
+    (function setupLibraryPage() {
+        const STORAGE_KEYS = ['wf_library_books', 'libraryBooks', 'books'];
+        const grid = document.getElementById('libraryGrid');
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text ?? '';
+            return div.innerHTML;
+        }
+
+        function readBooksFromKey(key) {
+            try {
+                const parsed = JSON.parse(localStorage.getItem(key) || '[]');
+                return Array.isArray(parsed) ? parsed : [];
+            } catch {
+                return [];
+            }
+        }
+
+        function normalizeBook(item, index) {
+            const title = String(item?.title || item?.name || `Livro ${index + 1}`).trim();
+            const author = String(item?.author || item?.writer || 'Autor').trim();
+            const text = String(item?.text || item?.content || '').trim();
+            const cover = item?.cover || item?.image || '';
+            const id = String(item?.id || `${title}-${author}`);
+
+            return { id, title, author, text, cover };
+        }
+
+        function getAllBooks() {
+            const pool = [];
+            STORAGE_KEYS.forEach((key) => {
+                pool.push(...readBooksFromKey(key));
+            });
+
+            const current = (() => {
+                try {
+                    return JSON.parse(localStorage.getItem('currentBook') || 'null');
+                } catch {
+                    return null;
+                }
+            })();
+
+            if (current && (current.title || current.text)) {
+                pool.unshift(current);
+            }
+
+            const seen = new Set();
+            const normalized = pool
+                .map(normalizeBook)
+                .filter((book) => book.text || book.title)
+                .filter((book) => {
+                    if (seen.has(book.id)) return false;
+                    seen.add(book.id);
+                    return true;
+                });
+
+            return normalized;
+        }
+
+        function writePrimaryBooks(books) {
+            localStorage.setItem('wf_library_books', JSON.stringify(books));
+        }
+
+        function openReader(book) {
+            localStorage.setItem('currentBook', JSON.stringify(book));
+            window.location.href = '/reader';
+        }
+
+        function estimatePages(text) {
+            const clean = String(text || '').trim();
+            if (!clean) return 1;
+            return Math.max(1, Math.ceil(clean.length / 1500));
+        }
+
+        function render() {
+            const books = getAllBooks();
+
+            if (!books.length) {
+                grid.innerHTML = `
+                    <div class="library-empty" style="grid-column:1 / -1;">
+                        Nenhum livro encontrado no navegador. Adicione pela sua página de biblioteca atual ou use o botão de exemplo.
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = books.map((book) => `
+                <article class="book-card" data-book-id="${escapeHtml(book.id)}" tabindex="0" role="button" aria-label="Abrir ${escapeHtml(book.title)}">
+                    <div class="book-cover">
+                        ${book.cover ? `<img src="${escapeHtml(book.cover)}" alt="Capa de ${escapeHtml(book.title)}">` : '<span class="book-cover-fallback">📘</span>'}
+                    </div>
+                    <div class="book-body">
+                        <h3 class="book-title">${escapeHtml(book.title)}</h3>
+                        <span class="book-author">${escapeHtml(book.author)}</span>
+                        <div class="book-meta">
+                            <span>${estimatePages(book.text)} páginas</span>
+                            <span>Tocar para ler</span>
+                        </div>
+                    </div>
+                </article>
+            `).join('');
+
+            grid.querySelectorAll('.book-card').forEach((card) => {
+                const id = card.getAttribute('data-book-id');
+                const book = books.find((b) => b.id === id);
+                if (!book) return;
+
+                const open = () => openReader(book);
+                card.addEventListener('click', open);
+                card.addEventListener('keydown', (event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        open();
+                    }
+                });
+            });
+        }
+
+        document.getElementById('seedBooksBtn').addEventListener('click', () => {
+            const samples = [
+                {
+                    id: 'guia-frutas',
+                    title: 'Guia Prático de Fruticultura',
+                    author: 'Equipe WallFruits',
+                    cover: '',
+                    text: 'Capítulo 1. Planejamento da produção.\n\nA escolha do solo, análise de clima e manejo de irrigação impactam diretamente na produtividade e no padrão de qualidade.\n\nCapítulo 2. Manejo de pragas.\n\nUse controle integrado, monitoramento semanal e ações preventivas para reduzir perdas e custos operacionais.'
+                },
+                {
+                    id: 'mercado-agro',
+                    title: 'Mercado Agro em Transformação',
+                    author: 'Observatório Rural',
+                    cover: '',
+                    text: 'Tendências de compra mostram preferência por transparência, rastreabilidade e previsibilidade de entrega.\n\nProdutores que digitalizam operação e relacionamento comercial aumentam conversão e recorrência.'
+                }
+            ];
+            writePrimaryBooks(samples);
+            render();
+        });
+
+        document.getElementById('clearBooksBtn').addEventListener('click', () => {
+            if (!confirm('Deseja limpar os livros salvos localmente neste navegador?')) return;
+            localStorage.removeItem('wf_library_books');
+            render();
+        });
+
+        render();
+    })();
+</script>
+{% endblock %}

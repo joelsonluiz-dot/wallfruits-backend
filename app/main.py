@@ -219,6 +219,18 @@ async def community_page(request: Request, current_user: User = Depends(get_curr
     return _render_template("community.html", request, current_user=current_user)
 
 
+@app.get("/library")
+async def library_page(request: Request, current_user: User = Depends(get_current_user_optional)):
+    """Página da biblioteca de leitura baseada em dados locais do navegador."""
+    return _render_template("library.html", request, current_user=current_user)
+
+
+@app.get("/reader")
+async def reader_page(request: Request, current_user: User = Depends(get_current_user_optional)):
+    """Leitor completo para abrir livros salvos no localStorage como currentBook."""
+    return _render_template("reader.html", request, current_user=current_user)
+
+
 @app.get("/login")
 async def login_page(request: Request):
     """Página de login."""

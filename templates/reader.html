@@ -1,0 +1,549 @@
+{% extends "base.html" %}
+
+{% block title %}Leitor - WallFruits{% endblock %}
+
+{% block content %}
+<style>
+    .reader-shell {
+        max-width: 980px;
+        margin: 0 auto;
+        border: 1px solid rgba(17, 73, 125, 0.14);
+        border-radius: 18px;
+        overflow: hidden;
+        background: #fffef8;
+        box-shadow: 0 14px 30px rgba(17, 52, 98, 0.12);
+    }
+
+    .reader-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.55rem;
+        padding: 0.72rem 0.8rem;
+        background: linear-gradient(135deg, #2f7f35, #4a9b4c);
+        color: #fff;
+        position: sticky;
+        top: 0;
+        z-index: 50;
+    }
+
+    .reader-title-group {
+        min-width: 0;
+        display: grid;
+        gap: 0.12rem;
+    }
+
+    .reader-title {
+        margin: 0;
+        font-size: 0.95rem;
+        font-weight: 800;
+        line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .reader-author {
+        margin: 0;
+        font-size: 0.7rem;
+        opacity: 0.9;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .reader-btn,
+    .reader-icon-btn {
+        border: none;
+        background: rgba(255, 255, 255, 0.16);
+        color: #fff;
+        border-radius: 10px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: transform 0.18s ease, background 0.18s ease;
+    }
+
+    .reader-btn:hover,
+    .reader-icon-btn:hover {
+        background: rgba(255, 255, 255, 0.24);
+        transform: translateY(-1px);
+    }
+
+    .reader-btn {
+        padding: 0.45rem 0.65rem;
+        font-size: 0.75rem;
+    }
+
+    .reader-icon-btn {
+        width: 36px;
+        height: 36px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+    }
+
+    .reader-controls {
+        display: flex;
+        gap: 0.35rem;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .reader-content {
+        padding: 1rem 1.1rem 0.85rem;
+        min-height: 70vh;
+        background: linear-gradient(180deg, #fffef8 0%, #fbfaf4 100%);
+    }
+
+    .reader-cover {
+        width: 100%;
+        max-width: 280px;
+        height: auto;
+        display: block;
+        margin: 0 auto 0.95rem;
+        border-radius: 12px;
+        border: 1px solid rgba(17, 73, 125, 0.14);
+        box-shadow: 0 10px 22px rgba(23, 63, 112, 0.12);
+    }
+
+    .reader-page {
+        border: 1px solid rgba(17, 73, 125, 0.12);
+        border-radius: 14px;
+        background: #fff;
+        padding: 1rem 1rem;
+        box-shadow: 0 8px 18px rgba(20, 58, 101, 0.08);
+        transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+
+    .reader-page.slide {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+
+    .reader-text {
+        margin: 0;
+        font-family: Georgia, 'Times New Roman', serif;
+        line-height: 1.85;
+        color: #273039;
+        font-size: 19px;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    .reader-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.6rem;
+        margin-top: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .reader-progress {
+        font-size: 0.74rem;
+        color: #4f6178;
+        font-weight: 700;
+    }
+
+    .reader-nav {
+        display: flex;
+        gap: 0.4rem;
+    }
+
+    .reader-nav-btn {
+        border: 1px solid rgba(17, 73, 125, 0.22);
+        border-radius: 10px;
+        background: #fff;
+        color: #1a4e88;
+        font-size: 0.74rem;
+        font-weight: 800;
+        padding: 0.45rem 0.76rem;
+    }
+
+    .reader-status {
+        font-size: 0.66rem;
+        font-weight: 800;
+        color: #2f6e3d;
+        border: 1px solid rgba(47, 110, 61, 0.25);
+        background: #f0faef;
+        border-radius: 999px;
+        padding: 0.2rem 0.5rem;
+    }
+
+    .reader-shell.dark {
+        background: #13171d;
+        border-color: rgba(148, 182, 221, 0.22);
+    }
+
+    .reader-shell.dark .reader-header {
+        background: linear-gradient(135deg, #1b2530, #2c3e52);
+    }
+
+    .reader-shell.dark .reader-content {
+        background: linear-gradient(180deg, #13171d 0%, #171d26 100%);
+    }
+
+    .reader-shell.dark .reader-page {
+        background: #1d2430;
+        border-color: rgba(148, 182, 221, 0.2);
+        box-shadow: 0 10px 20px rgba(3, 6, 10, 0.35);
+    }
+
+    .reader-shell.dark .reader-text {
+        color: #e8ecf4;
+    }
+
+    .reader-shell.dark .reader-progress {
+        color: #b9c7dc;
+    }
+
+    .reader-shell.dark .reader-nav-btn {
+        background: #223044;
+        border-color: rgba(148, 182, 221, 0.26);
+        color: #d5e2f3;
+    }
+
+    @media (max-width: 960px) {
+        .reader-content {
+            min-height: 64vh;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .reader-header {
+            flex-wrap: wrap;
+            align-items: flex-start;
+        }
+
+        .reader-controls {
+            width: 100%;
+            justify-content: flex-start;
+        }
+
+        .reader-text {
+            font-size: 17px;
+        }
+
+        .reader-page {
+            padding: 0.85rem 0.8rem;
+        }
+    }
+
+    @media (max-width: 540px) {
+        .reader-content {
+            padding: 0.75rem;
+        }
+
+        .reader-text {
+            font-size: 16px;
+            line-height: 1.75;
+        }
+
+        .reader-footer {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .reader-nav {
+            width: 100%;
+        }
+
+        .reader-nav-btn {
+            flex: 1;
+        }
+    }
+</style>
+
+<section class="reader-shell" id="readerShell">
+    <header class="reader-header">
+        <button class="reader-icon-btn" id="btnBack" title="Voltar">
+            <span class="material-icons">arrow_back</span>
+        </button>
+
+        <div class="reader-title-group">
+            <h1 class="reader-title" id="readerTitle">Título</h1>
+            <p class="reader-author" id="readerAuthor">Autor</p>
+        </div>
+
+        <div class="reader-controls">
+            <span class="reader-status" id="offlineStatus">Online</span>
+            <button class="reader-icon-btn" id="btnTheme" title="Modo escuro">
+                <span class="material-icons">dark_mode</span>
+            </button>
+            <button class="reader-icon-btn" id="btnFontUp" title="Aumentar fonte">
+                <span class="material-icons">text_increase</span>
+            </button>
+            <button class="reader-icon-btn" id="btnFontDown" title="Diminuir fonte">
+                <span class="material-icons">text_decrease</span>
+            </button>
+            <button class="reader-btn" id="btnAudio">Ler em áudio</button>
+        </div>
+    </header>
+
+    <div class="reader-content">
+        <img id="readerCover" class="reader-cover" alt="Capa do livro" style="display:none;">
+
+        <article class="reader-page" id="readerPage">
+            <p class="reader-text" id="readerText"></p>
+        </article>
+
+        <div class="reader-footer">
+            <div class="reader-progress" id="readerProgress">Página 1 de 1</div>
+            <div class="reader-nav">
+                <button class="reader-nav-btn" id="btnPrev">Página anterior</button>
+                <button class="reader-nav-btn" id="btnNext">Próxima página</button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    (function setupReader() {
+        const shell = document.getElementById('readerShell');
+        const page = document.getElementById('readerPage');
+        const titleEl = document.getElementById('readerTitle');
+        const authorEl = document.getElementById('readerAuthor');
+        const coverEl = document.getElementById('readerCover');
+        const textEl = document.getElementById('readerText');
+        const progressEl = document.getElementById('readerProgress');
+        const offlineStatusEl = document.getElementById('offlineStatus');
+
+        const btnBack = document.getElementById('btnBack');
+        const btnTheme = document.getElementById('btnTheme');
+        const btnFontUp = document.getElementById('btnFontUp');
+        const btnFontDown = document.getElementById('btnFontDown');
+        const btnAudio = document.getElementById('btnAudio');
+        const btnPrev = document.getElementById('btnPrev');
+        const btnNext = document.getElementById('btnNext');
+
+        const THEME_KEY = 'wf_reader_theme';
+        const FONT_KEY = 'wf_reader_font';
+
+        let book = null;
+        let pages = [''];
+        let currentPage = 0;
+        let fontSize = Number(localStorage.getItem(FONT_KEY) || '19') || 19;
+        let darkMode = localStorage.getItem(THEME_KEY) === 'dark';
+        let speaking = false;
+
+        function readCurrentBook() {
+            try {
+                return JSON.parse(localStorage.getItem('currentBook') || 'null');
+            } catch {
+                return null;
+            }
+        }
+
+        function getBookKey(bookObj) {
+            const raw = `${bookObj?.id || ''}-${bookObj?.title || 'book'}-${bookObj?.author || ''}`;
+            return `wf_reader_progress_${raw.slice(0, 120)}`;
+        }
+
+        function splitIntoPages(text) {
+            const content = String(text || '').trim();
+            if (!content) return ['Sem conteúdo para leitura.'];
+
+            const normalized = content.replace(/\r\n/g, '\n').replace(/\n{3,}/g, '\n\n');
+            const chunks = [];
+            const maxChars = window.innerWidth < 640 ? 900 : (window.innerWidth < 900 ? 1200 : 1600);
+
+            let start = 0;
+            while (start < normalized.length) {
+                let end = Math.min(start + maxChars, normalized.length);
+                if (end < normalized.length) {
+                    const boundary = normalized.lastIndexOf(' ', end);
+                    if (boundary > start + 300) end = boundary;
+                }
+                chunks.push(normalized.slice(start, end).trim());
+                start = end;
+            }
+
+            return chunks.length ? chunks : ['Sem conteúdo para leitura.'];
+        }
+
+        function persistProgress() {
+            if (!book) return;
+            const key = getBookKey(book);
+            localStorage.setItem(key, JSON.stringify({
+                page: currentPage,
+                fontSize,
+                updatedAt: new Date().toISOString(),
+            }));
+        }
+
+        function loadProgress() {
+            if (!book) return;
+            const key = getBookKey(book);
+            try {
+                const data = JSON.parse(localStorage.getItem(key) || 'null');
+                if (data && Number.isInteger(data.page)) {
+                    currentPage = Math.max(0, Math.min(pages.length - 1, data.page));
+                }
+                if (data && Number(data.fontSize)) {
+                    fontSize = Math.max(14, Math.min(30, Number(data.fontSize)));
+                }
+            } catch {
+                currentPage = 0;
+            }
+        }
+
+        function updateOfflineStatus() {
+            const online = navigator.onLine;
+            offlineStatusEl.textContent = online ? 'Online' : 'Offline';
+            offlineStatusEl.style.color = online ? '#2f6e3d' : '#8b2e2e';
+            offlineStatusEl.style.borderColor = online ? 'rgba(47,110,61,0.25)' : 'rgba(139,46,46,0.25)';
+            offlineStatusEl.style.background = online ? '#f0faef' : '#fff2f2';
+        }
+
+        function stopSpeech() {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+            speaking = false;
+            btnAudio.textContent = 'Ler em áudio';
+        }
+
+        function speakCurrentPage() {
+            if (!('speechSynthesis' in window)) {
+                alert('Leitura em áudio não suportada neste navegador.');
+                return;
+            }
+
+            if (speaking) {
+                stopSpeech();
+                return;
+            }
+
+            const text = pages[currentPage] || '';
+            if (!text.trim()) return;
+
+            stopSpeech();
+            const utter = new SpeechSynthesisUtterance(text);
+            utter.lang = 'pt-BR';
+            utter.rate = 1;
+            utter.pitch = 1;
+            utter.onend = () => {
+                speaking = false;
+                btnAudio.textContent = 'Ler em áudio';
+            };
+            window.speechSynthesis.speak(utter);
+            speaking = true;
+            btnAudio.textContent = 'Parar áudio';
+        }
+
+        function renderPage(animate = false) {
+            if (animate) {
+                page.classList.add('slide');
+                setTimeout(() => {
+                    textEl.textContent = pages[currentPage] || '';
+                    page.classList.remove('slide');
+                }, 120);
+            } else {
+                textEl.textContent = pages[currentPage] || '';
+            }
+
+            textEl.style.fontSize = `${fontSize}px`;
+            progressEl.textContent = `Página ${currentPage + 1} de ${pages.length}`;
+
+            btnPrev.disabled = currentPage <= 0;
+            btnNext.disabled = currentPage >= pages.length - 1;
+
+            localStorage.setItem(FONT_KEY, String(fontSize));
+            persistProgress();
+            stopSpeech();
+        }
+
+        function openBook() {
+            book = readCurrentBook();
+            if (!book) {
+                titleEl.textContent = 'Nenhum livro selecionado';
+                authorEl.textContent = 'Abra a Biblioteca e escolha um card';
+                pages = ['Nenhum conteúdo disponível para leitura.'];
+                currentPage = 0;
+                renderPage();
+                return;
+            }
+
+            titleEl.textContent = book.title || 'Título';
+            authorEl.textContent = book.author || 'Autor';
+
+            if (book.cover) {
+                coverEl.src = book.cover;
+                coverEl.style.display = 'block';
+            } else {
+                coverEl.style.display = 'none';
+            }
+
+            pages = splitIntoPages(book.text || '');
+            loadProgress();
+
+            // cache local para leitura offline do livro aberto
+            try {
+                const cache = JSON.parse(localStorage.getItem('wf_reader_offline_cache') || '{}');
+                cache[getBookKey(book)] = {
+                    title: book.title,
+                    author: book.author,
+                    text: book.text,
+                    cover: book.cover || '',
+                    updatedAt: new Date().toISOString(),
+                };
+                localStorage.setItem('wf_reader_offline_cache', JSON.stringify(cache));
+            } catch {
+                // fallback silencioso
+            }
+
+            renderPage();
+        }
+
+        btnBack.addEventListener('click', () => {
+            window.history.back();
+        });
+
+        btnTheme.addEventListener('click', () => {
+            darkMode = !darkMode;
+            shell.classList.toggle('dark', darkMode);
+            localStorage.setItem(THEME_KEY, darkMode ? 'dark' : 'light');
+        });
+
+        btnFontUp.addEventListener('click', () => {
+            fontSize = Math.min(30, fontSize + 2);
+            renderPage();
+        });
+
+        btnFontDown.addEventListener('click', () => {
+            fontSize = Math.max(14, fontSize - 2);
+            renderPage();
+        });
+
+        btnAudio.addEventListener('click', speakCurrentPage);
+
+        btnPrev.addEventListener('click', () => {
+            if (currentPage <= 0) return;
+            currentPage -= 1;
+            renderPage(true);
+        });
+
+        btnNext.addEventListener('click', () => {
+            if (currentPage >= pages.length - 1) return;
+            currentPage += 1;
+            renderPage(true);
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'ArrowRight') {
+                btnNext.click();
+            } else if (event.key === 'ArrowLeft') {
+                btnPrev.click();
+            }
+        });
+
+        window.addEventListener('online', updateOfflineStatus);
+        window.addEventListener('offline', updateOfflineStatus);
+
+        shell.classList.toggle('dark', darkMode);
+        updateOfflineStatus();
+        openBook();
+    })();
+</script>
+{% endblock %}
