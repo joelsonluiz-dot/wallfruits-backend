@@ -63,3 +63,20 @@ class CommunityShare(Base):
 
     post = relationship("CommunityPost")
     user = relationship("User")
+
+
+class CommunityUserBlock(Base):
+    __tablename__ = "community_user_blocks"
+    __table_args__ = (
+        UniqueConstraint("user_id", name="uq_community_block_user"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    blocked_by_user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    reason = Column(String(500), nullable=True)
+    is_active = Column(Boolean, default=True, nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    user = relationship("User", foreign_keys=[user_id])
+    blocked_by = relationship("User", foreign_keys=[blocked_by_user_id])

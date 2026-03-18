@@ -83,3 +83,26 @@ class CommunityShareResponse(BaseModel):
 class CommunityPostListResponse(BaseModel):
     posts: list[CommunityPostResponse]
     total: int
+
+
+class CommunityModerationActionResponse(BaseModel):
+    success: bool
+    action: str
+    target_type: str
+    target_id: int
+
+
+class CommunityBlockUserRequest(BaseModel):
+    reason: Optional[str] = None
+
+    @field_validator("reason")
+    @classmethod
+    def normalize_reason(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return None
+        text = value.strip()
+        if not text:
+            return None
+        if len(text) > 500:
+            raise ValueError("Motivo excede 500 caracteres")
+        return text

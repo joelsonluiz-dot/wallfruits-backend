@@ -240,6 +240,12 @@
         font-size: 1rem;
     }
 
+    .post-action-btn.moderation {
+        background: #fff6f7;
+        border-color: rgba(176, 46, 65, 0.26);
+        color: #8f2437;
+    }
+
     .post-action-btn.liked {
         border-color: rgba(203, 44, 73, 0.3);
         background: rgba(203, 44, 73, 0.1);
@@ -287,6 +293,28 @@
         font-size: 0.76rem;
         line-height: 1.35;
         white-space: pre-wrap;
+    }
+
+    .post-comment-actions {
+        margin-top: 0.2rem;
+        display: flex;
+        gap: 0.25rem;
+        flex-wrap: wrap;
+    }
+
+    .comment-mod-btn {
+        border: 1px solid rgba(176, 46, 65, 0.26);
+        background: #fff6f7;
+        color: #8f2437;
+        border-radius: 999px;
+        font-size: 0.62rem;
+        font-weight: 800;
+        padding: 0.18rem 0.44rem;
+    }
+
+    .post-card.post-focus {
+        border-color: rgba(46, 125, 50, 0.42);
+        box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.12), 0 12px 28px rgba(16, 44, 90, 0.12);
     }
 
     .post-comment-form {
@@ -438,6 +466,15 @@
         let pendingImage = null;
         const commentsCache = new Map();
         let postsCache = [];
+        const currentUser = (() => {
+            try {
+                return JSON.parse(localStorage.getItem('user') || 'null');
+            } catch {
+                return null;
+            }
+        })();
+        const isAdmin = currentUser?.role === 'admin';
+        const focusPostId = Number(new URLSearchParams(window.location.search).get('post') || 0) || null;
 
         function escapeHtml(text) {
             const div = document.createElement('div');
@@ -469,6 +506,15 @@
         async function fetchPosts() {
             const data = await apiRequest('/community/posts?limit=40');
             postsCache = Array.isArray(data?.posts) ? data.posts : [];
+
+            if (focusPostId && !postsCache.some((item) => Number(item.id) === Number(focusPostId))) {
+                try {
+                    const targetPost = await apiRequest(`/community/posts/${focusPostId}`);
+                    postsCache.unshift(targetPost);
+                } catch {
+                    // ignora se post não existir
+                }
+            }
         }
 
         async function fetchComments(postId) {
@@ -490,8 +536,112 @@
                 <article class="post-comment-item">
                     <div class="post-comment-meta">${escapeHtml(item.author?.name || 'Usuário')} • ${escapeHtml(fmtDate(item.created_at))}</div>
                     <p class="post-comment-content">${escapeHtml(item.content || '')}</p>
+                    ${isAdmin ? `
+                        <div class="post-comment-actions">
+                            <button class="comment-mod-btn" type="button" data-mod-hide-comment="${Number(item.id)}">Ocultar comentário</button>
+                            <button class="comment-mod-btn" type="button" data-mod-remove-comment="${Number(item.id)}">Remover comentário</button>
+                            <button class="comment-mod-btn" type="button" data-mod-block-user="${Number(item.author?.id || 0)}">Bloquear usuário</button>
+                        </div>
+                    ` : ''}
                 </article>
             `).join('');
+
+            if (isAdmin) {
+                bindCommentModerationActions(postId);
+            }
+        }
+
+        function scrollToFocusedPost() {
+            if (!focusPostId) return;
+            const element = document.querySelector(`[data-post-id="${focusPostId}"]`);
+            if (!element) return;
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        async function moderateHidePost(postId) {
+            if (!isAdmin) return;
+            if (!confirm('Ocultar este post da comunidade?')) return;
+            try {
+                await apiRequest(`/community/moderation/posts/${postId}/hide`, 'POST');
+                postsCache = postsCache.filter((item) => Number(item.id) !== Number(postId));
+                renderFeed();
+            } catch (error) {
+                alert(error.message || 'Falha ao ocultar post.');
+            }
+        }
+
+        async function moderateRemovePost(postId) {
+            if (!isAdmin) return;
+            if (!confirm('Remover este post permanentemente?')) return;
+            try {
+                await apiRequest(`/community/moderation/posts/${postId}`, 'DELETE');
+                postsCache = postsCache.filter((item) => Number(item.id) !== Number(postId));
+                renderFeed();
+            } catch (error) {
+                alert(error.message || 'Falha ao remover post.');
+            }
+        }
+
+        async function moderateBlockUser(userId) {
+            if (!isAdmin || !userId) return;
+            if (!confirm('Bloquear este usuário para interações na comunidade?')) return;
+            try {
+                await apiRequest(`/community/moderation/users/${userId}/block`, 'POST', { reason: 'Bloqueio aplicado por moderação' });
+                alert('Usuário bloqueado para postar/comentar/curtir/compartilhar na comunidade.');
+            } catch (error) {
+                alert(error.message || 'Falha ao bloquear usuário.');
+            }
+        }
+
+        function bindCommentModerationActions(postId) {
+            document.querySelectorAll('[data-mod-hide-comment]').forEach((button) => {
+                button.addEventListener('click', async () => {
+                    const commentId = Number(button.getAttribute('data-mod-hide-comment'));
+                    if (!confirm('Ocultar este comentário?')) return;
+                    try {
+                        await apiRequest(`/community/moderation/comments/${commentId}/hide`, 'POST');
+                        commentsCache.delete(postId);
+                        await fetchComments(postId);
+                        renderComments(postId);
+
+                        const post = postsCache.find((item) => Number(item.id) === Number(postId));
+                        if (post) {
+                            post.comments_count = Math.max(0, Number(post.comments_count || 0) - 1);
+                            renderFeed();
+                        }
+                    } catch (error) {
+                        alert(error.message || 'Falha ao ocultar comentário.');
+                    }
+                });
+            });
+
+            document.querySelectorAll('[data-mod-remove-comment]').forEach((button) => {
+                button.addEventListener('click', async () => {
+                    const commentId = Number(button.getAttribute('data-mod-remove-comment'));
+                    if (!confirm('Remover este comentário permanentemente?')) return;
+                    try {
+                        await apiRequest(`/community/moderation/comments/${commentId}`, 'DELETE');
+                        commentsCache.delete(postId);
+                        await fetchComments(postId);
+                        renderComments(postId);
+
+                        const post = postsCache.find((item) => Number(item.id) === Number(postId));
+                        if (post) {
+                            post.comments_count = Math.max(0, Number(post.comments_count || 0) - 1);
+                            renderFeed();
+                        }
+                    } catch (error) {
+                        alert(error.message || 'Falha ao remover comentário.');
+                    }
+                });
+            });
+
+            document.querySelectorAll('[data-mod-block-user]').forEach((button) => {
+                button.addEventListener('click', () => {
+                    const userId = Number(button.getAttribute('data-mod-block-user'));
+                    moderateBlockUser(userId);
+                });
+            });
         }
 
         async function submitComment(postId, inputEl) {
@@ -592,7 +742,7 @@
             feed.innerHTML = posts.map((post) => {
                 const isLiked = Boolean(post.liked_by_me);
                 return `
-                    <article class="post-card" data-post-id="${escapeHtml(post.id)}">
+                    <article class="post-card ${focusPostId && Number(post.id) === Number(focusPostId) ? 'post-focus' : ''}" data-post-id="${escapeHtml(post.id)}">
                         <div class="post-main">
                             <img class="post-avatar" src="${escapeHtml(post.author?.profile_image || 'https://i.pravatar.cc/120?img=13')}" alt="Avatar de ${escapeHtml(post.author?.name || 'Usuário')}">
 
@@ -624,6 +774,20 @@
                                         <span class="material-icons">share</span>
                                         <span>${Number(post.shares_count || 0)}</span>
                                     </button>
+                                    ${isAdmin ? `
+                                        <button class="post-action-btn moderation" type="button" data-mod-hide-post="${escapeHtml(post.id)}">
+                                            <span class="material-icons">visibility_off</span>
+                                            <span>Ocultar</span>
+                                        </button>
+                                        <button class="post-action-btn moderation" type="button" data-mod-remove-post="${escapeHtml(post.id)}">
+                                            <span class="material-icons">delete</span>
+                                            <span>Remover</span>
+                                        </button>
+                                        <button class="post-action-btn moderation" type="button" data-mod-block-post-user="${escapeHtml(post.author?.id || 0)}">
+                                            <span class="material-icons">block</span>
+                                            <span>Bloquear</span>
+                                        </button>
+                                    ` : ''}
                                 </div>
 
                                 <div class="post-comments" data-comments-wrap="${escapeHtml(post.id)}">
@@ -654,6 +818,27 @@
                 button.addEventListener('click', () => {
                     const postId = Number(button.getAttribute('data-share-post'));
                     sharePost(postId);
+                });
+            });
+
+            document.querySelectorAll('[data-mod-hide-post]').forEach((button) => {
+                button.addEventListener('click', () => {
+                    const postId = Number(button.getAttribute('data-mod-hide-post'));
+                    moderateHidePost(postId);
+                });
+            });
+
+            document.querySelectorAll('[data-mod-remove-post]').forEach((button) => {
+                button.addEventListener('click', () => {
+                    const postId = Number(button.getAttribute('data-mod-remove-post'));
+                    moderateRemovePost(postId);
+                });
+            });
+
+            document.querySelectorAll('[data-mod-block-post-user]').forEach((button) => {
+                button.addEventListener('click', () => {
+                    const userId = Number(button.getAttribute('data-mod-block-post-user'));
+                    moderateBlockUser(userId);
                 });
             });
 
@@ -764,7 +949,12 @@
         });
 
         fetchPosts()
-            .then(renderFeed)
+            .then(() => {
+                renderFeed();
+                if (focusPostId) {
+                    setTimeout(scrollToFocusedPost, 120);
+                }
+            })
             .catch((error) => {
                 feed.innerHTML = `<div class="community-empty">Falha ao carregar a comunidade: ${escapeHtml(error.message || 'erro inesperado')}.</div>`;
             });
