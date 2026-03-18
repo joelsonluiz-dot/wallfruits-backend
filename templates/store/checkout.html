@@ -201,7 +201,7 @@
                 });
                 showMessage('ok', `Compra concluida com sucesso. Pedido #${result.order_id}.`);
                 setTimeout(() => {
-                    window.location.href = '/store?success=order_placed';
+                    window.location.href = '/store/orders';
                 }, 1400);
             } catch (error) {
                 showMessage('error', error.message || 'Nao foi possivel concluir a compra.');

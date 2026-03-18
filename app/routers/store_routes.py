@@ -2,6 +2,7 @@ from fastapi import APIRouter, Request, Depends, Form, HTTPException, status
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
+from datetime import timedelta
 from app.database.connection import get_db
 from app.core.auth_middleware import get_current_user
 from app.models.user import User
@@ -95,6 +96,56 @@ class QuoteRequestIn(BaseModel):
 class CheckoutIn(BaseModel):
     payment_method: str = Field(default="pix")
     shipping_address: dict = Field(default_factory=dict)
+
+
+def _build_order_timeline(order: Order) -> list[dict]:
+    base = order.created_at
+    status_value = str(order.status)
+    rank = {
+        OrderStatus.PENDING: 0,
+        OrderStatus.PAID: 1,
+        OrderStatus.SHIPPED: 2,
+        OrderStatus.DELIVERED: 3,
+        OrderStatus.CANCELLED: -1,
+    }
+
+    current_rank = rank.get(order.status, 0)
+    steps = [
+        ("pending", "Pedido criado", "Seu pedido foi registrado no sistema.", timedelta(minutes=0), 0),
+        ("paid", "Pagamento aprovado", "Pagamento confirmado e faturamento iniciado.", timedelta(minutes=5), 1),
+        ("shipped", "Pedido em transporte", "Pedido separado e enviado para entrega.", timedelta(days=1), 2),
+        ("delivered", "Pedido entregue", "Entrega concluida com sucesso.", timedelta(days=3), 3),
+    ]
+
+    timeline = []
+    for code, title, description, offset, step_rank in steps:
+        done = current_rank >= step_rank and order.status != OrderStatus.CANCELLED
+        active = step_rank == current_rank and order.status != OrderStatus.CANCELLED
+        eta = (base + offset).isoformat() if base else None
+        timeline.append(
+            {
+                "code": code,
+                "title": title,
+                "description": description,
+                "done": done,
+                "active": active,
+                "eta": eta,
+            }
+        )
+
+    if order.status == OrderStatus.CANCELLED:
+        timeline.append(
+            {
+                "code": "cancelled",
+                "title": "Pedido cancelado",
+                "description": "O pedido foi cancelado antes da conclusao da entrega.",
+                "done": True,
+                "active": True,
+                "eta": order.updated_at.isoformat() if order.updated_at else None,
+            }
+        )
+
+    return timeline
 
 @router.post("/manage/create")
 async def create_product(
@@ -387,3 +438,44 @@ async def complete_checkout(payload: CheckoutIn, db: Session = Depends(get_db), 
         "total_amount": float(cart.total_amount or 0),
         "message": "Compra finalizada com sucesso",
     }
+
+
+@router.get("/orders/my")
+async def my_orders(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    orders = (
+        db.query(Order)
+        .filter(
+            Order.customer_id == current_user.id,
+            Order.payment_method != "cart_open",
+        )
+        .order_by(Order.created_at.desc())
+        .all()
+    )
+
+    payload = []
+    for order in orders:
+        payload.append(
+            {
+                "id": order.id,
+                "status": str(order.status),
+                "total_amount": float(order.total_amount or 0),
+                "payment_method": order.payment_method,
+                "shipping_address": order.shipping_address or {},
+                "created_at": order.created_at.isoformat() if order.created_at else None,
+                "updated_at": order.updated_at.isoformat() if order.updated_at else None,
+                "items": [
+                    {
+                        "id": item.id,
+                        "product_name": item.product.name,
+                        "product_slug": item.product.slug,
+                        "quantity": int(item.quantity),
+                        "unit_price": float(item.unit_price),
+                        "subtotal": float(item.subtotal),
+                    }
+                    for item in order.items
+                ],
+                "timeline": _build_order_timeline(order),
+            }
+        )
+
+    return {"orders": payload, "total": len(payload)}

@@ -1,0 +1,278 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .orders-shell {
+        display: grid;
+        gap: 0.9rem;
+    }
+
+    .orders-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.7rem;
+        flex-wrap: wrap;
+    }
+
+    .orders-head h1 {
+        margin: 0;
+        font-size: 1.32rem;
+        font-weight: 900;
+        color: #10366b;
+    }
+
+    .orders-list {
+        display: grid;
+        gap: 0.75rem;
+    }
+
+    .order-card {
+        border: 1px solid rgba(11, 46, 99, 0.12);
+        border-radius: 16px;
+        background: #fff;
+        box-shadow: 0 10px 24px rgba(16, 44, 90, 0.1);
+        padding: 0.8rem;
+        display: grid;
+        gap: 0.65rem;
+    }
+
+    .order-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+    }
+
+    .order-title {
+        margin: 0;
+        font-size: 0.92rem;
+        font-weight: 900;
+        color: #123568;
+    }
+
+    .order-meta {
+        margin: 0.2rem 0 0;
+        font-size: 0.74rem;
+        color: #5a7395;
+    }
+
+    .order-pill {
+        border-radius: 999px;
+        padding: 0.28rem 0.65rem;
+        font-size: 0.66rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        border: 1px solid rgba(11, 46, 99, 0.12);
+        background: #f0f6ff;
+        color: #134477;
+    }
+
+    .order-items {
+        border: 1px solid rgba(11, 46, 99, 0.08);
+        border-radius: 12px;
+        padding: 0.55rem;
+        background: #fbfdff;
+        display: grid;
+        gap: 0.32rem;
+    }
+
+    .order-item-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.5rem;
+        font-size: 0.76rem;
+        color: #234774;
+    }
+
+    .order-timeline {
+        position: relative;
+        display: grid;
+        gap: 0.45rem;
+        padding-left: 1.25rem;
+    }
+
+    .order-timeline::before {
+        content: "";
+        position: absolute;
+        left: 7px;
+        top: 2px;
+        bottom: 2px;
+        width: 2px;
+        background: #d7e7fb;
+    }
+
+    .timeline-step {
+        position: relative;
+        border-radius: 10px;
+        padding: 0.48rem 0.6rem;
+        border: 1px solid rgba(11, 46, 99, 0.08);
+        background: #ffffff;
+    }
+
+    .timeline-step::before {
+        content: "";
+        position: absolute;
+        left: -1.03rem;
+        top: 0.78rem;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        border: 2px solid #9ab8dc;
+        background: #fff;
+    }
+
+    .timeline-step.done {
+        border-color: rgba(22, 103, 52, 0.2);
+        background: #f3fff7;
+    }
+
+    .timeline-step.done::before {
+        border-color: #1e8a4a;
+        background: #1e8a4a;
+    }
+
+    .timeline-step.active {
+        border-color: rgba(18, 75, 117, 0.3);
+        background: #ecf7ff;
+    }
+
+    .timeline-title {
+        margin: 0;
+        font-size: 0.76rem;
+        font-weight: 800;
+        color: #123e74;
+    }
+
+    .timeline-desc {
+        margin: 0.18rem 0 0;
+        font-size: 0.7rem;
+        color: #5a7395;
+    }
+
+    .timeline-eta {
+        margin: 0.16rem 0 0;
+        font-size: 0.66rem;
+        color: #6e86a6;
+    }
+</style>
+
+<div class="orders-shell">
+    <div class="orders-head">
+        <h1>Acompanhamento de pedidos</h1>
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="/store" class="btn btn-wf-secondary">Voltar para loja</a>
+            <a href="/store/cart" class="btn btn-wf-secondary">Carrinho</a>
+        </div>
+    </div>
+
+    <div id="ordersFeedback"></div>
+    <section id="ordersList" class="orders-list"></section>
+</div>
+
+<script>
+    (function setupOrdersPage() {
+        const list = document.getElementById('ordersList');
+        const feedback = document.getElementById('ordersFeedback');
+
+        function showMessage(type, text) {
+            if (!feedback) return;
+            const cls = type === 'error' ? 'wf-alert wf-alert-error' : 'wf-alert wf-alert-info';
+            feedback.innerHTML = `<div class="${cls}">${text}</div>`;
+        }
+
+        function requireAuth() {
+            if (!localStorage.getItem('token')) {
+                window.location.href = '/login';
+                return false;
+            }
+            return true;
+        }
+
+        function money(value) {
+            return `R$ ${Number(value || 0).toFixed(2)}`;
+        }
+
+        function formatDate(dateIso) {
+            if (!dateIso) return '-';
+            const dt = new Date(dateIso);
+            if (Number.isNaN(dt.getTime())) return '-';
+            return dt.toLocaleString('pt-BR');
+        }
+
+        function statusLabel(status) {
+            const map = {
+                pending: 'Pendente',
+                paid: 'Pago',
+                shipped: 'Enviado',
+                delivered: 'Entregue',
+                cancelled: 'Cancelado',
+            };
+            return map[status] || status;
+        }
+
+        function renderOrders(orders) {
+            if (!orders.length) {
+                list.innerHTML = '<div class="wf-alert wf-alert-info">Voce ainda nao possui pedidos concluidos.</div>';
+                return;
+            }
+
+            list.innerHTML = orders.map((order) => {
+                const itemsHtml = (order.items || []).map((item) => `
+                    <div class="order-item-row">
+                        <span>${item.product_name} x${item.quantity}</span>
+                        <strong>${money(item.subtotal)}</strong>
+                    </div>
+                `).join('');
+
+                const timelineHtml = (order.timeline || []).map((step) => `
+                    <article class="timeline-step ${step.done ? 'done' : ''} ${step.active ? 'active' : ''}">
+                        <h3 class="timeline-title">${step.title}</h3>
+                        <p class="timeline-desc">${step.description}</p>
+                        <p class="timeline-eta">${step.done ? 'Concluido em: ' : 'Previsao: '}${formatDate(step.eta)}</p>
+                    </article>
+                `).join('');
+
+                return `
+                    <article class="order-card">
+                        <div class="order-top">
+                            <div>
+                                <h2 class="order-title">Pedido #${order.id}</h2>
+                                <p class="order-meta">Criado em ${formatDate(order.created_at)} | Pagamento: ${String(order.payment_method || '-').toUpperCase()}</p>
+                            </div>
+                            <div class="order-pill">${statusLabel(order.status)}</div>
+                        </div>
+
+                        <div class="order-items">
+                            ${itemsHtml}
+                            <div class="order-item-row" style="border-top:1px solid rgba(11,46,99,0.1);padding-top:0.35rem;">
+                                <strong>Total</strong>
+                                <strong>${money(order.total_amount)}</strong>
+                            </div>
+                        </div>
+
+                        <div class="order-timeline">
+                            ${timelineHtml}
+                        </div>
+                    </article>
+                `;
+            }).join('');
+        }
+
+        async function loadOrders() {
+            if (!requireAuth()) return;
+            try {
+                const data = await apiRequest('/store/orders/my');
+                const orders = Array.isArray(data?.orders) ? data.orders : [];
+                renderOrders(orders);
+            } catch (error) {
+                showMessage('error', error.message || 'Nao foi possivel carregar seus pedidos.');
+            }
+        }
+
+        loadOrders();
+    })();
+</script>
+{% endblock %}

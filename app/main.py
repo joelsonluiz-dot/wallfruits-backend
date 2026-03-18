@@ -379,6 +379,12 @@ async def store_proposals_page(request: Request, current_user: User = Depends(ge
     return _render_template("store/proposals.html", request, current_user=current_user)
 
 
+@app.get("/store/orders")
+async def store_orders_page(request: Request, current_user: User = Depends(get_current_user_optional)):
+    """Página de acompanhamento de pedidos e pós-venda."""
+    return _render_template("store/orders.html", request, current_user=current_user)
+
+
 @app.get("/api/store/featured")
 async def store_featured_products(limit: int = 8, db: Session = Depends(get_db)):
     """Lista pública de produtos em destaque para vitrines horizontais."""

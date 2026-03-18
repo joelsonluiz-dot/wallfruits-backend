@@ -1228,6 +1228,7 @@
                 <a class="wf-nav-link" href="/store" style="color: var(--wf-accent) !important; font-weight: 700;">🛒 Loja Agrícola</a>
                 <a class="wf-nav-link" href="/store/manage/dashboard" id="navStoreManage" style="display:none;">Painel da Loja</a>
                 <a class="wf-nav-link" href="/store/cart" id="navStoreCart" style="display:none;">Carrinho</a>
+                <a class="wf-nav-link" href="/store/orders" id="navStoreOrders" style="display:none;">Meus pedidos</a>
                 <a class="wf-nav-link" href="/store/proposals" id="navStoreProposals" style="display:none;">Propostas por volume</a>
                 <a class="wf-nav-link" href="/offers">Explorar ofertas</a>
                 <a class="wf-nav-link" href="/offers/new" id="navNewOffer" style="display:none;">Nova oferta</a>
@@ -1407,6 +1408,7 @@
             setElementDisplay('navAdmin', isAdmin);
             setElementDisplay('navStoreManage', isStoreManager);
             setElementDisplay('navStoreCart', isLogged);
+            setElementDisplay('navStoreOrders', isLogged);
             setElementDisplay('navStoreProposals', isLogged);
             setElementDisplay('navNewOffer', isLogged);
             setElementDisplay('navSidebarNewOffer', isLogged);
@@ -1427,6 +1429,7 @@
             setElementDisplay('notificationsSection', isLogged);
             setElementDisplay('rightNavStoreManage', isStoreManager);
             setElementDisplay('rightNavStoreCart', isLogged);
+            setElementDisplay('rightNavStoreOrders', isLogged);
             setElementDisplay('rightNavStoreProposals', isLogged);
             setElementDisplay('rightNavNewOffer', isLogged);
             setElementDisplay('rightNavMessages', isLogged);
@@ -1662,6 +1665,10 @@
                         <a href="/store/cart" class="wf-sidebar-right-item" id="rightNavStoreCart" style="display:none;">
                             <span>🧺</span>
                             <span>Carrinho</span>
+                        </a>
+                        <a href="/store/orders" class="wf-sidebar-right-item" id="rightNavStoreOrders" style="display:none;">
+                            <span>📦</span>
+                            <span>Meus pedidos</span>
                         </a>
                         <a href="/store/proposals" class="wf-sidebar-right-item" id="rightNavStoreProposals" style="display:none;">
                             <span>📩</span>
