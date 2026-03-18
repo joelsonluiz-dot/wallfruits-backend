@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .proposal-shell {
+        display: grid;
+        gap: 0.9rem;
+    }
+
+    .proposal-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.7rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .proposal-head h1 {
+        margin: 0;
+        font-size: 1.3rem;
+        font-weight: 900;
+        color: #113769;
+    }
+
+    .proposal-list {
+        display: grid;
+        gap: 0.65rem;
+    }
+
+    .proposal-card {
+        border: 1px solid rgba(11, 46, 99, 0.12);
+        border-radius: 14px;
+        background: #fff;
+        box-shadow: 0 10px 20px rgba(16, 44, 90, 0.08);
+        padding: 0.78rem;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 0.65rem;
+        align-items: center;
+    }
+
+    .proposal-title {
+        margin: 0;
+        font-size: 0.9rem;
+        font-weight: 800;
+        color: #123568;
+    }
+
+    .proposal-meta {
+        margin: 0.2rem 0 0;
+        color: #5c7597;
+        font-size: 0.74rem;
+    }
+
+    .proposal-badge {
+        border-radius: 999px;
+        padding: 0.28rem 0.62rem;
+        font-size: 0.68rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .proposal-badge.pending { background: #fff4cf; color: #7a5800; }
+    .proposal-badge.reviewed { background: #dff3ff; color: #124b75; }
+    .proposal-badge.accepted { background: #dbf6e5; color: #155f33; }
+    .proposal-badge.rejected { background: #ffe0e4; color: #842632; }
+    .proposal-badge.cancelled { background: #ececf0; color: #4f5460; }
+
+    @media (max-width: 768px) {
+        .proposal-card {
+            grid-template-columns: 1fr;
+            align-items: flex-start;
+        }
+    }
+</style>
+
+<div class="proposal-shell">
+    <div class="proposal-head">
+        <h1>Minhas propostas por volume</h1>
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="/store" class="btn btn-wf-secondary">Voltar para loja</a>
+            <a href="/store/cart" class="btn btn-wf-secondary">Abrir carrinho</a>
+        </div>
+    </div>
+
+    <div id="proposalFeedback"></div>
+    <section id="proposalList" class="proposal-list"></section>
+</div>
+
+<script>
+    (function setupProposalsPage() {
+        const list = document.getElementById('proposalList');
+        const feedback = document.getElementById('proposalFeedback');
+
+        function showMessage(type, text) {
+            if (!feedback) return;
+            const cls = type === 'error' ? 'wf-alert wf-alert-error' : 'wf-alert wf-alert-info';
+            feedback.innerHTML = `<div class="${cls}">${text}</div>`;
+        }
+
+        function requireAuth() {
+            if (!localStorage.getItem('token')) {
+                window.location.href = '/login';
+                return false;
+            }
+            return true;
+        }
+
+        function statusLabel(status) {
+            const map = {
+                pending: 'Pendente',
+                reviewed: 'Em analise',
+                accepted: 'Aceita',
+                rejected: 'Recusada',
+                cancelled: 'Cancelada',
+            };
+            return map[status] || status;
+        }
+
+        async function loadProposals() {
+            if (!requireAuth()) return;
+
+            try {
+                const data = await apiRequest('/store/quote/my');
+                const quotes = Array.isArray(data?.quotes) ? data.quotes : [];
+
+                if (!quotes.length) {
+                    list.innerHTML = '<div class="wf-alert wf-alert-info">Voce ainda nao enviou propostas por volume.</div>';
+                    return;
+                }
+
+                list.innerHTML = quotes.map((quote) => `
+                    <article class="proposal-card">
+                        <div>
+                            <h2 class="proposal-title">${quote.product_name}</h2>
+                            <p class="proposal-meta">Fornecedor: ${quote.supplier_name}</p>
+                            <p class="proposal-meta">Quantidade: ${Number(quote.requested_quantity).toFixed(2)} ${quote.unit || 'un'} | Preco alvo: ${quote.target_price ? `R$ ${Number(quote.target_price).toFixed(2)}` : 'nao informado'}</p>
+                            ${quote.message ? `<p class="proposal-meta">Mensagem: ${quote.message}</p>` : ''}
+                            <a href="/store/product/${quote.product_slug}" class="btn btn-sm btn-outline-primary mt-1">Ver produto</a>
+                        </div>
+                        <span class="proposal-badge ${quote.status}">${statusLabel(quote.status)}</span>
+                    </article>
+                `).join('');
+            } catch (error) {
+                showMessage('error', error.message || 'Falha ao carregar propostas.');
+            }
+        }
+
+        loadProposals();
+    })();
+</script>
+{% endblock %}

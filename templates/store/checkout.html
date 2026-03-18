@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .checkout-wrap {
+        display: grid;
+        grid-template-columns: 1.35fr 0.95fr;
+        gap: 0.95rem;
+    }
+
+    .checkout-card {
+        border: 1px solid rgba(11, 46, 99, 0.12);
+        border-radius: 16px;
+        background: #fff;
+        box-shadow: 0 10px 24px rgba(16, 44, 90, 0.1);
+        padding: 0.9rem;
+    }
+
+    .checkout-title {
+        margin: 0 0 0.8rem;
+        color: #10356a;
+        font-size: 1.26rem;
+        font-weight: 900;
+    }
+
+    .checkout-item {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.6rem;
+        padding: 0.4rem 0;
+        border-bottom: 1px solid rgba(11, 46, 99, 0.08);
+        font-size: 0.82rem;
+    }
+
+    .checkout-item:last-child {
+        border-bottom: none;
+    }
+
+    .checkout-total {
+        margin-top: 0.55rem;
+        padding-top: 0.55rem;
+        border-top: 1px solid rgba(11, 46, 99, 0.12);
+        display: flex;
+        justify-content: space-between;
+        font-weight: 900;
+        color: #0f2f60;
+        font-size: 0.98rem;
+    }
+
+    .checkout-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.6rem;
+    }
+
+    @media (max-width: 992px) {
+        .checkout-wrap {
+            grid-template-columns: 1fr;
+        }
+
+        .checkout-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="checkout-wrap">
+    <section class="checkout-card">
+        <h1 class="checkout-title">Finalizar compra</h1>
+        <div id="checkoutFeedback"></div>
+
+        <div class="checkout-grid">
+            <div>
+                <label class="wf-label">Nome do destinatario</label>
+                <input class="wf-input form-control" id="shipName" placeholder="Nome completo">
+            </div>
+            <div>
+                <label class="wf-label">Telefone</label>
+                <input class="wf-input form-control" id="shipPhone" placeholder="(00) 00000-0000">
+            </div>
+            <div>
+                <label class="wf-label">Cidade</label>
+                <input class="wf-input form-control" id="shipCity" placeholder="Cidade">
+            </div>
+            <div>
+                <label class="wf-label">Estado</label>
+                <input class="wf-input form-control" id="shipState" placeholder="UF">
+            </div>
+            <div style="grid-column: 1 / -1;">
+                <label class="wf-label">Endereco completo</label>
+                <input class="wf-input form-control" id="shipAddress" placeholder="Rua, numero, bairro, complemento">
+            </div>
+            <div>
+                <label class="wf-label">CEP</label>
+                <input class="wf-input form-control" id="shipZip" placeholder="00000-000">
+            </div>
+            <div>
+                <label class="wf-label">Forma de pagamento</label>
+                <select class="wf-select form-select" id="paymentMethod">
+                    <option value="pix">Pix</option>
+                    <option value="boleto">Boleto</option>
+                    <option value="cartao">Cartao</option>
+                    <option value="transferencia">Transferencia</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2 mt-3 flex-wrap">
+            <a href="/store/cart" class="btn btn-wf-secondary">Voltar ao carrinho</a>
+            <button class="btn btn-wf-primary" id="btnFinishPurchase">Concluir compra</button>
+        </div>
+    </section>
+
+    <aside class="checkout-card">
+        <h2 class="h6 mb-2">Resumo do pedido</h2>
+        <div id="checkoutItems"></div>
+        <div class="checkout-total">
+            <span>Total</span>
+            <span id="checkoutTotal">R$ 0.00</span>
+        </div>
+    </aside>
+</div>
+
+<script>
+    (function setupCheckout() {
+        const itemsEl = document.getElementById('checkoutItems');
+        const totalEl = document.getElementById('checkoutTotal');
+        const btnFinish = document.getElementById('btnFinishPurchase');
+        const feedback = document.getElementById('checkoutFeedback');
+        let currentCart = { items: [], total_amount: 0 };
+
+        function money(val) {
+            return `R$ ${Number(val || 0).toFixed(2)}`;
+        }
+
+        function showMessage(type, text) {
+            if (!feedback) return;
+            const cls = type === 'error' ? 'wf-alert wf-alert-error' : 'wf-alert wf-alert-info';
+            feedback.innerHTML = `<div class="${cls}">${text}</div>`;
+        }
+
+        function requireAuth() {
+            if (!localStorage.getItem('token')) {
+                window.location.href = '/login';
+                return false;
+            }
+            return true;
+        }
+
+        function renderSummary(cart) {
+            const items = Array.isArray(cart.items) ? cart.items : [];
+            if (!items.length) {
+                itemsEl.innerHTML = '<div class="wf-alert wf-alert-info">Seu carrinho esta vazio para checkout.</div>';
+                totalEl.textContent = money(0);
+                btnFinish.disabled = true;
+                return;
+            }
+
+            itemsEl.innerHTML = items.map((item) => `
+                <div class="checkout-item">
+                    <span>${item.product_name} x${item.quantity}</span>
+                    <strong>${money(item.subtotal)}</strong>
+                </div>
+            `).join('');
+
+            totalEl.textContent = money(cart.total_amount || 0);
+            btnFinish.disabled = false;
+        }
+
+        async function loadCart() {
+            if (!requireAuth()) return;
+            try {
+                currentCart = await apiRequest('/store/cart/items');
+                renderSummary(currentCart);
+            } catch (error) {
+                showMessage('error', error.message || 'Falha ao carregar checkout.');
+            }
+        }
+
+        btnFinish.addEventListener('click', async () => {
+            if (!requireAuth()) return;
+
+            const shippingAddress = {
+                name: document.getElementById('shipName').value,
+                phone: document.getElementById('shipPhone').value,
+                city: document.getElementById('shipCity').value,
+                state: document.getElementById('shipState').value,
+                address: document.getElementById('shipAddress').value,
+                zip: document.getElementById('shipZip').value,
+            };
+
+            if (!shippingAddress.name || !shippingAddress.address || !shippingAddress.city) {
+                showMessage('error', 'Preencha nome, cidade e endereco para concluir a compra.');
+                return;
+            }
+
+            try {
+                const result = await apiRequest('/store/checkout/complete', 'POST', {
+                    payment_method: document.getElementById('paymentMethod').value,
+                    shipping_address: shippingAddress,
+                });
+                showMessage('ok', `Compra concluida com sucesso. Pedido #${result.order_id}.`);
+                setTimeout(() => {
+                    window.location.href = '/store?success=order_placed';
+                }, 1400);
+            } catch (error) {
+                showMessage('error', error.message || 'Nao foi possivel concluir a compra.');
+            }
+        });
+
+        loadCart();
+    })();
+</script>
+{% endblock %}

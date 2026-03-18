@@ -1,51 +1,275 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container my-5">
-    <div class="row">
-        <div class="col-md-8">
-            <h1 class="mb-4">Carrinho do Ecommerce Agro 🛒</h1>
-            
-            <div class="card border-0 shadow-sm mb-3">
-                <div class="card-body p-5 text-center">
-                    <div style="font-size: 4rem;" class="mb-3">🛒</div>
-                    <h3>Seu carrinho está vazio</h3>
-                    <p class="text-muted">Adicione adubos, defensivos, implementos, vestuario agricola e ferramentas para montar seu pedido.</p>
-                    <a href="/store" class="btn btn-wf-primary mt-3">Ir para a Loja</a>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm sticky-top" style="top: 100px;">
-                <div class="card-header bg-white py-3">
-                    <h5 class="mb-0">Resumo do Pedido</h5>
-                </div>
-                <div class="card-body">
-                    <div class="d-flex justify-content-between mb-2">
-                        <span>Subtotal</span>
-                        <span>R$ 0,00</span>
-                    </div>
-                    <div class="d-flex justify-content-between mb-3">
-                        <span>Frete</span>
-                        <span>Calculando...</span>
-                    </div>
-                    <hr>
-                    <div class="d-flex justify-content-between mb-4">
-                        <strong>Total</strong>
-                        <strong class="text-success h4">R$ 0,00</strong>
-                    </div>
-                    
-                    <button class="btn btn-success w-100 btn-lg" disabled>
-                        Finalizar Pedido Agro
-                    </button>
-                    
-                    <div class="mt-3 text-center small text-muted">
-                        🔒 Pagamento Seguro
-                    </div>
-                </div>
-            </div>
+<style>
+    .cart-shell {
+        display: grid;
+        gap: 0.9rem;
+    }
+
+    .cart-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.8rem;
+        flex-wrap: wrap;
+    }
+
+    .cart-head h1 {
+        margin: 0;
+        font-size: 1.35rem;
+        font-weight: 900;
+        color: #123568;
+    }
+
+    .cart-wrap {
+        display: grid;
+        grid-template-columns: 1.5fr 0.9fr;
+        gap: 0.9rem;
+    }
+
+    .cart-panel {
+        border: 1px solid rgba(11, 46, 99, 0.12);
+        border-radius: 16px;
+        background: #fff;
+        box-shadow: 0 10px 24px rgba(16, 44, 90, 0.1);
+        overflow: hidden;
+    }
+
+    .cart-item {
+        display: grid;
+        grid-template-columns: 88px 1fr auto;
+        gap: 0.7rem;
+        padding: 0.7rem;
+        border-bottom: 1px solid rgba(11, 46, 99, 0.08);
+    }
+
+    .cart-item:last-child {
+        border-bottom: none;
+    }
+
+    .cart-item-media {
+        width: 88px;
+        height: 88px;
+        border-radius: 10px;
+        background: #eff5fc;
+        border: 1px solid rgba(11, 46, 99, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .cart-item-media img {
+        max-width: 92%;
+        max-height: 92%;
+        object-fit: contain;
+    }
+
+    .cart-item-title {
+        margin: 0;
+        font-size: 0.86rem;
+        font-weight: 800;
+        color: #113769;
+    }
+
+    .cart-item-sub {
+        margin: 0.2rem 0 0;
+        font-size: 0.72rem;
+        color: #5c7597;
+    }
+
+    .cart-item-actions {
+        display: flex;
+        gap: 0.35rem;
+        align-items: center;
+        margin-top: 0.45rem;
+        flex-wrap: wrap;
+    }
+
+    .cart-qty {
+        width: 78px;
+    }
+
+    .cart-price {
+        font-size: 0.85rem;
+        font-weight: 900;
+        color: #0f2f60;
+        min-width: 95px;
+        text-align: right;
+    }
+
+    .cart-summary {
+        padding: 0.95rem;
+        display: grid;
+        gap: 0.5rem;
+    }
+
+    .cart-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.83rem;
+    }
+
+    .cart-total {
+        display: flex;
+        justify-content: space-between;
+        font-size: 1.02rem;
+        font-weight: 900;
+        color: #123568;
+        border-top: 1px solid rgba(11, 46, 99, 0.12);
+        padding-top: 0.5rem;
+    }
+
+    @media (max-width: 992px) {
+        .cart-wrap {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="cart-shell">
+    <div class="cart-head">
+        <h1>Carrinho do ecommerce agro</h1>
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="/store" class="btn btn-wf-secondary">Continuar comprando</a>
+            <a href="/store/proposals" class="btn btn-wf-secondary">Minhas propostas</a>
         </div>
     </div>
+
+    <div id="cartFeedback"></div>
+
+    <div class="cart-wrap">
+        <section class="cart-panel" id="cartItemsPanel"></section>
+
+        <aside class="cart-panel">
+            <div class="cart-summary">
+                <h2 class="h6 mb-0">Resumo do pedido</h2>
+                <div class="cart-row">
+                    <span>Subtotal</span>
+                    <strong id="cartSubtotal">R$ 0.00</strong>
+                </div>
+                <div class="cart-row">
+                    <span>Frete estimado</span>
+                    <span id="cartShipping">R$ 24.90</span>
+                </div>
+                <div class="cart-total">
+                    <span>Total</span>
+                    <span id="cartTotal">R$ 0.00</span>
+                </div>
+                <a href="/store/checkout" class="btn btn-wf-primary" id="btnGoCheckout">Ir para checkout</a>
+            </div>
+        </aside>
+    </div>
 </div>
+
+<script>
+    (function setupCartPage() {
+        const panel = document.getElementById('cartItemsPanel');
+        const subtotalEl = document.getElementById('cartSubtotal');
+        const totalEl = document.getElementById('cartTotal');
+        const checkoutBtn = document.getElementById('btnGoCheckout');
+        const feedback = document.getElementById('cartFeedback');
+
+        function money(val) {
+            return `R$ ${Number(val || 0).toFixed(2)}`;
+        }
+
+        function showMessage(type, text) {
+            if (!feedback) return;
+            const cls = type === 'error' ? 'wf-alert wf-alert-error' : 'wf-alert wf-alert-info';
+            feedback.innerHTML = `<div class="${cls}">${text}</div>`;
+        }
+
+        function authGuard() {
+            if (!localStorage.getItem('token')) {
+                window.location.href = '/login';
+                return false;
+            }
+            return true;
+        }
+
+        function renderCart(data) {
+            const items = Array.isArray(data?.items) ? data.items : [];
+            const subtotal = Number(data?.total_amount || 0);
+            const shipping = items.length ? 24.9 : 0;
+            const total = subtotal + shipping;
+
+            subtotalEl.textContent = money(subtotal);
+            totalEl.textContent = money(total);
+            checkoutBtn.style.pointerEvents = items.length ? 'auto' : 'none';
+            checkoutBtn.style.opacity = items.length ? '1' : '0.5';
+
+            if (!items.length) {
+                panel.innerHTML = `
+                    <div class="p-4 text-center">
+                        <div style="font-size:2.6rem;">🛒</div>
+                        <h3 class="h5 mt-2">Seu carrinho esta vazio</h3>
+                        <p class="text-muted mb-3">Adicione produtos da loja para concluir sua compra.</p>
+                        <a href="/store" class="btn btn-wf-primary">Ir para loja</a>
+                    </div>
+                `;
+                return;
+            }
+
+            panel.innerHTML = items.map((item) => `
+                <article class="cart-item" data-item-id="${item.id}">
+                    <div class="cart-item-media">
+                        ${item.image ? `<img src="${item.image}" alt="${item.product_name}">` : '<span style="font-size:1.7rem;">📦</span>'}
+                    </div>
+                    <div>
+                        <h3 class="cart-item-title">${item.product_name}</h3>
+                        <p class="cart-item-sub">Unitario: ${money(item.unit_price)} | Estoque: ${item.stock_quantity}</p>
+                        <div class="cart-item-actions">
+                            <input class="wf-input form-control cart-qty" type="number" min="1" max="${item.stock_quantity}" value="${item.quantity}">
+                            <button class="btn btn-sm btn-wf-secondary" data-action="update">Atualizar</button>
+                            <button class="btn btn-sm btn-outline-danger" data-action="remove">Remover</button>
+                            <a class="btn btn-sm btn-outline-primary" href="/store/product/${item.product_slug}">Detalhes</a>
+                        </div>
+                    </div>
+                    <div class="cart-price">${money(item.subtotal)}</div>
+                </article>
+            `).join('');
+
+            panel.querySelectorAll('[data-action="update"]').forEach((btn) => {
+                btn.addEventListener('click', async () => {
+                    const article = btn.closest('.cart-item');
+                    const itemId = Number(article?.dataset.itemId);
+                    const qtyInput = article?.querySelector('.cart-qty');
+                    const quantity = Number(qtyInput?.value || 1);
+                    try {
+                        const updated = await apiRequest(`/store/cart/item/${itemId}`, 'PATCH', { quantity });
+                        renderCart(updated);
+                    } catch (error) {
+                        showMessage('error', error.message || 'Falha ao atualizar item do carrinho.');
+                    }
+                });
+            });
+
+            panel.querySelectorAll('[data-action="remove"]').forEach((btn) => {
+                btn.addEventListener('click', async () => {
+                    const article = btn.closest('.cart-item');
+                    const itemId = Number(article?.dataset.itemId);
+                    try {
+                        const updated = await apiRequest(`/store/cart/item/${itemId}`, 'DELETE');
+                        renderCart(updated);
+                    } catch (error) {
+                        showMessage('error', error.message || 'Falha ao remover item do carrinho.');
+                    }
+                });
+            });
+        }
+
+        async function loadCart() {
+            if (!authGuard()) return;
+            try {
+                const data = await apiRequest('/store/cart/items');
+                renderCart(data);
+            } catch (error) {
+                showMessage('error', error.message || 'Nao foi possivel carregar seu carrinho.');
+            }
+        }
+
+        loadCart();
+    })();
+</script>
 {% endblock %}

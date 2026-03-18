@@ -17,6 +17,14 @@ class OrderStatus(str, enum.Enum):
     DELIVERED = "delivered"
     CANCELLED = "cancelled"
 
+
+class QuoteRequestStatus(str, enum.Enum):
+    PENDING = "pending"
+    REVIEWED = "reviewed"
+    ACCEPTED = "accepted"
+    REJECTED = "rejected"
+    CANCELLED = "cancelled"
+
 class ProductCategory(Base):
     __tablename__ = "store_categories"
     
@@ -58,6 +66,7 @@ class Product(Base):
     category = relationship("ProductCategory", back_populates="products")
     supplier = relationship("User", backref="store_products")
     order_items = relationship("OrderItem", back_populates="product")
+    quote_requests = relationship("QuoteRequest", back_populates="product")
 
 class Order(Base):
     __tablename__ = "store_orders"
@@ -91,3 +100,25 @@ class OrderItem(Base):
     
     order = relationship("Order", back_populates="items")
     product = relationship("Product", back_populates="order_items")
+
+
+class QuoteRequest(Base):
+    __tablename__ = "store_quote_requests"
+
+    id = Column(Integer, primary_key=True, index=True)
+    requester_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    supplier_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    product_id = Column(Integer, ForeignKey("store_products.id"), nullable=False)
+
+    requested_quantity = Column(Float, nullable=False)
+    unit = Column(String(30), default="un")
+    target_price = Column(Float, nullable=True)
+    message = Column(Text, nullable=True)
+
+    status = Column(SqEnum(QuoteRequestStatus), default=QuoteRequestStatus.PENDING)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    requester = relationship("User", foreign_keys=[requester_id], backref="store_quote_requests")
+    supplier = relationship("User", foreign_keys=[supplier_id], backref="store_received_quote_requests")
+    product = relationship("Product", back_populates="quote_requests")

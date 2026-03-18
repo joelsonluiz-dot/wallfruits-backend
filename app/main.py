@@ -203,6 +203,7 @@ app.include_router(payment_routes.router, prefix=API_PREFIX)
 app.include_router(social_routes.router, prefix=API_PREFIX)
 app.include_router(notification_routes.router, prefix=API_PREFIX)
 app.include_router(store_routes.router)  # Loja Agrícola (HTML + API)
+app.include_router(store_routes.router, prefix=API_PREFIX)  # Alias /api/store para chamadas JS
 
 @app.get("/")
 async def home(request: Request, current_user: User = Depends(get_current_user_optional)):
@@ -364,6 +365,18 @@ async def supplier_dashboard(request: Request, db: Session = Depends(get_db), cu
 async def view_cart(request: Request, current_user: User = Depends(get_current_user_optional)):
     """Página do carrinho de compras."""
     return _render_template("store/cart.html", request, current_user=current_user)
+
+
+@app.get("/store/checkout")
+async def store_checkout_page(request: Request, current_user: User = Depends(get_current_user_optional)):
+    """Página de checkout da loja."""
+    return _render_template("store/checkout.html", request, current_user=current_user)
+
+
+@app.get("/store/proposals")
+async def store_proposals_page(request: Request, current_user: User = Depends(get_current_user_optional)):
+    """Página de propostas por volume do usuário comprador."""
+    return _render_template("store/proposals.html", request, current_user=current_user)
 
 
 @app.get("/api/store/featured")

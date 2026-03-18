@@ -131,10 +131,28 @@
 
                 <p class="mb-3">{{ product.description }}</p>
 
-                <div class="d-grid gap-2 d-md-flex">
-                    <button class="btn btn-wf-primary">Adicionar ao carrinho</button>
-                    <button class="btn btn-outline-primary">Solicitar proposta por volume</button>
+                <div class="row g-2 mb-2">
+                    <div class="col-6 col-md-4">
+                        <label class="form-label small text-muted mb-1">Quantidade</label>
+                        <input id="buyQty" type="number" min="1" max="{{ product.stock_quantity }}" value="1" class="wf-input form-control">
+                    </div>
+                    <div class="col-6 col-md-4">
+                        <label class="form-label small text-muted mb-1">Preco alvo (opcional)</label>
+                        <input id="targetPrice" type="number" min="0" step="0.01" placeholder="R$" class="wf-input form-control">
+                    </div>
                 </div>
+
+                <div class="d-grid gap-2 d-md-flex">
+                    <button class="btn btn-wf-primary" id="btnAddToCart">Adicionar ao carrinho</button>
+                    <button class="btn btn-outline-primary" id="btnRequestQuote">Solicitar proposta por volume</button>
+                </div>
+
+                <div class="d-flex gap-2 mt-2 flex-wrap">
+                    <a href="/store/cart" class="btn btn-wf-secondary btn-sm">Ver carrinho</a>
+                    <a href="/store/proposals" class="btn btn-wf-secondary btn-sm">Minhas propostas</a>
+                </div>
+
+                <div id="detailFeedback" class="mt-2"></div>
             </div>
         </div>
     </div>
@@ -170,4 +188,66 @@
     </div>
     {% endif %}
 </div>
+
+<script>
+    (function setupProductActions() {
+        const productId = Number('{{ product.id }}');
+        const btnAdd = document.getElementById('btnAddToCart');
+        const btnQuote = document.getElementById('btnRequestQuote');
+        const qtyInput = document.getElementById('buyQty');
+        const targetPriceInput = document.getElementById('targetPrice');
+        const feedback = document.getElementById('detailFeedback');
+
+        function showMessage(type, text) {
+            if (!feedback) return;
+            const cls = type === 'error' ? 'wf-alert wf-alert-error' : 'wf-alert wf-alert-info';
+            feedback.innerHTML = `<div class="${cls}">${text}</div>`;
+        }
+
+        function requireAuth() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/login';
+                return false;
+            }
+            return true;
+        }
+
+        if (btnAdd) {
+            btnAdd.addEventListener('click', async () => {
+                if (!requireAuth()) return;
+                const quantity = Number(qtyInput?.value || 1);
+
+                try {
+                    await apiRequest('/store/cart/add', 'POST', { product_id: productId, quantity });
+                    showMessage('ok', 'Produto adicionado ao carrinho com sucesso.');
+                } catch (error) {
+                    showMessage('error', error.message || 'Nao foi possivel adicionar ao carrinho.');
+                }
+            });
+        }
+
+        if (btnQuote) {
+            btnQuote.addEventListener('click', async () => {
+                if (!requireAuth()) return;
+
+                const quantity = Number(qtyInput?.value || 1);
+                const target = targetPriceInput?.value ? Number(targetPriceInput.value) : null;
+                const message = prompt('Descreva condicoes da proposta por volume (opcional):', 'Compra recorrente mensal com entrega programada.');
+
+                try {
+                    await apiRequest('/store/quote/request', 'POST', {
+                        product_id: productId,
+                        quantity,
+                        target_price: target,
+                        message: message || null,
+                    });
+                    showMessage('ok', 'Proposta por volume enviada para o fornecedor.');
+                } catch (error) {
+                    showMessage('error', error.message || 'Falha ao enviar proposta por volume.');
+                }
+            });
+        }
+    })();
+</script>
 {% endblock %}

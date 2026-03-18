@@ -1227,6 +1227,8 @@
                 <a class="wf-nav-link" href="/">Início</a>
                 <a class="wf-nav-link" href="/store" style="color: var(--wf-accent) !important; font-weight: 700;">🛒 Loja Agrícola</a>
                 <a class="wf-nav-link" href="/store/manage/dashboard" id="navStoreManage" style="display:none;">Painel da Loja</a>
+                <a class="wf-nav-link" href="/store/cart" id="navStoreCart" style="display:none;">Carrinho</a>
+                <a class="wf-nav-link" href="/store/proposals" id="navStoreProposals" style="display:none;">Propostas por volume</a>
                 <a class="wf-nav-link" href="/offers">Explorar ofertas</a>
                 <a class="wf-nav-link" href="/offers/new" id="navNewOffer" style="display:none;">Nova oferta</a>
                 <a class="wf-nav-link" href="/messages" id="navMessages" style="display:none;">Mensagens</a>
@@ -1404,6 +1406,8 @@
             setElementDisplay('navMessages', isLogged);
             setElementDisplay('navAdmin', isAdmin);
             setElementDisplay('navStoreManage', isStoreManager);
+            setElementDisplay('navStoreCart', isLogged);
+            setElementDisplay('navStoreProposals', isLogged);
             setElementDisplay('navNewOffer', isLogged);
             setElementDisplay('navSidebarNewOffer', isLogged);
             setElementDisplay('navTopMessages', isLogged);
@@ -1422,6 +1426,8 @@
             setElementDisplay('actionRegister', !isLogged);
             setElementDisplay('notificationsSection', isLogged);
             setElementDisplay('rightNavStoreManage', isStoreManager);
+            setElementDisplay('rightNavStoreCart', isLogged);
+            setElementDisplay('rightNavStoreProposals', isLogged);
             setElementDisplay('rightNavNewOffer', isLogged);
             setElementDisplay('rightNavMessages', isLogged);
             setElementDisplay('rightNavProfile', isLogged);
@@ -1652,6 +1658,14 @@
                         <a href="/store/manage/dashboard" class="wf-sidebar-right-item" id="rightNavStoreManage" style="display:none;">
                             <span>🛒</span>
                             <span>Painel da loja</span>
+                        </a>
+                        <a href="/store/cart" class="wf-sidebar-right-item" id="rightNavStoreCart" style="display:none;">
+                            <span>🧺</span>
+                            <span>Carrinho</span>
+                        </a>
+                        <a href="/store/proposals" class="wf-sidebar-right-item" id="rightNavStoreProposals" style="display:none;">
+                            <span>📩</span>
+                            <span>Minhas propostas</span>
                         </a>
                         <a href="/offers/new" class="wf-sidebar-right-item" id="rightNavNewOffer" style="display:none;">
                             <span>📝</span>
