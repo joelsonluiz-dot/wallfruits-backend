@@ -28,7 +28,7 @@ from app.database.connection import (
 )
 from app.models import Category, Favorite, Message, Offer, Review, Transaction, User
 from app.routers import (
-from app.routers import store_routes
+    store_routes,
     category_routes,
     dashboard_routes,
     favorite_routes,
@@ -178,6 +178,7 @@ app.include_router(growth_routes.router, prefix=API_PREFIX)
 app.include_router(payment_routes.router, prefix=API_PREFIX)
 app.include_router(social_routes.router, prefix=API_PREFIX)
 app.include_router(notification_routes.router, prefix=API_PREFIX)
+app.include_router(store_routes.router)  # Loja Agrícola (HTML + API)
 
 @app.get("/")
 async def home(request: Request, current_user: User = Depends(get_current_user_optional)):
