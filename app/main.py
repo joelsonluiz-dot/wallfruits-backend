@@ -265,6 +265,12 @@ async def offer_detail_page(
     return _render_template("offer_detail.html", request, current_user=current_user, offer_id=offer_id)
 
 
+@app.get("/orders")
+async def marketplace_orders_page(request: Request, current_user: User = Depends(get_current_user_optional)):
+    """Pagina de acompanhamento de reservas/pedidos do marketplace de ofertas."""
+    return _render_template("orders.html", request, current_user=current_user)
+
+
 @app.get("/messages")
 async def messages_page(request: Request, current_user: User = Depends(get_current_user_optional)):
     """Página de mensagens em formato chat."""

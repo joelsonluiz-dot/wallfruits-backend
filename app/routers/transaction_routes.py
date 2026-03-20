@@ -1,4 +1,5 @@
 from decimal import Decimal
+from datetime import datetime, timezone
 from typing import List
 from uuid import UUID
 
@@ -58,6 +59,22 @@ def create_transaction(
             f"Quantidade solicitada ({transaction.quantity}) maior que disponível ({offer.quantity})",
         )
 
+    if offer.min_order and transaction.quantity < offer.min_order:
+        raise HTTPException(
+            400,
+            f"Quantidade minima para reserva: {offer.min_order}",
+        )
+
+    today = datetime.now(timezone.utc).date()
+    if offer.reservation_start and today < offer.reservation_start:
+        raise HTTPException(400, "Periodo de reserva ainda nao iniciado para esta oferta")
+
+    if offer.reservation_end and today > offer.reservation_end:
+        raise HTTPException(400, "Periodo de reserva encerrado para esta oferta")
+
+    if transaction.delivery_method == "delivery" and not (transaction.delivery_address or "").strip():
+        raise HTTPException(400, "Endereco de entrega e obrigatorio para entrega")
+
     unit_price = offer.price
     total_price = unit_price * transaction.quantity
 
@@ -75,6 +92,11 @@ def create_transaction(
     )
 
     db.add(new_transaction)
+    db.flush()
+
+    offer.quantity -= transaction.quantity
+    if offer.quantity <= 0:
+        offer.status = "sold"
 
     create_notification(
         db,
@@ -89,12 +111,6 @@ def create_transaction(
 
     db.commit()
     db.refresh(new_transaction)
-
-    offer.quantity -= transaction.quantity
-    if offer.quantity <= 0:
-        offer.status = "sold"
-
-    db.commit()
 
     return new_transaction
 

@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+
+{% block title %}WallFruits - Meus pedidos{% endblock %}
+
+{% block extra_css %}
+<style>
+    .orders-shell {
+        display: grid;
+        gap: 1rem;
+    }
+
+    .orders-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.8rem;
+        flex-wrap: wrap;
+    }
+
+    .orders-grid {
+        display: grid;
+        gap: 0.9rem;
+    }
+
+    .order-card {
+        border: 1px solid rgba(11, 46, 99, 0.15);
+        border-radius: 12px;
+        background: #fff;
+        padding: 1rem;
+        box-shadow: 0 6px 18px rgba(11, 46, 99, 0.06);
+        display: grid;
+        gap: 0.8rem;
+    }
+
+    .order-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 0.8rem;
+        flex-wrap: wrap;
+    }
+
+    .order-title {
+        margin: 0;
+        font-size: 1rem;
+        color: #0b2e63;
+    }
+
+    .order-meta {
+        margin: 0.2rem 0 0;
+        font-size: 0.9rem;
+        color: #526071;
+    }
+
+    .order-pill {
+        border-radius: 999px;
+        padding: 0.3rem 0.7rem;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        background: #eef6ff;
+        color: #0b2e63;
+    }
+
+    .order-items {
+        border: 1px solid rgba(11, 46, 99, 0.12);
+        border-radius: 10px;
+        padding: 0.7rem;
+        display: grid;
+        gap: 0.55rem;
+        background: #fbfdff;
+    }
+
+    .order-item-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.92rem;
+    }
+
+    .order-actions {
+        display: flex;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+    }
+
+    @media (max-width: 768px) {
+        .order-card {
+            padding: 0.85rem;
+        }
+
+        .order-item-row {
+            font-size: 0.88rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="orders-shell">
+    <div class="orders-head">
+        <h1 class="mb-0">Meus pedidos</h1>
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="/offers" class="btn btn-wf-secondary">Voltar para ofertas</a>
+        </div>
+    </div>
+
+    <div id="ordersFeedback"></div>
+    <section id="ordersList" class="orders-grid"></section>
+</div>
+
+<script>
+    (function setupMarketplaceOrdersPage() {
+        const feedback = document.getElementById('ordersFeedback');
+        const list = document.getElementById('ordersList');
+
+        function showMessage(type, text) {
+            if (!feedback) return;
+            const cls = type === 'error' ? 'wf-alert wf-alert-error' : 'wf-alert wf-alert-info';
+            feedback.innerHTML = `<div class="${cls}">${text}</div>`;
+        }
+
+        function clearMessage() {
+            if (feedback) feedback.innerHTML = '';
+        }
+
+        function requireAuth() {
+            if (!localStorage.getItem('token')) {
+                window.location.href = '/login';
+                return false;
+            }
+            return true;
+        }
+
+        function money(value) {
+            return `R$ ${Number(value || 0).toFixed(2)}`;
+        }
+
+        function fmtDate(value) {
+            if (!value) return '-';
+            const dt = new Date(value);
+            if (Number.isNaN(dt.getTime())) return '-';
+            return dt.toLocaleString('pt-BR');
+        }
+
+        function statusLabel(status) {
+            const map = {
+                pending: 'Pendente',
+                confirmed: 'Confirmado',
+                completed: 'Concluido',
+                cancelled: 'Cancelado',
+                disputed: 'Em disputa',
+                paid: 'Pago',
+            };
+            return map[status] || status;
+        }
+
+        async function updateOrderStatus(orderId, nextStatus) {
+            clearMessage();
+            try {
+                await apiRequest(`/transactions/${orderId}`, 'PUT', { status: nextStatus });
+                showMessage('info', 'Status atualizado com sucesso.');
+                await loadOrders();
+            } catch (error) {
+                showMessage('error', error.message || 'Nao foi possivel atualizar o status.');
+            }
+        }
+
+        function buildActions(order) {
+            const status = String(order.status || '').toLowerCase();
+            const actions = [];
+
+            if (status === 'pending') {
+                actions.push(`<button class="btn btn-wf-primary" data-act="confirm" data-id="${order.id}">Confirmar pedido</button>`);
+            }
+
+            if (status === 'pending' || status === 'confirmed') {
+                actions.push(`<button class="btn btn-wf-secondary" data-act="cancel" data-id="${order.id}">Cancelar pedido</button>`);
+            }
+
+            if (!actions.length) {
+                actions.push('<span class="text-muted">Sem acoes disponiveis no momento.</span>');
+            }
+
+            return actions.join('');
+        }
+
+        function renderOrders(orders) {
+            if (!Array.isArray(orders) || !orders.length) {
+                list.innerHTML = '<div class="wf-alert wf-alert-info">Voce ainda nao possui pedidos no marketplace de ofertas.</div>';
+                return;
+            }
+
+            list.innerHTML = orders.map((order) => {
+                const offer = order.offer || {};
+                return `
+                    <article class="order-card">
+                        <div class="order-top">
+                            <div>
+                                <h2 class="order-title">Pedido #${order.id}</h2>
+                                <p class="order-meta">${offer.product_name || 'Produto'} | Criado em ${fmtDate(order.created_at)}</p>
+                            </div>
+                            <span class="order-pill">${statusLabel(order.status)}</span>
+                        </div>
+
+                        <div class="order-items">
+                            <div class="order-item-row"><span>Quantidade</span><strong>${order.quantity} ${offer.unit || ''}</strong></div>
+                            <div class="order-item-row"><span>Preco unitario</span><strong>${money(order.unit_price)}</strong></div>
+                            <div class="order-item-row" style="border-top:1px solid rgba(11,46,99,0.1);padding-top:0.35rem;"><span>Total</span><strong>${money(order.total_price)}</strong></div>
+                            <div class="order-item-row"><span>Entrega</span><strong>${String(order.delivery_method || '-').toUpperCase()}</strong></div>
+                            <div class="order-item-row"><span>Pagamento</span><strong>${String(order.payment_method || '-').toUpperCase()}</strong></div>
+                        </div>
+
+                        <div class="order-actions">
+                            ${buildActions(order)}
+                        </div>
+                    </article>
+                `;
+            }).join('');
+
+            list.querySelectorAll('button[data-act="confirm"]').forEach((btn) => {
+                btn.addEventListener('click', () => updateOrderStatus(btn.dataset.id, 'confirmed'));
+            });
+
+            list.querySelectorAll('button[data-act="cancel"]').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const ok = confirm('Deseja cancelar este pedido?');
+                    if (!ok) return;
+                    updateOrderStatus(btn.dataset.id, 'cancelled');
+                });
+            });
+        }
+
+        async function loadOrders() {
+            if (!requireAuth()) return;
+            try {
+                const data = await apiRequest('/transactions/my?type=purchases');
+                renderOrders(Array.isArray(data) ? data : []);
+            } catch (error) {
+                showMessage('error', error.message || 'Nao foi possivel carregar seus pedidos.');
+            }
+        }
+
+        loadOrders();
+    })();
+</script>
+{% endblock %}

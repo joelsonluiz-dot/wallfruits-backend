@@ -770,7 +770,8 @@
                 delivery_method: 'pickup',
                 payment_method: 'transfer',
             });
-            alert('Reserva registrada com sucesso.');
+            alert('Reserva registrada com sucesso. Acompanhe em Meus pedidos.');
+            window.location.href = '/orders';
         } catch (error) {
             alert(error.message || 'Nao foi possivel reservar agora.');
         }
