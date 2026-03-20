@@ -1,11 +1,13 @@
 """App principal da API WallFruits com startup e observabilidade robustos."""
 
 from contextlib import asynccontextmanager
+from collections import defaultdict, deque
 from datetime import datetime, timezone
 import logging
 import os
 import re
 import sys
+from threading import Lock
 import time
 from typing import Any
 from uuid import uuid4
@@ -68,6 +70,73 @@ logging.basicConfig(
 logger = logging.getLogger("wallfruits_api")
 logger.info("Starting WallFruits API v%s", settings.API_VERSION)
 
+_rate_limit_storage: dict[str, deque[float]] = defaultdict(deque)
+_rate_limit_lock = Lock()
+_sensitive_rate_limit_paths = (
+    "/api/auth/",
+    "/api/messages",
+    "/api/community/posts",
+    "/api/offers",
+)
+_metrics_lock = Lock()
+_request_metrics = {
+    "total": 0,
+    "status_2xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0,
+    "rate_limited": 0,
+    "duration_ms_total": 0.0,
+}
+
+
+def _client_identifier(request: Request) -> str:
+    if settings.RATE_LIMIT_TRUST_PROXY_HEADERS:
+        xff = request.headers.get("X-Forwarded-For", "").strip()
+        if xff:
+            return xff.split(",")[0].strip()
+
+    return (request.client.host if request.client else "unknown").strip() or "unknown"
+
+
+def _is_sensitive_rate_limit_path(path: str) -> bool:
+    return any(path.startswith(prefix) for prefix in _sensitive_rate_limit_paths)
+
+
+def _consume_rate_limit(request: Request) -> tuple[bool, int]:
+    if not settings.RATE_LIMIT_ENABLED or request.method == "OPTIONS":
+        return True, 0
+
+    path = request.url.path
+    bucket_max = (
+        settings.RATE_LIMIT_SENSITIVE_MAX_REQUESTS
+        if _is_sensitive_rate_limit_path(path)
+        else settings.RATE_LIMIT_MAX_REQUESTS
+    )
+    window = float(settings.RATE_LIMIT_WINDOW_SECONDS)
+    now = time.monotonic()
+    client = _client_identifier(request)
+    bucket_name = "sensitive" if _is_sensitive_rate_limit_path(path) else "default"
+    bucket_key = f"{client}:{bucket_name}"
+
+    with _rate_limit_lock:
+        queue = _rate_limit_storage[bucket_key]
+        while queue and (now - queue[0]) > window:
+            queue.popleft()
+
+        if len(queue) >= bucket_max:
+            retry_after = max(1, int(window - (now - queue[0]))) if queue else int(window)
+            return False, retry_after
+
+        queue.append(now)
+        return True, 0
+
+
+def _timed_check(check_fn) -> tuple[bool, str, float]:
+    started = time.perf_counter()
+    ok, detail = check_fn()
+    elapsed_ms = (time.perf_counter() - started) * 1000
+    return ok, detail, elapsed_ms
+
 
 def _request_id_from(request: Request) -> str:
     return getattr(request.state, "request_id", "unknown")
@@ -87,6 +156,7 @@ def _error_payload(message: Any, code: str, request: Request) -> dict[str, Any]:
 async def lifespan(app_obj: FastAPI):
     app_obj.state.startup_ok = False
     app_obj.state.startup_error = None
+    app_obj.state.started_at = datetime.now(timezone.utc)
 
     try:
         wait_for_database_ready()
@@ -117,13 +187,65 @@ app = FastAPI(
 async def request_context_middleware(request: Request, call_next):
     request_id = request.headers.get("X-Request-ID") or uuid4().hex
     request.state.request_id = request_id
+    request.state.request_started_at = time.perf_counter()
 
-    started_at = time.perf_counter()
+    accepted, retry_after = _consume_rate_limit(request)
+    if not accepted:
+        with _metrics_lock:
+            _request_metrics["total"] += 1
+            _request_metrics["status_4xx"] += 1
+            _request_metrics["rate_limited"] += 1
+        payload = _error_payload(
+            "Muitas requisições. Tente novamente em instantes.",
+            "rate_limited",
+            request,
+        )
+        response = JSONResponse(status_code=429, content=payload)
+        response.headers["Retry-After"] = str(retry_after)
+        response.headers["X-Request-ID"] = request_id
+        logger.warning(
+            "rate_limited method=%s path=%s request_id=%s client=%s retry_after=%ss",
+            request.method,
+            request.url.path,
+            request_id,
+            _client_identifier(request),
+            retry_after,
+        )
+        return response
+
     response = await call_next(request)
-    elapsed = time.perf_counter() - started_at
+    elapsed = time.perf_counter() - request.state.request_started_at
+    elapsed_ms = elapsed * 1000
 
     response.headers["X-Request-ID"] = request_id
     response.headers["X-Process-Time"] = f"{elapsed:.4f}"
+
+    with _metrics_lock:
+        _request_metrics["total"] += 1
+        _request_metrics["duration_ms_total"] += elapsed_ms
+        if 200 <= response.status_code < 300:
+            _request_metrics["status_2xx"] += 1
+        elif 400 <= response.status_code < 500:
+            _request_metrics["status_4xx"] += 1
+        elif response.status_code >= 500:
+            _request_metrics["status_5xx"] += 1
+
+    log_fn = logger.info
+    if response.status_code >= 500:
+        log_fn = logger.error
+    elif response.status_code >= 400:
+        log_fn = logger.warning
+
+    log_fn(
+        "request method=%s path=%s status=%s duration_ms=%.2f request_id=%s client=%s",
+        request.method,
+        request.url.path,
+        response.status_code,
+        elapsed_ms,
+        request_id,
+        _client_identifier(request),
+    )
+
     return response
 
 
@@ -527,8 +649,8 @@ async def mobile_preview_page(request: Request, url: str | None = None):
 @app.get("/health")
 def health():
     """Health check profundo da aplicação."""
-    db_ok, db_detail = check_database_connection()
-    redis_ok, redis_detail = check_redis_connection()
+    db_ok, db_detail, db_latency_ms = _timed_check(check_database_connection)
+    redis_ok, redis_detail, redis_latency_ms = _timed_check(check_redis_connection)
     startup_ok = bool(getattr(app.state, "startup_ok", False))
     startup_error = getattr(app.state, "startup_error", None)
 
@@ -549,11 +671,16 @@ def health():
             "environment": settings.APP_ENV,
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "checks": {
-                "database": {"ok": db_ok, "detail": db_detail},
+                "database": {
+                    "ok": db_ok,
+                    "detail": db_detail,
+                    "latency_ms": round(db_latency_ms, 2),
+                },
                 "redis": {
                     "ok": redis_ok,
                     "detail": redis_detail,
                     "enabled": settings.REDIS_ENABLED,
+                    "latency_ms": round(redis_latency_ms, 2),
                 },
                 "startup": {"ok": startup_ok, "detail": startup_error or "ok"},
             },
@@ -565,6 +692,33 @@ def health():
 def api_health_alias():
     """Alias para manter compatibilidade com clientes legados."""
     return health()
+
+
+@app.get("/api/metrics")
+def runtime_metrics():
+    """Métricas internas simples para diagnóstico rápido em produção."""
+    with _metrics_lock:
+        snapshot = dict(_request_metrics)
+
+    total = int(snapshot["total"])
+    avg_ms = (snapshot["duration_ms_total"] / total) if total else 0.0
+    started_at = getattr(app.state, "started_at", None)
+    uptime_seconds = 0.0
+    if isinstance(started_at, datetime):
+        uptime_seconds = max(0.0, (datetime.now(timezone.utc) - started_at).total_seconds())
+
+    return {
+        "status": "ok",
+        "uptime_seconds": round(uptime_seconds, 2),
+        "requests": {
+            "total": total,
+            "2xx": int(snapshot["status_2xx"]),
+            "4xx": int(snapshot["status_4xx"]),
+            "5xx": int(snapshot["status_5xx"]),
+            "rate_limited": int(snapshot["rate_limited"]),
+            "avg_duration_ms": round(avg_ms, 2),
+        },
+    }
 
 
 @app.get("/health/live")
@@ -579,9 +733,10 @@ def health_live():
 @app.get("/health/ready")
 def health_ready():
     """Readiness probe: pronto para receber tráfego."""
-    db_ok, db_detail = check_database_connection()
+    db_ok, db_detail, db_latency_ms = _timed_check(check_database_connection)
+    redis_ok, redis_detail, redis_latency_ms = _timed_check(check_redis_connection)
     startup_ok = bool(getattr(app.state, "startup_ok", False))
-    ready = startup_ok and db_ok
+    ready = startup_ok and db_ok and (redis_ok or not settings.REDIS_ENABLED)
 
     return JSONResponse(
         status_code=200 if ready else 503,
@@ -592,6 +747,13 @@ def health_ready():
                 "database": {
                     "ok": db_ok,
                     "detail": db_detail,
+                    "latency_ms": round(db_latency_ms, 2),
+                },
+                "redis": {
+                    "ok": redis_ok,
+                    "detail": redis_detail,
+                    "enabled": settings.REDIS_ENABLED,
+                    "latency_ms": round(redis_latency_ms, 2),
                 },
             },
         },

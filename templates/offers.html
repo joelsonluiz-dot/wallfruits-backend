@@ -27,6 +27,33 @@
         margin-top: 0.2rem;
     }
 
+    .offers-live-controls {
+        margin-top: 0.55rem;
+        display: inline-flex;
+        gap: 0.42rem;
+        flex-wrap: wrap;
+    }
+
+    .offers-live-btn {
+        border: 1px solid rgba(0, 212, 170, 0.24);
+        border-radius: 999px;
+        background: rgba(0, 212, 170, 0.08);
+        color: #d8fff6;
+        padding: 0.34rem 0.66rem;
+        font-size: 0.72rem;
+        font-weight: 800;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.28rem;
+        cursor: pointer;
+    }
+
+    .offers-live-btn.is-paused {
+        border-color: rgba(252, 90, 90, 0.3);
+        color: #ff9f9f;
+        background: rgba(214, 51, 51, 0.12);
+    }
+
     .offers-list {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -35,16 +62,101 @@
 
     .offers-filters {
         display: grid;
-        grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr auto;
+        grid-template-columns: 1fr 1fr 1fr 1fr auto;
         gap: 0.55rem;
         margin-bottom: 0.9rem;
     }
 
-    .offers-store-featured {
-        border: 1px solid var(--wf-border);
+    .offers-search-row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 0.5rem;
+        margin-bottom: 0.65rem;
+    }
+
+    .offers-active-filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        margin-bottom: 0.7rem;
+    }
+
+    .offers-filter-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        border-radius: 999px;
+        border: 1px solid rgba(21, 82, 129, 0.22);
+        background: linear-gradient(135deg, rgba(242, 251, 255, 0.98), rgba(237, 248, 242, 0.98));
+        color: #1b4e83;
+        font-size: 0.72rem;
+        font-weight: 700;
+        padding: 0.24rem 0.58rem;
+    }
+
+    .offers-filter-chip-remove {
+        border: none;
+        background: transparent;
+        color: #2f638f;
+        font-size: 0.84rem;
+        line-height: 1;
+        padding: 0;
+        cursor: pointer;
+    }
+
+    .offers-filter-chip.clear-all {
+        border-color: rgba(153, 53, 53, 0.24);
+        background: linear-gradient(135deg, rgba(255, 244, 244, 0.98), rgba(255, 236, 236, 0.98));
+        color: #a23333;
+        cursor: pointer;
+    }
+
+    .offers-filter-trigger {
+        border: 1px solid rgba(17, 73, 125, 0.2);
+        background: linear-gradient(135deg, rgba(242, 250, 255, 0.96), rgba(235, 247, 240, 0.98));
+        color: #1a4b81;
         border-radius: 10px;
-        background: rgba(255,255,255,0.03);
-        padding: 0.62rem;
+        width: 42px;
+        height: 42px;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+    }
+
+    .offers-filter-trigger.is-active {
+        border-color: rgba(20, 97, 56, 0.42);
+        background: linear-gradient(135deg, rgba(229, 248, 234, 0.98), rgba(219, 241, 255, 0.98));
+        color: #1c6940;
+        box-shadow: 0 8px 16px rgba(18, 83, 51, 0.2);
+    }
+
+    .offers-filter-trigger-count {
+        position: absolute;
+        top: -7px;
+        right: -7px;
+        min-width: 18px;
+        height: 18px;
+        border-radius: 999px;
+        border: 2px solid #ffffff;
+        background: #1f6d41;
+        color: #ffffff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.62rem;
+        font-weight: 800;
+        padding: 0 4px;
+        line-height: 1;
+    }
+
+    .offers-store-featured {
+        border: 1px solid rgba(24, 83, 56, 0.28);
+        border-radius: 14px;
+        background: linear-gradient(145deg, rgba(247, 252, 245, 0.95), rgba(237, 246, 251, 0.92));
+        box-shadow: 0 14px 30px rgba(16, 53, 83, 0.12);
+        padding: 0.72rem;
         margin-bottom: 0.95rem;
     }
 
@@ -59,9 +171,10 @@
 
     .offers-store-title {
         margin: 0;
-        font-size: 0.88rem;
+        font-size: 0.9rem;
         font-weight: 800;
         letter-spacing: -0.02em;
+        color: #18553a;
     }
 
     .offers-store-row {
@@ -74,17 +187,25 @@
     .offers-store-card {
         min-width: 192px;
         max-width: 192px;
-        border: 1px solid rgba(255,255,255,0.16);
-        border-radius: 9px;
-        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(20, 75, 122, 0.18);
+        border-radius: 12px;
+        background: linear-gradient(150deg, rgba(255, 255, 255, 0.92), rgba(241, 249, 244, 0.9));
+        box-shadow: 0 10px 22px rgba(20, 61, 95, 0.12);
         overflow: hidden;
         text-decoration: none;
         color: inherit;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+
+    .offers-store-card:hover {
+        transform: translateY(-2px);
+        border-color: rgba(24, 99, 57, 0.35);
+        box-shadow: 0 16px 26px rgba(23, 74, 47, 0.18);
     }
 
     .offers-store-media {
         height: 90px;
-        background: rgba(255,255,255,0.04);
+        background: linear-gradient(140deg, rgba(232, 245, 237, 0.92), rgba(231, 242, 252, 0.92));
         display: flex;
         align-items: center;
         justify-content: center;
@@ -104,7 +225,7 @@
 
     .offers-store-cat {
         font-size: 0.62rem;
-        color: var(--wf-text-secondary);
+        color: #4b6b8a;
         text-transform: uppercase;
         font-weight: 700;
     }
@@ -113,13 +234,76 @@
         margin: 0;
         font-size: 0.72rem;
         font-weight: 800;
-        color: #ffe0b4;
+        color: #1a4f78;
         min-height: 1.7rem;
     }
 
     .offers-store-price {
         font-size: 0.72rem;
         font-weight: 800;
+        color: #1f6d41;
+    }
+
+    .offers-filter-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(10, 21, 37, 0.48);
+        backdrop-filter: blur(2px);
+        -webkit-backdrop-filter: blur(2px);
+        z-index: 2220;
+        display: none;
+    }
+
+    .offers-filter-overlay.show {
+        display: block;
+    }
+
+    @keyframes wfToastIn {
+        0% {
+            opacity: 0;
+            transform: translateY(8px) scale(0.98);
+        }
+        100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    .offers-new-toast {
+        position: fixed;
+        right: 1rem;
+        bottom: calc(92px + env(safe-area-inset-bottom));
+        z-index: 1420;
+        display: none;
+        align-items: center;
+        gap: 0.42rem;
+        border-radius: 999px;
+        border: 1px solid rgba(0, 212, 170, 0.34);
+        background: rgba(7, 30, 44, 0.94);
+        color: #d8fff6;
+        padding: 0.44rem 0.7rem;
+        font-size: 0.74rem;
+        font-weight: 800;
+        box-shadow: 0 14px 26px rgba(6, 24, 37, 0.34);
+        transform-origin: right bottom;
+        animation: wfToastIn 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+        max-width: min(92vw, 360px);
+    }
+
+    .offers-new-toast .material-icons {
+        font-size: 1rem;
+        flex: 0 0 auto;
+    }
+
+    .offers-new-toast span:last-child {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .offers-filters-head {
+        display: none;
     }
 
     .offers-search-wrap {
@@ -449,6 +633,65 @@
             grid-template-columns: 1fr;
         }
 
+        .offers-filter-trigger {
+            display: inline-flex;
+        }
+
+        .offers-filters {
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%) scale(0.96);
+            width: min(92vw, 520px);
+            grid-template-columns: 1fr;
+            background: linear-gradient(145deg, rgba(248, 253, 249, 0.98), rgba(236, 246, 252, 0.97));
+            border: 1px solid rgba(22, 85, 56, 0.24);
+            border-radius: 14px;
+            box-shadow: 0 22px 44px rgba(8, 28, 53, 0.28);
+            padding: 0.85rem;
+            z-index: 2230;
+            margin-bottom: 0;
+            opacity: 0;
+            pointer-events: none;
+            transition: transform 0.12s ease, opacity 0.12s ease;
+        }
+
+        .offers-filters-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            margin-bottom: 0.25rem;
+            font-size: 0.88rem;
+            font-weight: 800;
+            color: #1c4e82;
+        }
+
+        .offers-filters-close {
+            border: none;
+            border-radius: 8px;
+            background: rgba(23, 75, 121, 0.12);
+            color: #1f578a;
+            width: 28px;
+            height: 28px;
+            font-size: 1rem;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .offers-filters.mobile-open {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .offers-filters .btn {
+            width: 100%;
+        }
+
         .produto-card {
             min-height: 202px;
         }
@@ -459,16 +702,21 @@
     }
 
     @media (max-width: 840px) {
+        .offers-new-toast {
+            right: 0.75rem;
+            bottom: calc(84px + env(safe-area-inset-bottom));
+            padding: 0.4rem 0.64rem;
+            font-size: 0.71rem;
+            box-shadow: 0 10px 18px rgba(6, 24, 37, 0.26);
+            background: rgba(7, 30, 44, 0.9);
+        }
+
         .offers-header h1 {
             font-size: 1.5rem;
         }
 
         .produto-content {
             grid-template-columns: 1fr;
-        }
-
-        .offers-filters {
-            grid-template-columns: 1fr 1fr;
         }
 
         .card-side {
@@ -497,8 +745,8 @@
             grid-template-columns: repeat(2, minmax(0, 1fr));
         }
 
-        .offers-filters {
-            grid-template-columns: 1fr;
+        .offers-search-row {
+            grid-template-columns: 1fr auto;
         }
     }
 </style>
@@ -512,20 +760,53 @@
     <div>
         <h1>Ofertas <span class="wf-gradient-text">Disponíveis</span></h1>
         <div class="offers-count" id="offersCount"></div>
+        <div class="offers-live-controls" aria-label="Controles de atualização automática">
+            <button id="offersRefreshToggle" class="offers-live-btn" type="button">
+                <span class="material-icons">pause_circle</span>
+                <span id="offersRefreshToggleText">Pausar auto-refresh</span>
+            </button>
+            <button id="offersRefreshInterval" class="offers-live-btn" type="button">
+                <span class="material-icons">schedule</span>
+                <span id="offersRefreshIntervalText">45s</span>
+            </button>
+        </div>
     </div>
     <a href="/offers/new" class="btn btn-wf-secondary">+ Criar oferta</a>
 </div>
 
-<div class="offers-filters">
+<div class="offers-search-row">
     <div class="offers-search-wrap">
         <span class="material-symbols-outlined">search</span>
         <input id="filterSearch" class="wf-input form-control offers-search-input" type="text" placeholder="Buscar ofertas, produtor ou localização">
+    </div>
+    <button type="button" class="offers-filter-trigger" id="offersFilterTrigger" title="Abrir filtros" aria-label="Abrir filtros">
+        <span class="material-symbols-outlined">tune</span>
+        <span class="offers-filter-trigger-count" id="offersFilterTriggerCount" style="display:none;">0</span>
+    </button>
+</div>
+
+<div class="offers-active-filters" id="activeFilterChips"></div>
+
+<div class="offers-filter-overlay" id="offersFilterOverlay"></div>
+
+<div class="offers-filters" id="offersFiltersPanel">
+    <div class="offers-filters-head">
+        <span>Filtros</span>
+        <button type="button" class="offers-filters-close" id="offersFiltersCloseBtn" aria-label="Fechar filtros">×</button>
     </div>
     <input id="filterCategory" class="wf-input form-control" type="text" placeholder="Categoria">
     <input id="filterLocation" class="wf-input form-control" type="text" placeholder="Localização">
     <input id="filterMinPrice" class="wf-input form-control" type="number" min="0" step="0.01" placeholder="Preço mín">
     <input id="filterMaxPrice" class="wf-input form-control" type="number" min="0" step="0.01" placeholder="Preço máx">
-    <button class="btn btn-wf-secondary" type="button" onclick="applyFilters()">Filtrar</button>
+    <select id="filterSort" class="wf-input form-control" aria-label="Ordenar ofertas">
+        <option value="">Ordenar: padrão</option>
+        <option value="price_asc">Preço: menor para maior</option>
+        <option value="price_desc">Preço: maior para menor</option>
+        <option value="newest">Mais recentes</option>
+        <option value="distance">Mais próximos de mim</option>
+    </select>
+    <button class="btn btn-wf-secondary" type="button" onclick="applyFilters()">Aplicar filtros</button>
+    <button class="btn btn-wf-secondary" type="button" onclick="clearFilters()">Limpar filtros</button>
 </div>
 
 <section class="offers-store-featured" aria-label="Produtos em destaque da loja">
@@ -541,15 +822,125 @@
     <div class="skeleton-card"></div>
     <div class="skeleton-card"></div>
 </div>
+<div id="offersLoadMoreSentinel" style="height:2px;"></div>
+<div id="offersLoadMoreStatus" class="offers-count" style="margin-top:0.45rem;"></div>
+
+<button id="offersNewToast" class="offers-new-toast" type="button" aria-label="Ver novas ofertas">
+    <span class="material-icons">north</span>
+    <span id="offersNewToastText">Novas ofertas disponíveis</span>
+</button>
 
 <script>
     const offersStore = new Map();
     const BOOKMARK_STORAGE_KEY = 'wf_offer_bookmarks';
+    const FILTER_PREFS_STORAGE_KEY = 'wf_offers_filter_prefs_v1';
+    const OFFERS_FILTER_BREAKPOINT = 1024;
+    const SEARCH_DEBOUNCE_MS = 260;
+    const OFFERS_PAGE_SIZE = 12;
+    const OFFERS_AUTO_REFRESH_DEFAULT_MS = 45000;
+    const OFFERS_AUTO_REFRESH_OPTIONS = [20000, 45000, 90000];
+    const OFFERS_REFRESH_PAUSED_KEY = 'wf_offers_refresh_paused';
+    const OFFERS_REFRESH_INTERVAL_KEY = 'wf_offers_refresh_interval_ms';
+    let searchDebounceTimer = null;
+    let offersObserver = null;
+    let offersRefreshTimer = null;
+    let offersRefreshPaused = false;
+    let offersRefreshIntervalMs = OFFERS_AUTO_REFRESH_DEFAULT_MS;
+    let pendingFreshOffers = 0;
+    let userGeo = null;
+    const offersFeedState = {
+        skip: 0,
+        hasMore: true,
+        isLoading: false,
+        prefetch: null,
+        signature: '',
+        items: [],
+    };
+    const REAL_PRODUCT_IMAGES = {
+        banana: 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?auto=format&fit=crop&w=1200&q=80',
+        manga: 'https://images.unsplash.com/photo-1591073113125-e46713c829ed?auto=format&fit=crop&w=1200&q=80',
+        laranja: 'https://images.unsplash.com/photo-1580052614034-c55d20bfee3b?auto=format&fit=crop&w=1200&q=80',
+        tomate: 'https://images.unsplash.com/photo-1546470427-e26264be0b0d?auto=format&fit=crop&w=1200&q=80',
+        abacaxi: 'https://images.unsplash.com/photo-1589820296156-2454bb8a6ad1?auto=format&fit=crop&w=1200&q=80',
+        cafe: 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&w=1200&q=80',
+        leite: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=1200&q=80',
+        milho: 'https://images.unsplash.com/photo-1551754655-cd27e38d2076?auto=format&fit=crop&w=1200&q=80',
+        grao: 'https://images.unsplash.com/photo-1471193945509-9ad0617afabf?auto=format&fit=crop&w=1200&q=80',
+        default: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1200&q=80',
+    };
 
     function escapeHtml(text) {
         const div = document.createElement('div');
         div.textContent = text ?? '';
         return div.innerHTML;
+    }
+
+    function offersIntervalLabel(ms) {
+        return `${Math.max(1, Math.round(ms / 1000))}s`;
+    }
+
+    function renderOffersRefreshControls() {
+        const toggle = document.getElementById('offersRefreshToggle');
+        const toggleText = document.getElementById('offersRefreshToggleText');
+        const intervalText = document.getElementById('offersRefreshIntervalText');
+        if (toggle && toggleText) {
+            toggleText.textContent = offersRefreshPaused ? 'Retomar auto-refresh' : 'Pausar auto-refresh';
+            toggle.classList.toggle('is-paused', offersRefreshPaused);
+        }
+        if (intervalText) {
+            intervalText.textContent = offersIntervalLabel(offersRefreshIntervalMs);
+        }
+    }
+
+    function showOffersToast(message) {
+        const toast = document.getElementById('offersNewToast');
+        const text = document.getElementById('offersNewToastText');
+        if (!toast || !text) return;
+        text.textContent = message;
+        toast.style.display = 'inline-flex';
+    }
+
+    function hideOffersToast() {
+        const toast = document.getElementById('offersNewToast');
+        if (!toast) return;
+        toast.style.display = 'none';
+    }
+
+    function restartOffersAutoRefresh() {
+        if (offersRefreshTimer) {
+            window.clearInterval(offersRefreshTimer);
+            offersRefreshTimer = null;
+        }
+
+        if (offersRefreshPaused) return;
+
+        offersRefreshTimer = window.setInterval(() => {
+            silentRefreshOffers();
+        }, offersRefreshIntervalMs);
+    }
+
+    function setOffersRefreshPaused(paused) {
+        offersRefreshPaused = Boolean(paused);
+        try {
+            localStorage.setItem(OFFERS_REFRESH_PAUSED_KEY, offersRefreshPaused ? '1' : '0');
+        } catch {
+            // ignora indisponibilidade de storage
+        }
+        renderOffersRefreshControls();
+        restartOffersAutoRefresh();
+    }
+
+    function cycleOffersRefreshInterval() {
+        const currentIndex = OFFERS_AUTO_REFRESH_OPTIONS.indexOf(offersRefreshIntervalMs);
+        const nextIndex = (currentIndex + 1) % OFFERS_AUTO_REFRESH_OPTIONS.length;
+        offersRefreshIntervalMs = OFFERS_AUTO_REFRESH_OPTIONS[nextIndex];
+        try {
+            localStorage.setItem(OFFERS_REFRESH_INTERVAL_KEY, String(offersRefreshIntervalMs));
+        } catch {
+            // ignora indisponibilidade de storage
+        }
+        renderOffersRefreshControls();
+        restartOffersAutoRefresh();
     }
 
     function toCurrency(value) {
@@ -565,15 +956,29 @@
         return `data:image/svg+xml;utf8,${svg}`;
     }
 
+    function getRealProductFallbackImage(name, category = '') {
+        const raw = `${name || ''} ${category || ''}`.toLowerCase();
+        if (raw.includes('banana')) return REAL_PRODUCT_IMAGES.banana;
+        if (raw.includes('manga')) return REAL_PRODUCT_IMAGES.manga;
+        if (raw.includes('laranja') || raw.includes('orange')) return REAL_PRODUCT_IMAGES.laranja;
+        if (raw.includes('tomate')) return REAL_PRODUCT_IMAGES.tomate;
+        if (raw.includes('abacaxi') || raw.includes('pineapple')) return REAL_PRODUCT_IMAGES.abacaxi;
+        if (raw.includes('cafe')) return REAL_PRODUCT_IMAGES.cafe;
+        if (raw.includes('leite')) return REAL_PRODUCT_IMAGES.leite;
+        if (raw.includes('milho') || raw.includes('corn')) return REAL_PRODUCT_IMAGES.milho;
+        if (raw.includes('grao') || raw.includes('bean')) return REAL_PRODUCT_IMAGES.grao;
+        return REAL_PRODUCT_IMAGES.default;
+    }
+
     function getOfferImage(offer) {
         if (Array.isArray(offer.images) && offer.images.length > 0 && offer.images[0]) {
             return offer.images[0];
         }
-        return fallbackImageSvg(offer.product_name);
+        return getRealProductFallbackImage(offer.product_name, offer.category);
     }
 
     function getStoreProductImage(product) {
-        return product.image || fallbackImageSvg(product.name || 'Produto');
+        return product.image || getRealProductFallbackImage(product.name, product.category);
     }
 
     function getOwnerUsername(offer) {
@@ -659,7 +1064,7 @@
         return `
             <article class="produto-card" data-offer-id="${offer.id}">
                 <div class="produto-img-wrap">
-                    <img class="produto-img" src="${escapeHtml(getOfferImage(offer))}" alt="Imagem de ${escapeHtml(offer.product_name)}">
+                    <img class="produto-img" src="${escapeHtml(getOfferImage(offer))}" alt="Imagem de ${escapeHtml(offer.product_name)}" onerror="this.onerror=null;this.src='${escapeHtml(getRealProductFallbackImage(offer.product_name, offer.category))}'">
                 </div>
 
                 <div class="produto-content">
@@ -872,48 +1277,529 @@
         });
     }
 
-    function buildOffersQuery() {
+    function buildOffersQuery(skip = 0, limit = OFFERS_PAGE_SIZE) {
         const search = document.getElementById('filterSearch').value.trim();
         const category = document.getElementById('filterCategory').value.trim();
         const location = document.getElementById('filterLocation').value.trim();
         const minPrice = document.getElementById('filterMinPrice').value;
         const maxPrice = document.getElementById('filterMaxPrice').value;
+        const sort = document.getElementById('filterSort').value;
 
         const params = new URLSearchParams();
-        params.set('limit', '12');
+        params.set('skip', String(skip));
+        params.set('limit', String(limit));
         if (search) params.set('search', search);
         if (category) params.set('category', category);
         if (location) params.set('location', location);
         if (minPrice) params.set('min_price', minPrice);
         if (maxPrice) params.set('max_price', maxPrice);
 
+        if (sort === 'price_asc') {
+            params.set('sort_by', 'price');
+            params.set('sort_order', 'asc');
+        } else if (sort === 'price_desc') {
+            params.set('sort_by', 'price');
+            params.set('sort_order', 'desc');
+        } else if (sort === 'newest') {
+            params.set('sort_by', 'created_at');
+            params.set('sort_order', 'desc');
+        }
+
+        if (sort === 'distance' && userGeo?.latitude && userGeo?.longitude) {
+            params.set('latitude', String(userGeo.latitude));
+            params.set('longitude', String(userGeo.longitude));
+            params.set('radius', '100');
+        }
+
         return `/offers?${params.toString()}`;
     }
 
-    async function loadOffers() {
-        const container = document.getElementById('offersContainer');
+    function getFilterState() {
+        return {
+            search: document.getElementById('filterSearch').value.trim(),
+            category: document.getElementById('filterCategory').value.trim(),
+            location: document.getElementById('filterLocation').value.trim(),
+            minPrice: document.getElementById('filterMinPrice').value.trim(),
+            maxPrice: document.getElementById('filterMaxPrice').value.trim(),
+            sort: document.getElementById('filterSort').value,
+        };
+    }
+
+    function getFilterSignature() {
+        const state = getFilterState();
+        return JSON.stringify({
+            ...state,
+            lat: userGeo?.latitude || null,
+            lon: userGeo?.longitude || null,
+        });
+    }
+
+    function saveFilterPrefs() {
         try {
-            const data = await apiRequest(buildOffersQuery());
-            const offers = data.offers || [];
+            localStorage.setItem(FILTER_PREFS_STORAGE_KEY, JSON.stringify(getFilterState()));
+        } catch {
+            // ignora indisponibilidade de storage
+        }
+    }
 
-            document.getElementById('offersCount').textContent = `${offers.length} oferta${offers.length === 1 ? '' : 's'} encontrada${offers.length === 1 ? '' : 's'}`;
+    function loadFilterPrefs() {
+        try {
+            return JSON.parse(localStorage.getItem(FILTER_PREFS_STORAGE_KEY) || '{}');
+        } catch {
+            return {};
+        }
+    }
 
-            if (!offers.length) {
+    function countActiveFilters() {
+        const state = getFilterState();
+        return [state.search, state.category, state.location, state.minPrice, state.maxPrice, state.sort].filter(Boolean).length;
+    }
+
+    function writeFiltersToUrl() {
+        const state = getFilterState();
+        const params = new URLSearchParams(window.location.search);
+
+        const map = [
+            ['search', state.search],
+            ['category', state.category],
+            ['location', state.location],
+            ['min_price', state.minPrice],
+            ['max_price', state.maxPrice],
+            ['sort', state.sort],
+        ];
+
+        map.forEach(([key, value]) => {
+            if (value) {
+                params.set(key, value);
+            } else {
+                params.delete(key);
+            }
+        });
+
+        const query = params.toString();
+        const nextUrl = `${window.location.pathname}${query ? `?${query}` : ''}`;
+        window.history.replaceState({}, '', nextUrl);
+    }
+
+    function hydrateFiltersFromUrl() {
+        const params = new URLSearchParams(window.location.search);
+        const prefs = loadFilterPrefs();
+        const pairs = {
+            filterSearch: params.get('search') || prefs.search || '',
+            filterCategory: params.get('category') || prefs.category || '',
+            filterLocation: params.get('location') || prefs.location || '',
+            filterMinPrice: params.get('min_price') || prefs.minPrice || '',
+            filterMaxPrice: params.get('max_price') || prefs.maxPrice || '',
+            filterSort: params.get('sort') || prefs.sort || '',
+        };
+
+        Object.entries(pairs).forEach(([id, value]) => {
+            const input = document.getElementById(id);
+            if (input) input.value = value;
+        });
+    }
+
+    function syncFilterTriggerState() {
+        const trigger = document.getElementById('offersFilterTrigger');
+        const countBadge = document.getElementById('offersFilterTriggerCount');
+        if (!trigger || !countBadge) return;
+
+        const total = countActiveFilters();
+        trigger.classList.toggle('is-active', total > 0);
+        countBadge.textContent = String(total);
+        countBadge.style.display = total > 0 ? 'inline-flex' : 'none';
+    }
+
+    function renderActiveFilterChips() {
+        const chips = document.getElementById('activeFilterChips');
+        if (!chips) return;
+
+        const state = getFilterState();
+        const labels = [];
+
+        if (state.search) labels.push({ key: 'search', label: `Busca: ${escapeHtml(state.search)}` });
+        if (state.category) labels.push({ key: 'category', label: `Categoria: ${escapeHtml(state.category)}` });
+        if (state.location) labels.push({ key: 'location', label: `Local: ${escapeHtml(state.location)}` });
+        if (state.minPrice) labels.push({ key: 'minPrice', label: `Min: R$ ${escapeHtml(state.minPrice)}` });
+        if (state.maxPrice) labels.push({ key: 'maxPrice', label: `Max: R$ ${escapeHtml(state.maxPrice)}` });
+        if (state.sort) {
+            const sortLabels = {
+                price_asc: 'Ordem: menor preço',
+                price_desc: 'Ordem: maior preço',
+                newest: 'Ordem: mais recentes',
+                distance: 'Ordem: mais próximos',
+            };
+            labels.push({ key: 'sort', label: sortLabels[state.sort] || 'Ordem customizada' });
+        }
+
+        if (!labels.length) {
+            chips.innerHTML = '';
+            syncFilterTriggerState();
+            return;
+        }
+
+        if (labels.length > 1) {
+            labels.push({ key: 'clearAll', label: 'Limpar tudo' });
+        }
+
+        chips.innerHTML = labels.map((item) => `
+            <span class="offers-filter-chip ${item.key === 'clearAll' ? 'clear-all' : ''}">
+                <span>${item.label}</span>
+                <button type="button" class="offers-filter-chip-remove" onclick="removeFilterChip('${item.key}')" aria-label="Remover filtro">×</button>
+            </span>
+        `).join('');
+
+        syncFilterTriggerState();
+    }
+
+    function removeFilterChip(key) {
+        const map = {
+            search: 'filterSearch',
+            category: 'filterCategory',
+            location: 'filterLocation',
+            minPrice: 'filterMinPrice',
+            maxPrice: 'filterMaxPrice',
+            sort: 'filterSort',
+        };
+
+        if (key === 'clearAll') {
+            clearFilters();
+            return;
+        }
+
+        const inputId = map[key];
+        if (!inputId) return;
+        const node = document.getElementById(inputId);
+        if (node) node.value = '';
+        renderActiveFilterChips();
+        saveFilterPrefs();
+        writeFiltersToUrl();
+        loadOffers();
+    }
+
+    window.removeFilterChip = removeFilterChip;
+
+    function isCompactFilterMode() {
+        return window.matchMedia(`(max-width: ${OFFERS_FILTER_BREAKPOINT}px)`).matches;
+    }
+
+    function openOffersFilters() {
+        const panel = document.getElementById('offersFiltersPanel');
+        const overlay = document.getElementById('offersFilterOverlay');
+        if (!panel || !overlay) return;
+        panel.classList.add('mobile-open');
+        overlay.classList.add('show');
+    }
+
+    function closeOffersFilters() {
+        const panel = document.getElementById('offersFiltersPanel');
+        const overlay = document.getElementById('offersFilterOverlay');
+        if (!panel || !overlay) return;
+        panel.classList.remove('mobile-open');
+        overlay.classList.remove('show');
+    }
+
+    function setupOffersFilterPopup() {
+        const trigger = document.getElementById('offersFilterTrigger');
+        const overlay = document.getElementById('offersFilterOverlay');
+        const closeBtn = document.getElementById('offersFiltersCloseBtn');
+
+        if (trigger) {
+            trigger.addEventListener('click', () => {
+                if (!isCompactFilterMode()) return;
+                openOffersFilters();
+            });
+        }
+
+        if (closeBtn) {
+            closeBtn.addEventListener('click', closeOffersFilters);
+        }
+
+        if (overlay) {
+            overlay.addEventListener('click', closeOffersFilters);
+        }
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                closeOffersFilters();
+            }
+        });
+
+        window.addEventListener('resize', () => {
+            if (!isCompactFilterMode()) {
+                closeOffersFilters();
+            }
+        });
+    }
+
+    function toRad(value) {
+        return (Number(value) * Math.PI) / 180;
+    }
+
+    function computeDistanceKm(fromLat, fromLon, toLat, toLon) {
+        const R = 6371;
+        const dLat = toRad(toLat - fromLat);
+        const dLon = toRad(toLon - fromLon);
+        const a =
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(toRad(fromLat)) * Math.cos(toRad(toLat)) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+    }
+
+    async function ensureUserGeolocation() {
+        if (userGeo?.latitude && userGeo?.longitude) return userGeo;
+        if (!navigator.geolocation) throw new Error('Geolocalização não suportada neste dispositivo.');
+
+        const position = await new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+                enableHighAccuracy: true,
+                timeout: 8000,
+                maximumAge: 120000,
+            });
+        });
+
+        userGeo = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+        };
+        return userGeo;
+    }
+
+    function applyDistanceSortIfNeeded(items) {
+        const sort = document.getElementById('filterSort')?.value;
+        if (sort !== 'distance' || !userGeo?.latitude || !userGeo?.longitude) {
+            return items;
+        }
+
+        const enriched = items.map((offer) => {
+            if (offer.latitude == null || offer.longitude == null) {
+                return { ...offer, _wfDistance: Number.POSITIVE_INFINITY };
+            }
+
+            return {
+                ...offer,
+                _wfDistance: computeDistanceKm(
+                    userGeo.latitude,
+                    userGeo.longitude,
+                    Number(offer.latitude),
+                    Number(offer.longitude),
+                ),
+            };
+        });
+
+        enriched.sort((a, b) => a._wfDistance - b._wfDistance);
+        return enriched;
+    }
+
+    function updateLoadMoreStatus(message = '') {
+        const status = document.getElementById('offersLoadMoreStatus');
+        if (!status) return;
+        status.textContent = message;
+    }
+
+    async function fetchOffersPage(skip, limit = OFFERS_PAGE_SIZE) {
+        const signature = getFilterSignature();
+        if (
+            offersFeedState.prefetch &&
+            offersFeedState.prefetch.signature === signature &&
+            offersFeedState.prefetch.skip === skip
+        ) {
+            if (offersFeedState.prefetch.request) {
+                await offersFeedState.prefetch.request;
+            }
+            const payload = offersFeedState.prefetch.payload;
+            offersFeedState.prefetch = null;
+            return payload;
+        }
+
+        return apiRequest(buildOffersQuery(skip, limit));
+    }
+
+    function prefetchNextPage() {
+        if (!offersFeedState.hasMore || offersFeedState.isLoading) return;
+        const nextSkip = offersFeedState.skip;
+        const signature = getFilterSignature();
+
+        if (
+            offersFeedState.prefetch &&
+            offersFeedState.prefetch.signature === signature &&
+            offersFeedState.prefetch.skip === nextSkip
+        ) {
+            return;
+        }
+
+        const request = apiRequest(buildOffersQuery(nextSkip, OFFERS_PAGE_SIZE))
+            .then((payload) => {
+                offersFeedState.prefetch = {
+                    signature,
+                    skip: nextSkip,
+                    payload,
+                };
+            })
+            .catch(() => {});
+
+        offersFeedState.prefetch = {
+            signature,
+            skip: nextSkip,
+            payload: null,
+            request,
+        };
+    }
+
+    function renderOffersList(items, append = false) {
+        const container = document.getElementById('offersContainer');
+        if (!container) return;
+
+        if (!append) {
+            container.innerHTML = items.map(renderOfferCard).join('');
+        } else {
+            container.insertAdjacentHTML('beforeend', items.map(renderOfferCard).join(''));
+        }
+
+        bindCardOpenBehavior();
+    }
+
+    async function silentRefreshOffers() {
+        if (offersRefreshPaused || offersFeedState.isLoading || !offersFeedState.items.length) return;
+
+        try {
+            const data = await apiRequest(buildOffersQuery(0, Math.min(10, OFFERS_PAGE_SIZE)));
+            const latest = Array.isArray(data?.offers) ? data.offers : [];
+            if (!latest.length) return;
+
+            const known = new Set(offersFeedState.items.map((item) => String(item.id)));
+            const fresh = latest.filter((item) => !known.has(String(item.id)));
+            if (!fresh.length) return;
+
+            fresh.forEach((offer) => offersStore.set(offer.id, offer));
+
+            const previousHeight = document.documentElement.scrollHeight;
+            const previousScroll = window.scrollY || 0;
+
+            offersFeedState.items = applyDistanceSortIfNeeded(fresh.concat(offersFeedState.items));
+            offersFeedState.skip += fresh.length;
+            pendingFreshOffers += fresh.length;
+
+            renderOffersList(offersFeedState.items, false);
+            document.getElementById('offersCount').textContent = `${offersFeedState.items.length} oferta${offersFeedState.items.length === 1 ? '' : 's'} carregada${offersFeedState.items.length === 1 ? '' : 's'}`;
+            updateLoadMoreStatus(`${fresh.length} nova(s) oferta(s) recebida(s).`);
+
+            const delta = document.documentElement.scrollHeight - previousHeight;
+            if (delta > 0) {
+                window.scrollTo({ top: previousScroll + delta, behavior: 'auto' });
+            }
+
+            showOffersToast(`${pendingFreshOffers} nova(s) oferta(s). Toque para ver.`);
+        } catch {
+            // falha silenciosa para manter a experiência
+        }
+    }
+
+    async function loadNextOffersPage() {
+        if (offersFeedState.isLoading || !offersFeedState.hasMore) return;
+        offersFeedState.isLoading = true;
+
+        if (offersFeedState.skip === 0) {
+            renderLoadingState();
+        } else {
+            updateLoadMoreStatus('Carregando mais ofertas...');
+        }
+
+        try {
+            const data = await fetchOffersPage(offersFeedState.skip, OFFERS_PAGE_SIZE);
+            const incoming = Array.isArray(data?.offers) ? data.offers : [];
+
+            incoming.forEach((offer) => offersStore.set(offer.id, offer));
+            offersFeedState.items = offersFeedState.items.concat(incoming);
+            offersFeedState.items = applyDistanceSortIfNeeded(offersFeedState.items);
+
+            if (!offersFeedState.items.length) {
+                const container = document.getElementById('offersContainer');
                 container.innerHTML = `
                     <div class="empty-state">
                         <p>Nenhuma oferta cadastrada ainda.</p>
                         <a href="/offers/new" class="btn btn-wf-primary">Criar primeira oferta</a>
                     </div>
                 `;
+                offersFeedState.hasMore = false;
+                updateLoadMoreStatus('');
                 return;
             }
 
-            offers.forEach((offer) => offersStore.set(offer.id, offer));
-            container.innerHTML = offers.map(renderOfferCard).join('');
-            bindCardOpenBehavior();
+            renderOffersList(offersFeedState.items, false);
+
+            offersFeedState.skip += incoming.length;
+            offersFeedState.hasMore = incoming.length === OFFERS_PAGE_SIZE;
+            document.getElementById('offersCount').textContent = `${offersFeedState.items.length} oferta${offersFeedState.items.length === 1 ? '' : 's'} carregada${offersFeedState.items.length === 1 ? '' : 's'}`;
+
+            if (!offersFeedState.hasMore) {
+                updateLoadMoreStatus('Você chegou ao fim das ofertas.');
+            } else {
+                updateLoadMoreStatus('Role para carregar mais.');
+                prefetchNextPage();
+            }
         } catch (error) {
+            const container = document.getElementById('offersContainer');
             container.innerHTML = `<div class="wf-alert wf-alert-error">${escapeHtml(error.message || 'Falha ao carregar ofertas')}</div>`;
+            updateLoadMoreStatus('');
+        } finally {
+            offersFeedState.isLoading = false;
         }
+    }
+
+    function setupInfiniteOffersScroll() {
+        const sentinel = document.getElementById('offersLoadMoreSentinel');
+        if (!sentinel) return;
+
+        if (offersObserver) {
+            offersObserver.disconnect();
+        }
+
+        offersObserver = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                    loadNextOffersPage();
+                }
+            });
+        }, {
+            root: null,
+            rootMargin: '260px 0px',
+            threshold: 0,
+        });
+
+        offersObserver.observe(sentinel);
+    }
+
+    function renderLoadingState() {
+        const container = document.getElementById('offersContainer');
+        if (!container) return;
+        container.innerHTML = `
+            <div class="skeleton-card"></div>
+            <div class="skeleton-card"></div>
+            <div class="skeleton-card"></div>
+            <div class="skeleton-card"></div>
+        `;
+    }
+
+    function resetOffersFeed() {
+        offersFeedState.skip = 0;
+        offersFeedState.hasMore = true;
+        offersFeedState.isLoading = false;
+        offersFeedState.prefetch = null;
+        offersFeedState.signature = getFilterSignature();
+        offersFeedState.items = [];
+        offersStore.clear();
+        updateLoadMoreStatus('');
+        renderLoadingState();
+    }
+
+    async function loadOffers() {
+        pendingFreshOffers = 0;
+        hideOffersToast();
+        resetOffersFeed();
+        await loadNextOffersPage();
     }
 
     async function loadFeaturedStoreProducts() {
@@ -921,8 +1807,7 @@
         if (!container) return;
 
         try {
-            const resp = await fetch('/api/store/featured?limit=6');
-            const data = await resp.json();
+            const data = await apiRequest('/store/featured?limit=6');
             const products = Array.isArray(data?.products) ? data.products : [];
 
             if (!products.length) {
@@ -933,7 +1818,7 @@
             container.innerHTML = products.map((product) => `
                 <a href="/store/product/${encodeURIComponent(product.slug)}" class="offers-store-card">
                     <div class="offers-store-media">
-                        <img src="${escapeHtml(getStoreProductImage(product))}" alt="${escapeHtml(product.name || 'Produto')}" loading="lazy">
+                        <img src="${escapeHtml(getStoreProductImage(product))}" alt="${escapeHtml(product.name || 'Produto')}" loading="lazy" onerror="this.onerror=null;this.src='${escapeHtml(getRealProductFallbackImage(product.name, product.category))}'">
                     </div>
                     <div class="offers-store-body">
                         <span class="offers-store-cat">${escapeHtml(product.category || 'Categoria')}</span>
@@ -947,22 +1832,147 @@
         }
     }
 
-    function applyFilters() {
+    async function applyFilters() {
+        const sort = document.getElementById('filterSort')?.value;
+        if (sort === 'distance') {
+            try {
+                await ensureUserGeolocation();
+            } catch (error) {
+                alert(error.message || 'Não foi possível obter sua localização para ordenar por distância.');
+                const sortInput = document.getElementById('filterSort');
+                if (sortInput) sortInput.value = '';
+            }
+        }
+
+        renderActiveFilterChips();
+        saveFilterPrefs();
+        writeFiltersToUrl();
         loadOffers();
+        if (isCompactFilterMode()) {
+            closeOffersFilters();
+        }
     }
 
-    ['filterSearch', 'filterCategory', 'filterLocation', 'filterMinPrice', 'filterMaxPrice'].forEach((id) => {
+    function clearFilters() {
+        ['filterSearch', 'filterCategory', 'filterLocation', 'filterMinPrice', 'filterMaxPrice', 'filterSort'].forEach((id) => {
+            const element = document.getElementById(id);
+            if (element) element.value = '';
+        });
+        renderActiveFilterChips();
+        saveFilterPrefs();
+        writeFiltersToUrl();
+        loadOffers();
+        if (isCompactFilterMode()) {
+            closeOffersFilters();
+        }
+    }
+
+    ['filterSearch', 'filterCategory', 'filterLocation', 'filterMinPrice', 'filterMaxPrice', 'filterSort'].forEach((id) => {
         const el = document.getElementById(id);
+        if (!el) return;
+
+        el.addEventListener('input', () => {
+            renderActiveFilterChips();
+            saveFilterPrefs();
+
+            if (id === 'filterSearch') {
+                if (searchDebounceTimer) {
+                    clearTimeout(searchDebounceTimer);
+                }
+                searchDebounceTimer = setTimeout(() => {
+                    writeFiltersToUrl();
+                    loadOffers();
+                }, SEARCH_DEBOUNCE_MS);
+            } else if (id === 'filterSort') {
+                writeFiltersToUrl();
+                loadOffers();
+            }
+        });
+
+        if (id === 'filterSort') {
+            el.addEventListener('change', async () => {
+                if (el.value === 'distance') {
+                    try {
+                        await ensureUserGeolocation();
+                    } catch (error) {
+                        alert(error.message || 'Não foi possível obter sua localização para ordenar por distância.');
+                        el.value = '';
+                    }
+                }
+                renderActiveFilterChips();
+                saveFilterPrefs();
+                writeFiltersToUrl();
+                loadOffers();
+            });
+        }
+
         el.addEventListener('keydown', (event) => {
             if (event.key === 'Enter') {
                 event.preventDefault();
+                renderActiveFilterChips();
+                saveFilterPrefs();
+                writeFiltersToUrl();
                 loadOffers();
             }
         });
     });
 
+    hydrateFiltersFromUrl();
+    try {
+        const savedPaused = localStorage.getItem(OFFERS_REFRESH_PAUSED_KEY);
+        offersRefreshPaused = savedPaused === '1';
+
+        const savedInterval = Number(localStorage.getItem(OFFERS_REFRESH_INTERVAL_KEY) || OFFERS_AUTO_REFRESH_DEFAULT_MS);
+        if (OFFERS_AUTO_REFRESH_OPTIONS.includes(savedInterval)) {
+            offersRefreshIntervalMs = savedInterval;
+        }
+    } catch {
+        // ignora indisponibilidade de storage
+    }
+
+    const offersRefreshToggle = document.getElementById('offersRefreshToggle');
+    const offersRefreshInterval = document.getElementById('offersRefreshInterval');
+    const offersToast = document.getElementById('offersNewToast');
+
+    if (offersRefreshToggle) {
+        offersRefreshToggle.addEventListener('click', () => {
+            setOffersRefreshPaused(!offersRefreshPaused);
+        });
+    }
+
+    if (offersRefreshInterval) {
+        offersRefreshInterval.addEventListener('click', cycleOffersRefreshInterval);
+    }
+
+    if (offersToast) {
+        offersToast.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            pendingFreshOffers = 0;
+            hideOffersToast();
+        });
+    }
+
+    window.addEventListener('scroll', () => {
+        if ((window.scrollY || 0) < 40 && pendingFreshOffers > 0) {
+            pendingFreshOffers = 0;
+            hideOffersToast();
+        }
+    }, { passive: true });
+
+    renderOffersRefreshControls();
+    saveFilterPrefs();
+    setupInfiniteOffersScroll();
     loadOffers();
     loadFeaturedStoreProducts();
     loadMessagesBadge();
+    setupOffersFilterPopup();
+    renderActiveFilterChips();
+    restartOffersAutoRefresh();
+
+    window.addEventListener('beforeunload', () => {
+        if (offersRefreshTimer) {
+            window.clearInterval(offersRefreshTimer);
+        }
+    });
 </script>
 {% endblock %}

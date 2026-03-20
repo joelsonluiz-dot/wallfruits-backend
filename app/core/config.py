@@ -87,6 +87,13 @@ class Settings(BaseSettings):
     # Security
     DEBUG: bool = False
     APP_ENV: str = "development"
+
+    # Rate limit (camada de proteção básica por IP)
+    RATE_LIMIT_ENABLED: bool = True
+    RATE_LIMIT_WINDOW_SECONDS: int = 60
+    RATE_LIMIT_MAX_REQUESTS: int = 180
+    RATE_LIMIT_SENSITIVE_MAX_REQUESTS: int = 40
+    RATE_LIMIT_TRUST_PROXY_HEADERS: bool = True
     
     model_config = SettingsConfigDict(
         env_file=str(ENV_FILE),
@@ -140,6 +147,15 @@ def get_settings() -> Settings:
 
     if settings.HEALTHCHECK_TIMEOUT_SECONDS <= 0:
         raise RuntimeError("HEALTHCHECK_TIMEOUT_SECONDS deve ser > 0")
+
+    if settings.RATE_LIMIT_WINDOW_SECONDS <= 0:
+        raise RuntimeError("RATE_LIMIT_WINDOW_SECONDS deve ser > 0")
+
+    if settings.RATE_LIMIT_MAX_REQUESTS < 1:
+        raise RuntimeError("RATE_LIMIT_MAX_REQUESTS deve ser >= 1")
+
+    if settings.RATE_LIMIT_SENSITIVE_MAX_REQUESTS < 1:
+        raise RuntimeError("RATE_LIMIT_SENSITIVE_MAX_REQUESTS deve ser >= 1")
 
     if settings.INTERMEDIATION_WEBHOOK_TIMEOUT_SECONDS <= 0:
         raise RuntimeError("INTERMEDIATION_WEBHOOK_TIMEOUT_SECONDS deve ser > 0")

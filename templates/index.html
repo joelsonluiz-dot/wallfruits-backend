@@ -194,6 +194,22 @@
         justify-content: space-between;
         font-size: 0.66rem;
         color: var(--wf-text-secondary);
+        gap: 0.35rem;
+    }
+
+    .home-community-stat {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.2rem;
+        font-weight: 800;
+        color: var(--wf-text-secondary);
+        min-width: 0;
+    }
+
+    .home-community-stat .material-icons {
+        font-size: 0.82rem;
+        line-height: 1;
+        opacity: 0.92;
     }
 
     .home-community-open {
@@ -270,6 +286,33 @@
         gap: 0.7rem;
         flex-wrap: wrap;
         margin-bottom: 0.9rem;
+    }
+
+    .home-live-controls {
+        display: inline-flex;
+        gap: 0.42rem;
+        flex-wrap: wrap;
+        margin-top: 0.5rem;
+    }
+
+    .home-live-btn {
+        border: 1px solid rgba(0, 212, 170, 0.24);
+        border-radius: 999px;
+        background: rgba(0, 212, 170, 0.08);
+        color: #d8fff6;
+        padding: 0.34rem 0.66rem;
+        font-size: 0.72rem;
+        font-weight: 800;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.28rem;
+        cursor: pointer;
+    }
+
+    .home-live-btn.is-paused {
+        border-color: rgba(252, 90, 90, 0.3);
+        color: #ff9f9f;
+        background: rgba(214, 51, 51, 0.12);
     }
     .home-offers-list {
         display: flex;
@@ -365,7 +408,60 @@
         font-size: 0.68rem;
         color: var(--wf-text-secondary);
     }
+
+    @keyframes wfToastIn {
+        0% {
+            opacity: 0;
+            transform: translateY(8px) scale(0.98);
+        }
+        100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    .home-new-toast {
+        position: fixed;
+        right: 1rem;
+        bottom: calc(92px + env(safe-area-inset-bottom));
+        z-index: 1420;
+        display: none;
+        align-items: center;
+        gap: 0.42rem;
+        border-radius: 999px;
+        border: 1px solid rgba(0, 212, 170, 0.34);
+        background: rgba(7, 30, 44, 0.94);
+        color: #d8fff6;
+        padding: 0.44rem 0.7rem;
+        font-size: 0.74rem;
+        font-weight: 800;
+        box-shadow: 0 14px 26px rgba(6, 24, 37, 0.34);
+        transform-origin: right bottom;
+        animation: wfToastIn 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+        max-width: min(92vw, 360px);
+    }
+
+    .home-new-toast .material-icons {
+        font-size: 0.98rem;
+        flex: 0 0 auto;
+    }
+
+    .home-new-toast span:last-child {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
     @media (max-width: 768px) {
+        .home-new-toast {
+            right: 0.75rem;
+            bottom: calc(84px + env(safe-area-inset-bottom));
+            padding: 0.4rem 0.64rem;
+            font-size: 0.71rem;
+            box-shadow: 0 10px 18px rgba(6, 24, 37, 0.26);
+            background: rgba(7, 30, 44, 0.9);
+        }
+
         .hero-title { font-size: 2.2rem; letter-spacing: -1px; }
         .hero-section { padding: 2.5rem 0 2rem; }
         .hero-subtitle { display: none; }
@@ -430,6 +526,16 @@
         <div>
             <h2 class="wf-section-title" style="font-size:1.45rem;margin:0;">Ofertas em <span class="wf-gradient-text">destaque</span></h2>
             <p style="color:var(--wf-text-secondary);margin:0.2rem 0 0;font-size:0.86rem;">Clique no card para abrir os detalhes completos em outra aba.</p>
+            <div class="home-live-controls" aria-label="Controles de atualização da home">
+                <button id="homeRefreshToggle" class="home-live-btn" type="button">
+                    <span class="material-icons">pause_circle</span>
+                    <span id="homeRefreshToggleText">Pausar auto-refresh</span>
+                </button>
+                <button id="homeRefreshInterval" class="home-live-btn" type="button">
+                    <span class="material-icons">schedule</span>
+                    <span id="homeRefreshIntervalText">45s</span>
+                </button>
+            </div>
         </div>
         <a href="/offers" class="btn btn-wf-secondary">Ver todas</a>
     </div>
@@ -477,11 +583,117 @@
     </div>
 </div>
 
+<button id="homeNewToast" class="home-new-toast" type="button" aria-label="Ver atualizações no topo da home">
+    <span class="material-icons">north</span>
+    <span id="homeNewToastText">Novidades na home</span>
+</button>
+
 <script>
+    const HOME_AUTO_REFRESH_DEFAULT_MS = 45000;
+    const HOME_AUTO_REFRESH_OPTIONS = [20000, 45000, 90000];
+    const HOME_REFRESH_PAUSED_KEY = 'wf_home_refresh_paused';
+    const HOME_REFRESH_INTERVAL_KEY = 'wf_home_refresh_interval_ms';
+
+    let homeRefreshTimer = null;
+    let homeRefreshPaused = false;
+    let homeRefreshIntervalMs = HOME_AUTO_REFRESH_DEFAULT_MS;
+    const homeSignatures = {
+        offers: '',
+        community: '',
+        stats: '',
+    };
+    let pendingHomeUpdates = 0;
+
     function escapeHtml(text) {
         const div = document.createElement('div');
         div.textContent = text ?? '';
         return div.innerHTML;
+    }
+
+    function homeIntervalLabel(ms) {
+        return `${Math.max(1, Math.round(ms / 1000))}s`;
+    }
+
+    function renderHomeRefreshControls() {
+        const toggle = document.getElementById('homeRefreshToggle');
+        const toggleText = document.getElementById('homeRefreshToggleText');
+        const intervalText = document.getElementById('homeRefreshIntervalText');
+        if (toggle && toggleText) {
+            toggleText.textContent = homeRefreshPaused ? 'Retomar auto-refresh' : 'Pausar auto-refresh';
+            toggle.classList.toggle('is-paused', homeRefreshPaused);
+        }
+        if (intervalText) {
+            intervalText.textContent = homeIntervalLabel(homeRefreshIntervalMs);
+        }
+    }
+
+    function showHomeToast(message) {
+        const toast = document.getElementById('homeNewToast');
+        const text = document.getElementById('homeNewToastText');
+        if (!toast || !text) return;
+        text.textContent = message;
+        toast.style.display = 'inline-flex';
+    }
+
+    function hideHomeToast() {
+        const toast = document.getElementById('homeNewToast');
+        if (!toast) return;
+        toast.style.display = 'none';
+    }
+
+    function markHomeUpdated(section, signature, silent) {
+        if (!silent) {
+            homeSignatures[section] = signature;
+            return;
+        }
+
+        if (!homeSignatures[section]) {
+            homeSignatures[section] = signature;
+            return;
+        }
+
+        if (homeSignatures[section] !== signature) {
+            homeSignatures[section] = signature;
+            pendingHomeUpdates += 1;
+            showHomeToast(`${pendingHomeUpdates} atualização(ões) nova(s). Toque para ver.`);
+        }
+    }
+
+    function restartHomeAutoRefresh() {
+        if (homeRefreshTimer) {
+            window.clearInterval(homeRefreshTimer);
+            homeRefreshTimer = null;
+        }
+
+        if (homeRefreshPaused) return;
+
+        homeRefreshTimer = window.setInterval(() => {
+            silentRefreshHome();
+        }, homeRefreshIntervalMs);
+    }
+
+    function setHomeRefreshPaused(paused) {
+        homeRefreshPaused = Boolean(paused);
+        try {
+            localStorage.setItem(HOME_REFRESH_PAUSED_KEY, homeRefreshPaused ? '1' : '0');
+        } catch {
+            // ignora indisponibilidade de storage
+        }
+        renderHomeRefreshControls();
+        restartHomeAutoRefresh();
+    }
+
+    function cycleHomeRefreshInterval() {
+        const currentIndex = HOME_AUTO_REFRESH_OPTIONS.indexOf(homeRefreshIntervalMs);
+        const nextIndex = (currentIndex + 1) % HOME_AUTO_REFRESH_OPTIONS.length;
+        homeRefreshIntervalMs = HOME_AUTO_REFRESH_OPTIONS[nextIndex];
+        try {
+            localStorage.setItem(HOME_REFRESH_INTERVAL_KEY, String(homeRefreshIntervalMs));
+        } catch {
+            // ignora indisponibilidade de storage
+        }
+        renderHomeRefreshControls();
+        restartHomeAutoRefresh();
     }
 
     function toCurrency(value) {
@@ -504,14 +716,17 @@
         return fallbackImageSvg(offer.product_name);
     }
 
-    async function loadHomeOffers() {
+    async function loadHomeOffers(options = {}) {
+        const silent = Boolean(options.silent);
         const container = document.getElementById('homeOffersList');
         try {
             const data = await apiRequest('/offers?limit=3');
             const offers = data.offers || [];
+            const signature = offers.map((item) => String(item.id)).join('|');
 
             if (!offers.length) {
                 container.innerHTML = '<div class="wf-alert wf-alert-info">Ainda não há ofertas em destaque.</div>';
+                markHomeUpdated('offers', 'empty', silent);
                 return;
             }
 
@@ -554,6 +769,8 @@
                     window.location.href = `/offers/${offerId}`;
                 });
             });
+
+            markHomeUpdated('offers', signature, silent);
         } catch (error) {
             container.innerHTML = '<div class="wf-alert wf-alert-error">Falha ao carregar ofertas da home.</div>';
         }
@@ -609,16 +826,19 @@
         return `/users/${userId}`;
     }
 
-    async function loadHomeCommunityHighlights() {
+    async function loadHomeCommunityHighlights(options = {}) {
+        const silent = Boolean(options.silent);
         const container = document.getElementById('homeCommunityHighlights');
         if (!container) return;
 
         try {
             const data = await apiRequest('/community/posts?limit=6');
             const posts = Array.isArray(data?.posts) ? data.posts : [];
+            const signature = posts.map((item) => String(item.id)).join('|');
 
             if (!posts.length) {
                 container.innerHTML = '<div class="wf-alert wf-alert-info" style="min-width:100%;">Ainda não há posts em destaque na comunidade.</div>';
+                markHomeUpdated('community', 'empty', silent);
                 return;
             }
 
@@ -654,29 +874,44 @@
                             </div>
                             <a href="${postUrl}" class="home-community-open"><p class="home-community-text">${escapeHtml(postText || 'Atualização da comunidade')}</p></a>
                             <div class="home-community-meta">
-                                <span>${likes} curtidas</span>
-                                <span>${comments} comentários</span>
-                                <span>${shares} compartilhamentos</span>
+                                <span class="home-community-stat" title="Curtidas"><span>${likes}</span><span class="material-icons">favorite</span></span>
+                                <span class="home-community-stat" title="Comentários"><span>${comments}</span><span class="material-icons">chat_bubble_outline</span></span>
+                                <span class="home-community-stat" title="Compartilhamentos"><span>${shares}</span><span class="material-icons">share</span></span>
                             </div>
                         </div>
                     </article>
                 `;
             }).join('');
+
+            markHomeUpdated('community', signature, silent);
         } catch {
             container.innerHTML = '<div class="wf-alert wf-alert-error" style="min-width:100%;">Falha ao carregar posts da comunidade.</div>';
         }
     }
 
-    async function loadStats() {
+    async function loadStats(options = {}) {
+        const silent = Boolean(options.silent);
         try {
             const stats = await apiRequest('/dashboard/insights');
             const totalOffers = (stats.price_insights || []).reduce((acc, item) => acc + (item.offer_count || 0), 0);
             document.getElementById('activeOffers').textContent = totalOffers;
             document.getElementById('tx24h').textContent = stats.recent_activity?.new_transactions_24h || 0;
+            const signature = `${totalOffers}|${stats.recent_activity?.new_transactions_24h || 0}`;
+            markHomeUpdated('stats', signature, silent);
         } catch (error) {
             document.getElementById('activeOffers').textContent = '0';
             document.getElementById('tx24h').textContent = '0';
         }
+    }
+
+    async function silentRefreshHome() {
+        if (homeRefreshPaused) return;
+
+        await Promise.allSettled([
+            loadHomeOffers({ silent: true }),
+            loadHomeCommunityHighlights({ silent: true }),
+            loadStats({ silent: true }),
+        ]);
     }
 
     function updateHeroAuthActions() {
@@ -687,10 +922,60 @@
         loginBtn.style.display = token ? 'none' : '';
     }
 
+    try {
+        const savedPaused = localStorage.getItem(HOME_REFRESH_PAUSED_KEY);
+        homeRefreshPaused = savedPaused === '1';
+
+        const savedInterval = Number(localStorage.getItem(HOME_REFRESH_INTERVAL_KEY) || HOME_AUTO_REFRESH_DEFAULT_MS);
+        if (HOME_AUTO_REFRESH_OPTIONS.includes(savedInterval)) {
+            homeRefreshIntervalMs = savedInterval;
+        }
+    } catch {
+        // ignora indisponibilidade de storage
+    }
+
+    const homeRefreshToggle = document.getElementById('homeRefreshToggle');
+    const homeRefreshInterval = document.getElementById('homeRefreshInterval');
+    const homeNewToast = document.getElementById('homeNewToast');
+
+    if (homeRefreshToggle) {
+        homeRefreshToggle.addEventListener('click', () => {
+            setHomeRefreshPaused(!homeRefreshPaused);
+        });
+    }
+
+    if (homeRefreshInterval) {
+        homeRefreshInterval.addEventListener('click', cycleHomeRefreshInterval);
+    }
+
+    if (homeNewToast) {
+        homeNewToast.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            pendingHomeUpdates = 0;
+            hideHomeToast();
+        });
+    }
+
+    window.addEventListener('scroll', () => {
+        if ((window.scrollY || 0) < 40 && pendingHomeUpdates > 0) {
+            pendingHomeUpdates = 0;
+            hideHomeToast();
+        }
+    }, { passive: true });
+
+    renderHomeRefreshControls();
+
     updateHeroAuthActions();
     loadHomeOffers();
     loadHomeFeaturedProducts();
     loadHomeCommunityHighlights();
     loadStats();
+    restartHomeAutoRefresh();
+
+    window.addEventListener('beforeunload', () => {
+        if (homeRefreshTimer) {
+            window.clearInterval(homeRefreshTimer);
+        }
+    });
 </script>
 {% endblock %}

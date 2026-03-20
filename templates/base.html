@@ -1278,6 +1278,27 @@
             .wf-publish-global-btn .wf-publish-label {
                 display: none;
             }
+
+            .wf-ai-fab {
+                right: 0.72rem;
+                bottom: calc(84px + env(safe-area-inset-bottom));
+                width: 54px;
+                height: 54px;
+            }
+
+            .wf-ai-modal {
+                width: min(100%, 720px);
+                height: min(84vh, 680px);
+                border-radius: 14px;
+            }
+
+            .wf-mobile-hide-help,
+            #navHelp,
+            #actionPopupHelp,
+            #actionHelp,
+            #rightNavHelp {
+                display: none !important;
+            }
         }
 
         .wf-help-popup-overlay {
@@ -1332,6 +1353,91 @@
         }
 
         .wf-help-popup iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: #fff;
+        }
+
+        .wf-ai-fab {
+            position: fixed;
+            right: 1rem;
+            bottom: 1rem;
+            z-index: 2550;
+            width: 58px;
+            height: 58px;
+            border: none;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            background: linear-gradient(135deg, #0f5c3c 0%, #2c7f57 48%, #1f4d7b 100%);
+            box-shadow: 0 16px 30px rgba(13, 53, 88, 0.34);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .wf-ai-fab:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 34px rgba(13, 53, 88, 0.38);
+        }
+
+        .wf-ai-fab .material-icons {
+            font-size: 28px;
+        }
+
+        .wf-ai-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(6, 13, 24, 0.58);
+            backdrop-filter: blur(3px);
+            -webkit-backdrop-filter: blur(3px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2590;
+            padding: 1rem;
+        }
+
+        .wf-ai-modal-overlay.show {
+            display: flex;
+        }
+
+        .wf-ai-modal {
+            width: min(100%, 980px);
+            height: min(88vh, 760px);
+            border-radius: 16px;
+            border: 1px solid rgba(15, 68, 112, 0.25);
+            background: #f7f5ee;
+            box-shadow: 0 24px 46px rgba(8, 25, 53, 0.34);
+            overflow: hidden;
+            display: grid;
+            grid-template-rows: auto 1fr;
+        }
+
+        .wf-ai-modal-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.7rem;
+            padding: 0.7rem 0.9rem;
+            border-bottom: 1px solid rgba(15, 68, 112, 0.14);
+            background: linear-gradient(90deg, #ebf3ea 0%, #e8f1f6 100%);
+            color: #11456f;
+            font-weight: 800;
+        }
+
+        .wf-ai-modal-close {
+            border: none;
+            border-radius: 10px;
+            background: #11456f;
+            color: #fff;
+            padding: 0.4rem 0.72rem;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .wf-ai-modal iframe {
             width: 100%;
             height: 100%;
             border: none;
@@ -1457,6 +1563,10 @@
         <span class="wf-publish-label">Publicar Produto</span>
     </a>
 
+    <button type="button" class="wf-ai-fab" id="wfAiFab" title="Abrir Agente IA" aria-label="Abrir Agente IA">
+        <span class="material-icons">smart_toy</span>
+    </button>
+
     <div class="wf-app-shell">
         <aside class="wf-sidebar">
             <div class="wf-sidebar-header">
@@ -1565,6 +1675,10 @@
 
     <script>
         const WF_DEFAULT_AVATAR = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320"><rect width="320" height="320" fill="%23edf2f7"/><circle cx="160" cy="112" r="58" fill="%2373899f"/><path d="M48 284c0-62 50-112 112-112s112 50 112 112" fill="%2373899f"/></svg>';
+        const WF_FAST_NAV_BREAKPOINT = 992;
+        const WF_GET_CACHE_TTL_MS = 12000;
+        const WF_GET_CACHE = new Map();
+        const WF_INFLIGHT_GET = new Map();
 
         function wfDefaultAvatar() {
             return WF_DEFAULT_AVATAR;
@@ -1587,6 +1701,26 @@
         window.wfDefaultAvatar = wfDefaultAvatar;
         window.wfResolveAvatar = wfResolveAvatar;
         window.wfAvatarOnError = wfAvatarOnError;
+
+        function isFastNavMode() {
+            return window.matchMedia(`(max-width: ${WF_FAST_NAV_BREAKPOINT}px)`).matches;
+        }
+
+        function isCacheableGetUrl(url) {
+            const raw = String(url || '').toLowerCase();
+            return (
+                raw.includes('/offers') ||
+                raw.includes('/store/featured') ||
+                raw.includes('/community/posts') ||
+                raw.includes('/categories') ||
+                raw.includes('/dashboard/insights')
+            );
+        }
+
+        function buildGetCacheKey(url, token) {
+            const scope = token ? `user:${token.slice(0, 16)}` : 'anon';
+            return `${scope}::${url}`;
+        }
 
         async function apiRequest(url, method = 'GET', data = null) {
             const isAbsolute = url.startsWith('http://') || url.startsWith('https://');
@@ -1625,44 +1759,76 @@
             const token = localStorage.getItem('token');
             if (token) config.headers['Authorization'] = `Bearer ${token}`;
 
-            const response = await fetch(apiUrl, config);
-            let payload = null;
-            const text = await response.text();
+            const isGet = String(resolvedMethod || 'GET').toUpperCase() === 'GET';
+            const shouldUseGetCache = isGet && resolvedData == null && isCacheableGetUrl(apiUrl);
+            const getCacheKey = shouldUseGetCache ? buildGetCacheKey(apiUrl, token) : null;
 
-            if (text) {
-                try {
-                    payload = JSON.parse(text);
-                } catch {
-                    payload = { detail: text };
+            if (getCacheKey) {
+                const now = Date.now();
+                const cached = WF_GET_CACHE.get(getCacheKey);
+                if (cached && now - cached.ts < WF_GET_CACHE_TTL_MS) {
+                    return cached.payload;
+                }
+
+                const inflight = WF_INFLIGHT_GET.get(getCacheKey);
+                if (inflight) {
+                    return inflight;
                 }
             }
 
-            function isRestrictedResourceMessage(message) {
-                if (!message) return false;
-                const textLower = String(message).toLowerCase();
-                return (
-                    textLower.includes('premium') ||
-                    textLower.includes('assinante') ||
-                    textLower.includes('recurso restrito') ||
-                    textLower.includes('exclusiva') ||
-                    textLower.includes('apenas para')
-                );
-            }
+            const requestPromise = (async () => {
+                const response = await fetch(apiUrl, config);
+                let payload = null;
+                const text = await response.text();
 
-            if (!response.ok) {
-                const errorMessage =
-                    payload?.detail ||
-                    payload?.error?.message ||
-                    payload?.message ||
-                    `Erro HTTP ${response.status}`;
-
-                if (response.status === 403 || isRestrictedResourceMessage(errorMessage)) {
-                    showRestrictedAccessNotice(errorMessage);
+                if (text) {
+                    try {
+                        payload = JSON.parse(text);
+                    } catch {
+                        payload = { detail: text };
+                    }
                 }
-                throw new Error(errorMessage);
+
+                function isRestrictedResourceMessage(message) {
+                    if (!message) return false;
+                    const textLower = String(message).toLowerCase();
+                    return (
+                        textLower.includes('premium') ||
+                        textLower.includes('assinante') ||
+                        textLower.includes('recurso restrito') ||
+                        textLower.includes('exclusiva') ||
+                        textLower.includes('apenas para')
+                    );
+                }
+
+                if (!response.ok) {
+                    const errorMessage =
+                        payload?.detail ||
+                        payload?.error?.message ||
+                        payload?.message ||
+                        `Erro HTTP ${response.status}`;
+
+                    if (response.status === 403 || isRestrictedResourceMessage(errorMessage)) {
+                        showRestrictedAccessNotice(errorMessage);
+                    }
+                    throw new Error(errorMessage);
+                }
+
+                if (getCacheKey) {
+                    WF_GET_CACHE.set(getCacheKey, { ts: Date.now(), payload });
+                }
+
+                return payload;
+            })();
+
+            if (getCacheKey) {
+                WF_INFLIGHT_GET.set(getCacheKey, requestPromise);
+                requestPromise.finally(() => {
+                    WF_INFLIGHT_GET.delete(getCacheKey);
+                });
             }
 
-            return payload;
+            return requestPromise;
         }
 
         function clearSessionToken() {
@@ -1923,6 +2089,20 @@
             overlay.setAttribute('aria-hidden', 'false');
         }
 
+        function openAiAgentModal() {
+            const overlay = document.getElementById('wfAiModalOverlay');
+            if (!overlay) return;
+            overlay.classList.add('show');
+            overlay.setAttribute('aria-hidden', 'false');
+        }
+
+        function closeAiAgentModal() {
+            const overlay = document.getElementById('wfAiModalOverlay');
+            if (!overlay) return;
+            overlay.classList.remove('show');
+            overlay.setAttribute('aria-hidden', 'true');
+        }
+
         function showRestrictedAccessNotice(message) {
             const overlay = document.getElementById('restrictedAccessModal');
             const body = document.getElementById('restrictedAccessMessage');
@@ -2012,6 +2192,30 @@
             }
         }
 
+        function setupAiAgentModal() {
+            const fab = document.getElementById('wfAiFab');
+            const overlay = document.getElementById('wfAiModalOverlay');
+            const close = document.getElementById('wfAiModalClose');
+
+            if (fab) {
+                fab.addEventListener('click', () => {
+                    closePopup();
+                    closeSidebarRight();
+                    openAiAgentModal();
+                });
+            }
+
+            if (close) {
+                close.addEventListener('click', closeAiAgentModal);
+            }
+
+            if (overlay) {
+                overlay.addEventListener('click', (event) => {
+                    if (event.target === overlay) closeAiAgentModal();
+                });
+            }
+        }
+
         function closeProfileMenu() {
             const profileMenu = document.getElementById('navProfileMenu');
             const profileTrigger = document.getElementById('wfProfileTrigger');
@@ -2069,6 +2273,7 @@
             setupSidebarRight();
             setupMobilePopup();
             setupHelpPopup();
+            setupAiAgentModal();
             setupProfileMenu();
             setNavAuthState();
             refreshUnreadNotifications();
@@ -2157,7 +2362,7 @@
                             <span class="material-icons">inventory_2</span>
                             <span>Criar produto</span>
                         </a>
-                        <a href="#" class="wf-popup-item" id="actionPopupHelp" data-open-help-popup="1" style="display:none;">
+                        <a href="#" class="wf-popup-item wf-mobile-hide-help" id="actionPopupHelp" data-open-help-popup="1" style="display:none;">
                             <span class="material-icons">help</span>
                             <span>Ajuda</span>
                         </a>
@@ -2177,7 +2382,7 @@
                             <span class="material-icons">add_circle</span>
                             <span>Nova oferta</span>
                         </a>
-                        <a href="#" class="wf-popup-item" id="actionHelp" data-open-help-popup="1" style="display:none;">
+                        <a href="#" class="wf-popup-item wf-mobile-hide-help" id="actionHelp" data-open-help-popup="1" style="display:none;">
                             <span class="material-icons">support_agent</span>
                             <span>Suporte IA</span>
                         </a>
@@ -2235,7 +2440,7 @@
                             <span>💬</span>
                             <span>Mensagens</span>
                         </a>
-                        <a href="#" class="wf-sidebar-right-item" id="rightNavHelp" data-open-help-popup="1" style="display:none;">
+                        <a href="#" class="wf-sidebar-right-item wf-mobile-hide-help" id="rightNavHelp" data-open-help-popup="1" style="display:none;">
                             <span>❓</span>
                             <span>Ajuda</span>
                         </a>
@@ -2291,6 +2496,16 @@
                         <button class="wf-help-popup-close" id="helpPopupClose" type="button">Fechar</button>
                     </div>
                     <iframe src="/ai-agent" loading="lazy" title="Ajuda WallFruits"></iframe>
+                </div>
+            </div>
+
+            <div class="wf-ai-modal-overlay" id="wfAiModalOverlay" aria-hidden="true">
+                <div class="wf-ai-modal" role="dialog" aria-modal="true" aria-label="Agente IA WallFruits">
+                    <div class="wf-ai-modal-head">
+                        <span>Agente IA WallFruits</span>
+                        <button class="wf-ai-modal-close" id="wfAiModalClose" type="button">Fechar</button>
+                    </div>
+                    <iframe src="/ai-agent" loading="lazy" title="Agente IA WallFruits"></iframe>
                 </div>
             </div>
 
@@ -2368,29 +2583,45 @@
             markActiveBySelector('.wf-sidebar-right-item');
             markActiveBySelector('.wf-profile-link');
 
-            // 3. Smooth Page Transitions
+            // 3. Fast Navigation Transitions (ultra-fast on mobile/tablet)
             document.querySelectorAll('a').forEach(link => {
                 if (link.hostname === window.location.hostname && !link.getAttribute('href').startsWith('#') && !link.getAttribute('target')) {
                     link.addEventListener('click', (e) => {
                         const href = link.getAttribute('href');
                         if (href) {
+                            const fastMode = isFastNavMode();
+                            if (fastMode) {
+                                return;
+                            }
                             e.preventDefault();
                             document.body.style.opacity = 0;
-                            document.body.style.transition = 'opacity 0.3s ease';
+                            document.body.style.transition = 'opacity 0.12s ease';
                             setTimeout(() => {
                                 window.location.href = href;
-                            }, 300);
+                            }, 120);
                         }
                     });
                 }
             });
             
             // Fade in on load
-            document.body.style.opacity = 0;
-            requestAnimationFrame(() => {
-                document.body.style.transition = 'opacity 0.5s ease';
+            const fastMode = isFastNavMode();
+            if (fastMode) {
                 document.body.style.opacity = 1;
-            });
+            } else {
+                document.body.style.opacity = 0;
+                requestAnimationFrame(() => {
+                    document.body.style.transition = 'opacity 0.16s ease';
+                    document.body.style.opacity = 1;
+                });
+            }
+
+            // Warm cache for frequently used feeds so page switches feel instant.
+            setTimeout(() => {
+                apiRequest('/offers?limit=12').catch(() => {});
+                apiRequest('/store/featured?limit=8').catch(() => {});
+                apiRequest('/community/posts?limit=6').catch(() => {});
+            }, 60);
         });
     </script>
 

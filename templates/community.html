@@ -33,6 +33,33 @@
         color: rgba(255, 255, 255, 0.92);
     }
 
+    .community-refresh-controls {
+        margin-top: 0.65rem;
+        display: inline-flex;
+        gap: 0.42rem;
+        flex-wrap: wrap;
+    }
+
+    .community-refresh-btn {
+        border: 1px solid rgba(0, 212, 170, 0.24);
+        background: rgba(0, 212, 170, 0.08);
+        color: #d8fff6;
+        border-radius: 999px;
+        padding: 0.34rem 0.66rem;
+        font-size: 0.72rem;
+        font-weight: 800;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.28rem;
+        cursor: pointer;
+    }
+
+    .community-refresh-btn.is-paused {
+        border-color: rgba(252, 90, 90, 0.3);
+        color: #ff9f9f;
+        background: rgba(214, 51, 51, 0.12);
+    }
+
     .community-create {
         display: grid;
         gap: 0.7rem;
@@ -127,6 +154,28 @@
         gap: 0.65rem;
     }
 
+    .community-feed-status {
+        color: #45678f;
+        font-size: 0.76rem;
+        font-weight: 700;
+        text-align: center;
+        padding: 0.25rem 0;
+    }
+
+    .community-skeleton {
+        min-height: 148px;
+        border: 1px solid rgba(11, 46, 99, 0.12);
+        border-radius: 14px;
+        background: linear-gradient(90deg, rgba(242, 248, 255, 0.85) 20%, rgba(232, 243, 252, 0.98) 50%, rgba(242, 248, 255, 0.85) 80%);
+        background-size: 200% 100%;
+        animation: communityShimmer 1.2s infinite;
+    }
+
+    @keyframes communityShimmer {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+    }
+
     .community-empty {
         border: 1px dashed rgba(11, 46, 99, 0.24);
         border-radius: 14px;
@@ -143,6 +192,17 @@
         background: #fff;
         box-shadow: 0 8px 22px rgba(16, 44, 90, 0.08);
         overflow: hidden;
+    }
+
+    .post-card.feed-enter {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    .post-card.feed-enter.is-in {
+        opacity: 1;
+        transform: translateY(0);
+        transition: opacity 0.2s ease, transform 0.2s ease;
     }
 
     .post-main {
@@ -381,6 +441,50 @@
         border: 1px solid rgba(255, 255, 255, 0.3);
     }
 
+    @keyframes wfToastIn {
+        0% {
+            opacity: 0;
+            transform: translateY(8px) scale(0.98);
+        }
+        100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    .community-toast {
+        position: fixed;
+        right: 1rem;
+        bottom: calc(92px + env(safe-area-inset-bottom));
+        z-index: 1420;
+        display: none;
+        align-items: center;
+        gap: 0.42rem;
+        border-radius: 999px;
+        border: 1px solid rgba(0, 212, 170, 0.34);
+        background: rgba(7, 30, 44, 0.94);
+        color: #d8fff6;
+        padding: 0.44rem 0.7rem;
+        font-size: 0.74rem;
+        font-weight: 800;
+        box-shadow: 0 14px 26px rgba(6, 24, 37, 0.34);
+        transform-origin: right bottom;
+        animation: wfToastIn 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+        max-width: min(92vw, 360px);
+    }
+
+    .community-toast .material-icons {
+        font-size: 1rem;
+        flex: 0 0 auto;
+    }
+
+    .community-toast span:last-child {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
     @media (max-width: 992px) {
         .community-wrap {
             max-width: 100%;
@@ -388,6 +492,15 @@
     }
 
     @media (max-width: 768px) {
+        .community-toast {
+            right: 0.75rem;
+            bottom: calc(84px + env(safe-area-inset-bottom));
+            padding: 0.4rem 0.64rem;
+            font-size: 0.71rem;
+            box-shadow: 0 10px 18px rgba(6, 24, 37, 0.26);
+            background: rgba(7, 30, 44, 0.9);
+        }
+
         .community-header h1 {
             font-size: 1.15rem;
         }
@@ -441,6 +554,16 @@
     <header class="community-header">
         <h1>Comunidade Agro</h1>
         <p>Compartilhe produção, manejo e resultados com outros participantes do marketplace.</p>
+        <div class="community-refresh-controls" aria-label="Controles de atualização automática">
+            <button id="communityRefreshToggle" class="community-refresh-btn" type="button">
+                <span class="material-icons">pause_circle</span>
+                <span id="communityRefreshToggleText">Pausar auto-refresh</span>
+            </button>
+            <button id="communityRefreshInterval" class="community-refresh-btn" type="button">
+                <span class="material-icons">schedule</span>
+                <span id="communityRefreshIntervalText">45s</span>
+            </button>
+        </div>
     </header>
 
     <section class="community-create" aria-label="Criar publicação">
@@ -466,11 +589,18 @@
     </section>
 
     <section id="communityFeed" class="community-feed" aria-live="polite"></section>
+    <div id="communityFeedSentinel" style="height:2px;"></div>
+    <div id="communityFeedStatus" class="community-feed-status"></div>
 </div>
 
 <div id="communityImgModal" class="img-modal" role="dialog" aria-modal="true" aria-label="Imagem ampliada">
     <img id="communityModalImg" alt="Imagem do post em tamanho ampliado">
 </div>
+
+<button id="communityToast" class="community-toast" type="button" aria-label="Ver novos posts">
+    <span class="material-icons">north</span>
+    <span id="communityToastText">Novos posts disponíveis</span>
+</button>
 
 <script>
     (function setupCommunityPage() {
@@ -497,6 +627,92 @@
         })();
         const isAdmin = currentUser?.role === 'admin';
         const focusPostId = Number(new URLSearchParams(window.location.search).get('post') || 0) || null;
+        const COMMUNITY_PAGE_SIZE = 14;
+        const COMMUNITY_SCROLL_KEY = 'wf_scroll_community';
+        const COMMUNITY_AUTO_REFRESH_DEFAULT_MS = 45000;
+        const COMMUNITY_AUTO_REFRESH_OPTIONS = [20000, 45000, 90000];
+        const COMMUNITY_REFRESH_PAUSED_KEY = 'wf_community_refresh_paused';
+        const COMMUNITY_REFRESH_INTERVAL_KEY = 'wf_community_refresh_interval_ms';
+        const GLOBAL_TYPING_LOCK_KEY = 'wf_global_typing_context';
+        let postsObserver = null;
+        let lastSavedScrollY = 0;
+        let postsRefreshTimer = null;
+        let postsRefreshPaused = false;
+        let postsRefreshIntervalMs = COMMUNITY_AUTO_REFRESH_DEFAULT_MS;
+        const postsFeedState = {
+            skip: 0,
+            hasMore: true,
+            isLoading: false,
+            prefetch: null,
+        };
+
+        function refreshIntervalLabel(ms) {
+            return `${Math.max(1, Math.round(ms / 1000))}s`;
+        }
+
+        function showCommunityToast(message) {
+            const toast = document.getElementById('communityToast');
+            const text = document.getElementById('communityToastText');
+            if (!toast || !text) return;
+            text.textContent = message;
+            toast.style.display = 'inline-flex';
+        }
+
+        function hideCommunityToast() {
+            const toast = document.getElementById('communityToast');
+            if (!toast) return;
+            toast.style.display = 'none';
+        }
+
+        function renderCommunityRefreshControls() {
+            const toggleBtn = document.getElementById('communityRefreshToggle');
+            const toggleText = document.getElementById('communityRefreshToggleText');
+            const intervalText = document.getElementById('communityRefreshIntervalText');
+            if (toggleBtn && toggleText) {
+                toggleText.textContent = postsRefreshPaused ? 'Retomar auto-refresh' : 'Pausar auto-refresh';
+                toggleBtn.classList.toggle('is-paused', postsRefreshPaused);
+            }
+            if (intervalText) {
+                intervalText.textContent = refreshIntervalLabel(postsRefreshIntervalMs);
+            }
+        }
+
+        function restartCommunityAutoRefresh() {
+            if (postsRefreshTimer) {
+                window.clearInterval(postsRefreshTimer);
+                postsRefreshTimer = null;
+            }
+
+            if (postsRefreshPaused) return;
+
+            postsRefreshTimer = window.setInterval(() => {
+                silentRefreshPosts();
+            }, postsRefreshIntervalMs);
+        }
+
+        function setCommunityRefreshPaused(paused) {
+            postsRefreshPaused = Boolean(paused);
+            try {
+                localStorage.setItem(COMMUNITY_REFRESH_PAUSED_KEY, postsRefreshPaused ? '1' : '0');
+            } catch {
+                // ignora indisponibilidade de storage
+            }
+            renderCommunityRefreshControls();
+            restartCommunityAutoRefresh();
+        }
+
+        function cycleCommunityRefreshInterval() {
+            const currentIndex = COMMUNITY_AUTO_REFRESH_OPTIONS.indexOf(postsRefreshIntervalMs);
+            const nextIndex = (currentIndex + 1) % COMMUNITY_AUTO_REFRESH_OPTIONS.length;
+            postsRefreshIntervalMs = COMMUNITY_AUTO_REFRESH_OPTIONS[nextIndex];
+            try {
+                localStorage.setItem(COMMUNITY_REFRESH_INTERVAL_KEY, String(postsRefreshIntervalMs));
+            } catch {
+                // ignora indisponibilidade de storage
+            }
+            renderCommunityRefreshControls();
+            restartCommunityAutoRefresh();
+        }
 
         function escapeHtml(text) {
             const div = document.createElement('div');
@@ -535,17 +751,206 @@
             return (text || '').trim();
         }
 
-        async function fetchPosts() {
-            const data = await apiRequest('/community/posts?limit=40');
-            postsCache = Array.isArray(data?.posts) ? data.posts : [];
+        function updateFeedStatus(message = '') {
+            const status = document.getElementById('communityFeedStatus');
+            if (!status) return;
+            status.textContent = message;
+        }
 
-            if (focusPostId && !postsCache.some((item) => Number(item.id) === Number(focusPostId))) {
-                try {
-                    const targetPost = await apiRequest(`/community/posts/${focusPostId}`);
-                    postsCache.unshift(targetPost);
-                } catch {
-                    // ignora se post não existir
+        function saveCommunityScroll() {
+            const current = Math.max(0, Math.floor(window.scrollY || 0));
+            if (Math.abs(current - lastSavedScrollY) < 12) return;
+            lastSavedScrollY = current;
+            try {
+                sessionStorage.setItem(COMMUNITY_SCROLL_KEY, String(current));
+            } catch {
+                // ignora indisponibilidade de storage
+            }
+        }
+
+        function restoreCommunityScroll() {
+            if (focusPostId) return;
+            try {
+                const value = Number(sessionStorage.getItem(COMMUNITY_SCROLL_KEY) || 0);
+                if (value > 0) {
+                    window.scrollTo({ top: value, behavior: 'auto' });
                 }
+            } catch {
+                // ignora indisponibilidade de storage
+            }
+        }
+
+        function animateFeedCards() {
+            const cards = feed.querySelectorAll('.post-card.feed-enter');
+            cards.forEach((card, index) => {
+                setTimeout(() => {
+                    card.classList.add('is-in');
+                }, index * 22);
+            });
+        }
+
+        function setCommunityTypingLock(active) {
+            try {
+                if (active) {
+                    localStorage.setItem(GLOBAL_TYPING_LOCK_KEY, 'community');
+                } else if (localStorage.getItem(GLOBAL_TYPING_LOCK_KEY) === 'community') {
+                    localStorage.removeItem(GLOBAL_TYPING_LOCK_KEY);
+                }
+            } catch {
+                // ignora indisponibilidade de storage
+            }
+        }
+
+        function isCommunityTyping() {
+            try {
+                return localStorage.getItem(GLOBAL_TYPING_LOCK_KEY) === 'community';
+            } catch {
+                return false;
+            }
+        }
+
+        function renderFeedLoading() {
+            feed.innerHTML = `
+                <div class="community-skeleton"></div>
+                <div class="community-skeleton"></div>
+                <div class="community-skeleton"></div>
+            `;
+        }
+
+        async function fetchPostsPage(skip, limit = COMMUNITY_PAGE_SIZE) {
+            if (postsFeedState.prefetch && postsFeedState.prefetch.skip === skip) {
+                if (postsFeedState.prefetch.request) {
+                    await postsFeedState.prefetch.request;
+                }
+                const payload = postsFeedState.prefetch.payload;
+                postsFeedState.prefetch = null;
+                return payload;
+            }
+
+            return apiRequest(`/community/posts?skip=${skip}&limit=${limit}`);
+        }
+
+        function prefetchNextPostsPage() {
+            if (!postsFeedState.hasMore || postsFeedState.isLoading) return;
+            const nextSkip = postsFeedState.skip;
+
+            if (postsFeedState.prefetch && postsFeedState.prefetch.skip === nextSkip) {
+                return;
+            }
+
+            const request = apiRequest(`/community/posts?skip=${nextSkip}&limit=${COMMUNITY_PAGE_SIZE}`)
+                .then((payload) => {
+                    postsFeedState.prefetch = { skip: nextSkip, payload };
+                })
+                .catch(() => {});
+
+            postsFeedState.prefetch = {
+                skip: nextSkip,
+                payload: null,
+                request,
+            };
+        }
+
+        async function loadNextPostsPage() {
+            if (postsFeedState.isLoading || !postsFeedState.hasMore) return;
+            postsFeedState.isLoading = true;
+
+            if (postsFeedState.skip === 0) {
+                renderFeedLoading();
+            } else {
+                updateFeedStatus('Carregando mais posts...');
+            }
+
+            try {
+                const data = await fetchPostsPage(postsFeedState.skip, COMMUNITY_PAGE_SIZE);
+                const incoming = Array.isArray(data?.posts) ? data.posts : [];
+
+                if (incoming.length) {
+                    postsCache = postsCache.concat(incoming);
+                    postsFeedState.skip += incoming.length;
+                    postsFeedState.hasMore = incoming.length === COMMUNITY_PAGE_SIZE;
+                } else {
+                    postsFeedState.hasMore = false;
+                }
+
+                if (focusPostId && !postsCache.some((item) => Number(item.id) === Number(focusPostId))) {
+                    try {
+                        const targetPost = await apiRequest(`/community/posts/${focusPostId}`);
+                        postsCache.unshift(targetPost);
+                    } catch {
+                        // ignora se post não existir
+                    }
+                }
+
+                renderFeed(postsFeedState.skip > incoming.length);
+
+                if (!postsFeedState.hasMore) {
+                    updateFeedStatus(postsCache.length ? 'Você chegou ao fim dos posts.' : '');
+                } else {
+                    updateFeedStatus('Role para carregar mais.');
+                    prefetchNextPostsPage();
+                }
+            } catch (error) {
+                if (!postsCache.length) {
+                    feed.innerHTML = `<div class="community-empty">Falha ao carregar a comunidade: ${escapeHtml(error.message || 'erro inesperado')}.</div>`;
+                }
+                updateFeedStatus('');
+            } finally {
+                postsFeedState.isLoading = false;
+            }
+        }
+
+        function resetPostsFeed() {
+            postsCache = [];
+            postsFeedState.skip = 0;
+            postsFeedState.hasMore = true;
+            postsFeedState.isLoading = false;
+            postsFeedState.prefetch = null;
+            updateFeedStatus('');
+        }
+
+        function setupPostsInfiniteScroll() {
+            const sentinel = document.getElementById('communityFeedSentinel');
+            if (!sentinel) return;
+
+            if (postsObserver) {
+                postsObserver.disconnect();
+            }
+
+            postsObserver = new IntersectionObserver((entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        loadNextPostsPage();
+                    }
+                });
+            }, {
+                root: null,
+                rootMargin: '260px 0px',
+                threshold: 0,
+            });
+
+            postsObserver.observe(sentinel);
+        }
+
+        async function silentRefreshPosts() {
+            if (postsRefreshPaused || isCommunityTyping() || postsFeedState.isLoading) return;
+
+            try {
+                const data = await apiRequest(`/community/posts?skip=0&limit=${Math.min(10, COMMUNITY_PAGE_SIZE)}`);
+                const latest = Array.isArray(data?.posts) ? data.posts : [];
+                if (!latest.length) return;
+
+                const knownIds = new Set(postsCache.map((item) => String(item.id)));
+                const fresh = latest.filter((item) => !knownIds.has(String(item.id)));
+                if (!fresh.length) return;
+
+                postsCache = fresh.concat(postsCache);
+                postsFeedState.skip += fresh.length;
+                renderFeed(true);
+                updateFeedStatus(`${fresh.length} novo(s) post(s) recebidos.`);
+                showCommunityToast(`${fresh.length} novo(s) post(s). Toque para ver.`);
+            } catch {
+                // falha silenciosa para nao interromper uso
             }
         }
 
@@ -763,7 +1168,7 @@
             renderComments(postId);
         }
 
-        function renderFeed() {
+        function renderFeed(animate = false) {
             const posts = postsCache;
 
             if (!posts.length) {
@@ -774,7 +1179,7 @@
             feed.innerHTML = posts.map((post) => {
                 const isLiked = Boolean(post.liked_by_me);
                 return `
-                    <article class="post-card ${focusPostId && Number(post.id) === Number(focusPostId) ? 'post-focus' : ''}" data-post-id="${escapeHtml(post.id)}">
+                    <article class="post-card ${focusPostId && Number(post.id) === Number(focusPostId) ? 'post-focus' : ''} ${animate ? 'feed-enter' : ''}" data-post-id="${escapeHtml(post.id)}">
                         <div class="post-main">
                             <a class="post-avatar-link" href="${escapeHtml(profileUrlByUserId(post.author?.id || 0))}" onclick="event.stopPropagation()">
                                 <img class="post-avatar" src="${escapeHtml(resolveAvatar(post.author?.profile_image))}" alt="Avatar de ${escapeHtml(post.author?.name || 'Usuário')}" onerror="wfAvatarOnError(this)">
@@ -838,6 +1243,10 @@
             }).join('');
 
             bindPostActions();
+
+            if (animate) {
+                requestAnimationFrame(animateFeedCards);
+            }
         }
 
         function bindPostActions() {
@@ -957,8 +1366,8 @@
                 pendingImage = null;
                 updatePreview(null, null);
 
-                await fetchPosts();
-                renderFeed();
+                resetPostsFeed();
+                await loadNextPostsPage();
             } catch (error) {
                 alert(error.message || 'Não foi possível publicar agora.');
             }
@@ -970,10 +1379,34 @@
             }
         });
 
+        postInput.addEventListener('focus', () => setCommunityTypingLock(true));
+        postInput.addEventListener('blur', () => setTimeout(() => setCommunityTypingLock(false), 120));
+        postInput.addEventListener('input', () => setCommunityTypingLock(true));
+
+        feed.addEventListener('focusin', (event) => {
+            if (event.target && event.target.classList && event.target.classList.contains('post-comment-input')) {
+                setCommunityTypingLock(true);
+            }
+        });
+
+        feed.addEventListener('focusout', (event) => {
+            if (event.target && event.target.classList && event.target.classList.contains('post-comment-input')) {
+                setTimeout(() => setCommunityTypingLock(false), 120);
+            }
+        });
+
         modal.addEventListener('click', () => {
             modal.style.display = 'none';
             modalImg.src = '';
         });
+
+        const communityToast = document.getElementById('communityToast');
+        if (communityToast) {
+            communityToast.addEventListener('click', () => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                hideCommunityToast();
+            });
+        }
 
         document.addEventListener('keydown', (event) => {
             if (event.key === 'Escape') {
@@ -982,16 +1415,55 @@
             }
         });
 
-        fetchPosts()
-            .then(() => {
-                renderFeed();
-                if (focusPostId) {
-                    setTimeout(scrollToFocusedPost, 120);
-                }
-            })
-            .catch((error) => {
-                feed.innerHTML = `<div class="community-empty">Falha ao carregar a comunidade: ${escapeHtml(error.message || 'erro inesperado')}.</div>`;
+        window.addEventListener('scroll', saveCommunityScroll, { passive: true });
+        window.addEventListener('scroll', () => {
+            if ((window.scrollY || 0) < 40) {
+                hideCommunityToast();
+            }
+        }, { passive: true });
+
+        try {
+            const savedPaused = localStorage.getItem(COMMUNITY_REFRESH_PAUSED_KEY);
+            postsRefreshPaused = savedPaused === '1';
+
+            const savedInterval = Number(localStorage.getItem(COMMUNITY_REFRESH_INTERVAL_KEY) || COMMUNITY_AUTO_REFRESH_DEFAULT_MS);
+            if (COMMUNITY_AUTO_REFRESH_OPTIONS.includes(savedInterval)) {
+                postsRefreshIntervalMs = savedInterval;
+            }
+        } catch {
+            // ignora indisponibilidade de storage
+        }
+
+        const refreshToggleBtn = document.getElementById('communityRefreshToggle');
+        const refreshIntervalBtn = document.getElementById('communityRefreshInterval');
+        if (refreshToggleBtn) {
+            refreshToggleBtn.addEventListener('click', () => {
+                setCommunityRefreshPaused(!postsRefreshPaused);
             });
+        }
+        if (refreshIntervalBtn) {
+            refreshIntervalBtn.addEventListener('click', cycleCommunityRefreshInterval);
+        }
+
+        renderCommunityRefreshControls();
+
+        setupPostsInfiniteScroll();
+        loadNextPostsPage().then(() => {
+            if (focusPostId) {
+                setTimeout(scrollToFocusedPost, 120);
+            } else {
+                setTimeout(restoreCommunityScroll, 60);
+            }
+        });
+
+        restartCommunityAutoRefresh();
+
+        window.addEventListener('beforeunload', () => {
+            if (postsRefreshTimer) {
+                window.clearInterval(postsRefreshTimer);
+            }
+            setCommunityTypingLock(false);
+        });
     })();
 </script>
 {% endblock %}

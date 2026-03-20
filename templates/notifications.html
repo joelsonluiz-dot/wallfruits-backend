@@ -21,6 +21,8 @@
     }
     .notif-item:hover { border-color: rgba(0,212,170,0.25); transform: translateY(-1px); }
     .notif-item.unread { border-color: rgba(0,212,170,0.4); background: rgba(0,212,170,0.08); }
+    .notif-item.feed-enter { opacity: 0; transform: translateY(8px); }
+    .notif-item.feed-enter.is-in { opacity: 1; transform: translateY(0); transition: opacity 0.2s ease, transform 0.2s ease; }
     .notif-avatar {
         width: 42px; height: 42px; border-radius: 50%; object-fit: cover;
         background: rgba(255,255,255,0.08); border: 1px solid var(--wf-border);
@@ -34,7 +36,110 @@
     .notif-time { color: var(--wf-text-secondary); font-size: 0.78rem; white-space: nowrap; }
     .notif-list { display: grid; gap: 0.75rem; }
     .notif-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+    .notif-refresh-btn {
+        border: 1px solid rgba(0, 212, 170, 0.24);
+        background: rgba(0, 212, 170, 0.08);
+        color: #d8fff6;
+        border-radius: 999px;
+        padding: 0.34rem 0.66rem;
+        font-size: 0.72rem;
+        font-weight: 800;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.28rem;
+    }
+    .notif-refresh-btn.is-paused {
+        border-color: rgba(252, 90, 90, 0.3);
+        color: #ff9f9f;
+        background: rgba(214, 51, 51, 0.12);
+    }
+    .notif-feed-status { color: var(--wf-text-secondary); font-size: 0.8rem; font-weight: 700; text-align: center; padding-top: 0.4rem; }
+    .notif-new-indicator {
+        position: fixed;
+        right: 1rem;
+        bottom: calc(90px + env(safe-area-inset-bottom));
+        z-index: 1400;
+        display: none;
+        align-items: center;
+        gap: 0.45rem;
+        border: 1px solid rgba(0, 212, 170, 0.34);
+        background: rgba(10, 31, 46, 0.94);
+        color: #d8fff6;
+        border-radius: 999px;
+        padding: 0.46rem 0.74rem;
+        font-size: 0.76rem;
+        font-weight: 800;
+        box-shadow: 0 14px 24px rgba(6, 24, 37, 0.34);
+    }
+    .notif-new-indicator .material-icons { font-size: 1rem; }
+    .notif-skeleton {
+        min-height: 80px;
+        border-radius: 12px;
+        border: 1px solid var(--wf-border);
+        background: linear-gradient(90deg, rgba(255,255,255,0.04) 20%, rgba(255,255,255,0.09) 50%, rgba(255,255,255,0.04) 80%);
+        background-size: 200% 100%;
+        animation: notifShimmer 1.2s infinite;
+    }
+    @keyframes notifShimmer {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+    }
+    @keyframes wfToastIn {
+        0% {
+            opacity: 0;
+            transform: translateY(8px) scale(0.98);
+        }
+        100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+    .notif-toast {
+        position: fixed;
+        right: 1rem;
+        bottom: calc(144px + env(safe-area-inset-bottom));
+        z-index: 1401;
+        display: none;
+        align-items: center;
+        gap: 0.42rem;
+        border-radius: 999px;
+        border: 1px solid rgba(0, 212, 170, 0.34);
+        background: rgba(7, 30, 44, 0.94);
+        color: #d8fff6;
+        padding: 0.44rem 0.72rem;
+        font-size: 0.74rem;
+        font-weight: 800;
+        box-shadow: 0 14px 26px rgba(6, 24, 37, 0.34);
+        transform-origin: right bottom;
+        animation: wfToastIn 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+        max-width: min(92vw, 360px);
+    }
+    .notif-toast .material-icons { font-size: 1rem; flex: 0 0 auto; }
+    .notif-toast span:last-child {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
     @media (max-width: 900px) { .notif-layout { grid-template-columns: 1fr; } }
+    @media (max-width: 768px) {
+        .notif-toast,
+        .notif-new-indicator {
+            right: 0.75rem;
+            padding: 0.4rem 0.64rem;
+            font-size: 0.71rem;
+            box-shadow: 0 10px 18px rgba(6, 24, 37, 0.26);
+            background: rgba(7, 30, 44, 0.9);
+        }
+
+        .notif-toast {
+            bottom: calc(136px + env(safe-area-inset-bottom));
+        }
+
+        .notif-new-indicator {
+            bottom: calc(82px + env(safe-area-inset-bottom));
+        }
+    }
 </style>
 
 <div class="wf-card mb-3">
@@ -43,6 +148,14 @@
         <div class="notif-actions">
             <button class="btn btn-wf-primary" onclick="markAllRead()">Marcar tudo como lido</button>
             <button class="btn btn-wf-secondary" onclick="loadNotifications()">Atualizar</button>
+            <button id="notifRefreshToggle" class="btn btn-wf-secondary notif-refresh-btn" type="button">
+                <span class="material-icons">pause_circle</span>
+                <span id="notifRefreshToggleText">Pausar auto-refresh</span>
+            </button>
+            <button id="notifRefreshInterval" class="btn btn-wf-secondary notif-refresh-btn" type="button">
+                <span class="material-icons">schedule</span>
+                <span id="notifRefreshIntervalText">45s</span>
+            </button>
         </div>
     </div>
 </div>
@@ -62,14 +175,115 @@
     <section class="wf-card">
         <div class="card-body">
             <div id="notifList" class="notif-list"></div>
+            <div id="notifLoadSentinel" style="height:2px;"></div>
+            <div id="notifLoadStatus" class="notif-feed-status"></div>
             <div id="notifEmpty" class="wf-alert wf-alert-info" style="display:none;">Sem notificações para este filtro.</div>
         </div>
     </section>
 </div>
 
+<button id="notifNewIndicator" class="notif-new-indicator" type="button" aria-label="Ver novas notificações">
+    <span class="material-icons">north</span>
+    <span id="notifNewIndicatorText">Novas notificações</span>
+</button>
+
+<button id="notifToast" class="notif-toast" type="button" aria-label="Ver novas notificações no topo">
+    <span class="material-icons">notifications_active</span>
+    <span id="notifToastText">Novas notificações recebidas</span>
+</button>
+
 <script>
     let notifStore = [];
     let currentFilter = 'all';
+    const NOTIF_PAGE_SIZE = 40;
+    const NOTIF_SCROLL_KEY = 'wf_scroll_notifications';
+    const NOTIF_AUTO_REFRESH_DEFAULT_MS = 45000;
+    const NOTIF_AUTO_REFRESH_OPTIONS = [20000, 45000, 90000];
+    const NOTIF_REFRESH_PAUSED_KEY = 'wf_notifications_refresh_paused';
+    const NOTIF_REFRESH_INTERVAL_KEY = 'wf_notifications_refresh_interval_ms';
+    const NOTIF_FILTER_KEY = 'wf_notifications_active_filter';
+    const GLOBAL_TYPING_LOCK_KEY = 'wf_global_typing_context';
+    const notifFeedState = {
+        skip: 0,
+        hasMore: true,
+        isLoading: false,
+        prefetch: null,
+    };
+    let notifObserver = null;
+    let notifRefreshTimer = null;
+    let lastNotifScrollY = 0;
+    let pendingFreshNotifCount = 0;
+    let notifRefreshPaused = false;
+    let notifRefreshIntervalMs = NOTIF_AUTO_REFRESH_DEFAULT_MS;
+
+    function notifIntervalLabel(ms) {
+        return `${Math.max(1, Math.round(ms / 1000))}s`;
+    }
+
+    function renderNotifRefreshControls() {
+        const toggle = document.getElementById('notifRefreshToggle');
+        const toggleText = document.getElementById('notifRefreshToggleText');
+        const interval = document.getElementById('notifRefreshInterval');
+        const intervalText = document.getElementById('notifRefreshIntervalText');
+        if (toggle && toggleText) {
+            toggleText.textContent = notifRefreshPaused ? 'Retomar auto-refresh' : 'Pausar auto-refresh';
+            toggle.classList.toggle('is-paused', notifRefreshPaused);
+        }
+        if (interval && intervalText) {
+            intervalText.textContent = notifIntervalLabel(notifRefreshIntervalMs);
+        }
+    }
+
+    function restartNotifAutoRefresh() {
+        if (notifRefreshTimer) {
+            window.clearInterval(notifRefreshTimer);
+            notifRefreshTimer = null;
+        }
+
+        if (notifRefreshPaused) return;
+
+        notifRefreshTimer = window.setInterval(() => {
+            silentRefreshNotifications();
+        }, notifRefreshIntervalMs);
+    }
+
+    function setNotifRefreshPaused(paused) {
+        notifRefreshPaused = Boolean(paused);
+        try {
+            localStorage.setItem(NOTIF_REFRESH_PAUSED_KEY, notifRefreshPaused ? '1' : '0');
+        } catch {
+            // ignora indisponibilidade de storage
+        }
+        renderNotifRefreshControls();
+        restartNotifAutoRefresh();
+    }
+
+    function cycleNotifRefreshInterval() {
+        const currentIndex = NOTIF_AUTO_REFRESH_OPTIONS.indexOf(notifRefreshIntervalMs);
+        const nextIndex = (currentIndex + 1) % NOTIF_AUTO_REFRESH_OPTIONS.length;
+        notifRefreshIntervalMs = NOTIF_AUTO_REFRESH_OPTIONS[nextIndex];
+        try {
+            localStorage.setItem(NOTIF_REFRESH_INTERVAL_KEY, String(notifRefreshIntervalMs));
+        } catch {
+            // ignora indisponibilidade de storage
+        }
+        renderNotifRefreshControls();
+        restartNotifAutoRefresh();
+    }
+
+    function showNotifToast(message) {
+        const toast = document.getElementById('notifToast');
+        const text = document.getElementById('notifToastText');
+        if (!toast || !text) return;
+        text.textContent = message;
+        toast.style.display = 'inline-flex';
+    }
+
+    function hideNotifToast() {
+        const toast = document.getElementById('notifToast');
+        if (!toast) return;
+        toast.style.display = 'none';
+    }
 
     function avatarHtml(actor) {
         const src = window.wfResolveAvatar ? window.wfResolveAvatar(actor?.profile_image) : (actor?.profile_image || '');
@@ -122,6 +336,168 @@
         });
     }
 
+    function syncNewNotifIndicator() {
+        const indicator = document.getElementById('notifNewIndicator');
+        const text = document.getElementById('notifNewIndicatorText');
+        if (!indicator || !text) return;
+
+        if (pendingFreshNotifCount <= 0) {
+            indicator.style.display = 'none';
+            return;
+        }
+
+        text.textContent = `${pendingFreshNotifCount} nova(s) notificação(ões)`;
+        indicator.style.display = 'inline-flex';
+    }
+
+    function updateNotifStatus(message = '') {
+        const status = document.getElementById('notifLoadStatus');
+        if (!status) return;
+        status.textContent = message;
+    }
+
+    function saveNotifScroll() {
+        const current = Math.max(0, Math.floor(window.scrollY || 0));
+        if (Math.abs(current - lastNotifScrollY) < 12) return;
+        lastNotifScrollY = current;
+        try {
+            sessionStorage.setItem(NOTIF_SCROLL_KEY, String(current));
+        } catch {
+            // ignora indisponibilidade de storage
+        }
+    }
+
+    function restoreNotifScroll() {
+        try {
+            const value = Number(sessionStorage.getItem(NOTIF_SCROLL_KEY) || 0);
+            if (value > 0) {
+                window.scrollTo({ top: value, behavior: 'auto' });
+            }
+        } catch {
+            // ignora indisponibilidade de storage
+        }
+    }
+
+    function animateNotificationCards() {
+        const cards = document.querySelectorAll('.notif-item.feed-enter');
+        cards.forEach((card, index) => {
+            setTimeout(() => {
+                card.classList.add('is-in');
+            }, index * 18);
+        });
+    }
+
+    function renderNotifSkeleton() {
+        const listEl = document.getElementById('notifList');
+        if (!listEl) return;
+        listEl.innerHTML = `
+            <div class="notif-skeleton"></div>
+            <div class="notif-skeleton"></div>
+            <div class="notif-skeleton"></div>
+        `;
+    }
+
+    async function fetchNotifPage(skip, limit = NOTIF_PAGE_SIZE) {
+        if (notifFeedState.prefetch && notifFeedState.prefetch.skip === skip) {
+            if (notifFeedState.prefetch.request) {
+                await notifFeedState.prefetch.request;
+            }
+            const payload = notifFeedState.prefetch.payload;
+            notifFeedState.prefetch = null;
+            return payload;
+        }
+
+        return apiRequest(`/notifications?skip=${skip}&limit=${limit}`);
+    }
+
+    function prefetchNextNotifPage() {
+        if (!notifFeedState.hasMore || notifFeedState.isLoading) return;
+        const nextSkip = notifFeedState.skip;
+
+        if (notifFeedState.prefetch && notifFeedState.prefetch.skip === nextSkip) {
+            return;
+        }
+
+        const request = apiRequest(`/notifications?skip=${nextSkip}&limit=${NOTIF_PAGE_SIZE}`)
+            .then((payload) => {
+                notifFeedState.prefetch = { skip: nextSkip, payload };
+            })
+            .catch(() => {});
+
+        notifFeedState.prefetch = {
+            skip: nextSkip,
+            payload: null,
+            request,
+        };
+    }
+
+    async function loadNextNotificationsPage() {
+        if (notifFeedState.isLoading || !notifFeedState.hasMore) return;
+        notifFeedState.isLoading = true;
+
+        if (notifFeedState.skip === 0) {
+            renderNotifSkeleton();
+        } else {
+            updateNotifStatus('Carregando mais notificações...');
+        }
+
+        try {
+            const incoming = await fetchNotifPage(notifFeedState.skip, NOTIF_PAGE_SIZE);
+            const items = Array.isArray(incoming) ? incoming : [];
+
+            if (items.length) {
+                notifStore = notifStore.concat(items);
+                notifFeedState.skip += items.length;
+                notifFeedState.hasMore = items.length === NOTIF_PAGE_SIZE;
+            } else {
+                notifFeedState.hasMore = false;
+            }
+
+            renderNotifications({ animate: notifFeedState.skip > items.length });
+
+            if (!notifFeedState.hasMore) {
+                updateNotifStatus(notifStore.length ? 'Você chegou ao fim das notificações.' : '');
+            } else {
+                updateNotifStatus('Role para carregar mais.');
+                prefetchNextNotifPage();
+            }
+        } finally {
+            notifFeedState.isLoading = false;
+        }
+    }
+
+    function resetNotificationsFeed() {
+        notifStore = [];
+        notifFeedState.skip = 0;
+        notifFeedState.hasMore = true;
+        notifFeedState.isLoading = false;
+        notifFeedState.prefetch = null;
+        updateNotifStatus('');
+    }
+
+    function setupNotificationsInfiniteScroll() {
+        const sentinel = document.getElementById('notifLoadSentinel');
+        if (!sentinel) return;
+
+        if (notifObserver) {
+            notifObserver.disconnect();
+        }
+
+        notifObserver = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                    loadNextNotificationsPage();
+                }
+            });
+        }, {
+            root: null,
+            rootMargin: '240px 0px',
+            threshold: 0,
+        });
+
+        notifObserver.observe(sentinel);
+    }
+
     async function markRead(item, event) {
         event.stopPropagation();
         await apiRequest(`/notifications/${item.id}/read`, 'POST');
@@ -129,10 +505,14 @@
         renderNotifications();
     }
 
-    function renderNotifications() {
+    function renderNotifications(options = {}) {
+        const animate = Boolean(options.animate);
+        const preserveScroll = Boolean(options.preserveScroll);
         renderFilters();
         const listEl = document.getElementById('notifList');
         const emptyEl = document.getElementById('notifEmpty');
+        const previousHeight = preserveScroll ? document.documentElement.scrollHeight : 0;
+        const previousScroll = preserveScroll ? window.scrollY : 0;
 
         const items = filteredItems();
         if (!items.length) {
@@ -143,7 +523,7 @@
 
         emptyEl.style.display = 'none';
         listEl.innerHTML = items.map((item) => `
-            <article class="notif-item ${item.is_read ? '' : 'unread'}" onclick='openNotification(${JSON.stringify(item).replace(/'/g, "&#39;")})'>
+            <article class="notif-item ${item.is_read ? '' : 'unread'} ${animate ? 'feed-enter' : ''}" onclick='openNotification(${JSON.stringify(item).replace(/'/g, "&#39;")})'>
                 <div>${avatarHtml(item.actor)}</div>
                 <div>
                     <div class="notif-title">${item.title}</div>
@@ -155,10 +535,26 @@
                 </div>
             </article>
         `).join('');
+
+        if (preserveScroll) {
+            const delta = document.documentElement.scrollHeight - previousHeight;
+            if (delta > 0) {
+                window.scrollTo({ top: previousScroll + delta, behavior: 'auto' });
+            }
+        }
+
+        if (animate) {
+            requestAnimationFrame(animateNotificationCards);
+        }
     }
 
     function setFilter(filter) {
         currentFilter = filter;
+        try {
+            localStorage.setItem(NOTIF_FILTER_KEY, filter);
+        } catch {
+            // ignora indisponibilidade de storage
+        }
         renderNotifications();
     }
 
@@ -175,10 +571,106 @@
             return;
         }
 
-        notifStore = await apiRequest('/notifications?limit=120');
-        renderNotifications();
+        resetNotificationsFeed();
+        await loadNextNotificationsPage();
+        setTimeout(restoreNotifScroll, 60);
     }
 
+    async function silentRefreshNotifications() {
+        if (notifRefreshPaused || notifFeedState.isLoading) return;
+        if (localStorage.getItem(GLOBAL_TYPING_LOCK_KEY) === 'community') return;
+
+        try {
+            const incoming = await apiRequest(`/notifications?skip=0&limit=${Math.min(20, NOTIF_PAGE_SIZE)}`);
+            const latest = Array.isArray(incoming) ? incoming : [];
+            if (!latest.length) return;
+
+            const knownIds = new Set(notifStore.map((item) => String(item.id)));
+            const fresh = latest.filter((item) => !knownIds.has(String(item.id)));
+            if (!fresh.length) return;
+
+            notifStore = fresh.concat(notifStore);
+            notifFeedState.skip += fresh.length;
+            pendingFreshNotifCount += fresh.length;
+            renderNotifications({ animate: true, preserveScroll: true });
+            updateNotifStatus(`${fresh.length} nova(s) notificação(ões) recebida(s).`);
+            syncNewNotifIndicator();
+            showNotifToast(`${fresh.length} nova(s) notificação(ões). Toque para ver.`);
+        } catch {
+            // falha silenciosa para não interromper a experiência
+        }
+    }
+
+    window.addEventListener('scroll', saveNotifScroll, { passive: true });
+    window.addEventListener('scroll', () => {
+        if ((window.scrollY || 0) < 40 && pendingFreshNotifCount > 0) {
+            pendingFreshNotifCount = 0;
+            syncNewNotifIndicator();
+        }
+        if ((window.scrollY || 0) < 40) {
+            hideNotifToast();
+        }
+    }, { passive: true });
+
+    const indicator = document.getElementById('notifNewIndicator');
+    if (indicator) {
+        indicator.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            pendingFreshNotifCount = 0;
+            syncNewNotifIndicator();
+            hideNotifToast();
+        });
+    }
+
+    const notifToast = document.getElementById('notifToast');
+    if (notifToast) {
+        notifToast.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            pendingFreshNotifCount = 0;
+            syncNewNotifIndicator();
+            hideNotifToast();
+        });
+    }
+
+    try {
+        const savedFilter = localStorage.getItem(NOTIF_FILTER_KEY);
+        if (savedFilter && ['all', 'message', 'favorite', 'reservation', 'follow', 'unread'].includes(savedFilter)) {
+            currentFilter = savedFilter;
+        }
+
+        const savedPaused = localStorage.getItem(NOTIF_REFRESH_PAUSED_KEY);
+        notifRefreshPaused = savedPaused === '1';
+
+        const savedInterval = Number(localStorage.getItem(NOTIF_REFRESH_INTERVAL_KEY) || NOTIF_AUTO_REFRESH_DEFAULT_MS);
+        if (NOTIF_AUTO_REFRESH_OPTIONS.includes(savedInterval)) {
+            notifRefreshIntervalMs = savedInterval;
+        }
+    } catch {
+        // ignora indisponibilidade de storage
+    }
+
+    const notifRefreshToggle = document.getElementById('notifRefreshToggle');
+    const notifRefreshInterval = document.getElementById('notifRefreshInterval');
+    if (notifRefreshToggle) {
+        notifRefreshToggle.addEventListener('click', () => {
+            setNotifRefreshPaused(!notifRefreshPaused);
+        });
+    }
+    if (notifRefreshInterval) {
+        notifRefreshInterval.addEventListener('click', cycleNotifRefreshInterval);
+    }
+
+    renderNotifRefreshControls();
+
+    setupNotificationsInfiniteScroll();
     loadNotifications().catch((error) => alert(error.message || 'Erro ao carregar notificações'));
+
+    restartNotifAutoRefresh();
+
+    window.addEventListener('beforeunload', () => {
+        if (notifRefreshTimer) {
+            window.clearInterval(notifRefreshTimer);
+        }
+    });
 </script>
 {% endblock %}
