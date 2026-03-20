@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-title" content="WallFruits">
     <link rel="manifest" href="/static/manifest.webmanifest">
     <link rel="icon" type="image/svg+xml" href="/static/icon.svg">
-    <link rel="apple-touch-icon" href="/static/icon.svg">
+    <link rel="apple-touch-icon" href="/static/icon-180.png">
     <title>{% block title %}WallFruits - Marketplace{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Merriweather:wght@700&display=swap" rel="stylesheet">
@@ -443,7 +443,7 @@
 
         .wf-bottom-menu-list {
             display: grid;
-            grid-template-columns: repeat(6, minmax(0, 1fr));
+            grid-template-columns: repeat(5, minmax(0, 1fr));
             align-items: center;
             list-style: none;
             margin: 0;
@@ -1279,6 +1279,176 @@
                 display: none;
             }
         }
+
+        .wf-help-popup-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(6, 14, 26, 0.62);
+            backdrop-filter: blur(3px);
+            -webkit-backdrop-filter: blur(3px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2400;
+            padding: 1rem;
+        }
+
+        .wf-help-popup-overlay.show {
+            display: flex;
+        }
+
+        .wf-help-popup {
+            width: min(100%, 980px);
+            height: min(90vh, 760px);
+            border-radius: 16px;
+            background: #fdf8eb;
+            border: 1px solid rgba(11, 46, 99, 0.18);
+            overflow: hidden;
+            display: grid;
+            grid-template-rows: auto 1fr;
+            box-shadow: 0 20px 42px rgba(8, 26, 58, 0.3);
+        }
+
+        .wf-help-popup-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.6rem;
+            padding: 0.65rem 0.85rem;
+            border-bottom: 1px solid rgba(11, 46, 99, 0.14);
+            background: linear-gradient(90deg, #f4ecd5 0%, #efe5c8 100%);
+            font-weight: 800;
+            color: #0b2e63;
+        }
+
+        .wf-help-popup-close {
+            border: none;
+            border-radius: 10px;
+            background: #0b2e63;
+            color: #fff;
+            padding: 0.38rem 0.7rem;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .wf-help-popup iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: #fff;
+        }
+
+        .wf-restricted-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(7, 14, 24, 0.58);
+            backdrop-filter: blur(3px);
+            -webkit-backdrop-filter: blur(3px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2600;
+            padding: 1rem;
+        }
+
+        .wf-restricted-modal.show {
+            display: flex;
+        }
+
+        .wf-restricted-card {
+            width: min(100%, 460px);
+            border-radius: 14px;
+            border: 1px solid rgba(184, 131, 51, 0.32);
+            background: #fff7ea;
+            color: #5a451f;
+            box-shadow: 0 18px 38px rgba(15, 29, 49, 0.24);
+            padding: 1rem 1rem 0.9rem;
+        }
+
+        .wf-restricted-head {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin-bottom: 0.45rem;
+        }
+
+        .wf-restricted-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 999px;
+            background: rgba(184, 131, 51, 0.18);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.95rem;
+        }
+
+        .wf-restricted-title {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 800;
+            color: #6d4f14;
+        }
+
+        .wf-restricted-msg {
+            margin: 0;
+            font-size: 0.9rem;
+            color: #6a5732;
+            line-height: 1.45;
+        }
+
+        .wf-restricted-actions {
+            margin-top: 0.8rem;
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .wf-lock-field {
+            position: relative;
+            border: 1px dashed rgba(184, 131, 51, 0.42);
+            background: linear-gradient(135deg, rgba(184, 131, 51, 0.08), rgba(94, 127, 44, 0.05));
+            border-radius: 10px;
+            padding: 0.48rem 0.56rem;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.45rem;
+            cursor: pointer;
+        }
+
+        .wf-lock-field-main {
+            display: grid;
+            gap: 2px;
+        }
+
+        .wf-lock-title {
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #8a6a2d;
+            font-weight: 800;
+        }
+
+        .wf-lock-subtitle {
+            font-size: 0.8rem;
+            color: #705b35;
+            font-weight: 600;
+        }
+
+        .wf-lock-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 999px;
+            background: rgba(184, 131, 51, 0.16);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.92rem;
+            color: #7a5e22;
+        }
     </style>
 </head>
 <body>
@@ -1311,7 +1481,7 @@
                 <a class="wf-nav-link" href="/offers">Explorar ofertas</a>
                 <a class="wf-nav-link" href="/offers/new" id="navNewOffer" style="display:none;">Nova oferta</a>
                 <a class="wf-nav-link" href="/messages" id="navMessages" style="display:none;">Mensagens</a>
-                <a class="wf-nav-link" href="/ai-agent" id="navHelp" style="display:none;">Ajuda</a>
+                <a class="wf-nav-link" href="#" id="navHelp" data-open-help-popup="1" style="display:none;">Ajuda</a>
                 <a class="wf-nav-link" href="/notifications" id="navNotifications" style="display:none;">Notificações <span id="navNotifBadge" style="display:none;background:var(--wf-danger);color:#fff;padding:1px 6px;border-radius:999px;font-size:0.75rem;">0</span></a>
             </div>
 
@@ -1394,6 +1564,30 @@
             </div>
 
     <script>
+        const WF_DEFAULT_AVATAR = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320"><rect width="320" height="320" fill="%23edf2f7"/><circle cx="160" cy="112" r="58" fill="%2373899f"/><path d="M48 284c0-62 50-112 112-112s112 50 112 112" fill="%2373899f"/></svg>';
+
+        function wfDefaultAvatar() {
+            return WF_DEFAULT_AVATAR;
+        }
+
+        function wfResolveAvatar(avatar) {
+            if (!avatar) return WF_DEFAULT_AVATAR;
+            if (avatar.startsWith('http://') || avatar.startsWith('https://') || avatar.startsWith('/')) {
+                return avatar;
+            }
+            return `/api/uploads/profiles/${avatar}`;
+        }
+
+        function wfAvatarOnError(img) {
+            if (!img) return;
+            img.onerror = null;
+            img.src = WF_DEFAULT_AVATAR;
+        }
+
+        window.wfDefaultAvatar = wfDefaultAvatar;
+        window.wfResolveAvatar = wfResolveAvatar;
+        window.wfAvatarOnError = wfAvatarOnError;
+
         async function apiRequest(url, method = 'GET', data = null) {
             const isAbsolute = url.startsWith('http://') || url.startsWith('https://');
             const apiUrl = isAbsolute || url.startsWith('/api') ? url : `/api${url.startsWith('/') ? url : `/${url}`}`;
@@ -1443,12 +1637,28 @@
                 }
             }
 
+            function isRestrictedResourceMessage(message) {
+                if (!message) return false;
+                const textLower = String(message).toLowerCase();
+                return (
+                    textLower.includes('premium') ||
+                    textLower.includes('assinante') ||
+                    textLower.includes('recurso restrito') ||
+                    textLower.includes('exclusiva') ||
+                    textLower.includes('apenas para')
+                );
+            }
+
             if (!response.ok) {
                 const errorMessage =
                     payload?.detail ||
                     payload?.error?.message ||
                     payload?.message ||
                     `Erro HTTP ${response.status}`;
+
+                if (response.status === 403 || isRestrictedResourceMessage(errorMessage)) {
+                    showRestrictedAccessNotice(errorMessage);
+                }
                 throw new Error(errorMessage);
             }
 
@@ -1706,6 +1916,102 @@
             });
         }
 
+        function openHelpPopup() {
+            const overlay = document.getElementById('helpPopupOverlay');
+            if (!overlay) return;
+            overlay.classList.add('show');
+            overlay.setAttribute('aria-hidden', 'false');
+        }
+
+        function showRestrictedAccessNotice(message) {
+            const overlay = document.getElementById('restrictedAccessModal');
+            const body = document.getElementById('restrictedAccessMessage');
+            if (!overlay || !body) {
+                alert(message || 'Este recurso está disponível apenas para assinantes Premium.');
+                return;
+            }
+
+            body.textContent = message || 'Este recurso está disponível apenas para assinantes Premium da plataforma.';
+            overlay.classList.add('show');
+            overlay.setAttribute('aria-hidden', 'false');
+        }
+
+        function closeRestrictedAccessNotice() {
+            const overlay = document.getElementById('restrictedAccessModal');
+            if (!overlay) return;
+            overlay.classList.remove('show');
+            overlay.setAttribute('aria-hidden', 'true');
+        }
+
+        function lockFieldMarkup(title, subtitle, reason) {
+            const htmlEscape = (value) => String(value || '')
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#39;');
+            const safeTitle = htmlEscape(title || 'Conteúdo restrito');
+            const safeSubtitle = htmlEscape(subtitle || 'Disponível para assinantes Premium');
+            const safeReason = String(reason || 'Este dado é privado e liberado apenas para assinantes.');
+            const escapedReason = safeReason.replace(/'/g, "\\'");
+            return `
+                <div class="wf-lock-field" onclick="showRestrictedAccessNotice('${escapedReason}')" title="${htmlEscape(safeReason)}">
+                    <div class="wf-lock-field-main">
+                        <div class="wf-lock-title">${safeTitle}</div>
+                        <div class="wf-lock-subtitle">${safeSubtitle}</div>
+                    </div>
+                    <span class="wf-lock-icon" aria-hidden="true">🔒</span>
+                </div>
+            `;
+        }
+
+        window.showRestrictedAccessNotice = showRestrictedAccessNotice;
+        window.closeRestrictedAccessNotice = closeRestrictedAccessNotice;
+        window.lockFieldMarkup = lockFieldMarkup;
+
+        function closeHelpPopup() {
+            const overlay = document.getElementById('helpPopupOverlay');
+            if (!overlay) return;
+            overlay.classList.remove('show');
+            overlay.setAttribute('aria-hidden', 'true');
+        }
+
+        function setupHelpPopup() {
+            const overlay = document.getElementById('helpPopupOverlay');
+            const closeBtn = document.getElementById('helpPopupClose');
+            const restrictedOverlay = document.getElementById('restrictedAccessModal');
+            const restrictedClose = document.getElementById('restrictedAccessClose');
+
+            document.querySelectorAll('[data-open-help-popup="1"]').forEach((item) => {
+                item.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    closePopup();
+                    closeSidebarRight();
+                    openHelpPopup();
+                });
+            });
+
+            if (closeBtn) {
+                closeBtn.addEventListener('click', closeHelpPopup);
+            }
+
+            if (overlay) {
+                overlay.addEventListener('click', (event) => {
+                    if (event.target === overlay) closeHelpPopup();
+                });
+            }
+
+            if (restrictedClose) {
+                restrictedClose.addEventListener('click', closeRestrictedAccessNotice);
+            }
+
+            if (restrictedOverlay) {
+                restrictedOverlay.addEventListener('click', (event) => {
+                    if (event.target === restrictedOverlay) closeRestrictedAccessNotice();
+                });
+            }
+        }
+
         function closeProfileMenu() {
             const profileMenu = document.getElementById('navProfileMenu');
             const profileTrigger = document.getElementById('wfProfileTrigger');
@@ -1762,6 +2068,7 @@
             bindLogoutHandler('rightNavLogout');
             setupSidebarRight();
             setupMobilePopup();
+            setupHelpPopup();
             setupProfileMenu();
             setNavAuthState();
             refreshUnreadNotifications();
@@ -1803,22 +2110,16 @@
                                 <span class="wf-mobile-nav-label">Comunidade</span>
                             </a>
                         </li>
-                        <li class="wf-mobile-nav-slot" id="actionExplore">
-                            <a href="/offers" class="wf-mobile-nav-item" title="Ofertas">
-                                <span class="material-icons wf-mobile-nav-icon">local_offer</span>
-                                <span class="wf-mobile-notif-badge" id="dockNotifBadge">0</span>
-                                <span class="wf-mobile-nav-label">Ofertas</span>
-                            </a>
-                        </li>
                         <li class="wf-mobile-center-slot">
                             <button class="wf-mobile-center-button" id="actionCenterButton" type="button" title="Abrir ações rápidas">
                                 <span class="material-icons">add</span>
                             </button>
                         </li>
-                        <li class="wf-mobile-nav-slot" id="actionStore">
-                            <a href="/store" class="wf-mobile-nav-item" title="Loja">
-                                <span class="material-icons wf-mobile-nav-icon">shopping_bag</span>
-                                <span class="wf-mobile-nav-label">Loja</span>
+                        <li class="wf-mobile-nav-slot" id="actionExplore">
+                            <a href="/offers" class="wf-mobile-nav-item" title="Ofertas">
+                                <span class="material-icons wf-mobile-nav-icon">local_offer</span>
+                                <span class="wf-mobile-notif-badge" id="dockNotifBadge">0</span>
+                                <span class="wf-mobile-nav-label">Ofertas</span>
                             </a>
                         </li>
                         <li class="wf-mobile-nav-slot" id="actionProfile">
@@ -1844,6 +2145,10 @@
                             <span class="material-icons">groups</span>
                             <span>Comunidade</span>
                         </a>
+                        <a href="/store" class="wf-popup-item" id="actionPopupStore">
+                            <span class="material-icons">shopping_bag</span>
+                            <span>Loja</span>
+                        </a>
                         <a href="/library" class="wf-popup-item" id="actionPopupLibrary">
                             <span class="material-icons">menu_book</span>
                             <span>Biblioteca</span>
@@ -1852,7 +2157,7 @@
                             <span class="material-icons">inventory_2</span>
                             <span>Criar produto</span>
                         </a>
-                        <a href="/ai-agent" class="wf-popup-item" id="actionPopupHelp" style="display:none;">
+                        <a href="#" class="wf-popup-item" id="actionPopupHelp" data-open-help-popup="1" style="display:none;">
                             <span class="material-icons">help</span>
                             <span>Ajuda</span>
                         </a>
@@ -1872,7 +2177,7 @@
                             <span class="material-icons">add_circle</span>
                             <span>Nova oferta</span>
                         </a>
-                        <a href="/ai-agent" class="wf-popup-item" id="actionHelp" style="display:none;">
+                        <a href="#" class="wf-popup-item" id="actionHelp" data-open-help-popup="1" style="display:none;">
                             <span class="material-icons">support_agent</span>
                             <span>Suporte IA</span>
                         </a>
@@ -1930,7 +2235,7 @@
                             <span>💬</span>
                             <span>Mensagens</span>
                         </a>
-                        <a href="/ai-agent" class="wf-sidebar-right-item" id="rightNavHelp" style="display:none;">
+                        <a href="#" class="wf-sidebar-right-item" id="rightNavHelp" data-open-help-popup="1" style="display:none;">
                             <span>❓</span>
                             <span>Ajuda</span>
                         </a>
@@ -1978,6 +2283,29 @@
                 </div>
             </div>
             <div class="wf-sidebar-right-overlay" id="sidebarRightOverlay"></div>
+
+            <div class="wf-help-popup-overlay" id="helpPopupOverlay" aria-hidden="true">
+                <div class="wf-help-popup" role="dialog" aria-modal="true" aria-label="Ajuda WallFruits">
+                    <div class="wf-help-popup-head">
+                        <span>Central de Ajuda WallFruits</span>
+                        <button class="wf-help-popup-close" id="helpPopupClose" type="button">Fechar</button>
+                    </div>
+                    <iframe src="/ai-agent" loading="lazy" title="Ajuda WallFruits"></iframe>
+                </div>
+            </div>
+
+            <div class="wf-restricted-modal" id="restrictedAccessModal" aria-hidden="true">
+                <div class="wf-restricted-card" role="dialog" aria-modal="true" aria-label="Recurso restrito">
+                    <div class="wf-restricted-head">
+                        <span class="wf-restricted-icon">🔒</span>
+                        <h3 class="wf-restricted-title">Recurso restrito</h3>
+                    </div>
+                    <p class="wf-restricted-msg" id="restrictedAccessMessage">Este recurso está disponível apenas para assinantes Premium.</p>
+                    <div class="wf-restricted-actions">
+                        <button type="button" class="btn btn-wf-secondary" id="restrictedAccessClose">Entendi</button>
+                    </div>
+                </div>
+            </div>
 
     <!-- 🌟 REVOLUTIONARY UI SCRIPTS -->
     <script>
@@ -2066,7 +2394,5 @@
         });
     </script>
 
-    <!-- Botão Flutuante Agente IA -->
-    {% include 'components/ai_agent_button.html' %}
 </body>
 </html>

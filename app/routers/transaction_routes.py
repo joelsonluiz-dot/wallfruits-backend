@@ -31,6 +31,7 @@ def _seller_offer_scope(*, current_user: User, current_profile_id):
 # -----------------------------
 # CREATE TRANSACTION (COMPRAR)
 # -----------------------------
+@router.post("", response_model=TransactionResponse, status_code=status.HTTP_201_CREATED)
 @router.post("/", response_model=TransactionResponse, status_code=status.HTTP_201_CREATED)
 def create_transaction(
     transaction: TransactionCreate,

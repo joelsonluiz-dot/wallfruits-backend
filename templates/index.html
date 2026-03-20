@@ -529,7 +529,7 @@
                         <div class="home-offer-body">
                             <div class="home-producer">
                                 <a href="${escapeHtml(ownerProfile)}" onclick="event.stopPropagation()" style="display:inline-flex;">
-                                    <img class="home-producer-avatar" src="${escapeHtml(ownerAvatar)}" alt="Avatar de ${escapeHtml(ownerName)}">
+                                    <img class="home-producer-avatar" src="${escapeHtml(ownerAvatar)}" alt="Avatar de ${escapeHtml(ownerName)}" onerror="wfAvatarOnError(this)">
                                 </a>
                                 <a class="home-producer-link" href="${escapeHtml(ownerProfile)}" onclick="event.stopPropagation()">${escapeHtml(ownerName)}</a>
                             </div>
@@ -600,13 +600,8 @@
     }
 
     function resolveAvatar(avatar) {
-        if (!avatar) {
-            return 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><rect width="100%" height="100%" fill="%23e5eef8"/><circle cx="60" cy="46" r="20" fill="%23638ab7"/><rect x="26" y="72" width="68" height="26" rx="13" fill="%23638ab7"/></svg>';
-        }
-        if (avatar.startsWith('http://') || avatar.startsWith('https://') || avatar.startsWith('/')) {
-            return avatar;
-        }
-        return `/api/uploads/profiles/${avatar}`;
+        if (window.wfResolveAvatar) return window.wfResolveAvatar(avatar);
+        return avatar || '';
     }
 
     function profileUrlByUserId(userId) {
@@ -650,7 +645,7 @@
                         <div class="home-community-body">
                             <div class="home-community-head">
                                 <a href="${escapeHtml(profileUrl)}" style="display:inline-flex;" onclick="event.stopPropagation()">
-                                    <img class="home-community-avatar" src="${escapeHtml(resolveAvatar(post.author?.profile_image))}" alt="Avatar de ${escapeHtml(userName)}" loading="lazy">
+                                    <img class="home-community-avatar" src="${escapeHtml(resolveAvatar(post.author?.profile_image))}" alt="Avatar de ${escapeHtml(userName)}" loading="lazy" onerror="wfAvatarOnError(this)">
                                 </a>
                                 <div style="display:grid;gap:0.04rem;min-width:0;">
                                     <a href="${escapeHtml(profileUrl)}" class="home-community-user" onclick="event.stopPropagation()">${escapeHtml(userName)}</a>

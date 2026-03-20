@@ -45,6 +45,7 @@ chat_manager = ChatManager()
 # -----------------------------
 # SEND MESSAGE
 # -----------------------------
+@router.post("", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
 @router.post("/", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
 async def send_message(
     message: MessageCreate,
@@ -90,13 +91,20 @@ async def send_message(
 
         db.add(new_message)
 
+        notification_title = "Nova mensagem"
+        notification_text = f"{current_user.name} enviou uma mensagem para você."
+        if message.message_type == "offer_inquiry" and message.offer_id:
+            notification_title = "Novo interesse em oferta"
+            product_name = offer.product_name if message.offer_id and offer else "sua oferta"
+            notification_text = f"{current_user.name} demonstrou interesse em {product_name}."
+
         create_notification(
             db,
             user_id=message.receiver_id,
             actor_user_id=current_user.id,
             notification_type="message",
-            title="Nova mensagem",
-            message=f"{current_user.name} enviou uma mensagem para você.",
+            title=notification_title,
+            message=notification_text,
             resource_type="thread",
             resource_id=str(thread_id),
         )
@@ -134,6 +142,7 @@ async def send_message(
 # -----------------------------
 # GET MY MESSAGES
 # -----------------------------
+@router.get("", response_model=List[MessageResponse])
 @router.get("/", response_model=List[MessageResponse])
 def get_my_messages(
     current_user: User = Depends(get_current_user),

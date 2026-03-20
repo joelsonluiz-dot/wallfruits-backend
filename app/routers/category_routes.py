@@ -16,6 +16,7 @@ router = APIRouter(
 # -----------------------------
 # CREATE CATEGORY (ADMIN ONLY)
 # -----------------------------
+@router.post("", response_model=CategoryResponse, status_code=status.HTTP_201_CREATED)
 @router.post("/", response_model=CategoryResponse, status_code=status.HTTP_201_CREATED)
 def create_category(
     category: CategoryCreate,
@@ -45,6 +46,7 @@ def create_category(
 # -----------------------------
 # GET ALL CATEGORIES
 # -----------------------------
+@router.get("", response_model=List[CategoryResponse])
 @router.get("/", response_model=List[CategoryResponse])
 def get_categories(
     db: Session = Depends(get_db),

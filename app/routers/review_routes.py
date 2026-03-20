@@ -17,6 +17,7 @@ router = APIRouter(
 # -----------------------------
 # CREATE REVIEW
 # -----------------------------
+@router.post("", response_model=ReviewResponse, status_code=status.HTTP_201_CREATED)
 @router.post("/", response_model=ReviewResponse, status_code=status.HTTP_201_CREATED)
 def create_review(
     review: ReviewCreate,

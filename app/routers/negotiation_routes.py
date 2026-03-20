@@ -95,6 +95,7 @@ def _validate_contract_upload(file: UploadFile) -> None:
         )
 
 
+@router.post("", response_model=NegotiationResponse, status_code=status.HTTP_201_CREATED)
 @router.post("/", response_model=NegotiationResponse, status_code=status.HTTP_201_CREATED)
 def create_negotiation(
     payload: NegotiationCreate,

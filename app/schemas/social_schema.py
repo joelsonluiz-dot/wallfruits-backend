@@ -34,11 +34,14 @@ class PublicUserProfileResponse(BaseModel):
     id: int
     name: str
     username: str
-    email: str
+    email: Optional[str]
+    phone: Optional[str]
     role: str
     bio: Optional[str]
     location: Optional[str]
     profile_image: Optional[str]
+    contact_locked: bool = False
+    contact_lock_reason: Optional[str] = None
 
     total_offers: int
     followers_count: int

@@ -215,6 +215,49 @@
         gap: 0.55rem;
     }
 
+    .profile-audience-banner {
+        margin-top: 0.85rem;
+        border-radius: 14px;
+        border: 1px solid rgba(255,255,255,0.2);
+        background: linear-gradient(135deg, rgba(249, 210, 140, 0.2), rgba(31, 184, 143, 0.14));
+        padding: 0.7rem 0.75rem;
+        display: grid;
+        gap: 0.35rem;
+    }
+
+    .profile-audience-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.55rem;
+        flex-wrap: wrap;
+    }
+
+    .profile-audience-title {
+        margin: 0;
+        font-size: 0.9rem;
+        font-weight: 800;
+        color: #fff;
+    }
+
+    .profile-audience-sub {
+        margin: 0;
+        font-size: 0.78rem;
+        color: var(--pf-muted);
+    }
+
+    .profile-audience-pill {
+        border-radius: 999px;
+        padding: 0.18rem 0.58rem;
+        border: 1px solid rgba(255,255,255,0.26);
+        font-size: 0.68rem;
+        font-weight: 700;
+        color: #ffe7bf;
+        background: rgba(0,0,0,0.2);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
     .stat {
         border-radius: 14px;
         padding: 0.62rem;
@@ -252,6 +295,7 @@
     }
 
     .nav-link {
+        position: relative;
         border-radius: 12px;
         border: 1px solid rgba(255,255,255,0.15);
         text-decoration: none;
@@ -266,6 +310,20 @@
         transition: all 0.22s ease;
     }
 
+    .nav-link::after {
+        content: '';
+        position: absolute;
+        left: 22%;
+        right: 22%;
+        bottom: 6px;
+        height: 2px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, rgba(249, 210, 140, 0.95), rgba(31, 184, 143, 0.92));
+        transform: scaleX(0);
+        transform-origin: center;
+        transition: transform 0.22s ease;
+    }
+
     .nav-link.active,
     .nav-link:hover {
         background: rgba(255,255,255,0.15);
@@ -273,20 +331,36 @@
         color: #fff;
     }
 
+    .nav-link.active::after,
+    .nav-link:hover::after {
+        transform: scaleX(1);
+    }
+
     .content-sections {
         margin-top: 0.8rem;
+        display: grid;
+        gap: 0.7rem;
     }
 
     .content-section {
-        display: none;
+        display: block;
         border-radius: 14px;
         border: 1px solid rgba(255,255,255,0.16);
         background: rgba(0,0,0,0.2);
         padding: 0.9rem;
+        opacity: 0;
+        max-height: 0;
+        transform: translateY(8px) scale(0.995);
+        overflow: hidden;
+        pointer-events: none;
+        transition: opacity 0.24s ease, transform 0.24s ease, max-height 0.28s ease;
     }
 
     .content-section.active {
-        display: block;
+        opacity: 1;
+        max-height: 1400px;
+        transform: translateY(0) scale(1);
+        pointer-events: auto;
         animation: fadeInUp 0.26s ease;
     }
 
@@ -299,6 +373,20 @@
         margin: 0 0 0.65rem;
         font-size: 1rem;
         font-weight: 800;
+    }
+
+    .section-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+    }
+
+    .section-sub {
+        margin: 0;
+        font-size: 0.75rem;
+        color: var(--pf-muted);
     }
 
     .offer-grid {
@@ -340,6 +428,7 @@
         color: #fff;
         line-height: 1.35;
         display: -webkit-box;
+        line-clamp: 3;
         -webkit-line-clamp: 3;
         -webkit-box-orient: vertical;
         overflow: hidden;
@@ -358,14 +447,28 @@
         border-radius: 12px;
         overflow: hidden;
         border: 1px solid rgba(255,255,255,0.15);
-        background: rgba(0,0,0,0.25);
+        background: linear-gradient(180deg, rgba(0,0,0,0.22), rgba(0,0,0,0.3));
         cursor: pointer;
-        transition: transform 0.2s ease, border-color 0.2s ease;
+        transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .offer-card.stagger-item,
+    .community-card.stagger-item {
+        opacity: 0;
+        transform: translateY(12px) scale(0.985);
+    }
+
+    .offer-card.stagger-item.is-in,
+    .community-card.stagger-item.is-in {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        transition: opacity 0.34s ease, transform 0.34s ease;
     }
 
     .offer-card:hover {
         transform: translateY(-2px);
         border-color: rgba(255,255,255,0.4);
+        box-shadow: 0 14px 28px rgba(0,0,0,0.26);
     }
 
     .offer-image {
@@ -377,6 +480,41 @@
 
     .offer-body {
         padding: 0.55rem 0.62rem 0.66rem;
+    }
+
+    .offer-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.35rem;
+        margin-bottom: 0.35rem;
+    }
+
+    .offer-status-badge {
+        border-radius: 999px;
+        padding: 0.16rem 0.46rem;
+        font-size: 0.64rem;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        border: 1px solid rgba(255,255,255,0.22);
+    }
+
+    .offer-status-badge.active {
+        background: rgba(54, 208, 141, 0.22);
+        color: #b7ffe2;
+    }
+
+    .offer-status-badge.sold,
+    .offer-status-badge.closed,
+    .offer-status-badge.expired {
+        background: rgba(255, 123, 123, 0.22);
+        color: #ffd4d4;
+    }
+
+    .offer-date {
+        font-size: 0.66rem;
+        color: var(--pf-muted);
     }
 
     .offer-title {
@@ -402,6 +540,19 @@
         border: 1px solid rgba(255,255,255,0.12);
         padding: 0.56rem 0.62rem;
         background: rgba(255,255,255,0.04);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .detail-item::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        background: linear-gradient(180deg, rgba(249, 210, 140, 0.95), rgba(31, 184, 143, 0.85));
+        opacity: 0.85;
     }
 
     .detail-label {
@@ -419,6 +570,24 @@
     .settings-form {
         display: grid;
         gap: 0.8rem;
+    }
+
+    .settings-block {
+        border: 1px solid rgba(255,255,255,0.16);
+        background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.03));
+        border-radius: 12px;
+        padding: 0.75rem;
+        display: grid;
+        gap: 0.55rem;
+    }
+
+    .settings-block-title {
+        margin: 0;
+        font-size: 0.78rem;
+        font-weight: 800;
+        color: #ffe5ba;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
     }
 
     .settings-grid {
@@ -441,6 +610,7 @@
         display: flex;
         gap: 0.5rem;
         flex-wrap: wrap;
+        justify-content: flex-end;
     }
 
     .logout-box {
@@ -452,6 +622,19 @@
     .helper-text {
         color: var(--pf-muted);
         font-size: 0.78rem;
+    }
+
+    .section-panel-note {
+        margin: 0;
+        font-size: 0.78rem;
+        color: var(--pf-muted);
+    }
+
+    .logout-box {
+        border: 1px solid rgba(255,255,255,0.16);
+        border-radius: 12px;
+        background: linear-gradient(160deg, rgba(255,255,255,0.05), rgba(0,0,0,0.12));
+        padding: 0.85rem;
     }
 
     .hidden {
@@ -543,6 +726,8 @@
                 </div>
 
                 <div class="stats" id="profileStats"></div>
+
+                <div class="profile-audience-banner" id="profileAudienceBanner"></div>
             </div>
 
             <div class="profile-body">
@@ -555,43 +740,62 @@
 
                 <div class="content-sections">
                     <section class="content-section active" id="home-section">
-                        <h3 class="section-title">Ofertas publicadas</h3>
+                        <div class="section-head">
+                            <h3 class="section-title" id="offersSectionTitle">Ofertas publicadas</h3>
+                            <p class="section-sub" id="offersSectionHint">Portfólio público de produtos e preços.</p>
+                        </div>
                         <div class="offer-grid" id="offersGrid"></div>
                         <div id="emptyOffers" class="helper-text" style="margin-top:0.5rem;display:none;">Nenhuma oferta publicada ainda.</div>
 
-                        <h3 class="section-title" style="margin-top:0.9rem;">Posts da comunidade</h3>
+                        <div class="section-head" style="margin-top:0.9rem;">
+                            <h3 class="section-title" style="margin:0;">Posts da comunidade</h3>
+                            <p class="section-sub" id="communitySectionHint">Atividade social recente deste perfil.</p>
+                        </div>
                         <div class="community-grid" id="communityPostsGrid"></div>
                         <div id="emptyCommunityPosts" class="helper-text" style="margin-top:0.5rem;display:none;">Nenhuma publicação da comunidade ainda.</div>
                     </section>
 
                     <section class="content-section" id="profile-section">
-                        <h3 class="section-title">Detalhes do perfil</h3>
+                        <div class="section-head">
+                            <h3 class="section-title" style="margin:0;">Detalhes do perfil</h3>
+                            <p class="section-sub" id="detailsSectionHint">Identidade pública e informações da conta.</p>
+                        </div>
                         <div class="profile-details" id="profileDetails"></div>
                     </section>
 
                     <section class="content-section" id="settings-section">
-                        <h3 class="section-title">Configurações</h3>
+                        <div class="section-head">
+                            <h3 class="section-title" style="margin:0;">Configurações</h3>
+                            <p class="section-sub" id="settingsSectionHint">Ajuste dados e preferências desta conta.</p>
+                        </div>
                         <div id="settingsLocked" class="helper-text hidden">Somente o dono deste perfil pode editar as configurações.</div>
 
                         <form id="profileSettingsForm" class="settings-form hidden">
-                            <div class="settings-grid">
-                                <div>
-                                    <label class="wf-label" for="editName">Nome</label>
-                                    <input id="editName" class="wf-input form-control" type="text" minlength="2" maxlength="150">
-                                </div>
-                                <div>
-                                    <label class="wf-label" for="editLocation">Localização</label>
-                                    <input id="editLocation" class="wf-input form-control" type="text" maxlength="150">
-                                </div>
-                                <div style="grid-column: 1 / -1;">
-                                    <label class="wf-label" for="editBio">Bio</label>
-                                    <textarea id="editBio" class="wf-input form-control" maxlength="500" rows="3"></textarea>
+                            <div class="settings-block">
+                                <h4 class="settings-block-title">Dados públicos</h4>
+                                <div class="settings-grid">
+                                    <div>
+                                        <label class="wf-label" for="editName">Nome</label>
+                                        <input id="editName" class="wf-input form-control" type="text" minlength="2" maxlength="150">
+                                    </div>
+                                    <div>
+                                        <label class="wf-label" for="editLocation">Localização</label>
+                                        <input id="editLocation" class="wf-input form-control" type="text" maxlength="150">
+                                    </div>
+                                    <div style="grid-column: 1 / -1;">
+                                        <label class="wf-label" for="editBio">Bio</label>
+                                        <textarea id="editBio" class="wf-input form-control" maxlength="500" rows="3"></textarea>
+                                    </div>
                                 </div>
                             </div>
 
-                            <div>
-                                <label class="wf-label" for="profileImageFile">Imagem de perfil (upload)</label>
-                                <input id="profileImageFile" class="wf-input form-control" type="file" accept="image/*">
+                            <div class="settings-block">
+                                <h4 class="settings-block-title">Imagem de perfil</h4>
+                                <p class="section-panel-note">Atualize sua foto para fortalecer confiança em negociações e interações.</p>
+                                <div>
+                                    <label class="wf-label" for="profileImageFile">Imagem de perfil (upload)</label>
+                                    <input id="profileImageFile" class="wf-input form-control" type="file" accept="image/*">
+                                </div>
                             </div>
 
                             <div class="settings-actions">
@@ -603,6 +807,10 @@
                     </section>
 
                     <section class="content-section" id="logout-section">
+                        <div class="section-head">
+                            <h3 class="section-title" style="margin:0;">Segurança da sessão</h3>
+                            <p class="section-sub" id="logoutSectionHint">Gerencie o encerramento seguro da conta neste dispositivo.</p>
+                        </div>
                         <div class="logout-box" id="logoutBox">
                             <h3 class="section-title" style="margin-bottom:0;">Encerrar sessão</h3>
                             <p class="helper-text">Deseja sair da sua conta neste dispositivo?</p>
@@ -628,13 +836,8 @@
     let isOwnerProfile = false;
 
     function resolveAvatar(url) {
-        if (!url) return null;
-        if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/')) return url;
-        return `/api/uploads/profiles/${url}`;
-    }
-
-    function initials(name) {
-        return (name || 'U').split(' ').filter(Boolean).slice(0, 2).map(p => p[0].toUpperCase()).join('') || 'U';
+        if (window.wfResolveAvatar) return window.wfResolveAvatar(url);
+        return url || '';
     }
 
     function esc(text) {
@@ -652,6 +855,22 @@
         const date = new Date(iso);
         if (Number.isNaN(date.getTime())) return '-';
         return date.toLocaleDateString('pt-BR');
+    }
+
+    function offerStatusClass(status) {
+        const value = String(status || '').toLowerCase();
+        if (!value) return 'active';
+        return value;
+    }
+
+    function offerStatusLabel(status) {
+        const value = String(status || 'active').toLowerCase();
+        if (value === 'active') return 'Ativa';
+        if (value === 'sold') return 'Vendida';
+        if (value === 'closed') return 'Encerrada';
+        if (value === 'expired') return 'Expirada';
+        if (value === 'paused') return 'Pausada';
+        return value;
     }
 
     async function getCurrentUser() {
@@ -695,6 +914,22 @@
         document.querySelectorAll('.content-section').forEach((section) => {
             section.classList.toggle('active', section.id === `${sectionId}-section`);
         });
+
+        if (sectionId === 'home') {
+            animateHomeStagger();
+        }
+    }
+
+    function animateHomeStagger() {
+        const items = document.querySelectorAll('#offersGrid .offer-card, #communityPostsGrid .community-card');
+        items.forEach((item, index) => {
+            item.classList.add('stagger-item');
+            item.classList.remove('is-in');
+            const delay = Math.min(index * 55, 440);
+            setTimeout(() => {
+                item.classList.add('is-in');
+            }, delay);
+        });
     }
 
     function setThemeMode() {
@@ -714,11 +949,7 @@
     function renderAvatar(name, image) {
         const node = document.getElementById('profileAvatarNode');
         const url = resolveAvatar(image);
-        if (url) {
-            node.outerHTML = `<img id="profileAvatarNode" class="profile-picture" src="${esc(url)}" alt="Avatar de ${esc(name)}">`;
-        } else {
-            node.outerHTML = `<div id="profileAvatarNode" class="profile-picture-fallback">${esc(initials(name))}</div>`;
-        }
+        node.outerHTML = `<img id="profileAvatarNode" class="profile-picture" src="${esc(url)}" alt="Avatar de ${esc(name)}" onerror="wfAvatarOnError(this)">`;
     }
 
     function renderStats(data) {
@@ -736,6 +967,9 @@
 
         if (!Array.isArray(posts) || !posts.length) {
             grid.innerHTML = '';
+            empty.textContent = isOwnerProfile
+                ? 'Você ainda não publicou nada na comunidade. Compartilhe um update para ganhar visibilidade.'
+                : 'Este perfil ainda não publicou na comunidade.';
             empty.style.display = 'block';
             return;
         }
@@ -754,6 +988,8 @@
                 </div>
             </article>
         `).join('');
+
+        animateHomeStagger();
     }
 
     function renderOffers(offers) {
@@ -762,6 +998,9 @@
 
         if (!offers.length) {
             grid.innerHTML = '';
+            empty.textContent = isOwnerProfile
+                ? 'Você ainda não publicou ofertas. Crie sua primeira oferta para começar a vender.'
+                : 'Este usuário ainda não possui ofertas publicadas no momento.';
             empty.style.display = 'block';
             return;
         }
@@ -776,21 +1015,64 @@
                 <article class="offer-card" onclick="window.location.href='/offers/${offer.id}'">
                     <img class="offer-image" src="${esc(safeImage)}" alt="${esc(offer.product_name)}">
                     <div class="offer-body">
+                        <div class="offer-head">
+                            <span class="offer-status-badge ${esc(offerStatusClass(offer.status))}">${esc(offerStatusLabel(offer.status || 'active'))}</span>
+                            <span class="offer-date">${esc(fmtDate(offer.created_at))}</span>
+                        </div>
                         <p class="offer-title">${esc(offer.product_name)}</p>
                         <div class="offer-meta">${currency(offer.price)} / ${esc(offer.unit || 'kg')}</div>
                     </div>
                 </article>
             `;
         }).join('');
+
+        animateHomeStagger();
+    }
+
+    function renderAudienceBanner(data) {
+        const banner = document.getElementById('profileAudienceBanner');
+        const offersCount = Number(data.total_offers || 0);
+        const postsCount = Number((data.community_posts || []).length);
+
+        if (isOwnerProfile) {
+            banner.innerHTML = `
+                <div class="profile-audience-top">
+                    <h4 class="profile-audience-title">Seu painel público está ativo</h4>
+                    <span class="profile-audience-pill">Visão do dono</span>
+                </div>
+                <p class="profile-audience-sub">Este é o mesmo perfil que outros usuários veem. Você tem ${offersCount} oferta(s) publicada(s) e ${postsCount} post(s).</p>
+            `;
+            return;
+        }
+
+        banner.innerHTML = `
+            <div class="profile-audience-top">
+                <h4 class="profile-audience-title">Perfil público de ${esc(data.name || 'usuário')}</h4>
+                <span class="profile-audience-pill">Visão pública</span>
+            </div>
+            <p class="profile-audience-sub">Explore as ofertas publicadas e a atividade da comunidade deste perfil. Atualmente: ${offersCount} oferta(s) e ${postsCount} post(s).</p>
+        `;
     }
 
     function renderDetails(data) {
+        const lockReason = data.contact_lock_reason || 'Contato e localização completos são liberados para assinantes Premium.';
+        const emailNode = data.contact_locked
+            ? lockFieldMarkup('Contato', 'Email disponível para assinantes', lockReason)
+            : `<div class="detail-value">${esc(data.email || '-')}</div>`;
+        const phoneNode = data.contact_locked
+            ? lockFieldMarkup('Contato', 'Telefone disponível para assinantes', lockReason)
+            : `<div class="detail-value">${esc(data.phone || 'Não informado')}</div>`;
+        const locationNode = data.contact_locked
+            ? lockFieldMarkup('Endereço', 'Localização completa para assinantes', lockReason)
+            : `<div class="detail-value">${esc(data.location || 'Não informada')}</div>`;
+
         document.getElementById('profileDetails').innerHTML = `
             <div class="detail-item"><div class="detail-label">Nome</div><div class="detail-value">${esc(data.name || '-')}</div></div>
-            <div class="detail-item"><div class="detail-label">Email</div><div class="detail-value">${esc(data.email || '-')}</div></div>
+            <div class="detail-item"><div class="detail-label">Email</div>${emailNode}</div>
+            <div class="detail-item"><div class="detail-label">Telefone</div>${phoneNode}</div>
             <div class="detail-item"><div class="detail-label">Usuário</div><div class="detail-value">${esc(data.username || '-')}</div></div>
             <div class="detail-item"><div class="detail-label">Perfil</div><div class="detail-value">${esc(data.role || '-')}</div></div>
-            <div class="detail-item"><div class="detail-label">Localização</div><div class="detail-value">${esc(data.location || 'Não informada')}</div></div>
+            <div class="detail-item"><div class="detail-label">Localização</div>${locationNode}</div>
             <div class="detail-item"><div class="detail-label">Bio</div><div class="detail-value">${esc(data.bio || 'Sem bio informada')}</div></div>
         `;
     }
@@ -875,6 +1157,41 @@
         `;
 
         renderAvatar(data.name, data.profile_image);
+
+        const offersTitle = document.getElementById('offersSectionTitle');
+        const offersHint = document.getElementById('offersSectionHint');
+        const communityHint = document.getElementById('communitySectionHint');
+        const detailsHint = document.getElementById('detailsSectionHint');
+        const settingsHint = document.getElementById('settingsSectionHint');
+        const logoutHint = document.getElementById('logoutSectionHint');
+        if (offersTitle) {
+            offersTitle.textContent = isOwnerProfile ? 'Minhas ofertas publicadas' : `Ofertas publicadas por ${data.name || 'usuário'}`;
+        }
+        if (offersHint) {
+            offersHint.textContent = isOwnerProfile
+                ? 'Vitrine pública das suas ofertas ativas e históricas.'
+                : 'Vitrine pública com produtos e condições cadastradas por este perfil.';
+        }
+        if (communityHint) {
+            communityHint.textContent = isOwnerProfile
+                ? 'Seu histórico recente de publicações na comunidade.'
+                : 'Publicações recentes deste perfil na comunidade WallFruits.';
+        }
+        if (detailsHint) {
+            detailsHint.textContent = isOwnerProfile
+                ? 'Dados da sua identidade pública e informações principais da conta.'
+                : 'Informações públicas disponíveis deste perfil na plataforma.';
+        }
+        if (settingsHint) {
+            settingsHint.textContent = isOwnerProfile
+                ? 'Altere nome, bio, localização e foto com acabamento profissional.'
+                : 'Configurações privadas disponíveis apenas para o dono do perfil.';
+        }
+        if (logoutHint) {
+            logoutHint.textContent = isOwnerProfile
+                ? 'Finalize sua sessão atual com segurança quando necessário.'
+                : 'Ações de sessão são privadas e não aparecem para visitantes.';
+        }
     }
 
     async function loadProfile() {
@@ -894,6 +1211,7 @@
         renderDetails(profileData);
         renderOffers(profileData.offers || []);
         renderCommunityPosts(profileData.community_posts || []);
+        renderAudienceBanner(profileData);
         renderQuickActions(profileData);
         setupOwnerSections(profileData);
 
@@ -913,6 +1231,7 @@
             event.preventDefault();
             const section = link.dataset.section;
             if ((section === 'settings' || section === 'logout') && !isOwnerProfile) {
+                showRestrictedAccessNotice('Esta ação é privada e está disponível apenas para o dono do perfil.');
                 return;
             }
             setActiveSection(section);

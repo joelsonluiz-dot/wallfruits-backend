@@ -153,9 +153,10 @@
 
     .ag-products-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
         gap: 0.9rem;
         margin-top: 0.4rem;
+        align-items: stretch;
     }
 
     .ag-row-section {
@@ -249,6 +250,7 @@
         overflow: hidden;
         box-shadow: 0 8px 22px rgba(14, 41, 83, 0.09);
         transition: transform 0.22s ease, box-shadow 0.22s ease;
+        height: 100%;
     }
 
     .ag-card:hover {
@@ -286,6 +288,9 @@
 
     .ag-card-body {
         padding: 0.85rem;
+        display: flex;
+        flex-direction: column;
+        min-height: 164px;
     }
 
     .ag-card-category {
@@ -317,7 +322,7 @@
     }
 
     .ag-card-footer {
-        margin-top: 0.7rem;
+        margin-top: auto;
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -366,6 +371,47 @@
         }
     }
 
+    @media (max-width: 1100px) {
+        .ag-products-grid {
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .ag-card-media {
+            height: 164px;
+        }
+
+        .ag-card-body {
+            min-height: 154px;
+        }
+    }
+
+    @media (max-width: 912px) {
+        .ag-products-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.68rem;
+        }
+
+        .ag-card-media {
+            height: 154px;
+        }
+
+        .ag-card-title {
+            font-size: 0.8rem;
+            min-height: 2.35rem;
+        }
+
+        .ag-price {
+            font-size: 0.86rem;
+        }
+    }
+
+    @media (max-width: 820px) {
+        .ag-products-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
     @media (max-width: 768px) {
         .ag-store-hero {
             border-radius: 16px;
@@ -405,6 +451,25 @@
         .ag-card-media {
             height: 146px;
         }
+
+        .ag-card-body {
+            min-height: 146px;
+            padding: 0.72rem;
+        }
+
+        .ag-card-title {
+            font-size: 0.78rem;
+            min-height: 2.2rem;
+        }
+
+        .ag-card-meta {
+            font-size: 0.7rem;
+        }
+
+        .ag-buy-btn {
+            font-size: 0.71rem;
+            padding: 0.42rem 0.62rem;
+        }
     }
 
     @media (max-width: 480px) {
@@ -421,7 +486,8 @@
         }
 
         .ag-products-grid {
-            grid-template-columns: 1fr;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.55rem;
         }
 
         .ag-row-item {
@@ -429,8 +495,27 @@
             max-width: 182px;
         }
 
+        .ag-card-media {
+            height: 124px;
+        }
+
         .ag-card-body {
-            padding: 0.72rem;
+            padding: 0.62rem;
+            min-height: 136px;
+        }
+
+        .ag-card-title {
+            font-size: 0.74rem;
+            min-height: 2.1rem;
+        }
+
+        .ag-price {
+            font-size: 0.82rem;
+        }
+
+        .ag-buy-btn {
+            font-size: 0.68rem;
+            padding: 0.38rem 0.56rem;
         }
     }
 </style>

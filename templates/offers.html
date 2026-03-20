@@ -585,24 +585,17 @@
         return `@produtor${ownerId}`;
     }
 
+    function ownerContactLockBadge(offer) {
+        if (!offer.contact_locked && !offer.owner_data?.contact_locked) return '';
+        const reason = (offer.restriction_message || offer.owner_data?.contact_lock_reason || 'Contato completo disponível para assinantes Premium.').replace(/'/g, "\\'");
+        return `<button type="button" class="wf-badge wf-badge-neutral" style="margin-top:0.24rem;font-size:0.63rem;padding:0.18rem 0.45rem;" onclick="event.stopPropagation();showRestrictedAccessNotice('${reason}')">🔒 contato premium</button>`;
+    }
+
     function getOwnerAvatar(offer) {
-        if (offer.owner_data?.profile_image) {
-            const image = offer.owner_data.profile_image;
-            const src = image.startsWith('http://') || image.startsWith('https://') || image.startsWith('/')
-                ? image
-                : `/api/uploads/profiles/${image}`;
-            return `<img class="produtor-avatar" src="${escapeHtml(src)}" alt="Avatar do produtor">`;
-        }
-
-        const name = offer.owner_data?.name || 'Produtor';
-        const initials = name
-            .split(' ')
-            .filter(Boolean)
-            .slice(0, 2)
-            .map((p) => p[0].toUpperCase())
-            .join('');
-
-        return `<span class="produtor-avatar-fallback">${escapeHtml(initials || 'PR')}</span>`;
+        const src = window.wfResolveAvatar
+            ? window.wfResolveAvatar(offer.owner_data?.profile_image)
+            : (offer.owner_data?.profile_image || '');
+        return `<img class="produtor-avatar" src="${escapeHtml(src)}" alt="Avatar do produtor" onerror="wfAvatarOnError(this)">`;
     }
 
     function ownerProfileUrl(offer) {
@@ -677,6 +670,7 @@
                                 <div class="produtor-info">
                                     <div class="produtor-nome">${escapeHtml(offer.owner_data?.name || 'Produtor')}</div>
                                     <div class="produtor-username">${escapeHtml(getOwnerUsername(offer))}</div>
+                                    ${ownerContactLockBadge(offer)}
                                 </div>
                             </a>
                         </div>
@@ -739,7 +733,27 @@
             return;
         }
 
-        window.location.href = `/messages?user_id=${receiverId}&offer_id=${offer.id}`;
+        const content = `Aviso de interesse: tenho interesse na oferta "${offer.product_name}" e gostaria de alinhar detalhes de quantidade, entrega e pagamento.`;
+
+        try {
+            const sent = await apiRequest('/messages', 'POST', {
+                receiver_id: receiverId,
+                offer_id: offer.id,
+                message_type: 'offer_inquiry',
+                subject: `Interesse na oferta: ${offer.product_name}`,
+                content,
+            });
+
+            const threadId = sent?.thread_id;
+            if (threadId) {
+                window.location.href = `/messages?thread_id=${threadId}`;
+                return;
+            }
+
+            window.location.href = `/messages?user_id=${receiverId}&offer_id=${offer.id}`;
+        } catch (error) {
+            alert(error.message || 'Nao foi possivel enviar o aviso agora.');
+        }
     }
 
     async function reserveOffer(offerId, event) {

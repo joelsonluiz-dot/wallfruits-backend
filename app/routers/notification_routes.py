@@ -10,6 +10,7 @@ from app.schemas.social_schema import NotificationActor, NotificationResponse
 router = APIRouter(prefix="/notifications", tags=["notifications"])
 
 
+@router.get("", response_model=list[NotificationResponse])
 @router.get("/", response_model=list[NotificationResponse])
 def list_my_notifications(
     current_user: User = Depends(get_current_user),

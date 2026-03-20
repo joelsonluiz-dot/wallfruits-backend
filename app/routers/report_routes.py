@@ -25,6 +25,7 @@ def _http_error_from_value_error(exc: ValueError) -> HTTPException:
     return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=detail)
 
 
+@router.post("", response_model=ReportResponse, status_code=status.HTTP_201_CREATED)
 @router.post("/", response_model=ReportResponse, status_code=status.HTTP_201_CREATED)
 def create_report(
     payload: ReportCreate,
@@ -53,6 +54,7 @@ def list_my_reports(
     return ReportService(db).list_my_reports(current_user=current_user, skip=skip, limit=limit)
 
 
+@router.get("", response_model=list[ReportResponse])
 @router.get("/", response_model=list[ReportResponse])
 def list_reports_admin(
     status_filter: str | None = Query(

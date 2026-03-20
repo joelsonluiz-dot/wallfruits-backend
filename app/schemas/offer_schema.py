@@ -232,6 +232,9 @@ class OfferResponse(BaseModel):
     owner: Optional[Dict] = None
     owner_data: Optional[Dict] = None
     is_favorited: Optional[bool] = False
+    contact_locked: bool = False
+    private_address_locked: bool = False
+    restriction_message: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -257,17 +260,20 @@ class OfferResponse(BaseModel):
         if value is None:
             return None
         if isinstance(value, dict):
+            value = dict(value)
+            value["email"] = None
+            value["location"] = None
             return value
 
         # Compatibilidade quando SQLAlchemy retorna a relação owner como objeto ORM.
         return {
             "id": getattr(value, "id", None),
             "name": getattr(value, "name", None),
-            "email": getattr(value, "email", None),
+            "email": None,
             "profile_image": getattr(value, "profile_image", None),
             "rating": getattr(value, "rating", None),
             "total_reviews": getattr(value, "total_reviews", None),
-            "location": getattr(value, "location", None),
+            "location": None,
             "is_verified": getattr(value, "is_verified", None),
         }
 

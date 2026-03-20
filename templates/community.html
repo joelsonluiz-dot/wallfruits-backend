@@ -510,13 +510,8 @@
         }
 
         function resolveAvatar(avatar) {
-            if (!avatar) {
-                return 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><rect width="100%" height="100%" fill="%23e5eef8"/><circle cx="60" cy="46" r="20" fill="%23638ab7"/><rect x="26" y="72" width="68" height="26" rx="13" fill="%23638ab7"/></svg>';
-            }
-            if (avatar.startsWith('http://') || avatar.startsWith('https://') || avatar.startsWith('/')) {
-                return avatar;
-            }
-            return `/api/uploads/profiles/${avatar}`;
+            if (window.wfResolveAvatar) return window.wfResolveAvatar(avatar);
+            return avatar || '';
         }
 
         function fmtDate(isoDate) {
@@ -782,7 +777,7 @@
                     <article class="post-card ${focusPostId && Number(post.id) === Number(focusPostId) ? 'post-focus' : ''}" data-post-id="${escapeHtml(post.id)}">
                         <div class="post-main">
                             <a class="post-avatar-link" href="${escapeHtml(profileUrlByUserId(post.author?.id || 0))}" onclick="event.stopPropagation()">
-                                <img class="post-avatar" src="${escapeHtml(resolveAvatar(post.author?.profile_image))}" alt="Avatar de ${escapeHtml(post.author?.name || 'Usuário')}">
+                                <img class="post-avatar" src="${escapeHtml(resolveAvatar(post.author?.profile_image))}" alt="Avatar de ${escapeHtml(post.author?.name || 'Usuário')}" onerror="wfAvatarOnError(this)">
                             </a>
 
                             <div>

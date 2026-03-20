@@ -117,6 +117,16 @@
         color: var(--wf-text-secondary);
     }
 
+    .producer-lock-note {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        margin-top: 0.2rem;
+        font-size: 0.68rem;
+        color: #b88333;
+        font-weight: 700;
+    }
+
     .price-box {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -295,13 +305,10 @@
     }
 
     function ownerAvatarHtml(offer) {
-        if (offer.owner_data?.profile_image) {
-            return `<img class="producer-avatar" src="${escapeHtml(offer.owner_data.profile_image)}" alt="Avatar do produtor">`;
-        }
-
-        const name = offer.owner_data?.name || 'Produtor';
-        const initials = name.split(' ').filter(Boolean).slice(0, 2).map((p) => p[0].toUpperCase()).join('') || 'PR';
-        return `<span class="producer-avatar-fallback">${escapeHtml(initials)}</span>`;
+        const src = window.wfResolveAvatar
+            ? window.wfResolveAvatar(offer.owner_data?.profile_image)
+            : (offer.owner_data?.profile_image || '');
+        return `<img class="producer-avatar" src="${escapeHtml(src)}" alt="Avatar do produtor" onerror="wfAvatarOnError(this)">`;
     }
 
     function renderMetaItem(icon, label, value) {
@@ -312,6 +319,18 @@
                     <span>${escapeHtml(label)}</span>
                 </div>
                 <div class="meta-value" title="${escapeHtml(String(value))}">${escapeHtml(String(value))}</div>
+            </div>
+        `;
+    }
+
+    function renderLockedMetaItem(label, reason) {
+        return `
+            <div class="meta-item">
+                <div class="meta-top">
+                    <span class="material-symbols-outlined">lock</span>
+                    <span>${escapeHtml(label)}</span>
+                </div>
+                ${lockFieldMarkup('Dado privado', 'Disponível para assinantes Premium', reason || 'Este dado é exclusivo para assinantes Premium.')}
             </div>
         `;
     }
@@ -339,6 +358,10 @@
             renderMetaItem('calendar_clock', 'Reserva inicio', toDate(offer.reservation_start)),
             renderMetaItem('event_busy', 'Reserva fim', toDate(offer.reservation_end)),
         ].join('');
+
+        const addressMeta = offer.private_address_locked
+            ? renderLockedMetaItem('Endereco', offer.restriction_message)
+            : renderMetaItem('route', 'Endereco', offer.property_address || '-');
 
         return `
             <div class="offer-detail-layout">
@@ -369,7 +392,7 @@
                         <h2 class="offer-section-title">Propriedade</h2>
                         <div class="meta-grid">
                             ${renderMetaItem('home_work', 'Nome da propriedade', offer.property_name || '-')}
-                            ${renderMetaItem('route', 'Endereco', offer.property_address || '-')}
+                            ${addressMeta}
                             ${renderMetaItem('inventory_2', 'Caixas minimas', offer.min_boxes_to_negotiate || '-')}
                         </div>
                     </section>
@@ -381,6 +404,7 @@
                         <div>
                             <div class="producer-name">${escapeHtml(offer.owner_data?.name || 'Produtor')}</div>
                             <div class="producer-username">${escapeHtml(ownerUsername(offer))}</div>
+                            ${offer.contact_locked ? `<div class="producer-lock-note" onclick="showRestrictedAccessNotice('${escapeHtml((offer.restriction_message || 'Contato completo disponível para assinantes Premium.').replace(/'/g, "\\'"))}')">🔒 Contato completo exclusivo para assinantes</div>` : ''}
                         </div>
                     </div>
 
@@ -430,18 +454,24 @@
             return;
         }
 
-        const content = prompt('Digite sua mensagem para o produtor:');
-        if (!content) return;
+        const content = `Aviso de interesse: tenho interesse na oferta "${offerData.product_name}" e gostaria de alinhar detalhes de quantidade, entrega e pagamento.`;
 
         try {
-            await apiRequest('/messages', 'POST', {
+            const sent = await apiRequest('/messages', 'POST', {
                 receiver_id: receiverId,
                 offer_id: offerData.id,
                 message_type: 'offer_inquiry',
                 subject: `Interesse na oferta: ${offerData.product_name}`,
                 content,
             });
-            alert('Mensagem enviada com sucesso.');
+
+            const threadId = sent?.thread_id;
+            if (threadId) {
+                window.location.href = `/messages?thread_id=${threadId}`;
+                return;
+            }
+
+            window.location.href = `/messages?user_id=${receiverId}&offer_id=${offerData.id}`;
         } catch (error) {
             alert(error.message || 'Falha ao enviar mensagem.');
         }

@@ -26,6 +26,48 @@ router = APIRouter(
     tags=["offers"]
 )
 
+
+def _can_view_private_contact(*, db: Session, current_user: Optional[User], owner_user_id: int) -> bool:
+    if not current_user:
+        return False
+    if current_user.id == owner_user_id or current_user.role == "admin":
+        return True
+    return ProfileService(db).is_premium(current_user.id)
+
+
+def _apply_offer_visibility_policy(*, db: Session, offer: Offer, current_user: Optional[User]) -> None:
+    can_view_private = _can_view_private_contact(
+        db=db,
+        current_user=current_user,
+        owner_user_id=offer.owner.id,
+    )
+
+    restriction_message = (
+        "Dados de contato e endereço detalhado são exclusivos para assinantes Premium."
+        if not can_view_private
+        else None
+    )
+
+    offer.owner_data = {
+        "id": offer.owner.id,
+        "name": offer.owner.name,
+        "email": offer.owner.email if can_view_private else None,
+        "profile_image": offer.owner.profile_image,
+        "rating": offer.owner.rating,
+        "total_reviews": offer.owner.total_reviews,
+        "location": offer.owner.location if can_view_private else None,
+        "is_verified": offer.owner.is_verified,
+        "contact_locked": not can_view_private,
+        "contact_lock_reason": restriction_message,
+    }
+
+    offer.contact_locked = not can_view_private
+    offer.private_address_locked = not can_view_private
+    offer.restriction_message = restriction_message
+
+    if not can_view_private:
+        offer.property_address = None
+
 # -----------------------------
 # WebSocket Manager
 # -----------------------------
@@ -92,6 +134,7 @@ async def websocket_endpoint(websocket: WebSocket, group_name: Optional[str] = N
 # -----------------------------
 # CREATE OFFER
 # -----------------------------
+@router.post("", response_model=OfferResponse, status_code=status.HTTP_201_CREATED)
 @router.post("/", response_model=OfferResponse, status_code=status.HTTP_201_CREATED)
 async def create_offer(
     offer: OfferCreate,
@@ -169,6 +212,7 @@ def get_my_offers(
 # -----------------------------
 # GET OFFERS (AVANÇADO)
 # -----------------------------
+@router.get("", response_model=PaginatedOfferResponse)
 @router.get("/", response_model=PaginatedOfferResponse)
 def get_offers(
     db: Session = Depends(get_db),
@@ -188,13 +232,13 @@ def get_offers(
     sort_by: str = Query("created_at", pattern="^(created_at|price|views|rating)$"),
     sort_order: str = Query("desc", pattern="^(asc|desc)$")
 ):
-
-    # Criar chave de cache baseada nos filtros
-    cache_key = f"offers:{skip}:{limit}:{search}:{category}:{location}:{min_price}:{max_price}:{organic}:{quality_grade}:{latitude}:{longitude}:{radius}:{sort_by}:{sort_order}"
-
-    cached = get_cache(cache_key)
-    if cached:
-        return json.loads(cached)
+    # Cache apenas para usuário anônimo para evitar vazamento de visão entre perfis.
+    cache_key = None
+    if current_user is None:
+        cache_key = f"offers:{skip}:{limit}:{search}:{category}:{location}:{min_price}:{max_price}:{organic}:{quality_grade}:{latitude}:{longitude}:{radius}:{sort_by}:{sort_order}"
+        cached = get_cache(cache_key)
+        if cached:
+            return json.loads(cached)
 
     query = db.query(Offer).filter(Offer.status == "active")
 
@@ -254,15 +298,7 @@ def get_offers(
 
     # Adicionar dados do proprietário e verificar se está nos favoritos do usuário
     for offer in offers:
-        # Dados do proprietário
-        offer.owner_data = {
-            "id": offer.owner.id,
-            "name": offer.owner.name,
-            "email": offer.owner.email,
-            "profile_image": offer.owner.profile_image,
-            "rating": offer.owner.rating,
-            "location": offer.owner.location
-        }
+        _apply_offer_visibility_policy(db=db, offer=offer, current_user=current_user)
 
         # Verificar se está nos favoritos (se usuário logado)
         if current_user:
@@ -317,7 +353,8 @@ def get_offers(
     )
 
     # Cache por 5 minutos
-    set_cache(cache_key, json.dumps(response.model_dump(mode="json")), 300)
+    if cache_key:
+        set_cache(cache_key, json.dumps(response.model_dump(mode="json")), 300)
 
     return response
 
@@ -360,17 +397,7 @@ def get_offer(
         ).first()
         is_favorited = favorite is not None
 
-    # Adicionar dados do proprietário
-    offer.owner_data = {
-        "id": offer.owner.id,
-        "name": offer.owner.name,
-        "email": offer.owner.email,
-        "profile_image": offer.owner.profile_image,
-        "rating": offer.owner.rating,
-        "total_reviews": offer.owner.total_reviews,
-        "location": offer.owner.location,
-        "is_verified": offer.owner.is_verified
-    }
+    _apply_offer_visibility_policy(db=db, offer=offer, current_user=current_user)
 
     offer.is_favorited = is_favorited
 

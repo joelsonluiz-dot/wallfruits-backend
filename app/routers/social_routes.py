@@ -7,6 +7,7 @@ from app.database.connection import get_db
 from app.models import CommunityComment, CommunityLike, CommunityPost, CommunityShare, Follow, Offer, User
 from app.schemas.social_schema import ActiveAccountItem, FollowActionResponse, PublicUserProfileResponse
 from app.services.notification_service import create_notification
+from app.services.profile_service import ProfileService
 
 router = APIRouter(prefix="/social", tags=["social"])
 
@@ -42,13 +43,15 @@ def get_public_user_profile(
     if not user:
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
 
-    offers = (
-        db.query(Offer)
-        .filter(Offer.user_id == user.id)
-        .order_by(Offer.created_at.desc())
-        .limit(limit)
-        .all()
+    can_view_all_own_offers = bool(
+        current_user and (current_user.id == user.id or current_user.role == "admin")
     )
+
+    offers_query = db.query(Offer).filter(Offer.user_id == user.id)
+    if not can_view_all_own_offers:
+        offers_query = offers_query.filter(Offer.status == "active")
+
+    offers = offers_query.order_by(Offer.created_at.desc()).limit(limit).all()
 
     likes_subq = (
         db.query(CommunityLike.post_id.label("post_id"), func.count(CommunityLike.id).label("likes_count"))
@@ -94,15 +97,32 @@ def get_public_user_profile(
             is not None
         )
 
+    can_view_contact = False
+    if current_user:
+        if current_user.id == user.id or current_user.role == "admin":
+            can_view_contact = True
+        else:
+            can_view_contact = ProfileService(db).is_premium(current_user.id)
+
+    contact_locked = not can_view_contact
+    contact_lock_reason = (
+        "Contato e localização completos disponíveis apenas para assinantes Premium."
+        if contact_locked
+        else None
+    )
+
     return PublicUserProfileResponse(
         id=user.id,
         name=user.name,
         username=_username_from_email(user.email, user.id),
-        email=user.email,
+        email=user.email if can_view_contact else None,
+        phone=user.phone if can_view_contact else None,
         role=user.role,
         bio=user.bio,
-        location=user.location,
+        location=user.location if can_view_contact else None,
         profile_image=_normalize_profile_image(user.profile_image),
+        contact_locked=contact_locked,
+        contact_lock_reason=contact_lock_reason,
         total_offers=len(offers),
         followers_count=followers_count,
         following_count=following_count,

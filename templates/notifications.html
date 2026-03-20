@@ -71,17 +71,9 @@
     let notifStore = [];
     let currentFilter = 'all';
 
-    function initials(name) {
-        return (name || 'U').split(' ').filter(Boolean).slice(0, 2).map((p) => p[0].toUpperCase()).join('') || 'U';
-    }
-
     function avatarHtml(actor) {
-        const image = actor?.profile_image;
-        if (image) {
-            const src = image.startsWith('http') || image.startsWith('/') ? image : `/api/uploads/profiles/${image}`;
-            return `<img class="notif-avatar" src="${src}" alt="avatar">`;
-        }
-        return `<div class="notif-avatar-fallback">${initials(actor?.name)}</div>`;
+        const src = window.wfResolveAvatar ? window.wfResolveAvatar(actor?.profile_image) : (actor?.profile_image || '');
+        return `<img class="notif-avatar" src="${src}" alt="avatar" onerror="wfAvatarOnError(this)">`;
     }
 
     function relativeTime(isoDate) {

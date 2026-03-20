@@ -18,6 +18,7 @@ router = APIRouter(
 # -----------------------------
 # ADD TO FAVORITES
 # -----------------------------
+@router.post("", response_model=FavoriteResponse, status_code=status.HTTP_201_CREATED)
 @router.post("/", response_model=FavoriteResponse, status_code=status.HTTP_201_CREATED)
 def add_to_favorites(
     favorite: FavoriteCreate,
