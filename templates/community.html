@@ -492,6 +492,10 @@
     }
 
     @media (max-width: 768px) {
+        .community-header {
+            display: none;
+        }
+
         .community-toast {
             right: 0.75rem;
             bottom: calc(84px + env(safe-area-inset-bottom));
@@ -510,7 +514,14 @@
         }
 
         .community-create {
-            padding: 0.65rem;
+            padding: 0.52rem;
+            gap: 0.5rem;
+        }
+
+        .community-input {
+            min-height: 68px;
+            padding: 0.58rem 0.72rem;
+            font-size: 0.84rem;
         }
 
         .post-main {
@@ -525,6 +536,17 @@
     }
 
     @media (max-width: 480px) {
+        .community-create {
+            padding: 0.46rem;
+            gap: 0.44rem;
+        }
+
+        .community-input {
+            min-height: 56px;
+            padding: 0.5rem 0.64rem;
+            font-size: 0.8rem;
+        }
+
         .community-create-actions {
             align-items: stretch;
         }

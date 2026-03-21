@@ -9,7 +9,7 @@ class MessageCreate(BaseModel):
     offer_id: Optional[UUID] = None
     subject: Optional[str] = Field(None, max_length=200)
     content: str = Field(..., max_length=2000)
-    message_type: str = Field("direct", pattern="^(direct|system|offer_inquiry)$")
+    message_type: str = Field("direct", pattern="^(direct|system|offer_inquiry|service_inquiry)$")
     thread_id: Optional[UUID] = None
 
 

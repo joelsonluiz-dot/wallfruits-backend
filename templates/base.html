@@ -255,22 +255,22 @@
             background: rgba(244, 239, 223, 0.82);
             backdrop-filter: blur(10px);
             border-bottom: 1px solid var(--wf-border);
-            padding: 1rem 1.4rem;
+            padding: 0.62rem 1rem;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 1rem;
+            gap: 0.65rem;
         }
 
         .wf-topbar-title {
-            font-size: 1.05rem;
+            font-size: 0.9rem;
             font-weight: 800;
             letter-spacing: -0.02em;
         }
 
         .wf-topbar-subtitle {
             color: var(--wf-text-secondary);
-            font-size: 0.82rem;
+            font-size: 0.72rem;
         }
 
         .wf-topbar-actions {
@@ -278,6 +278,11 @@
             gap: 0.6rem;
             align-items: center;
             flex-wrap: wrap;
+        }
+
+        .wf-topbar-actions .btn {
+            font-size: 0.72rem;
+            padding: 0.38rem 0.72rem;
         }
 
         .wf-publish-global-btn {
@@ -526,7 +531,7 @@
         .wf-mobile-floating-add {
             position: fixed;
             right: 1rem;
-            bottom: calc(88px + env(safe-area-inset-bottom));
+            bottom: calc(78px + env(safe-area-inset-bottom));
             z-index: 151;
             display: none;
             border: none;
@@ -1099,7 +1104,7 @@
             }
 
             .wf-topbar {
-                padding: 0.95rem 1rem;
+                padding: 0.56rem 0.86rem;
             }
 
             .wf-container {
@@ -1132,7 +1137,7 @@
             .wf-ai-fab {
                 right: 1rem;
                 left: auto;
-                bottom: calc(160px + env(safe-area-inset-bottom));
+                bottom: calc(150px + env(safe-area-inset-bottom));
             }
 
             #navNotifBadge {
@@ -1181,12 +1186,21 @@
             }
 
             .wf-topbar {
-                flex-direction: column;
-                align-items: flex-start;
+                flex-direction: row;
+                align-items: center;
+                padding: 0.5rem 0.72rem;
             }
 
             .wf-topbar-actions {
                 width: 100%;
+            }
+
+            .wf-topbar-title {
+                font-size: 0.82rem;
+            }
+
+            .wf-topbar-subtitle {
+                font-size: 0.66rem;
             }
 
             .wf-shell-main {
@@ -1264,7 +1278,7 @@
                 width: 52px;
                 height: 52px;
                 right: 0.72rem;
-                bottom: calc(80px + env(safe-area-inset-bottom));
+                bottom: calc(76px + env(safe-area-inset-bottom));
             }
 
             .wf-mobile-notif-badge {
@@ -1300,7 +1314,7 @@
 
             .wf-ai-fab {
                 right: 0.72rem;
-                bottom: calc(146px + env(safe-area-inset-bottom));
+                bottom: calc(138px + env(safe-area-inset-bottom));
                 width: 54px;
                 height: 54px;
             }
@@ -1381,7 +1395,7 @@
         .wf-ai-fab {
             position: fixed;
             right: 1rem;
-            bottom: 1rem;
+            bottom: calc(154px + env(safe-area-inset-bottom));
             z-index: 2550;
             width: 58px;
             height: 58px;
@@ -1940,7 +1954,7 @@
 
             const topbar = document.querySelector('.wf-topbar');
             if (topbar) {
-                topbar.style.display = isLogged ? 'none' : 'flex';
+                topbar.style.display = 'flex';
             }
 
             const actionBar = document.getElementById('actionBar');

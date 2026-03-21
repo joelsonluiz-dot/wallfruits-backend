@@ -104,6 +104,15 @@
         color: #2b5f95;
     }
 
+    .services-btn-chat {
+        background: linear-gradient(130deg, #1d6f45, #2b8a58);
+        color: #fff;
+    }
+
+    .services-btn-chat:hover {
+        filter: brightness(1.05);
+    }
+
     .services-list {
         display: grid;
         gap: 0.5rem;
@@ -114,7 +123,7 @@
 
     .services-list-toolbar {
         display: grid;
-        grid-template-columns: 1fr auto;
+        grid-template-columns: 1fr auto auto;
         gap: 0.45rem;
         margin-bottom: 0.55rem;
     }
@@ -235,6 +244,10 @@
         .services-form-row {
             grid-template-columns: 1fr;
         }
+
+        .services-list-toolbar {
+            grid-template-columns: 1fr;
+        }
     }
 </style>
 
@@ -291,7 +304,8 @@
                 <div class="services-form-row">
                     <div>
                         <label class="wf-label" for="serviceCategoria">Categoria</label>
-                        <input id="serviceCategoria" maxlength="80" placeholder="Ex.: Pulverização, Solo, Irrigação">
+                        <input id="serviceCategoria" maxlength="80" list="serviceCategoryOptions" placeholder="Selecione ou digite uma categoria agrícola">
+                        <datalist id="serviceCategoryOptions"></datalist>
                     </div>
                     <div>
                         <label class="wf-label" for="serviceUnidade">Unidade</label>
@@ -338,6 +352,9 @@
             <h2>Serviços cadastrados</h2>
             <div class="services-list-toolbar">
                 <input id="servicesSearch" placeholder="Buscar por título, local ou preço">
+                <select id="servicesCategoryFilter" title="Filtrar por categoria">
+                    <option value="">Todas as categorias</option>
+                </select>
                 <select id="servicesPageSize" title="Itens por página">
                     <option value="5">5</option>
                     <option value="10" selected>10</option>
@@ -374,7 +391,9 @@
         const listEl = document.getElementById('servicesList');
         const newBtn = document.getElementById('serviceNewBtn');
         const uploadBtn = document.getElementById('serviceUploadBtn');
+        const categoryOptions = document.getElementById('serviceCategoryOptions');
         const searchInput = document.getElementById('servicesSearch');
+        const categoryFilter = document.getElementById('servicesCategoryFilter');
         const pageSizeSelect = document.getElementById('servicesPageSize');
         const prevBtn = document.getElementById('servicesPrevBtn');
         const nextBtn = document.getElementById('servicesNextBtn');
@@ -427,11 +446,14 @@
 
         function filteredServices() {
             const term = (searchInput.value || '').trim().toLowerCase();
-            if (!term) return allServices;
+            const selectedCategory = String(categoryFilter.value || '').trim().toLowerCase();
 
             return allServices.filter((service) => {
+                const categoryValue = String(service?.ficha_tecnica?.categoria || '').trim().toLowerCase();
                 const haystack = `${service.titulo || ''} ${service.local || ''} ${service.preco || ''}`.toLowerCase();
-                return haystack.includes(term);
+                const searchMatch = !term || haystack.includes(term);
+                const categoryMatch = !selectedCategory || categoryValue === selectedCategory;
+                return searchMatch && categoryMatch;
             });
         }
 
@@ -521,22 +543,33 @@
             prevBtn.disabled = currentPage <= 1;
             nextBtn.disabled = currentPage >= totalPages;
 
-            listEl.innerHTML = services.map((service) => `
-                <article class="services-item">
-                    <div class="services-item-head">
-                        <h3 class="services-item-title">${service.titulo}</h3>
-                        <span class="services-item-badge ${service.is_active ? '' : 'off'}">${service.is_active ? 'ATIVO' : 'INATIVO'}</span>
-                    </div>
-                    <div class="services-item-meta">
-                        <span>${service.preco}</span>
-                        <span>${service.local}</span>
-                    </div>
-                    <div class="services-item-actions">
-                        <button type="button" class="services-btn services-btn-secondary" data-edit-id="${service.id}">Editar</button>
-                        <button type="button" class="services-btn services-btn-secondary" data-toggle-id="${service.id}" data-next-active="${service.is_active ? 'false' : 'true'}">${service.is_active ? 'Desativar' : 'Ativar'}</button>
-                    </div>
-                </article>
-            `).join('');
+            listEl.innerHTML = services.map((service) => {
+                const providerId = Number(service?.created_by_user?.id || 0);
+                const serviceTitle = encodeURIComponent(service?.titulo || 'Serviço agrícola');
+                const serviceCategory = encodeURIComponent(String(service?.ficha_tecnica?.categoria || '').trim());
+                const chatUrl = providerId
+                    ? `/messages?user_id=${providerId}&service_id=${encodeURIComponent(service.id)}&service_title=${serviceTitle}&service_category=${serviceCategory}`
+                    : '';
+
+                return `
+                    <article class="services-item">
+                        <div class="services-item-head">
+                            <h3 class="services-item-title">${service.titulo}</h3>
+                            <span class="services-item-badge ${service.is_active ? '' : 'off'}">${service.is_active ? 'ATIVO' : 'INATIVO'}</span>
+                        </div>
+                        <div class="services-item-meta">
+                            <span>${service.preco}</span>
+                            <span>${service.local}</span>
+                        </div>
+                        <div class="services-item-actions">
+                            <a href="/services/detail/${service.id}" target="_blank" rel="noopener" class="services-btn services-btn-secondary">Ver detalhe</a>
+                            ${providerId ? `<a href="${chatUrl}" target="_blank" rel="noopener" class="services-btn services-btn-chat">Conversar</a>` : '<button type="button" class="services-btn services-btn-secondary" disabled>Sem divulgador</button>'}
+                            <button type="button" class="services-btn services-btn-secondary" data-edit-id="${service.id}">Editar</button>
+                            <button type="button" class="services-btn services-btn-secondary" data-toggle-id="${service.id}" data-next-active="${service.is_active ? 'false' : 'true'}">${service.is_active ? 'Desativar' : 'Ativar'}</button>
+                        </div>
+                    </article>
+                `;
+            }).join('');
 
             listEl.querySelectorAll('[data-edit-id]').forEach((btn) => {
                 btn.addEventListener('click', () => {
@@ -570,6 +603,29 @@
             } catch (error) {
                 showStatus(error.message || 'Falha ao carregar serviços.', true);
                 listEl.innerHTML = '<div class="services-item">Erro ao carregar lista de serviços.</div>';
+            }
+        }
+
+        async function loadOfficialCategories() {
+            try {
+                const data = await apiRequest('/services/categories');
+                const categories = Array.isArray(data?.categories) ? data.categories : [];
+                const categoryLabels = categories
+                    .map((item) => String(item?.label || '').trim())
+                    .filter(Boolean);
+
+                categoryOptions.innerHTML = categories
+                    .map((item) => String(item?.label || '').trim())
+                    .filter(Boolean)
+                    .map((label) => `<option value="${label}"></option>`)
+                    .join('');
+
+                categoryFilter.innerHTML = `<option value="">Todas as categorias</option>${categoryLabels
+                    .map((label) => `<option value="${label}">${label}</option>`)
+                    .join('')}`;
+            } catch {
+                categoryOptions.innerHTML = '';
+                categoryFilter.innerHTML = '<option value="">Todas as categorias</option>';
             }
         }
 
@@ -620,6 +676,11 @@
         });
 
         searchInput.addEventListener('input', () => {
+            currentPage = 1;
+            renderList(pagedServices().rows);
+        });
+
+        categoryFilter.addEventListener('change', () => {
             currentPage = 1;
             renderList(pagedServices().rows);
         });
@@ -678,6 +739,7 @@
 
         newBtn.addEventListener('click', resetForm);
 
+        loadOfficialCategories();
         loadServices();
     })();
 </script>

@@ -1,13 +1,16 @@
 from fastapi import APIRouter, HTTPException, Depends, status, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from typing import List, Optional
 from uuid import UUID
+from datetime import datetime, timezone
 
 from app.database.connection import get_db, SessionLocal
 from app.models import Message, User, Offer
 from app.schemas import MessageCreate, MessageResponse, ConversationResponse
 from app.core.auth_middleware import get_current_user, get_user_from_token
 from app.services.notification_service import create_notification
+from app.services.profile_service import ProfileService
 
 router = APIRouter(
     prefix="/messages",
@@ -63,6 +66,29 @@ async def send_message(
         if message.receiver_id == current_user.id:
             raise HTTPException(400, "Não é possível enviar mensagem para você mesmo")
 
+        if message.message_type == "service_inquiry":
+            is_premium = ProfileService(db).is_premium(current_user.id)
+            if not is_premium:
+                now_utc = datetime.now(timezone.utc)
+                month_start = now_utc.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+                monthly_requests = (
+                    db.query(func.count(Message.id))
+                    .filter(
+                        Message.sender_id == current_user.id,
+                        Message.message_type == "service_inquiry",
+                        Message.created_at >= month_start,
+                    )
+                    .scalar()
+                    or 0
+                )
+
+                if monthly_requests >= 1:
+                    raise HTTPException(
+                        status_code=403,
+                        detail="Seus créditos de solicitação de serviço acabaram neste mês. Faça upgrade para assinatura para continuar.",
+                    )
+
         # Se for sobre uma oferta, verificar se ela existe
         if message.offer_id:
             offer = db.query(Offer).filter(Offer.id == message.offer_id).first()
@@ -97,6 +123,9 @@ async def send_message(
             notification_title = "Novo interesse em oferta"
             product_name = offer.product_name if message.offer_id and offer else "sua oferta"
             notification_text = f"{current_user.name} demonstrou interesse em {product_name}."
+        elif message.message_type == "service_inquiry":
+            notification_title = "Nova solicitação de serviço"
+            notification_text = f"{current_user.name} solicitou orçamento de serviço."
 
         create_notification(
             db,

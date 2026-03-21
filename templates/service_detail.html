@@ -1,0 +1,303 @@
+{% extends "base.html" %}
+
+{% block title %}Detalhe do Serviço - WallFruits{% endblock %}
+
+{% block content %}
+<style>
+    .service-detail-page {
+        max-width: 1080px;
+        margin: 0 auto;
+        display: grid;
+        gap: 0.95rem;
+    }
+
+    .service-detail-top {
+        border: 1px solid rgba(18, 76, 120, 0.2);
+        border-radius: 16px;
+        background: linear-gradient(145deg, #f3fbf5, #f4faff);
+        box-shadow: 0 12px 26px rgba(16, 58, 95, 0.12);
+        padding: 0.9rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.65rem;
+        flex-wrap: wrap;
+    }
+
+    .service-detail-top h1 {
+        margin: 0;
+        color: #184f7f;
+        font-size: 1.1rem;
+        font-weight: 900;
+    }
+
+    .service-detail-back {
+        border: none;
+        border-radius: 10px;
+        background: #eaf2fd;
+        color: #2c5d90;
+        font-weight: 800;
+        font-size: 0.78rem;
+        padding: 0.52rem 0.74rem;
+        text-decoration: none;
+    }
+
+    .service-detail-card {
+        border: 1px solid rgba(18, 76, 120, 0.2);
+        border-radius: 16px;
+        background: #fff;
+        box-shadow: 0 12px 28px rgba(17, 61, 97, 0.12);
+        overflow: hidden;
+        display: grid;
+        grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    }
+
+    .service-detail-cover {
+        width: 100%;
+        height: 100%;
+        min-height: 300px;
+        object-fit: cover;
+        background: #eef4f0;
+    }
+
+    .service-detail-body {
+        padding: 0.95rem;
+        display: grid;
+        align-content: start;
+        gap: 0.52rem;
+    }
+
+    .service-title {
+        margin: 0;
+        color: #1a4f80;
+        font-size: 1.18rem;
+        font-weight: 900;
+        letter-spacing: -0.01em;
+    }
+
+    .service-description {
+        margin: 0;
+        color: #4a6787;
+        font-size: 0.86rem;
+        line-height: 1.45;
+    }
+
+    .service-meta {
+        margin: 0;
+        color: #2f608f;
+        font-size: 0.8rem;
+        font-weight: 700;
+    }
+
+    .service-price {
+        margin: 0;
+        color: #1d6f45;
+        font-size: 1rem;
+        font-weight: 900;
+    }
+
+    .service-provider {
+        border: 1px solid rgba(18, 76, 120, 0.16);
+        border-radius: 12px;
+        background: #f7fbff;
+        padding: 0.6rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+    }
+
+    .service-provider-name {
+        color: #194f7e;
+        font-size: 0.82rem;
+        font-weight: 800;
+    }
+
+    .service-actions {
+        display: grid;
+        gap: 0.45rem;
+    }
+
+    .service-btn {
+        border: none;
+        border-radius: 12px;
+        font-size: 0.82rem;
+        font-weight: 800;
+        text-decoration: none;
+        text-align: center;
+        padding: 0.74rem 0.9rem;
+    }
+
+    .service-btn-primary {
+        background: linear-gradient(130deg, #1d6f45, #2b8a58);
+        color: #fff;
+    }
+
+    .service-btn-secondary {
+        background: #edf4fd;
+        color: #2d5f93;
+    }
+
+    .service-tech-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.45rem;
+    }
+
+    .service-tech-item {
+        border: 1px solid rgba(18, 76, 120, 0.16);
+        border-radius: 10px;
+        background: #f8fbff;
+        padding: 0.45rem;
+    }
+
+    .service-tech-key {
+        color: #597696;
+        font-size: 0.66rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .service-tech-value {
+        color: #245481;
+        font-size: 0.75rem;
+        font-weight: 700;
+    }
+
+    .service-state {
+        border: 1px dashed rgba(18, 76, 120, 0.22);
+        border-radius: 14px;
+        padding: 1rem;
+        text-align: center;
+        color: #3f6791;
+        font-weight: 700;
+        background: #fff;
+    }
+
+    @media (max-width: 960px) {
+        .service-detail-card {
+            grid-template-columns: 1fr;
+        }
+
+        .service-detail-cover {
+            min-height: 240px;
+        }
+    }
+
+    @media (max-width: 560px) {
+        .service-tech-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .service-title {
+            font-size: 1.02rem;
+        }
+    }
+</style>
+
+<div class="service-detail-page">
+    <section class="service-detail-top">
+        <h1>Detalhes completos do serviço</h1>
+        <a class="service-detail-back" href="/services">Voltar para serviços</a>
+    </section>
+
+    <article id="serviceDetailState" class="service-state">Carregando serviço...</article>
+</div>
+
+<script>
+    (function initServiceDetailPage() {
+        const stateEl = document.getElementById('serviceDetailState');
+        const serviceId = Number('{{ service_id }}');
+
+        function esc(text) {
+            const div = document.createElement('div');
+            div.textContent = String(text || '');
+            return div.innerHTML;
+        }
+
+        function buildTechRows(ficha) {
+            const labels = {
+                categoria: 'Categoria',
+                unidade: 'Unidade',
+                prazo_atendimento: 'Prazo',
+                disponibilidade: 'Disponibilidade',
+                area_atuacao: 'Área',
+                tempo_execucao: 'Execução',
+                equipamentos: 'Equipamentos',
+                observacoes: 'Observações'
+            };
+
+            return Object.keys(labels)
+                .map((key) => ({ label: labels[key], value: String(ficha?.[key] || '').trim() }))
+                .filter((row) => row.value.length > 0);
+        }
+
+        function buildChatLink(service) {
+            const provider = service?.created_by_user;
+            if (!provider?.id) return null;
+
+            const title = encodeURIComponent(service?.titulo || 'Serviço agrícola');
+            const category = encodeURIComponent(String(service?.ficha_tecnica?.categoria || '').trim());
+            return `/messages?user_id=${provider.id}&service_id=${service.id}&service_title=${title}&service_category=${category}`;
+        }
+
+        function renderService(service) {
+            const techRows = buildTechRows(service?.ficha_tecnica || {});
+            const provider = service?.created_by_user;
+            const chatLink = buildChatLink(service);
+
+            stateEl.className = 'service-detail-card';
+            stateEl.innerHTML = `
+                <img class="service-detail-cover" src="${esc(service.imagem)}" alt="${esc(service.titulo)}">
+                <div class="service-detail-body">
+                    <h2 class="service-title">${esc(service.titulo)}</h2>
+                    <p class="service-description">${esc(service.descricao)}</p>
+                    <p class="service-meta">📍 ${esc(service.local)}</p>
+                    <p class="service-price">${esc(service.preco)}</p>
+
+                    <div class="service-provider">
+                        <span class="service-provider-name">Prestador: ${esc(provider?.name || 'Não informado')}</span>
+                        ${provider?.id ? `<a class="service-btn service-btn-secondary" href="/users/${provider.id}" target="_blank" rel="noopener">Ver perfil</a>` : ''}
+                    </div>
+
+                    ${techRows.length ? `
+                        <div class="service-tech-grid">
+                            ${techRows.map((row) => `
+                                <div class="service-tech-item">
+                                    <div class="service-tech-key">${esc(row.label)}</div>
+                                    <div class="service-tech-value">${esc(row.value)}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+
+                    <div class="service-actions">
+                        ${chatLink ? `<a class="service-btn service-btn-primary" href="${chatLink}">Solicitar orçamento no bate-papo</a>` : '<div class="service-state">Este serviço ainda não possui um divulgador definido para conversar.</div>'}
+                        <a class="service-btn service-btn-secondary" href="/services" target="_blank" rel="noopener">Abrir catálogo em outra aba</a>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function loadService() {
+            if (!serviceId) {
+                stateEl.className = 'service-state';
+                stateEl.textContent = 'ID de serviço inválido.';
+                return;
+            }
+
+            try {
+                const service = await apiRequest(`/services/${serviceId}`);
+                renderService(service || {});
+            } catch {
+                stateEl.className = 'service-state';
+                stateEl.textContent = 'Não foi possível carregar este serviço agora.';
+            }
+        }
+
+        loadService();
+    })();
+</script>
+{% endblock %}

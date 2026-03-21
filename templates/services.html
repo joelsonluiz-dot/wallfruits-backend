@@ -148,6 +148,23 @@
         font-weight: 900;
     }
 
+    .service-card-actions {
+        margin-top: 0.42rem;
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .service-open-tab-btn {
+        border: 1px solid rgba(24, 83, 130, 0.2);
+        border-radius: 10px;
+        text-decoration: none;
+        background: #f4f8ff;
+        color: #245481;
+        font-size: 0.7rem;
+        font-weight: 800;
+        padding: 0.3rem 0.52rem;
+    }
+
     .service-detail {
         border: 1px solid rgba(21, 84, 127, 0.16);
         border-radius: 16px;
@@ -237,7 +254,26 @@
         width: 100%;
     }
 
-    @media (max-width: 940px) {
+    .service-detail-btn.secondary {
+        background: #edf4fd;
+        color: #2b5f94;
+        border: 1px solid rgba(20, 78, 122, 0.2);
+        text-decoration: none;
+        text-align: center;
+        display: block;
+    }
+
+    .service-empty {
+        border: 1px dashed rgba(18, 78, 123, 0.24);
+        border-radius: 12px;
+        padding: 0.82rem;
+        color: #4a6b8e;
+        background: #fff;
+        font-weight: 700;
+        font-size: 0.8rem;
+    }
+
+    @media (max-width: 980px) {
         .services-grid {
             grid-template-columns: 1fr;
         }
@@ -248,6 +284,14 @@
     }
 
     @media (max-width: 560px) {
+        .services-shell {
+            gap: 0.72rem;
+        }
+
+        .services-hero {
+            padding: 0.88rem 0.82rem;
+        }
+
         .service-card-inner {
             grid-template-columns: 88px minmax(0, 1fr);
         }
@@ -263,6 +307,11 @@
 
         .service-tech-grid {
             grid-template-columns: 1fr;
+        }
+
+        .service-detail-body {
+            padding: 0.75rem;
+            gap: 0.44rem;
         }
     }
 </style>
@@ -317,6 +366,7 @@
         const chipsEl = document.getElementById('servicesCategoryChips');
 
         let allServices = [];
+        let officialCategories = [];
         let selectedCategory = 'Todas';
 
         if (!listEl || !detailEl || !chipsEl) return;
@@ -337,8 +387,22 @@
             return allServices.filter((service) => normalizeCategory(getServiceCategory(service)) === target);
         }
 
+        function buildServiceDetailUrl(service) {
+            return `/services/detail/${encodeURIComponent(service.id)}`;
+        }
+
+        function buildServiceChatUrl(service) {
+            const providerId = service?.created_by_user?.id;
+            if (!providerId) return null;
+
+            const title = encodeURIComponent(service.titulo || 'Serviço agrícola');
+            const category = encodeURIComponent(getServiceCategory(service));
+            return `/messages?user_id=${encodeURIComponent(providerId)}&service_id=${encodeURIComponent(service.id)}&service_title=${title}&service_category=${category}`;
+        }
+
         function renderCategoryChips() {
-            const categories = Array.from(new Set(allServices.map((service) => getServiceCategory(service))));
+            const fromServices = Array.from(new Set(allServices.map((service) => getServiceCategory(service))));
+            const categories = Array.from(new Set([...(officialCategories || []), ...fromServices]));
             const options = ['Todas', ...categories];
 
             chipsEl.innerHTML = options.map((label) => `
@@ -394,6 +458,7 @@
         }
 
         function renderDetail(service) {
+            const chatUrl = buildServiceChatUrl(service);
             detailEl.innerHTML = `
                 <img class="service-detail-cover" src="${service.imagem}" alt="${service.titulo}">
                 <div class="service-detail-body">
@@ -402,7 +467,8 @@
                     <p class="service-detail-location">📍 ${service.local}</p>
                     <p class="service-detail-price">${service.preco}</p>
                     ${renderTech(service)}
-                    <button type="button" class="service-detail-btn">Solicitar serviço</button>
+                    ${chatUrl ? `<a href="${chatUrl}" class="service-detail-btn">Solicitar orçamento no bate-papo</a>` : '<div class="service-empty">Este serviço ainda não possui divulgador definido para conversar.</div>'}
+                    <a href="${buildServiceDetailUrl(service)}" target="_blank" rel="noopener" class="service-detail-btn secondary">Abrir detalhes completos em outra aba</a>
                 </div>
             `;
         }
@@ -421,6 +487,9 @@
                                 <span class="service-location">${service.local}</span>
                                 <span class="service-price">${service.preco}</span>
                             </div>
+                            <div class="service-card-actions">
+                                <a href="${buildServiceDetailUrl(service)}" target="_blank" rel="noopener" class="service-open-tab-btn" onclick="event.stopPropagation()">Abrir detalhes</a>
+                            </div>
                         </div>
                     </div>
                 </article>
@@ -431,21 +500,20 @@
                     const serviceId = card.getAttribute('data-service-id');
                     const selected = services.find((item) => item.id === serviceId);
                     if (!selected) return;
-                    renderList(services, selected.id);
-                    renderDetail(selected);
+                    window.location.href = buildServiceDetailUrl(selected);
                 });
             });
         }
 
         function renderLoading() {
             chipsEl.innerHTML = '';
-            listEl.innerHTML = '<div class="library-empty">Carregando serviços...</div>';
+            listEl.innerHTML = '<div class="service-empty">Carregando serviços...</div>';
             detailEl.innerHTML = '<div class="service-detail-body"><p class="service-detail-text">Preparando detalhes do serviço...</p></div>';
         }
 
         function renderError(message) {
             chipsEl.innerHTML = '';
-            listEl.innerHTML = `<div class="library-empty">${message}</div>`;
+            listEl.innerHTML = `<div class="service-empty">${message}</div>`;
             detailEl.innerHTML = '<div class="service-detail-body"><p class="service-detail-text">Não foi possível carregar os detalhes agora.</p></div>';
         }
 
@@ -453,8 +521,14 @@
             renderLoading();
 
             try {
-                const data = await apiRequest('/services');
-                const services = Array.isArray(data?.services) ? data.services : [];
+                const [servicesData, categoriesData] = await Promise.all([
+                    apiRequest('/services'),
+                    apiRequest('/services/categories').catch(() => ({ categories: [] })),
+                ]);
+                const services = Array.isArray(servicesData?.services) ? servicesData.services : [];
+                officialCategories = Array.isArray(categoriesData?.categories)
+                    ? categoriesData.categories.map((item) => String(item?.label || '').trim()).filter(Boolean)
+                    : [];
 
                 if (!services.length) {
                     renderError('Nenhum serviço disponível no momento.');
@@ -473,6 +547,7 @@
                 }
 
                 allServices = fallbackServices;
+                officialCategories = [];
                 selectedCategory = 'Todas';
                 renderCategoryChips();
                 renderList(allServices, allServices[0].id);

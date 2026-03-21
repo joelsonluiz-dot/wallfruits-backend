@@ -378,6 +378,12 @@ async def services_page(request: Request, current_user: User = Depends(get_curre
     return _render_template("services.html", request, current_user=current_user)
 
 
+@app.get("/services/detail/{service_id}")
+async def service_detail_page(service_id: int, request: Request, current_user: User = Depends(get_current_user_optional)):
+    """Página de detalhe completo de um serviço agrícola."""
+    return _render_template("service_detail.html", request, current_user=current_user, service_id=service_id)
+
+
 @app.get("/services/manage")
 async def services_manage_page(request: Request, current_user: User = Depends(get_current_user_optional)):
     """Página de gestão de serviços para admin/fornecedor/produtor."""

@@ -96,6 +96,82 @@
         margin-top: 2.1rem;
     }
 
+    .home-services-section {
+        margin-top: 2.1rem;
+    }
+
+    .home-services-row {
+        display: flex;
+        gap: 0.75rem;
+        overflow-x: auto;
+        padding: 0.2rem 0.05rem 0.4rem;
+        scroll-snap-type: x proximity;
+    }
+
+    .home-service-card {
+        min-width: 236px;
+        max-width: 236px;
+        border-radius: 10px;
+        border: 1px solid var(--wf-border);
+        background: var(--wf-card);
+        text-decoration: none;
+        color: inherit;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.14);
+        overflow: hidden;
+        scroll-snap-align: start;
+    }
+
+    .home-service-media {
+        height: 116px;
+        background: rgba(255,255,255,0.05);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .home-service-media img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .home-service-body {
+        padding: 0.62rem 0.68rem;
+        display: grid;
+        gap: 0.24rem;
+    }
+
+    .home-service-cat {
+        color: var(--wf-text-secondary);
+        font-size: 0.64rem;
+        text-transform: uppercase;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+    }
+
+    .home-service-name {
+        margin: 0;
+        font-size: 0.78rem;
+        font-weight: 800;
+        color: #f2c98a;
+        min-height: 1.85rem;
+    }
+
+    .home-service-price {
+        font-size: 0.78rem;
+        font-weight: 800;
+        color: var(--wf-accent);
+    }
+
+    .home-service-local {
+        font-size: 0.68rem;
+        color: var(--wf-text-secondary);
+        font-weight: 700;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
     .home-community-section {
         margin-top: 2.1rem;
     }
@@ -494,7 +570,7 @@
     }
 </style>
 
-<section class="hero-section">
+<section class="hero-section" id="homeHeroSection">
     <div class="hero-tag">
         <span class="hero-tag-dot"></span>
         <span class="hero-tag-desktop">MARKETPLACE INTELIGENTE</span>
@@ -553,6 +629,17 @@
     <div id="homeFeaturedProducts" class="home-products-row"></div>
 </section>
 
+<section class="home-services-section">
+    <div class="home-offers-head">
+        <div>
+            <h2 class="wf-section-title" style="font-size:1.35rem;margin:0;">Serviços em <span class="wf-gradient-text">destaque</span></h2>
+            <p style="color:var(--wf-text-secondary);margin:0.2rem 0 0;font-size:0.83rem;">Profissionais e operações agrícolas em evidência para solicitar orçamento rápido.</p>
+        </div>
+        <a href="/services" class="btn btn-wf-secondary">Ver serviços</a>
+    </div>
+    <div id="homeServiceHighlights" class="home-services-row"></div>
+</section>
+
 <section class="home-community-section">
     <div class="home-offers-head">
         <div>
@@ -564,7 +651,7 @@
     <div id="homeCommunityHighlights" class="home-community-row"></div>
 </section>
 
-<div class="stats-grid wf-stagger">
+<div class="stats-grid wf-stagger" id="homeStatsGrid">
     <div class="stat-card">
         <div class="stat-value wf-gradient-text" id="activeOffers">--</div>
         <div class="stat-label">Ofertas Ativas</div>
@@ -599,6 +686,7 @@
     let homeRefreshIntervalMs = HOME_AUTO_REFRESH_DEFAULT_MS;
     const homeSignatures = {
         offers: '',
+        services: '',
         community: '',
         stats: '',
     };
@@ -810,6 +898,46 @@
         }
     }
 
+    async function loadHomeServiceHighlights(options = {}) {
+        const silent = Boolean(options.silent);
+        const container = document.getElementById('homeServiceHighlights');
+        if (!container) return;
+
+        try {
+            const data = await apiRequest('/services');
+            const services = Array.isArray(data?.services) ? data.services.slice(0, 8) : [];
+            const signature = services.map((item) => String(item.id)).join('|');
+
+            if (!services.length) {
+                container.innerHTML = '<div class="wf-alert wf-alert-info" style="min-width:100%;">Ainda não há serviços em destaque.</div>';
+                markHomeUpdated('services', 'empty', silent);
+                return;
+            }
+
+            container.innerHTML = services.map((service) => {
+                const category = String(service?.ficha_tecnica?.categoria || 'Serviço agrícola').trim();
+                const image = service.imagem || fallbackImageSvg(service.titulo || 'Serviço');
+                return `
+                    <a href="/services/detail/${encodeURIComponent(service.id)}" class="home-service-card">
+                        <div class="home-service-media">
+                            <img src="${escapeHtml(image)}" alt="${escapeHtml(service.titulo || 'Serviço')}" loading="lazy">
+                        </div>
+                        <div class="home-service-body">
+                            <span class="home-service-cat">${escapeHtml(category)}</span>
+                            <h3 class="home-service-name">${escapeHtml(service.titulo || 'Serviço')}</h3>
+                            <span class="home-service-price">${escapeHtml(service.preco || 'Sob consulta')}</span>
+                            <span class="home-service-local">${escapeHtml(service.local || 'Local não informado')}</span>
+                        </div>
+                    </a>
+                `;
+            }).join('');
+
+            markHomeUpdated('services', signature, silent);
+        } catch {
+            container.innerHTML = '<div class="wf-alert wf-alert-error" style="min-width:100%;">Falha ao carregar serviços em destaque.</div>';
+        }
+    }
+
     function truncateText(text, maxLen = 74) {
         const value = String(text || '').trim();
         if (value.length <= maxLen) return value;
@@ -909,6 +1037,7 @@
 
         await Promise.allSettled([
             loadHomeOffers({ silent: true }),
+            loadHomeServiceHighlights({ silent: true }),
             loadHomeCommunityHighlights({ silent: true }),
             loadStats({ silent: true }),
         ]);
@@ -916,10 +1045,22 @@
 
     function updateHeroAuthActions() {
         const loginBtn = document.getElementById('heroLoginBtn');
-        if (!loginBtn) return;
-
         const token = localStorage.getItem('token');
-        loginBtn.style.display = token ? 'none' : '';
+        const isLogged = Boolean(token);
+
+        if (loginBtn) {
+            loginBtn.style.display = isLogged ? 'none' : '';
+        }
+
+        const heroSection = document.getElementById('homeHeroSection');
+        if (heroSection) {
+            heroSection.style.display = isLogged ? 'none' : '';
+        }
+
+        const statsGrid = document.getElementById('homeStatsGrid');
+        if (statsGrid) {
+            statsGrid.style.display = isLogged ? 'none' : '';
+        }
     }
 
     try {
@@ -968,6 +1109,7 @@
     updateHeroAuthActions();
     loadHomeOffers();
     loadHomeFeaturedProducts();
+    loadHomeServiceHighlights();
     loadHomeCommunityHighlights();
     loadStats();
     restartHomeAutoRefresh();

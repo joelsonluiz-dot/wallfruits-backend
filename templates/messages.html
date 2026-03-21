@@ -365,6 +365,54 @@
         box-shadow: 0 0 0 2px rgba(25,147,147,0.22);
     }
 
+    .service-upgrade-modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(7, 16, 26, 0.56);
+        backdrop-filter: blur(3px);
+        -webkit-backdrop-filter: blur(3px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 2200;
+        padding: 0.9rem;
+    }
+
+    .service-upgrade-modal.show {
+        display: flex;
+    }
+
+    .service-upgrade-card {
+        width: min(100%, 430px);
+        border-radius: 14px;
+        border: 1px solid rgba(184, 131, 51, 0.28);
+        background: #fff7ea;
+        padding: 0.95rem;
+        box-shadow: 0 16px 34px rgba(10, 27, 45, 0.3);
+    }
+
+    .service-upgrade-title {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 900;
+        color: #6a4b14;
+    }
+
+    .service-upgrade-text {
+        margin: 0.35rem 0 0;
+        color: #6e5a38;
+        font-size: 0.86rem;
+        line-height: 1.45;
+    }
+
+    .service-upgrade-actions {
+        margin-top: 0.8rem;
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.45rem;
+        flex-wrap: wrap;
+    }
+
     @media (max-width: 980px) {
         .chat-layout {
             grid-template-columns: 1fr;
@@ -463,6 +511,17 @@
     </section>
 </div>
 
+<div id="serviceUpgradeModal" class="service-upgrade-modal" role="dialog" aria-modal="true" aria-labelledby="serviceUpgradeTitle">
+    <div class="service-upgrade-card">
+        <h3 id="serviceUpgradeTitle" class="service-upgrade-title">Créditos mensais esgotados</h3>
+        <p class="service-upgrade-text">Você já usou sua solicitação de serviço deste mês. Faça upgrade para assinatura e continue solicitando novos serviços.</p>
+        <div class="service-upgrade-actions">
+            <button type="button" class="btn btn-wf-secondary" id="serviceUpgradeCloseBtn">Fechar</button>
+            <a href="/me/profile" class="btn btn-wf-primary">Fazer upgrade</a>
+        </div>
+    </div>
+</div>
+
 <script>
     let me = null;
     let conversations = [];
@@ -471,11 +530,25 @@
     let selectedUserName = '';
     let selectedUserImage = null;
     let selectedOfferId = null;
+    let selectedServiceId = null;
+    let selectedServiceTitle = '';
     let accountsStore = [];
     const quickOffersStore = new Map();
 
     const CHAT_THEME_KEY = 'wf_chat_theme';
     const chatThemes = ['theme-forest', 'theme-ocean', 'theme-sunset', 'theme-slate', 'theme-aurora'];
+
+    function showServiceUpgradeModal() {
+        const modal = document.getElementById('serviceUpgradeModal');
+        if (!modal) return;
+        modal.classList.add('show');
+    }
+
+    function hideServiceUpgradeModal() {
+        const modal = document.getElementById('serviceUpgradeModal');
+        if (!modal) return;
+        modal.classList.remove('show');
+    }
 
     function qParam(name) {
         const params = new URLSearchParams(window.location.search);
@@ -542,7 +615,10 @@
                 ${avatarMarkup(selectedUserImage, selectedUserName, 'target-avatar', 'avatar-fallback target')}
                 <div>
                     <div class="chat-target-name">${esc(selectedUserName || 'Usuário')}</div>
-                    <div class="chat-target-meta">${selectedOfferId ? `Conversa sobre oferta ${esc(String(selectedOfferId))}` : 'Conversa direta'}</div>
+                        <div class="chat-target-meta">${selectedServiceId
+                            ? `Solicitação de orçamento: ${esc(selectedServiceTitle || `serviço ${String(selectedServiceId)}`)}`
+                            : (selectedOfferId ? `Conversa sobre oferta ${esc(String(selectedOfferId))}` : 'Conversa direta')}
+                        </div>
                 </div>
             </a>
         `;
@@ -649,6 +725,8 @@
             selectedUserName = conv.other_user?.name || 'Usuário';
             selectedUserImage = conv.other_user?.profile_image || null;
             selectedOfferId = conv.last_message?.offer_id || null;
+            selectedServiceId = null;
+            selectedServiceTitle = '';
         }
 
         renderChatTargetIdentity();
@@ -742,6 +820,8 @@
         selectedUserName = userName || 'Usuário';
         selectedUserImage = userImage || null;
         selectedOfferId = offerId;
+        selectedServiceId = null;
+        selectedServiceTitle = '';
         selectedThreadId = null;
 
         await hydrateSelectedUser(selectedUserId);
@@ -756,6 +836,8 @@
         selectedUserName = userName || 'Usuário';
         selectedUserImage = userImage || null;
         selectedOfferId = null;
+        selectedServiceId = null;
+        selectedServiceTitle = '';
         selectedThreadId = null;
 
         await hydrateSelectedUser(selectedUserId);
@@ -769,6 +851,28 @@
         const threadId = qParam('thread_id');
         const userId = qParam('user_id');
         const offerId = qParam('offer_id');
+        const serviceId = qParam('service_id');
+        const serviceTitle = qParam('service_title');
+        const serviceCategory = qParam('service_category');
+
+        function buildServiceBudgetMessage(title, category) {
+            const normalizedCategory = String(category || '').trim().toLowerCase();
+            const displayTitle = title || `serviço ${selectedServiceId}`;
+
+            if (normalizedCategory.includes('irrig')) {
+                return `Olá! Quero solicitar orçamento para o serviço "${displayTitle}". Pode informar valor, prazo, disponibilidade e o que está incluso no manejo/ajuste de irrigação?`;
+            }
+
+            if (normalizedCategory.includes('drone') || normalizedCategory.includes('pulver')) {
+                return `Olá! Quero solicitar orçamento para o serviço "${displayTitle}". Pode passar valores por área, prazo de atendimento e disponibilidade para aplicação com drone/pulverização?`;
+            }
+
+            if (normalizedCategory.includes('solo') || normalizedCategory.includes('aduba')) {
+                return `Olá! Quero solicitar orçamento para o serviço "${displayTitle}". Pode me enviar valores, prazo, disponibilidade e detalhes da análise/recomendação técnica?`;
+            }
+
+            return `Olá! Quero solicitar orçamento para o serviço "${displayTitle}". Pode me passar valores, prazo e disponibilidade?`;
+        }
 
         if (threadId) {
             await loadThread(threadId);
@@ -776,7 +880,21 @@
         }
 
         if (userId) {
-            if (offerId) {
+            if (serviceId) {
+                await startConversationWithAccount(Number(userId), String(serviceTitle || '').trim() || 'Prestador de serviço', '');
+
+                selectedServiceId = String(serviceId);
+                selectedServiceTitle = String(serviceTitle || '').trim();
+                renderChatTargetIdentity();
+
+                const input = document.getElementById('chatInput');
+                if (input) {
+                    const displayTitle = selectedServiceTitle || `serviço ${selectedServiceId}`;
+                    input.value = buildServiceBudgetMessage(displayTitle, serviceCategory);
+                    input.focus();
+                    input.setSelectionRange(input.value.length, input.value.length);
+                }
+            } else if (offerId) {
                 await prepareChatFromOffer(Number(userId), offerId || null, 'Nova conversa', '');
             } else {
                 await startConversationWithAccount(Number(userId), 'Nova conversa', '');
@@ -796,22 +914,33 @@
             return;
         }
 
-        await apiRequest('/messages', 'POST', {
-            receiver_id: Number(selectedUserId),
-            offer_id: selectedOfferId,
-            message_type: selectedOfferId ? 'offer_inquiry' : 'direct',
-            subject: selectedOfferId ? `Interesse em oferta ${selectedOfferId}` : 'Conversa direta',
-            content,
-        });
+        try {
+            await apiRequest('/messages', 'POST', {
+                receiver_id: Number(selectedUserId),
+                offer_id: selectedOfferId,
+                message_type: selectedOfferId ? 'offer_inquiry' : (selectedServiceId ? 'service_inquiry' : 'direct'),
+                subject: selectedOfferId
+                    ? `Interesse em oferta ${selectedOfferId}`
+                    : (selectedServiceId ? `Solicitação de orçamento - serviço ${selectedServiceTitle || selectedServiceId}` : 'Conversa direta'),
+                content,
+            });
 
-        input.value = '';
-        await loadConversations();
+            input.value = '';
+            await loadConversations();
 
-        const conv = conversations.find((c) => Number(c.other_user?.id) === Number(selectedUserId));
-        if (conv) {
-            await loadThread(conv.thread_id);
-        } else {
-            document.getElementById('chatMessages').insertAdjacentHTML('beforeend', '<li class="chat-thread-empty">Mensagem enviada. Aguarde resposta para criar thread.</li>');
+            const conv = conversations.find((c) => Number(c.other_user?.id) === Number(selectedUserId));
+            if (conv) {
+                await loadThread(conv.thread_id);
+            } else {
+                document.getElementById('chatMessages').insertAdjacentHTML('beforeend', '<li class="chat-thread-empty">Mensagem enviada. Aguarde resposta para criar thread.</li>');
+            }
+        } catch (error) {
+            const msg = String(error?.message || '').toLowerCase();
+            if (msg.includes('créditos') || msg.includes('creditos') || msg.includes('upgrade')) {
+                showServiceUpgradeModal();
+                return;
+            }
+            alert(error.message || 'Erro ao enviar mensagem');
         }
     });
 
@@ -836,6 +965,17 @@
     window.startConversationWithAccount = startConversationWithAccount;
     window.startConversationWithAccountById = startConversationWithAccountById;
     window.searchAccounts = searchAccounts;
+
+    const upgradeModal = document.getElementById('serviceUpgradeModal');
+    const upgradeCloseBtn = document.getElementById('serviceUpgradeCloseBtn');
+    if (upgradeCloseBtn) {
+        upgradeCloseBtn.addEventListener('click', hideServiceUpgradeModal);
+    }
+    if (upgradeModal) {
+        upgradeModal.addEventListener('click', (event) => {
+            if (event.target === upgradeModal) hideServiceUpgradeModal();
+        });
+    }
 
     initChatPage().catch((error) => {
         alert(error.message || 'Erro ao carregar chat');
