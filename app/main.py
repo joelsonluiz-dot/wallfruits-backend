@@ -16,7 +16,7 @@ from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -335,6 +335,24 @@ app.include_router(store_routes.router, prefix=API_PREFIX)  # Alias /api/store p
 app.include_router(service_routes.router, prefix=API_PREFIX)
 app.include_router(library_routes.router, prefix=API_PREFIX)
 app.include_router(buyer_client_routes.router, prefix=API_PREFIX)
+
+if not settings.DEBUG:
+    @app.get("/docs", include_in_schema=False)
+    async def docs_alias():
+        """Mantem compatibilidade para ambientes que esperam /docs."""
+        return RedirectResponse(url="/api/docs", status_code=307)
+
+
+    @app.get("/redoc", include_in_schema=False)
+    async def redoc_alias():
+        """Mantem compatibilidade para ambientes que esperam /redoc."""
+        return RedirectResponse(url="/api/redoc", status_code=307)
+
+
+    @app.get("/openapi.json", include_in_schema=False)
+    async def openapi_alias():
+        """Mantem compatibilidade para ambientes que esperam /openapi.json."""
+        return RedirectResponse(url="/api/openapi.json", status_code=307)
 
 @app.get("/")
 async def home(request: Request, current_user: User = Depends(get_current_user_optional)):
