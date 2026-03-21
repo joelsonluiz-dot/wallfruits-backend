@@ -1,0 +1,486 @@
+{% extends "base.html" %}
+
+{% block title %}Serviços - WallFruits{% endblock %}
+
+{% block content %}
+<style>
+    .services-shell {
+        display: grid;
+        gap: 0.95rem;
+    }
+
+    .services-hero {
+        border-radius: 18px;
+        border: 1px solid rgba(29, 97, 58, 0.28);
+        background: linear-gradient(138deg, #ecf8ef 0%, #eef7ff 65%, #fffdf4 100%);
+        box-shadow: 0 14px 30px rgba(24, 76, 45, 0.14);
+        padding: 1rem 1.05rem;
+    }
+
+    .services-hero h1 {
+        margin: 0;
+        font-size: 1.35rem;
+        font-weight: 900;
+        color: #175838;
+        letter-spacing: -0.02em;
+    }
+
+    .services-hero p {
+        margin: 0.38rem 0 0;
+        color: #345f8d;
+        font-size: 0.84rem;
+        font-weight: 600;
+    }
+
+    .services-category-chips {
+        margin-top: 0.72rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.42rem;
+    }
+
+    .services-category-chip {
+        border: 1px solid rgba(23, 87, 58, 0.24);
+        border-radius: 999px;
+        background: #ffffff;
+        color: #246243;
+        font-size: 0.72rem;
+        font-weight: 800;
+        padding: 0.34rem 0.62rem;
+        cursor: pointer;
+        transition: all 0.18s ease;
+    }
+
+    .services-category-chip.active {
+        background: linear-gradient(130deg, #1d6f45, #2b8a58);
+        color: #fff;
+        border-color: transparent;
+        box-shadow: 0 8px 16px rgba(21, 77, 49, 0.22);
+    }
+
+    .services-grid {
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 0.85rem;
+        align-items: start;
+    }
+
+    .services-list {
+        display: grid;
+        gap: 0.65rem;
+    }
+
+    .service-card {
+        border: 1px solid rgba(21, 84, 127, 0.18);
+        border-radius: 14px;
+        background: #fff;
+        box-shadow: 0 10px 22px rgba(16, 56, 98, 0.12);
+        overflow: hidden;
+        cursor: pointer;
+        transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+    }
+
+    .service-card:hover {
+        transform: translateY(-2px);
+        border-color: rgba(25, 103, 63, 0.34);
+        box-shadow: 0 16px 28px rgba(21, 67, 48, 0.17);
+    }
+
+    .service-card.active {
+        border-color: rgba(24, 98, 59, 0.48);
+        box-shadow: 0 16px 28px rgba(21, 67, 48, 0.22);
+        background: linear-gradient(140deg, #f6fff8, #f5fbff);
+    }
+
+    .service-card-inner {
+        display: grid;
+        grid-template-columns: 108px minmax(0, 1fr);
+        gap: 0.72rem;
+        padding: 0.58rem;
+    }
+
+    .service-thumb {
+        width: 108px;
+        height: 96px;
+        border-radius: 10px;
+        overflow: hidden;
+        background: #e9f2ec;
+    }
+
+    .service-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .service-title {
+        margin: 0;
+        font-size: 0.9rem;
+        font-weight: 800;
+        color: #1b4d7e;
+    }
+
+    .service-desc {
+        margin: 0.22rem 0 0;
+        font-size: 0.76rem;
+        color: #526f92;
+        line-height: 1.38;
+        min-height: 2em;
+    }
+
+    .service-meta {
+        margin-top: 0.35rem;
+        display: flex;
+        justify-content: space-between;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    .service-location {
+        font-size: 0.7rem;
+        color: #4f6f90;
+        font-weight: 700;
+    }
+
+    .service-price {
+        font-size: 0.75rem;
+        color: #1a6a40;
+        font-weight: 900;
+    }
+
+    .service-detail {
+        border: 1px solid rgba(21, 84, 127, 0.16);
+        border-radius: 16px;
+        background: #fff;
+        box-shadow: 0 10px 24px rgba(19, 58, 94, 0.12);
+        overflow: hidden;
+        position: sticky;
+        top: 1rem;
+    }
+
+    .service-detail-cover {
+        width: 100%;
+        height: 210px;
+        object-fit: cover;
+        background: #edf4ef;
+    }
+
+    .service-detail-body {
+        padding: 0.92rem;
+        display: grid;
+        gap: 0.5rem;
+    }
+
+    .service-detail-title {
+        margin: 0;
+        font-size: 1.03rem;
+        font-weight: 900;
+        color: #1a4d7f;
+    }
+
+    .service-detail-text {
+        margin: 0;
+        color: #4e6a8a;
+        font-size: 0.8rem;
+        line-height: 1.45;
+    }
+
+    .service-detail-location {
+        margin: 0;
+        color: #395e86;
+        font-size: 0.78rem;
+        font-weight: 700;
+    }
+
+    .service-detail-price {
+        margin: 0;
+        color: #1e6f43;
+        font-size: 1rem;
+        font-weight: 900;
+    }
+
+    .service-tech-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.42rem;
+    }
+
+    .service-tech-item {
+        border: 1px solid rgba(21, 84, 127, 0.14);
+        border-radius: 10px;
+        background: #f8fbff;
+        padding: 0.36rem 0.45rem;
+    }
+
+    .service-tech-key {
+        font-size: 0.64rem;
+        color: #5a7495;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+
+    .service-tech-value {
+        font-size: 0.72rem;
+        color: #245481;
+        font-weight: 700;
+    }
+
+    .service-detail-btn {
+        border: none;
+        border-radius: 12px;
+        background: linear-gradient(130deg, #1d6f45, #2b8a58);
+        color: #fff;
+        font-size: 0.8rem;
+        font-weight: 800;
+        padding: 0.75rem 0.9rem;
+        width: 100%;
+    }
+
+    @media (max-width: 940px) {
+        .services-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .service-detail {
+            position: static;
+        }
+    }
+
+    @media (max-width: 560px) {
+        .service-card-inner {
+            grid-template-columns: 88px minmax(0, 1fr);
+        }
+
+        .service-thumb {
+            width: 88px;
+            height: 82px;
+        }
+
+        .service-detail-cover {
+            height: 182px;
+        }
+
+        .service-tech-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="services-shell">
+    <section class="services-hero">
+        <h1>Serviços Agrícolas</h1>
+        <p>Escolha um serviço para ver detalhes e solicitar atendimento especializado na sua região.</p>
+        <div id="servicesCategoryChips" class="services-category-chips"></div>
+    </section>
+
+    <section class="services-grid">
+        <div id="servicesList" class="services-list"></div>
+        <article id="serviceDetail" class="service-detail"></article>
+    </section>
+</div>
+
+<script>
+    (function setupServicesPage() {
+        const fallbackServices = [
+            {
+                id: '1',
+                titulo: 'Análise de Solo',
+                descricao: 'Diagnóstico completo da fertilidade com recomendação técnica para correção e produtividade.',
+                preco: 'R$ 100',
+                local: 'Petrolina - PE',
+                imagem: 'https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=1000&q=80',
+                ficha_tecnica: { categoria: 'Solo' }
+            },
+            {
+                id: '2',
+                titulo: 'Pulverização com Drone',
+                descricao: 'Aplicação de defensivos com precisão em áreas de difícil acesso e menor desperdício.',
+                preco: 'R$ 250',
+                local: 'Juazeiro - BA',
+                imagem: 'https://images.unsplash.com/photo-1472145246862-b24cf25c4a36?auto=format&fit=crop&w=1000&q=80',
+                ficha_tecnica: { categoria: 'Pulverização' }
+            },
+            {
+                id: '3',
+                titulo: 'Mapeamento de Irrigação',
+                descricao: 'Levantamento técnico para distribuir água com eficiência e reduzir custos operacionais.',
+                preco: 'R$ 180',
+                local: 'Limoeiro do Norte - CE',
+                imagem: 'https://images.unsplash.com/photo-1464226184884-fa280b87c399?auto=format&fit=crop&w=1000&q=80',
+                ficha_tecnica: { categoria: 'Irrigação' }
+            }
+        ];
+
+        const listEl = document.getElementById('servicesList');
+        const detailEl = document.getElementById('serviceDetail');
+        const chipsEl = document.getElementById('servicesCategoryChips');
+
+        let allServices = [];
+        let selectedCategory = 'Todas';
+
+        if (!listEl || !detailEl || !chipsEl) return;
+
+        function getServiceCategory(service) {
+            const ficha = service && typeof service.ficha_tecnica === 'object' ? service.ficha_tecnica : {};
+            const value = String((ficha && ficha.categoria) || '').trim();
+            return value || 'Sem categoria';
+        }
+
+        function normalizeCategory(value) {
+            return String(value || '').trim().toLowerCase();
+        }
+
+        function filteredServices() {
+            if (selectedCategory === 'Todas') return allServices;
+            const target = normalizeCategory(selectedCategory);
+            return allServices.filter((service) => normalizeCategory(getServiceCategory(service)) === target);
+        }
+
+        function renderCategoryChips() {
+            const categories = Array.from(new Set(allServices.map((service) => getServiceCategory(service))));
+            const options = ['Todas', ...categories];
+
+            chipsEl.innerHTML = options.map((label) => `
+                <button type="button" class="services-category-chip ${label === selectedCategory ? 'active' : ''}" data-category="${label}">${label}</button>
+            `).join('');
+
+            chipsEl.querySelectorAll('.services-category-chip').forEach((chip) => {
+                chip.addEventListener('click', () => {
+                    selectedCategory = chip.getAttribute('data-category') || 'Todas';
+                    renderCategoryChips();
+
+                    const filtered = filteredServices();
+                    if (!filtered.length) {
+                        renderError('Nenhum serviço encontrado para essa categoria.');
+                        return;
+                    }
+
+                    renderList(filtered, filtered[0].id);
+                    renderDetail(filtered[0]);
+                });
+            });
+        }
+
+        function renderTech(service) {
+            const ficha = (service && typeof service.ficha_tecnica === 'object' && service.ficha_tecnica) || {};
+            const labels = {
+                categoria: 'Categoria',
+                unidade: 'Unidade',
+                prazo_atendimento: 'Prazo',
+                disponibilidade: 'Disponibilidade',
+                area_atuacao: 'Área',
+                tempo_execucao: 'Execução',
+                equipamentos: 'Equipamentos',
+                observacoes: 'Observações'
+            };
+
+            const rows = Object.keys(labels)
+                .map((key) => ({ key: labels[key], value: String(ficha[key] || '').trim() }))
+                .filter((item) => item.value.length > 0);
+
+            if (!rows.length) return '';
+
+            return `
+                <div class="service-tech-grid">
+                    ${rows.map((item) => `
+                        <div class="service-tech-item">
+                            <div class="service-tech-key">${item.key}</div>
+                            <div class="service-tech-value">${item.value}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function renderDetail(service) {
+            detailEl.innerHTML = `
+                <img class="service-detail-cover" src="${service.imagem}" alt="${service.titulo}">
+                <div class="service-detail-body">
+                    <h2 class="service-detail-title">${service.titulo}</h2>
+                    <p class="service-detail-text">${service.descricao}</p>
+                    <p class="service-detail-location">📍 ${service.local}</p>
+                    <p class="service-detail-price">${service.preco}</p>
+                    ${renderTech(service)}
+                    <button type="button" class="service-detail-btn">Solicitar serviço</button>
+                </div>
+            `;
+        }
+
+        function renderList(services, activeId) {
+            listEl.innerHTML = services.map((service) => `
+                <article class="service-card ${service.id === activeId ? 'active' : ''}" data-service-id="${service.id}">
+                    <div class="service-card-inner">
+                        <div class="service-thumb">
+                            <img src="${service.imagem}" alt="${service.titulo}">
+                        </div>
+                        <div>
+                            <h3 class="service-title">${service.titulo}</h3>
+                            <p class="service-desc">${service.descricao}</p>
+                            <div class="service-meta">
+                                <span class="service-location">${service.local}</span>
+                                <span class="service-price">${service.preco}</span>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            `).join('');
+
+            listEl.querySelectorAll('.service-card').forEach((card) => {
+                card.addEventListener('click', () => {
+                    const serviceId = card.getAttribute('data-service-id');
+                    const selected = services.find((item) => item.id === serviceId);
+                    if (!selected) return;
+                    renderList(services, selected.id);
+                    renderDetail(selected);
+                });
+            });
+        }
+
+        function renderLoading() {
+            chipsEl.innerHTML = '';
+            listEl.innerHTML = '<div class="library-empty">Carregando serviços...</div>';
+            detailEl.innerHTML = '<div class="service-detail-body"><p class="service-detail-text">Preparando detalhes do serviço...</p></div>';
+        }
+
+        function renderError(message) {
+            chipsEl.innerHTML = '';
+            listEl.innerHTML = `<div class="library-empty">${message}</div>`;
+            detailEl.innerHTML = '<div class="service-detail-body"><p class="service-detail-text">Não foi possível carregar os detalhes agora.</p></div>';
+        }
+
+        async function loadServices() {
+            renderLoading();
+
+            try {
+                const data = await apiRequest('/services');
+                const services = Array.isArray(data?.services) ? data.services : [];
+
+                if (!services.length) {
+                    renderError('Nenhum serviço disponível no momento.');
+                    return;
+                }
+
+                allServices = services;
+                selectedCategory = 'Todas';
+                renderCategoryChips();
+                renderList(allServices, allServices[0].id);
+                renderDetail(allServices[0]);
+            } catch {
+                if (!fallbackServices.length) {
+                    renderError('Falha ao carregar serviços. Tente novamente em instantes.');
+                    return;
+                }
+
+                allServices = fallbackServices;
+                selectedCategory = 'Todas';
+                renderCategoryChips();
+                renderList(allServices, allServices[0].id);
+                renderDetail(allServices[0]);
+            }
+        }
+
+        loadServices();
+    })();
+</script>
+{% endblock %}

@@ -28,6 +28,9 @@ from .follow import Follow
 from .notification import Notification
 from .community_post import CommunityPost, CommunityComment, CommunityLike, CommunityShare, CommunityUserBlock
 from .store_models import ProductCategory, Product, Order, OrderItem, QuoteRequest
+from .service import Service
+from .library_item import LibraryItem
+from .buyer_client import BuyerClient, BuyerClientPolicy, BuyerClientSlotPurchase
 
 __all__ = [
     "User",
@@ -68,4 +71,9 @@ __all__ = [
     "Order",
     "OrderItem",
     "QuoteRequest",
+    "Service",
+    "LibraryItem",
+    "BuyerClient",
+    "BuyerClientPolicy",
+    "BuyerClientSlotPurchase",
 ]

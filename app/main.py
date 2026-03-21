@@ -34,6 +34,9 @@ from sqlalchemy.orm import Session
 from app.models import Category, Favorite, Message, Offer, Review, Transaction, User
 from app.routers import (
     store_routes,
+    service_routes,
+    library_routes,
+    buyer_client_routes,
     category_routes,
     dashboard_routes,
     favorite_routes,
@@ -306,6 +309,7 @@ def _ensure_store_categories(db: Session) -> None:
         db.add(ProductCategory(**item, is_active=True))
     db.commit()
 
+
 app.include_router(auth_routes.router, prefix=API_PREFIX)
 app.include_router(offer_routes.router, prefix=API_PREFIX)
 app.include_router(transaction_routes.router, prefix=API_PREFIX)
@@ -328,6 +332,9 @@ app.include_router(community_routes.router, prefix=API_PREFIX)
 app.include_router(notification_routes.router, prefix=API_PREFIX)
 app.include_router(store_routes.router)  # Loja Agrícola (HTML + API)
 app.include_router(store_routes.router, prefix=API_PREFIX)  # Alias /api/store para chamadas JS
+app.include_router(service_routes.router, prefix=API_PREFIX)
+app.include_router(library_routes.router, prefix=API_PREFIX)
+app.include_router(buyer_client_routes.router, prefix=API_PREFIX)
 
 @app.get("/")
 async def home(request: Request, current_user: User = Depends(get_current_user_optional)):
@@ -345,6 +352,24 @@ async def community_page(request: Request, current_user: User = Depends(get_curr
 async def library_page(request: Request, current_user: User = Depends(get_current_user_optional)):
     """Página da biblioteca de leitura baseada em dados locais do navegador."""
     return _render_template("library.html", request, current_user=current_user)
+
+
+@app.get("/services")
+async def services_page(request: Request, current_user: User = Depends(get_current_user_optional)):
+    """Página de serviços agrícolas com catálogo e detalhe rápido."""
+    return _render_template("services.html", request, current_user=current_user)
+
+
+@app.get("/services/manage")
+async def services_manage_page(request: Request, current_user: User = Depends(get_current_user_optional)):
+    """Página de gestão de serviços para admin/fornecedor/produtor."""
+    return _render_template("services_manage.html", request, current_user=current_user)
+
+
+@app.get("/clients/manage")
+async def clients_manage_page(request: Request, current_user: User = Depends(get_current_user_optional)):
+    """Página de gestão de carteira de clientes para compradores."""
+    return _render_template("clients_manage.html", request, current_user=current_user)
 
 
 @app.get("/reader")

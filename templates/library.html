@@ -47,78 +47,197 @@
         font-size: 0.75rem;
         font-weight: 800;
         padding: 0.42rem 0.76rem;
+        cursor: pointer;
     }
 
     .library-grid {
         display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 0.8rem;
     }
 
-    .book-card {
-        border: 1px solid rgba(17, 73, 125, 0.18);
-        border-radius: 14px;
-        background: #fff;
-        box-shadow: 0 8px 20px rgba(19, 60, 109, 0.1);
+    .library-blog-card {
+        position: relative;
+        height: 220px;
+        border-radius: 18px;
         overflow: hidden;
+        border: 1px solid rgba(17, 73, 125, 0.2);
+        box-shadow: 0 14px 28px rgba(18, 59, 101, 0.16);
         cursor: pointer;
-        transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
 
-    .book-card:hover {
+    .library-blog-card:hover {
         transform: translateY(-2px);
-        box-shadow: 0 14px 28px rgba(22, 67, 121, 0.16);
-        border-color: rgba(46, 125, 50, 0.35);
+        box-shadow: 0 18px 32px rgba(15, 52, 84, 0.2);
     }
 
-    .book-cover {
-        height: 168px;
+    .library-blog-cover {
+        position: absolute;
+        inset: 0;
         background: linear-gradient(155deg, #f0f8ff, #f7fbf0);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
     }
 
-    .book-cover img {
+    .library-blog-cover img {
         width: 100%;
         height: 100%;
         object-fit: cover;
     }
 
-    .book-cover-fallback {
-        font-size: 2.1rem;
-        color: #2f6caa;
+    .library-blog-gradient {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, rgba(5, 12, 20, 0) 22%, rgba(5, 12, 20, 0.68) 100%);
     }
 
-    .book-body {
-        padding: 0.65rem;
+    .library-blog-content {
+        position: absolute;
+        inset: 0;
+        padding: 0.7rem;
         display: grid;
-        gap: 0.22rem;
+        align-content: end;
+        gap: 0.36rem;
     }
 
-    .book-title {
-        margin: 0;
-        font-size: 0.8rem;
+    .library-blog-category {
+        display: inline-flex;
+        width: fit-content;
+        border-radius: 999px;
+        padding: 0.18rem 0.5rem;
+        font-size: 0.66rem;
         font-weight: 800;
-        color: #16427b;
-        line-height: 1.32;
-        min-height: 2.1em;
+        color: #f3fbff;
+        background: rgba(8, 28, 45, 0.62);
+        border: 1px solid rgba(181, 224, 255, 0.4);
     }
 
-    .book-author {
-        font-size: 0.71rem;
-        color: #5c7699;
+    .library-blog-title {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 800;
+        color: #f4fbff;
+        line-height: 1.28;
+    }
+
+    .library-blog-meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.45rem;
+    }
+
+    .library-blog-time {
+        font-size: 0.7rem;
+        color: #d3ecff;
         font-weight: 700;
     }
 
-    .book-meta {
-        margin-top: 0.2rem;
+    .library-blog-read-btn {
+        border: none;
+        border-radius: 999px;
+        background: #ffffff;
+        color: #1c4d81;
+        font-size: 0.67rem;
+        font-weight: 800;
+        padding: 0.24rem 0.58rem;
+        cursor: pointer;
+    }
+
+    .library-detail {
+        border: 1px solid rgba(17, 73, 125, 0.2);
+        border-radius: 16px;
+        background: #fff;
+        box-shadow: 0 10px 24px rgba(21, 61, 97, 0.12);
+        overflow: hidden;
+    }
+
+    .library-detail-cover {
+        width: 100%;
+        height: 230px;
+        object-fit: cover;
+        background: linear-gradient(155deg, #f0f8ff, #f7fbf0);
+    }
+
+    .library-detail-body {
+        padding: 1rem;
+        display: grid;
+        gap: 0.62rem;
+    }
+
+    .library-detail-title {
+        margin: 0;
+        font-size: 1.18rem;
+        color: #134377;
+        font-weight: 900;
+    }
+
+    .library-detail-inline {
         display: flex;
-        justify-content: space-between;
-        gap: 0.35rem;
-        font-size: 0.65rem;
-        color: #4d698f;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        font-size: 0.77rem;
+        color: #4b6c91;
+        font-weight: 700;
+    }
+
+    .library-detail-content {
+        margin: 0;
+        color: #34557a;
+        line-height: 1.6;
+        font-size: 0.86rem;
+        white-space: pre-wrap;
+    }
+
+    .library-detail-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+    }
+
+    .library-fav-btn,
+    .library-offline-btn,
+    .library-reader-btn,
+    .library-back-btn {
+        border: none;
+        border-radius: 999px;
+        font-size: 0.74rem;
+        font-weight: 800;
+        padding: 0.42rem 0.74rem;
+        cursor: pointer;
+    }
+
+    .library-fav-btn {
+        background: linear-gradient(130deg, #ffeef3, #ffdbe7);
+        color: #9d2c5b;
+        border: 1px solid rgba(168, 40, 98, 0.22);
+    }
+
+    .library-fav-btn.active {
+        background: linear-gradient(130deg, #ffdae8, #ffc2da);
+        color: #862650;
+    }
+
+    .library-offline-btn {
+        background: linear-gradient(130deg, #eaf5ff, #d8edff);
+        color: #1a4e86;
+        border: 1px solid rgba(21, 83, 133, 0.24);
+    }
+
+    .library-offline-btn.active {
+        background: linear-gradient(130deg, #d7ebff, #c5e2ff);
+        color: #134377;
+    }
+
+    .library-reader-btn {
+        background: linear-gradient(130deg, #1d6f45, #2b8a58);
+        color: #ffffff;
+    }
+
+    .library-back-btn {
+        background: #f2f8ff;
+        color: #1a4e86;
+        border: 1px solid rgba(22, 84, 132, 0.22);
     }
 
     .library-empty {
@@ -133,30 +252,33 @@
 
     @media (max-width: 1200px) {
         .library-grid {
-            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-template-columns: repeat(2, minmax(0, 1fr));
         }
     }
 
     @media (max-width: 900px) {
         .library-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-
-        .book-cover {
-            height: 152px;
+            grid-template-columns: 1fr;
         }
     }
 
     @media (max-width: 560px) {
-        .library-grid {
-            grid-template-columns: 1fr;
+        .library-blog-card {
+            height: 200px;
         }
 
-        .book-cover {
-            height: 180px;
+        .library-detail-cover {
+            height: 190px;
         }
 
         .library-btn {
+            width: 100%;
+        }
+
+        .library-fav-btn,
+        .library-offline-btn,
+        .library-reader-btn,
+        .library-back-btn {
             width: 100%;
         }
     }
@@ -173,13 +295,79 @@
         </div>
     </section>
 
-    <section id="libraryGrid" class="library-grid"></section>
+    <section id="libraryListView">
+        <div id="libraryGrid" class="library-grid"></div>
+    </section>
+
+    <section id="libraryDetailView" class="library-detail" style="display:none;"></section>
 </div>
 
 <script>
     (function setupLibraryPage() {
         const STORAGE_KEYS = ['wf_library_books', 'libraryBooks', 'books'];
+        const FAVORITES_KEY = 'wf_library_favorites';
+        const OFFLINE_KEY = 'wf_library_offline';
         const grid = document.getElementById('libraryGrid');
+        const listView = document.getElementById('libraryListView');
+        const detailView = document.getElementById('libraryDetailView');
+        let booksCache = [];
+        let activeSyncOps = 0;
+        const syncMetrics = {
+            fetchAttempts: 0,
+            fetchErrors: 0,
+            singleSyncAttempts: 0,
+            singleSyncErrors: 0,
+            batchSyncAttempts: 0,
+            batchSyncErrors: 0,
+            localPoolCount: 0,
+            remotePoolCount: 0,
+            mergedCount: 0,
+            dedupDiscardedCount: 0,
+            backfillPendingCount: 0,
+            status: 'local',
+            statusMessage: 'Modo local',
+        };
+
+        function publishSyncMetrics(eventName, extra) {
+            const payload = {
+                event: eventName,
+                at: new Date().toISOString(),
+                ...syncMetrics,
+                ...(extra || {}),
+            };
+            window.__wfLibrarySyncMetrics = payload;
+            console.debug('[WF Library Sync]', payload);
+        }
+
+        function setSyncStatus(state, message) {
+            syncMetrics.status = String(state || 'local');
+            syncMetrics.statusMessage = String(message || 'Modo local');
+            publishSyncMetrics('status_update', {
+                status: syncMetrics.status,
+                statusMessage: syncMetrics.statusMessage,
+            });
+        }
+
+        function beginSync(message) {
+            if (!isLoggedIn()) return;
+            activeSyncOps += 1;
+            setSyncStatus('syncing', message || 'Sincronizando...');
+        }
+
+        function endSync(ok, message) {
+            if (!isLoggedIn()) return;
+            activeSyncOps = Math.max(0, activeSyncOps - 1);
+            if (activeSyncOps > 0) return;
+            setSyncStatus(ok ? 'synced' : 'error', message || (ok ? 'Sincronizado' : 'Falha de sync'));
+        }
+
+        function getAuthToken() {
+            return localStorage.getItem('token') || '';
+        }
+
+        function isLoggedIn() {
+            return Boolean(getAuthToken());
+        }
 
         function escapeHtml(text) {
             const div = document.createElement('div');
@@ -202,11 +390,215 @@
             const text = String(item?.text || item?.content || '').trim();
             const cover = item?.cover || item?.image || '';
             const id = String(item?.id || `${title}-${author}`);
+            const category = String(item?.categoria || item?.category || 'E-book').trim();
+            const readTime = String(item?.tempo || `${Math.max(3, Math.ceil((text.length || 300) / 1000))} min`).trim();
 
-            return { id, title, author, text, cover };
+            return { id, title, author, text, cover, category, readTime };
         }
 
-        function getAllBooks() {
+        function buildBookSignature(book) {
+            const title = String(book?.title || '').trim().toLowerCase();
+            const author = String(book?.author || '').trim().toLowerCase();
+            const text = String(book?.text || '').trim().replace(/\s+/g, ' ').toLowerCase();
+            const excerpt = text.slice(0, 160);
+            return `${title}|${author}|${excerpt}`;
+        }
+
+        function pickBestValue(localValue, remoteValue) {
+            const local = String(localValue || '').trim();
+            const remote = String(remoteValue || '').trim();
+            if (!local) return remote;
+            if (!remote) return local;
+            return remote.length > local.length ? remote : local;
+        }
+
+        function mergeBookData(localBook, remoteBook) {
+            return {
+                ...localBook,
+                ...remoteBook,
+                title: pickBestValue(localBook?.title, remoteBook?.title),
+                author: pickBestValue(localBook?.author, remoteBook?.author),
+                category: pickBestValue(localBook?.category, remoteBook?.category),
+                readTime: pickBestValue(localBook?.readTime, remoteBook?.readTime),
+                cover: pickBestValue(localBook?.cover, remoteBook?.cover),
+                text: pickBestValue(localBook?.text, remoteBook?.text),
+                isFavorite: Boolean(localBook?.isFavorite) || Boolean(remoteBook?.isFavorite),
+                isOffline: Boolean(localBook?.isOffline) || Boolean(remoteBook?.isOffline),
+            };
+        }
+
+        function getFavoritesSet() {
+            try {
+                return new Set(JSON.parse(localStorage.getItem(FAVORITES_KEY) || '[]'));
+            } catch {
+                return new Set();
+            }
+        }
+
+        function setFavoritesSet(set) {
+            localStorage.setItem(FAVORITES_KEY, JSON.stringify(Array.from(set)));
+        }
+
+        function getOfflineMap() {
+            try {
+                const parsed = JSON.parse(localStorage.getItem(OFFLINE_KEY) || '{}');
+                return parsed && typeof parsed === 'object' ? parsed : {};
+            } catch {
+                return {};
+            }
+        }
+
+        function setOfflineMap(map) {
+            localStorage.setItem(OFFLINE_KEY, JSON.stringify(map));
+        }
+
+        function hydrateLocalStateFromBooks(books) {
+            const favorites = new Set();
+            const offlineMap = {};
+
+            books.forEach((book) => {
+                const id = String(book.id || '');
+                if (!id) return;
+
+                if (Boolean(book.isFavorite)) {
+                    favorites.add(id);
+                }
+
+                if (Boolean(book.isOffline)) {
+                    offlineMap[id] = {
+                        id: book.id,
+                        title: book.title,
+                        author: book.author,
+                        category: book.category,
+                        text: book.text,
+                        cover: book.cover,
+                        readTime: book.readTime,
+                        savedAt: new Date().toISOString(),
+                    };
+                }
+            });
+
+            setFavoritesSet(favorites);
+            setOfflineMap(offlineMap);
+        }
+
+        async function fetchRemoteLibraryItems() {
+            if (!isLoggedIn()) {
+                setSyncStatus('local', '📱 Modo local');
+                return [];
+            }
+            syncMetrics.fetchAttempts += 1;
+            beginSync('Buscando nuvem...');
+            try {
+                const data = await apiRequest('/library/items');
+                endSync(true, 'Nuvem sincronizada');
+                const items = Array.isArray(data?.items) ? data.items : [];
+                syncMetrics.remotePoolCount = items.length;
+                publishSyncMetrics('fetch_remote_ok', { remotePoolCount: items.length });
+                return items;
+            } catch {
+                syncMetrics.fetchErrors += 1;
+                endSync(false, 'Erro ao buscar nuvem');
+                publishSyncMetrics('fetch_remote_error');
+                return [];
+            }
+        }
+
+        async function syncRemoteLibraryItem(book, nextFavorite, nextOffline) {
+            if (!isLoggedIn()) return;
+
+            syncMetrics.singleSyncAttempts += 1;
+            beginSync('Enviando atualização...');
+            try {
+                await apiRequest(`/library/items/${encodeURIComponent(String(book.id))}`, 'PUT', {
+                    title: book.title || 'Livro',
+                    author: book.author || 'Autor',
+                    category: book.category || 'E-book',
+                    read_time: book.readTime || `${Math.max(3, Math.ceil((String(book.text || '').length || 300) / 1000))} min`,
+                    cover: book.cover || '',
+                    text: book.text || '',
+                    is_favorite: Boolean(nextFavorite),
+                    is_offline: Boolean(nextOffline),
+                });
+                endSync(true, 'Sincronizado');
+                publishSyncMetrics('single_sync_ok', { bookId: String(book.id) });
+            } catch (error) {
+                syncMetrics.singleSyncErrors += 1;
+                endSync(false, 'Falha ao sincronizar');
+                publishSyncMetrics('single_sync_error', { bookId: String(book.id) });
+                throw error;
+            }
+        }
+
+        async function syncRemoteLibraryBatch(items) {
+            if (!isLoggedIn() || !Array.isArray(items) || !items.length) return;
+
+            syncMetrics.batchSyncAttempts += 1;
+            beginSync(`Sincronizando ${items.length} itens...`);
+            try {
+                await apiRequest('/library/items/batch', 'POST', { items });
+                endSync(true, 'Sincronização em lote concluída');
+                publishSyncMetrics('batch_sync_ok', { batchSize: items.length });
+            } catch (error) {
+                syncMetrics.batchSyncErrors += 1;
+                endSync(false, 'Falha no sync em lote');
+                publishSyncMetrics('batch_sync_error', { batchSize: items.length });
+                throw error;
+            }
+        }
+
+        async function backfillRemoteStateFromLocal(books, remoteItems) {
+            if (!isLoggedIn()) return;
+
+            const remoteMap = new Map(
+                (remoteItems || []).map((item) => [String(item.id), item])
+            );
+            const favorites = getFavoritesSet();
+            const offlineMap = getOfflineMap();
+
+            const pending = [];
+            books.forEach((book) => {
+                const id = String(book.id || '');
+                if (!id) return;
+
+                const localFavorite = favorites.has(id);
+                const localOffline = Boolean(offlineMap[id]);
+                const remote = remoteMap.get(id);
+
+                const shouldCreate = !remote && (localFavorite || localOffline);
+                const shouldUpdate = remote && (
+                    Boolean(remote.is_favorite) !== localFavorite ||
+                    Boolean(remote.is_offline) !== localOffline
+                );
+
+                if (shouldCreate || shouldUpdate) {
+                    pending.push({
+                        id,
+                        title: book.title || 'Livro',
+                        author: book.author || 'Autor',
+                        category: book.category || 'E-book',
+                        read_time: book.readTime || `${Math.max(3, Math.ceil((String(book.text || '').length || 300) / 1000))} min`,
+                        cover: book.cover || '',
+                        text: book.text || '',
+                        is_favorite: localFavorite,
+                        is_offline: localOffline,
+                    });
+                }
+            });
+
+            if (pending.length) {
+                syncMetrics.backfillPendingCount = pending.length;
+                try {
+                    await syncRemoteLibraryBatch(pending);
+                } catch {
+                    // fallback local mantido
+                }
+            } else {
+                syncMetrics.backfillPendingCount = 0;
+            }
+        }
+
+        async function getAllBooks() {
             const pool = [];
             STORAGE_KEYS.forEach((key) => {
                 pool.push(...readBooksFromKey(key));
@@ -223,18 +615,88 @@
             if (current && (current.title || current.text)) {
                 pool.unshift(current);
             }
+            syncMetrics.localPoolCount = pool.length;
 
-            const seen = new Set();
+            const seenIds = new Set();
+            const seenSignatures = new Set();
             const normalized = pool
                 .map(normalizeBook)
                 .filter((book) => book.text || book.title)
                 .filter((book) => {
-                    if (seen.has(book.id)) return false;
-                    seen.add(book.id);
+                    const id = String(book.id || '');
+                    const signature = buildBookSignature(book);
+
+                    if (id && seenIds.has(id)) return false;
+                    if (signature && seenSignatures.has(signature)) return false;
+
+                    if (id) seenIds.add(id);
+                    if (signature) seenSignatures.add(signature);
                     return true;
                 });
+            syncMetrics.dedupDiscardedCount = Math.max(0, pool.length - normalized.length);
 
-            return normalized;
+            const favorites = getFavoritesSet();
+            const offlineMap = getOfflineMap();
+            normalized.forEach((book) => {
+                book.isFavorite = favorites.has(book.id);
+                book.isOffline = Boolean(offlineMap[book.id]);
+            });
+
+            const remoteItems = await fetchRemoteLibraryItems();
+            if (!remoteItems.length) {
+                return normalized;
+            }
+
+            const merged = new Map(normalized.map((book) => [String(book.id), book]));
+            const signatureToId = new Map(
+                normalized.map((book) => [buildBookSignature(book), String(book.id)])
+            );
+            remoteItems.forEach((item, index) => {
+                const remoteBook = normalizeBook(
+                    {
+                        id: item.id,
+                        title: item.title,
+                        author: item.author,
+                        text: item.text,
+                        cover: item.cover,
+                        category: item.category,
+                        tempo: item.read_time,
+                    },
+                    index,
+                );
+                remoteBook.isFavorite = Boolean(item.is_favorite);
+                remoteBook.isOffline = Boolean(item.is_offline);
+
+                const key = String(remoteBook.id);
+                const signature = buildBookSignature(remoteBook);
+                const signatureMatchKey = signatureToId.get(signature);
+
+                if (merged.has(key) || signatureMatchKey) {
+                    const resolvedKey = merged.has(key) ? key : signatureMatchKey;
+                    const localBook = merged.get(resolvedKey);
+                    merged.set(key, mergeBookData(localBook, remoteBook));
+
+                    if (!merged.has(key) && resolvedKey !== key) {
+                        merged.delete(resolvedKey);
+                    }
+                    signatureToId.set(signature, key);
+                } else {
+                    merged.set(key, remoteBook);
+                    signatureToId.set(signature, key);
+                }
+            });
+
+            const mergedBooks = Array.from(merged.values());
+            syncMetrics.mergedCount = mergedBooks.length;
+            hydrateLocalStateFromBooks(mergedBooks);
+            await backfillRemoteStateFromLocal(mergedBooks, remoteItems);
+            publishSyncMetrics('merge_complete', {
+                localPoolCount: syncMetrics.localPoolCount,
+                remotePoolCount: syncMetrics.remotePoolCount,
+                mergedCount: syncMetrics.mergedCount,
+                dedupDiscardedCount: syncMetrics.dedupDiscardedCount,
+            });
+            return mergedBooks;
         }
 
         function writePrimaryBooks(books) {
@@ -246,14 +708,118 @@
             window.location.href = '/reader';
         }
 
+        function openDetail(bookId) {
+            const book = booksCache.find((item) => item.id === bookId);
+            if (!book) return;
+
+            const favorites = getFavoritesSet();
+            const offlineMap = getOfflineMap();
+            const isFavorite = favorites.has(book.id);
+            const isOffline = Boolean(offlineMap[book.id]);
+
+            detailView.innerHTML = `
+                ${book.cover ? `<img class="library-detail-cover" src="${escapeHtml(book.cover)}" alt="Capa de ${escapeHtml(book.title)}">` : '<div class="library-detail-cover"></div>'}
+                <div class="library-detail-body">
+                    <h2 class="library-detail-title">${escapeHtml(book.title)}</h2>
+                    <div class="library-detail-inline">
+                        <span>📚 ${escapeHtml(book.category)}</span>
+                        <span>📖 ${escapeHtml(book.readTime)} de leitura</span>
+                        <span>✍️ ${escapeHtml(book.author)}</span>
+                    </div>
+                    <p class="library-detail-content">${escapeHtml(book.text || 'Conteúdo indisponível no momento.')}</p>
+                    <div class="library-detail-actions">
+                        <button type="button" class="library-fav-btn ${isFavorite ? 'active' : ''}" id="libraryFavBtn">👉 Marcar como favorito ❤️</button>
+                        <button type="button" class="library-offline-btn ${isOffline ? 'active' : ''}" id="libraryOfflineBtn">👉 Salvar leitura offline</button>
+                        <button type="button" class="library-reader-btn" id="libraryReaderBtn">Ler agora</button>
+                        <button type="button" class="library-back-btn" id="libraryBackBtn">← Voltar</button>
+                    </div>
+                </div>
+            `;
+
+            listView.style.display = 'none';
+            detailView.style.display = '';
+
+            const favBtn = document.getElementById('libraryFavBtn');
+            const offlineBtn = document.getElementById('libraryOfflineBtn');
+            const readerBtn = document.getElementById('libraryReaderBtn');
+            const backBtn = document.getElementById('libraryBackBtn');
+
+            if (favBtn) {
+                favBtn.addEventListener('click', async () => {
+                    const updated = getFavoritesSet();
+                    const offline = getOfflineMap();
+                    const currentOffline = Boolean(offline[book.id]);
+                    let nextFavorite = false;
+                    if (updated.has(book.id)) {
+                        updated.delete(book.id);
+                        nextFavorite = false;
+                    } else {
+                        updated.add(book.id);
+                        nextFavorite = true;
+                    }
+                    setFavoritesSet(updated);
+                    try {
+                        await syncRemoteLibraryItem(book, nextFavorite, currentOffline);
+                    } catch {
+                        // fallback local mantido
+                    }
+                    openDetail(book.id);
+                });
+            }
+
+            if (offlineBtn) {
+                offlineBtn.addEventListener('click', async () => {
+                    const updated = getOfflineMap();
+                    const favorites = getFavoritesSet();
+                    const currentFavorite = favorites.has(book.id);
+                    let nextOffline = false;
+                    if (updated[book.id]) {
+                        delete updated[book.id];
+                        nextOffline = false;
+                    } else {
+                        updated[book.id] = {
+                            id: book.id,
+                            title: book.title,
+                            author: book.author,
+                            category: book.category,
+                            text: book.text,
+                            cover: book.cover,
+                            readTime: book.readTime,
+                            savedAt: new Date().toISOString(),
+                        };
+                        nextOffline = true;
+                    }
+                    setOfflineMap(updated);
+                    try {
+                        await syncRemoteLibraryItem(book, currentFavorite, nextOffline);
+                    } catch {
+                        // fallback local mantido
+                    }
+                    openDetail(book.id);
+                });
+            }
+
+            if (readerBtn) {
+                readerBtn.addEventListener('click', () => openReader(book));
+            }
+
+            if (backBtn) {
+                backBtn.addEventListener('click', () => {
+                    detailView.style.display = 'none';
+                    listView.style.display = '';
+                });
+            }
+        }
+
         function estimatePages(text) {
             const clean = String(text || '').trim();
             if (!clean) return 1;
             return Math.max(1, Math.ceil(clean.length / 1500));
         }
 
-        function render() {
-            const books = getAllBooks();
+        async function render() {
+            const books = await getAllBooks();
+            booksCache = books;
 
             if (!books.length) {
                 grid.innerHTML = `
@@ -265,27 +831,25 @@
             }
 
             grid.innerHTML = books.map((book) => `
-                <article class="book-card" data-book-id="${escapeHtml(book.id)}" tabindex="0" role="button" aria-label="Abrir ${escapeHtml(book.title)}">
-                    <div class="book-cover">
-                        ${book.cover ? `<img src="${escapeHtml(book.cover)}" alt="Capa de ${escapeHtml(book.title)}">` : '<span class="book-cover-fallback">📘</span>'}
+                <article class="library-blog-card" data-book-id="${escapeHtml(book.id)}" tabindex="0" role="button" aria-label="Abrir ${escapeHtml(book.title)}">
+                    <div class="library-blog-cover">
+                        ${book.cover ? `<img src="${escapeHtml(book.cover)}" alt="Capa de ${escapeHtml(book.title)}">` : ''}
                     </div>
-                    <div class="book-body">
-                        <h3 class="book-title">${escapeHtml(book.title)}</h3>
-                        <span class="book-author">${escapeHtml(book.author)}</span>
-                        <div class="book-meta">
-                            <span>${estimatePages(book.text)} páginas</span>
-                            <span>Tocar para ler</span>
+                    <div class="library-blog-gradient"></div>
+                    <div class="library-blog-content">
+                        <span class="library-blog-category">${escapeHtml(book.category)}</span>
+                        <h3 class="library-blog-title">${escapeHtml(book.title)}</h3>
+                        <div class="library-blog-meta">
+                            <span class="library-blog-time">${escapeHtml(book.readTime)} de leitura</span>
+                            <button type="button" class="library-blog-read-btn">Leia mais</button>
                         </div>
                     </div>
                 </article>
             `).join('');
 
-            grid.querySelectorAll('.book-card').forEach((card) => {
+            grid.querySelectorAll('.library-blog-card').forEach((card) => {
                 const id = card.getAttribute('data-book-id');
-                const book = books.find((b) => b.id === id);
-                if (!book) return;
-
-                const open = () => openReader(book);
+                const open = () => openDetail(id);
                 card.addEventListener('click', open);
                 card.addEventListener('keydown', (event) => {
                     if (event.key === 'Enter' || event.key === ' ') {
@@ -302,6 +866,8 @@
                     id: 'guia-frutas',
                     title: 'Guia Prático de Fruticultura',
                     author: 'Equipe WallFruits',
+                    category: 'Solo',
+                    tempo: '5 min',
                     cover: '',
                     text: 'Capítulo 1. Planejamento da produção.\n\nA escolha do solo, análise de clima e manejo de irrigação impactam diretamente na produtividade e no padrão de qualidade.\n\nCapítulo 2. Manejo de pragas.\n\nUse controle integrado, monitoramento semanal e ações preventivas para reduzir perdas e custos operacionais.'
                 },
@@ -309,6 +875,8 @@
                     id: 'mercado-agro',
                     title: 'Mercado Agro em Transformação',
                     author: 'Observatório Rural',
+                    category: 'Tecnologia',
+                    tempo: '7 min',
                     cover: '',
                     text: 'Tendências de compra mostram preferência por transparência, rastreabilidade e previsibilidade de entrega.\n\nProdutores que digitalizam operação e relacionamento comercial aumentam conversão e recorrência.'
                 }

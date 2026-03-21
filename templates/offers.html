@@ -74,6 +74,44 @@
         margin-bottom: 0.65rem;
     }
 
+    .offers-fruit-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        margin-bottom: 0.7rem;
+        align-items: center;
+    }
+
+    .offers-fruit-chip {
+        border: 1px solid rgba(17, 73, 125, 0.2);
+        border-radius: 999px;
+        background: linear-gradient(135deg, rgba(242, 250, 255, 0.96), rgba(235, 247, 240, 0.98));
+        color: #1a4b81;
+        font-size: 0.72rem;
+        font-weight: 800;
+        padding: 0.3rem 0.62rem;
+        cursor: pointer;
+        transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+    }
+
+    .offers-fruit-chip.active {
+        color: #ffffff;
+        border-color: rgba(29, 111, 69, 0.62);
+        background: linear-gradient(130deg, #1d6f45, #2b8a58);
+        box-shadow: 0 8px 16px rgba(18, 83, 51, 0.22);
+    }
+
+    @media (min-width: 1025px) {
+        .offers-fruit-chips {
+            overflow: visible;
+            white-space: normal;
+        }
+
+        .offers-fruit-chip:hover {
+            transform: translateY(-1px);
+        }
+    }
+
     .offers-active-filters {
         display: flex;
         flex-wrap: wrap;
@@ -748,6 +786,28 @@
         .offers-search-row {
             grid-template-columns: 1fr auto;
         }
+
+        .offers-fruit-chips {
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            overflow-y: hidden;
+            -webkit-overflow-scrolling: touch;
+            scroll-snap-type: x proximity;
+            padding-bottom: 0.2rem;
+            margin-right: -0.1rem;
+            scrollbar-width: none;
+            mask-image: linear-gradient(to right, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
+        }
+
+        .offers-fruit-chips::-webkit-scrollbar {
+            display: none;
+        }
+
+        .offers-fruit-chip {
+            flex: 0 0 auto;
+            scroll-snap-align: start;
+            white-space: nowrap;
+        }
     }
 </style>
 
@@ -784,6 +844,8 @@
         <span class="offers-filter-trigger-count" id="offersFilterTriggerCount" style="display:none;">0</span>
     </button>
 </div>
+
+<div class="offers-fruit-chips" id="offersFruitChips"></div>
 
 <div class="offers-active-filters" id="activeFilterChips"></div>
 
@@ -841,6 +903,18 @@
     const OFFERS_AUTO_REFRESH_OPTIONS = [20000, 45000, 90000];
     const OFFERS_REFRESH_PAUSED_KEY = 'wf_offers_refresh_paused';
     const OFFERS_REFRESH_INTERVAL_KEY = 'wf_offers_refresh_interval_ms';
+    const OFFERS_FRUIT_CHIPS = [
+        'Banana',
+        'Manga',
+        'Laranja',
+        'Maçã',
+        'Uva',
+        'Abacaxi',
+        'Mamão',
+        'Melancia',
+        'Goiaba',
+        'Limão',
+    ];
     let searchDebounceTimer = null;
     let offersObserver = null;
     let offersRefreshTimer = null;
@@ -873,6 +947,44 @@
         const div = document.createElement('div');
         div.textContent = text ?? '';
         return div.innerHTML;
+    }
+
+    function normalizeText(value) {
+        return String(value || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .trim();
+    }
+
+    function renderFruitChips() {
+        const chipsWrap = document.getElementById('offersFruitChips');
+        const searchInput = document.getElementById('filterSearch');
+        if (!chipsWrap || !searchInput) return;
+
+        const activeSearch = normalizeText(searchInput.value);
+        const items = ['Todas', ...OFFERS_FRUIT_CHIPS];
+
+        chipsWrap.innerHTML = items.map((item) => {
+            const isAll = item === 'Todas';
+            const isActive = isAll
+                ? OFFERS_FRUIT_CHIPS.every((fruit) => normalizeText(fruit) !== activeSearch)
+                : normalizeText(item) === activeSearch;
+
+            return `<button type="button" class="offers-fruit-chip ${isActive ? 'active' : ''}" data-fruit="${escapeHtml(item)}">${escapeHtml(item)}</button>`;
+        }).join('');
+
+        chipsWrap.querySelectorAll('.offers-fruit-chip').forEach((chip) => {
+            chip.addEventListener('click', () => {
+                const fruit = chip.getAttribute('data-fruit') || 'Todas';
+                searchInput.value = fruit === 'Todas' ? '' : fruit;
+                renderFruitChips();
+                renderActiveFilterChips();
+                saveFilterPrefs();
+                writeFiltersToUrl();
+                loadOffers();
+            });
+        });
     }
 
     function offersIntervalLabel(ms) {
@@ -1873,6 +1985,9 @@
 
         el.addEventListener('input', () => {
             renderActiveFilterChips();
+            if (id === 'filterSearch') {
+                renderFruitChips();
+            }
             saveFilterPrefs();
 
             if (id === 'filterSearch') {
@@ -1910,6 +2025,9 @@
             if (event.key === 'Enter') {
                 event.preventDefault();
                 renderActiveFilterChips();
+                if (id === 'filterSearch') {
+                    renderFruitChips();
+                }
                 saveFilterPrefs();
                 writeFiltersToUrl();
                 loadOffers();
@@ -1962,6 +2080,7 @@
     renderOffersRefreshControls();
     saveFilterPrefs();
     setupInfiniteOffersScroll();
+    renderFruitChips();
     loadOffers();
     loadFeaturedStoreProducts();
     loadMessagesBadge();

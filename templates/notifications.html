@@ -168,6 +168,7 @@
             <button class="btn btn-wf-secondary notif-filter-btn" data-filter="favorite" onclick="setFilter('favorite')">Curtidas</button>
             <button class="btn btn-wf-secondary notif-filter-btn" data-filter="reservation" onclick="setFilter('reservation')">Reservas</button>
             <button class="btn btn-wf-secondary notif-filter-btn" data-filter="follow" onclick="setFilter('follow')">Seguidores</button>
+            <button id="notifAdminSyncIssuesBtn" class="btn btn-wf-secondary notif-filter-btn" data-filter="library_sync_issue" onclick="setFilter('library_sync_issue')" style="display:none;">Correções Sync</button>
             <button class="btn btn-wf-secondary notif-filter-btn" data-filter="unread" onclick="setFilter('unread')">Não lidas</button>
         </div>
     </aside>
@@ -203,6 +204,7 @@
     const NOTIF_REFRESH_INTERVAL_KEY = 'wf_notifications_refresh_interval_ms';
     const NOTIF_FILTER_KEY = 'wf_notifications_active_filter';
     const GLOBAL_TYPING_LOCK_KEY = 'wf_global_typing_context';
+    const ADMIN_SYNC_FILTERS = ['library_sync_issue'];
     const notifFeedState = {
         skip: 0,
         hasMore: true,
@@ -322,6 +324,32 @@
         if (currentFilter === 'all') return notifStore;
         if (currentFilter === 'unread') return notifStore.filter((n) => !n.is_read);
         return notifStore.filter((n) => n.notification_type === currentFilter);
+    }
+
+    function getCurrentUserRole() {
+        try {
+            const user = JSON.parse(localStorage.getItem('user') || 'null');
+            return String(user?.role || '').toLowerCase();
+        } catch {
+            return '';
+        }
+    }
+
+    function isCurrentUserAdmin() {
+        const role = getCurrentUserRole();
+        return role === 'admin' || role === 'superuser';
+    }
+
+    function setupAdminOnlyFilters() {
+        const isAdmin = isCurrentUserAdmin();
+        const adminBtn = document.getElementById('notifAdminSyncIssuesBtn');
+        if (adminBtn) {
+            adminBtn.style.display = isAdmin ? '' : 'none';
+        }
+
+        if (!isAdmin && ADMIN_SYNC_FILTERS.includes(currentFilter)) {
+            currentFilter = 'all';
+        }
     }
 
     function renderFilters() {
@@ -549,6 +577,9 @@
     }
 
     function setFilter(filter) {
+        if (!isCurrentUserAdmin() && ADMIN_SYNC_FILTERS.includes(filter)) {
+            return;
+        }
         currentFilter = filter;
         try {
             localStorage.setItem(NOTIF_FILTER_KEY, filter);
@@ -634,7 +665,7 @@
 
     try {
         const savedFilter = localStorage.getItem(NOTIF_FILTER_KEY);
-        if (savedFilter && ['all', 'message', 'favorite', 'reservation', 'follow', 'unread'].includes(savedFilter)) {
+        if (savedFilter && ['all', 'message', 'favorite', 'reservation', 'follow', 'library_sync_issue', 'unread'].includes(savedFilter)) {
             currentFilter = savedFilter;
         }
 
@@ -661,6 +692,7 @@
     }
 
     renderNotifRefreshControls();
+    setupAdminOnlyFilters();
 
     setupNotificationsInfiniteScroll();
     loadNotifications().catch((error) => alert(error.message || 'Erro ao carregar notificações'));

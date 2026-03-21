@@ -523,27 +523,35 @@
             height: 74px;
         }
 
-        .wf-mobile-center-button {
+        .wf-mobile-floating-add {
+            position: fixed;
+            right: 1rem;
+            bottom: calc(88px + env(safe-area-inset-bottom));
+            z-index: 151;
+            display: none;
             border: none;
             background: linear-gradient(135deg, #2196f3, #00bcd4);
             color: #fff;
             width: clamp(52px, 12vw, 64px);
             height: clamp(52px, 12vw, 64px);
             border-radius: 50%;
-            display: inline-flex;
             align-items: center;
             justify-content: center;
-            margin-top: -28px;
             box-shadow: 0 9px 20px rgba(0, 0, 0, 0.28);
             transition: transform 0.2s ease;
             cursor: pointer;
+            pointer-events: auto;
         }
 
-        .wf-mobile-center-button:active {
+        .wf-mobile-floating-add.is-hidden {
+            display: none;
+        }
+
+        .wf-mobile-floating-add:active {
             transform: scale(0.92);
         }
 
-        .wf-mobile-center-button .material-icons {
+        .wf-mobile-floating-add .material-icons {
             font-size: 1.85rem;
         }
 
@@ -1117,6 +1125,16 @@
                 width: min(340px, 82vw);
             }
 
+            .wf-mobile-floating-add {
+                display: inline-flex;
+            }
+
+            .wf-ai-fab {
+                right: 1rem;
+                left: auto;
+                bottom: calc(160px + env(safe-area-inset-bottom));
+            }
+
             #navNotifBadge {
                 position: absolute;
                 top: 0;
@@ -1242,10 +1260,11 @@
                 height: 64px;
             }
 
-            .wf-mobile-center-button {
+            .wf-mobile-floating-add {
                 width: 52px;
                 height: 52px;
-                margin-top: -20px;
+                right: 0.72rem;
+                bottom: calc(80px + env(safe-area-inset-bottom));
             }
 
             .wf-mobile-notif-badge {
@@ -1281,7 +1300,7 @@
 
             .wf-ai-fab {
                 right: 0.72rem;
-                bottom: calc(84px + env(safe-area-inset-bottom));
+                bottom: calc(146px + env(safe-area-inset-bottom));
                 width: 54px;
                 height: 54px;
             }
@@ -1582,6 +1601,9 @@
                 <div class="wf-group-title">Operação</div>
                 <a class="wf-nav-link" href="/">Início</a>
                 <a class="wf-nav-link" href="/community">Comunidade</a>
+                <a class="wf-nav-link" href="/services">Serviços</a>
+                <a class="wf-nav-link" href="/services/manage" id="navServicesManage" style="display:none;">Gerir serviços</a>
+                <a class="wf-nav-link" href="/clients/manage" id="navClientsManage" style="display:none;">Meus clientes</a>
                 <a class="wf-nav-link" href="/library">Biblioteca</a>
                 <a class="wf-nav-link" href="/store" style="color: var(--wf-accent) !important; font-weight: 700;">🛒 Loja Agrícola</a>
                 <a class="wf-nav-link" href="/store/manage/dashboard" id="navStoreManage" style="display:none;">Painel da Loja</a>
@@ -1667,6 +1689,7 @@
                 <div class="wf-topbar-actions wf-mobile-quick-actions">
                     <a class="btn btn-wf-secondary" href="/offers">Ofertas</a>
                     <a class="btn btn-wf-secondary" href="/community">Comunidade</a>
+                    <a class="btn btn-wf-secondary" href="/services">Serviços</a>
                     <a class="btn btn-wf-secondary" href="/library">Biblioteca</a>
                     <a class="btn btn-wf-secondary" href="/messages" id="navTopMessages" style="display:none;">Mensagens</a>
                     <a class="btn btn-wf-primary" href="/offers/new" id="navTopNewOffer" style="display:none;">Nova oferta</a>
@@ -1865,6 +1888,8 @@
             setElementDisplay('navHelp', isLogged);
             setElementDisplay('navAdmin', isAdmin);
             setElementDisplay('navStoreManage', isStoreManager);
+            setElementDisplay('navServicesManage', isStoreManager);
+            setElementDisplay('navClientsManage', isLogged);
             setElementDisplay('navStoreCart', isLogged);
             setElementDisplay('navStoreOrders', isLogged);
             setElementDisplay('navStoreProposals', isLogged);
@@ -1884,11 +1909,13 @@
             setElementDisplay('actionNotifications', isLogged);
             setElementDisplay('actionProfile', true);
             setElementDisplay('actionPopupHelp', isLogged);
+            setElementDisplay('actionPopupServicesManage', isStoreManager);
             setElementDisplay('actionPopupNewOffer', isLogged);
             setElementDisplay('actionPopupCreateProduct', isStoreManager);
             setElementDisplay('actionPopupFeatured', isAdmin);
             setElementDisplay('notificationsSection', isLogged);
             setElementDisplay('rightNavStoreManage', isStoreManager);
+            setElementDisplay('rightNavServicesManage', isStoreManager);
             setElementDisplay('rightNavStoreCart', isLogged);
             setElementDisplay('rightNavStoreOrders', isLogged);
             setElementDisplay('rightNavStoreProposals', isLogged);
@@ -2027,7 +2054,7 @@
         function setupMobilePopup() {
             const popup = document.getElementById('mobileActionPopup');
             const popupContent = document.getElementById('popupContent');
-            const centerButton = document.getElementById('actionCenterButton');
+            const centerButton = document.getElementById('actionFloatingButton');
             const popupClose = document.getElementById('popupCloseBtn');
 
             if (!popup || !popupContent || !centerButton) return;
@@ -2294,6 +2321,10 @@
 </main>
 </div>
 
+            <button class="wf-mobile-floating-add" id="actionFloatingButton" type="button" title="Abrir ações rápidas">
+                <span class="material-icons">add</span>
+            </button>
+
             <!-- Botão menu lateral (mobile/tablet) -->
             <button class="wf-menu-toggle" id="btnToggleMenuRight" title="Menu">
                 <span class="material-icons">menu</span>
@@ -2315,10 +2346,11 @@
                                 <span class="wf-mobile-nav-label">Comunidade</span>
                             </a>
                         </li>
-                        <li class="wf-mobile-center-slot">
-                            <button class="wf-mobile-center-button" id="actionCenterButton" type="button" title="Abrir ações rápidas">
-                                <span class="material-icons">add</span>
-                            </button>
+                        <li class="wf-mobile-nav-slot" id="actionServices">
+                            <a href="/services" class="wf-mobile-nav-item" title="Serviços">
+                                <span class="material-icons wf-mobile-nav-icon">engineering</span>
+                                <span class="wf-mobile-nav-label">Serviços</span>
+                            </a>
                         </li>
                         <li class="wf-mobile-nav-slot" id="actionExplore">
                             <a href="/offers" class="wf-mobile-nav-item" title="Ofertas">
@@ -2349,6 +2381,14 @@
                         <a href="/community" class="wf-popup-item" id="actionPopupCommunity">
                             <span class="material-icons">groups</span>
                             <span>Comunidade</span>
+                        </a>
+                        <a href="/services" class="wf-popup-item" id="actionPopupServices">
+                            <span class="material-icons">engineering</span>
+                            <span>Serviços</span>
+                        </a>
+                        <a href="/services/manage" class="wf-popup-item" id="actionPopupServicesManage" style="display:none;">
+                            <span class="material-icons">construction</span>
+                            <span>Gerir serviços</span>
                         </a>
                         <a href="/store" class="wf-popup-item" id="actionPopupStore">
                             <span class="material-icons">shopping_bag</span>
@@ -2411,6 +2451,14 @@
                         <a href="/community" class="wf-sidebar-right-item">
                             <span>👥</span>
                             <span>Comunidade</span>
+                        </a>
+                        <a href="/services" class="wf-sidebar-right-item">
+                            <span>🛠️</span>
+                            <span>Serviços</span>
+                        </a>
+                        <a href="/services/manage" class="wf-sidebar-right-item" id="rightNavServicesManage" style="display:none;">
+                            <span>🧰</span>
+                            <span>Gerir serviços</span>
                         </a>
                         <a href="/library" class="wf-sidebar-right-item">
                             <span>📚</span>

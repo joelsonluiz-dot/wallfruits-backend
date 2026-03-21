@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from app.core.auth_middleware import get_current_user
 from app.core.domain_permissions import enforce_negotiation_policy
 from app.database.connection import get_db
+from app.models.buyer_client import BuyerClientPolicy
 from app.models import Offer, Transaction, User
 from app.schemas import TransactionCreate, TransactionResponse, TransactionUpdate
 from app.services.profile_service import ProfileService
@@ -39,6 +40,16 @@ def create_transaction(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    client_policy = db.query(BuyerClientPolicy).filter(BuyerClientPolicy.user_id == current_user.id).first()
+    if client_policy and client_policy.purchase_restricted:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=(
+                "Acesso temporariamente restrito para compras por descumprimento contratual "
+                "na gestão de clientes. Regularize com o suporte/admin."
+            ),
+        )
+
     profile_service = ProfileService(db)
     buyer_profile = profile_service.get_or_create_profile(current_user)
 

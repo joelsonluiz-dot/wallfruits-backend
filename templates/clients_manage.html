@@ -1,0 +1,327 @@
+{% extends "base.html" %}
+
+{% block title %}Meus Clientes - WallFruits{% endblock %}
+
+{% block content %}
+<style>
+    .clients-shell { display: grid; gap: 1rem; }
+    .clients-grid { display: grid; gap: 1rem; grid-template-columns: 1.1fr 1fr; }
+    .clients-card { border: 1px solid var(--wf-border); border-radius: 14px; background: rgba(255,255,255,0.03); padding: 0.9rem; }
+    .clients-title { font-size: 1.05rem; font-weight: 800; margin: 0 0 0.55rem; }
+    .clients-policy { display: grid; gap: 0.45rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .clients-kpi { border: 1px solid var(--wf-border); border-radius: 12px; padding: 0.6rem; background: rgba(255,255,255,0.02); }
+    .clients-kpi b { display: block; font-size: 1rem; }
+    .clients-kpi span { font-size: 0.78rem; color: var(--wf-text-secondary); }
+    .clients-form-grid { display: grid; gap: 0.55rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .clients-form-grid textarea { grid-column: 1 / -1; min-height: 90px; }
+    .clients-list { display: grid; gap: 0.6rem; }
+    .client-row { border: 1px solid var(--wf-border); border-radius: 12px; padding: 0.75rem; display: grid; gap: 0.45rem; }
+    .client-head { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; }
+    .client-meta { color: var(--wf-text-secondary); font-size: 0.84rem; }
+    .clients-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+    .clients-alert { border-radius: 10px; padding: 0.6rem 0.7rem; font-size: 0.86rem; font-weight: 700; }
+    .clients-alert.warn { background: rgba(255, 192, 57, 0.14); color: #ffd79a; border: 1px solid rgba(255, 192, 57, 0.4); }
+    .clients-alert.bad { background: rgba(230, 85, 85, 0.14); color: #ffc9c9; border: 1px solid rgba(230, 85, 85, 0.45); }
+    .clients-admin-panel { display: none; }
+    @media (max-width: 980px) { .clients-grid { grid-template-columns: 1fr; } .clients-form-grid { grid-template-columns: 1fr; } }
+</style>
+
+<div class="clients-shell">
+    <section class="clients-card">
+        <h1 class="clients-title">Gestão de Carteira de Clientes</h1>
+        <p style="margin:0;color:var(--wf-text-secondary);font-size:0.88rem;">
+            Gerencie sua carteira para negociações. Cada novo cliente exige slot pré-pago via checkout financeiro, com limite contratual de até 20 registros.
+        </p>
+    </section>
+
+    <section class="clients-grid">
+        <article class="clients-card">
+            <h2 class="clients-title">Contrato e Limites</h2>
+            <div id="clientsSubscriptionInfo" class="client-meta" style="margin-bottom:0.55rem;">Assinatura: carregando...</div>
+            <div class="clients-actions" style="margin-bottom:0.7rem;">
+                <button class="btn btn-wf-secondary" type="button" id="upgradePremiumBtn">Upgrade para Premium</button>
+            </div>
+            <div id="clientsPolicyAlert" style="display:none;"></div>
+            <div class="clients-policy" id="clientsPolicyGrid"></div>
+            <div class="clients-actions" style="margin-top:0.7rem;">
+                <input id="slotQty" type="number" min="1" max="20" value="1" class="wf-input" style="max-width:120px;" />
+                <button class="btn btn-wf-primary" type="button" id="buySlotBtn">Comprar slot(s)</button>
+                <button class="btn btn-wf-secondary" type="button" id="refreshClientsBtn">Atualizar</button>
+            </div>
+        </article>
+
+        <article class="clients-card">
+            <h2 class="clients-title">Cadastrar Cliente</h2>
+            <form id="clientCreateForm" class="clients-form-grid">
+                <input class="wf-input" name="name" placeholder="Nome do cliente" required />
+                <input class="wf-input" name="company_name" placeholder="Empresa" />
+                <input class="wf-input" name="email" placeholder="E-mail" />
+                <input class="wf-input" name="phone" placeholder="Telefone" />
+                <input class="wf-input" name="city" placeholder="Cidade" />
+                <input class="wf-input" name="state" placeholder="Estado" />
+                <select class="wf-input" name="management_scope">
+                    <option value="joint">Gestão conjunta (WallFruits + comprador)</option>
+                    <option value="buyer">Gestão própria do comprador</option>
+                    <option value="wallfruits">Gestão WallFruits para o comprador</option>
+                </select>
+                <textarea class="wf-input" name="demand_summary" placeholder="Demanda principal de negociação (volumes, periodicidade, foco)"></textarea>
+                <textarea class="wf-input" name="notes" placeholder="Notas internas"></textarea>
+                <button class="btn btn-wf-primary" type="submit">Adicionar cliente</button>
+            </form>
+        </article>
+    </section>
+
+    <section class="clients-card">
+        <h2 class="clients-title">Clientes Cadastrados</h2>
+        <div id="clientsList" class="clients-list"></div>
+    </section>
+
+    <section class="clients-card">
+        <h2 class="clients-title">Últimas compras de slots</h2>
+        <div id="slotPurchasesList" class="clients-list"></div>
+    </section>
+
+    <section class="clients-card clients-admin-panel" id="clientsAdminPanel">
+        <h2 class="clients-title">Admin | Compliance de Carteira</h2>
+        <form id="adminPolicyForm" class="clients-form-grid">
+            <input class="wf-input" name="user_id" type="number" min="1" placeholder="ID do comprador" required />
+            <select class="wf-input" name="compliance_status">
+                <option value="ok">OK</option>
+                <option value="warning">Warning</option>
+                <option value="violation">Violation</option>
+            </select>
+            <select class="wf-input" name="purchase_restricted">
+                <option value="false">Sem restrição</option>
+                <option value="true">Restringir compras/cadastro</option>
+            </select>
+            <textarea class="wf-input" name="restriction_reason" placeholder="Motivo da restrição"></textarea>
+            <button class="btn btn-wf-primary" type="submit">Aplicar política</button>
+        </form>
+    </section>
+</div>
+
+<script>
+    let clientsState = { policy: null, clients: [] };
+
+    function parseUser() {
+        try { return JSON.parse(localStorage.getItem('user') || 'null'); } catch { return null; }
+    }
+
+    function isAdminUser() {
+        const user = parseUser();
+        const role = String(user?.role || '').toLowerCase();
+        return role === 'admin' || role === 'superuser';
+    }
+
+    function showToast(msg) {
+        if (window.showGlobalToast) {
+            window.showGlobalToast(msg, 'info');
+            return;
+        }
+        alert(msg);
+    }
+
+    function policyBadge(policy) {
+        const status = String(policy?.compliance_status || 'ok');
+        if (status === 'violation' || policy?.purchase_restricted) {
+            return `<div class="clients-alert bad">Acesso restrito para compras/cadastro. ${policy?.restriction_reason || 'Regularize com suporte/admin.'}</div>`;
+        }
+        if (status === 'warning') {
+            return `<div class="clients-alert warn">Conta em observação de compliance. Evite violações contratuais para não perder acesso.</div>`;
+        }
+        return '';
+    }
+
+    function renderPolicy(policy) {
+        const grid = document.getElementById('clientsPolicyGrid');
+        const alertBox = document.getElementById('clientsPolicyAlert');
+        if (!grid || !policy) return;
+
+        const rows = [
+            ['Limite contratual', `${policy.max_clients}`],
+            ['Slots comprados', `${policy.slots_purchased}`],
+            ['Slots usados', `${policy.slots_used}`],
+            ['Pré-pagos livres', `${policy.prepaid_available}`],
+            ['Capacidade restante', `${policy.remaining_cap}`],
+            ['Preço por slot', `R$ ${Number(policy.slot_price || 0).toFixed(2)}`],
+        ];
+
+        grid.innerHTML = rows.map(([label, value]) => `
+            <div class="clients-kpi">
+                <b>${value}</b>
+                <span>${label}</span>
+            </div>
+        `).join('');
+
+        const badge = policyBadge(policy);
+        if (badge) {
+            alertBox.style.display = '';
+            alertBox.innerHTML = badge;
+        } else {
+            alertBox.style.display = 'none';
+            alertBox.innerHTML = '';
+        }
+    }
+
+    function renderClients(clients) {
+        const root = document.getElementById('clientsList');
+        if (!root) return;
+
+        if (!clients.length) {
+            root.innerHTML = '<div class="wf-alert wf-alert-info">Nenhum cliente cadastrado ainda.</div>';
+            return;
+        }
+
+        root.innerHTML = clients.map((item) => `
+            <article class="client-row">
+                <div class="client-head">
+                    <strong>${item.name}</strong>
+                    <span class="client-meta">${item.management_scope}</span>
+                </div>
+                <div class="client-meta">${item.company_name || '-'} · ${item.email || '-'} · ${item.phone || '-'}</div>
+                <div class="client-meta">${item.city || '-'} / ${item.state || '-'} | ativo: ${item.is_active ? 'sim' : 'não'}</div>
+                <div class="client-meta">Demanda: ${item.demand_summary || '-'}</div>
+                <div class="clients-actions">
+                    <button class="btn btn-wf-secondary" type="button" onclick="toggleClient(${item.id}, ${item.is_active ? 'false' : 'true'})">${item.is_active ? 'Desativar' : 'Ativar'}</button>
+                    <button class="btn btn-wf-secondary" type="button" onclick="removeClient(${item.id})">Remover</button>
+                </div>
+            </article>
+        `).join('');
+    }
+
+    function renderSlotPurchases(items) {
+        const root = document.getElementById('slotPurchasesList');
+        if (!root) return;
+        if (!items || !items.length) {
+            root.innerHTML = '<div class="wf-alert wf-alert-info">Nenhuma compra de slot registrada ainda.</div>';
+            return;
+        }
+
+        root.innerHTML = items.map((item) => `
+            <article class="client-row">
+                <div class="client-head">
+                    <strong>Compra #${item.id}</strong>
+                    <span class="client-meta">${item.status}</span>
+                </div>
+                <div class="client-meta">Quantidade: ${item.quantity} | Total: R$ ${Number(item.total_amount || 0).toFixed(2)}</div>
+                <div class="client-meta">Criada em: ${item.created_at ? new Date(item.created_at).toLocaleString('pt-BR') : '-'}</div>
+                <div class="client-meta">Pagamento confirmado: ${item.paid_at ? new Date(item.paid_at).toLocaleString('pt-BR') : 'pendente'}</div>
+            </article>
+        `).join('');
+    }
+
+    async function loadDashboard() {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/login';
+            return;
+        }
+        const data = await apiRequest('/buyer-clients/dashboard');
+        clientsState = data || { policy: null, clients: [] };
+        renderPolicy(clientsState.policy || null);
+        renderClients(clientsState.clients || []);
+        renderSlotPurchases(clientsState.slot_purchases || []);
+        await loadSubscription();
+    }
+
+    async function loadSubscription() {
+        const info = document.getElementById('clientsSubscriptionInfo');
+        if (!info) return;
+        try {
+            const sub = await apiRequest('/payment/subscription');
+            const plan = String(sub?.plan_type || 'none');
+            const status = String(sub?.status || 'inactive');
+            info.textContent = `Assinatura: ${plan.toUpperCase()} (${status})`;
+        } catch {
+            info.textContent = 'Assinatura: indisponível no momento';
+        }
+    }
+
+    async function startPremiumUpgrade() {
+        const data = await apiRequest('/payment/checkout/premium', 'POST', {
+            success_url: `${window.location.origin}/clients/manage`,
+            cancel_url: `${window.location.origin}/clients/manage`,
+        });
+        if (data?.checkout_url) {
+            window.location.href = data.checkout_url;
+            return;
+        }
+        showToast('Não foi possível iniciar o checkout da assinatura premium.');
+    }
+
+    async function buySlots() {
+        const qty = Number(document.getElementById('slotQty')?.value || 0);
+        if (!qty || qty < 1) {
+            showToast('Informe uma quantidade válida de slots.');
+            return;
+        }
+        const data = await apiRequest('/buyer-clients/slots/purchase', 'POST', {
+            quantity: qty,
+            success_url: `${window.location.origin}/clients/manage`,
+            cancel_url: `${window.location.origin}/clients/manage`,
+        });
+        if (data?.checkout_url) {
+            window.location.href = data.checkout_url;
+            return;
+        }
+        showToast('Não foi possível iniciar o checkout de pagamento.');
+    }
+
+    async function removeClient(clientId) {
+        if (!confirm('Remover este cliente da carteira?')) return;
+        await apiRequest(`/buyer-clients/${clientId}`, 'DELETE');
+        await loadDashboard();
+    }
+
+    async function toggleClient(clientId, nextActive) {
+        await apiRequest(`/buyer-clients/${clientId}`, 'PATCH', { is_active: Boolean(nextActive) });
+        await loadDashboard();
+    }
+
+    async function createClient(event) {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const formData = new FormData(form);
+        const payload = Object.fromEntries(formData.entries());
+        await apiRequest('/buyer-clients', 'POST', payload);
+        form.reset();
+        showToast('Cliente adicionado.');
+        await loadDashboard();
+    }
+
+    async function applyAdminPolicy(event) {
+        event.preventDefault();
+        const formData = new FormData(event.currentTarget);
+        const userId = Number(formData.get('user_id') || 0);
+        if (!userId) {
+            showToast('Informe um ID de comprador válido.');
+            return;
+        }
+        const payload = {
+            compliance_status: String(formData.get('compliance_status') || 'ok'),
+            purchase_restricted: String(formData.get('purchase_restricted')) === 'true',
+            restriction_reason: String(formData.get('restriction_reason') || ''),
+        };
+        await apiRequest(`/buyer-clients/admin/policy/${userId}`, 'PATCH', payload);
+        showToast('Política de compliance aplicada.');
+    }
+
+    document.getElementById('refreshClientsBtn')?.addEventListener('click', loadDashboard);
+    document.getElementById('buySlotBtn')?.addEventListener('click', buySlots);
+    document.getElementById('upgradePremiumBtn')?.addEventListener('click', startPremiumUpgrade);
+    document.getElementById('clientCreateForm')?.addEventListener('submit', createClient);
+
+    const adminPanel = document.getElementById('clientsAdminPanel');
+    if (isAdminUser() && adminPanel) {
+        adminPanel.style.display = '';
+        document.getElementById('adminPolicyForm')?.addEventListener('submit', applyAdminPolicy);
+    }
+
+    loadDashboard().catch((err) => {
+        alert(err?.message || 'Falha ao carregar carteira de clientes');
+    });
+
+    window.removeClient = removeClient;
+    window.toggleClient = toggleClient;
+</script>
+{% endblock %}

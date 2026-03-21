@@ -1,0 +1,684 @@
+{% extends "base.html" %}
+
+{% block title %}Gestão de Serviços - WallFruits{% endblock %}
+
+{% block content %}
+<style>
+    .services-manage-shell {
+        display: grid;
+        gap: 0.9rem;
+    }
+
+    .services-manage-head {
+        border-radius: 16px;
+        border: 1px solid rgba(26, 90, 60, 0.26);
+        background: linear-gradient(135deg, #eef8ef, #eef6ff);
+        box-shadow: 0 12px 26px rgba(22, 66, 44, 0.14);
+        padding: 0.9rem;
+    }
+
+    .services-manage-head h1 {
+        margin: 0;
+        font-size: 1.2rem;
+        font-weight: 900;
+        color: #175736;
+    }
+
+    .services-manage-head p {
+        margin: 0.3rem 0 0;
+        color: #3b638f;
+        font-size: 0.82rem;
+        font-weight: 600;
+    }
+
+    .services-manage-grid {
+        display: grid;
+        grid-template-columns: 1fr 1.1fr;
+        gap: 0.8rem;
+    }
+
+    .services-manage-card {
+        border: 1px solid rgba(19, 74, 120, 0.18);
+        border-radius: 14px;
+        background: #fff;
+        box-shadow: 0 10px 22px rgba(19, 61, 99, 0.12);
+        padding: 0.8rem;
+    }
+
+    .services-manage-card h2 {
+        margin: 0 0 0.6rem;
+        font-size: 0.95rem;
+        color: #184f7f;
+        font-weight: 900;
+    }
+
+    .services-form {
+        display: grid;
+        gap: 0.5rem;
+    }
+
+    .services-form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+    }
+
+    .services-form textarea,
+    .services-form input,
+    .services-form select {
+        width: 100%;
+        border: 1px solid rgba(19, 74, 120, 0.22);
+        border-radius: 10px;
+        background: #fff;
+        padding: 0.58rem 0.62rem;
+        font-size: 0.8rem;
+    }
+
+    .services-form textarea {
+        min-height: 92px;
+        resize: vertical;
+    }
+
+    .services-form-actions {
+        display: flex;
+        gap: 0.45rem;
+        flex-wrap: wrap;
+    }
+
+    .services-btn {
+        border: none;
+        border-radius: 10px;
+        font-size: 0.76rem;
+        font-weight: 800;
+        padding: 0.62rem 0.72rem;
+        cursor: pointer;
+    }
+
+    .services-btn-primary {
+        background: linear-gradient(130deg, #1d6e45, #2b8a58);
+        color: #fff;
+    }
+
+    .services-btn-secondary {
+        background: #edf3fb;
+        color: #2b5f95;
+    }
+
+    .services-list {
+        display: grid;
+        gap: 0.5rem;
+        max-height: 70vh;
+        overflow: auto;
+        padding-right: 0.2rem;
+    }
+
+    .services-list-toolbar {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 0.45rem;
+        margin-bottom: 0.55rem;
+    }
+
+    .services-pager {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.45rem;
+        margin-top: 0.55rem;
+    }
+
+    .services-pager-info {
+        font-size: 0.72rem;
+        color: #45678e;
+        font-weight: 700;
+    }
+
+    .services-item {
+        border: 1px solid rgba(21, 84, 127, 0.2);
+        border-radius: 12px;
+        background: #fff;
+        padding: 0.55rem;
+        display: grid;
+        gap: 0.35rem;
+    }
+
+    .services-item-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.4rem;
+        align-items: center;
+    }
+
+    .services-item-title {
+        margin: 0;
+        font-size: 0.83rem;
+        color: #184f7f;
+        font-weight: 900;
+    }
+
+    .services-item-badge {
+        border-radius: 999px;
+        font-size: 0.62rem;
+        font-weight: 800;
+        padding: 0.18rem 0.5rem;
+        background: #eaf6ee;
+        color: #1c6a41;
+    }
+
+    .services-item-badge.off {
+        background: #f9ecec;
+        color: #9a3737;
+    }
+
+    .services-item-meta {
+        font-size: 0.72rem;
+        color: #4c6d90;
+        display: flex;
+        justify-content: space-between;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+    }
+
+    .services-item-actions {
+        display: flex;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+    }
+
+    .services-status {
+        border-radius: 10px;
+        padding: 0.52rem 0.6rem;
+        font-size: 0.76rem;
+        font-weight: 700;
+        background: #f0f7ff;
+        color: #2b5f95;
+        display: none;
+    }
+
+    .services-status.error {
+        background: #ffefef;
+        color: #9a3737;
+    }
+
+    .services-image-preview {
+        border: 1px dashed rgba(19, 74, 120, 0.28);
+        border-radius: 12px;
+        background: #f8fbff;
+        min-height: 140px;
+        display: grid;
+        place-items: center;
+        overflow: hidden;
+    }
+
+    .services-image-preview img {
+        width: 100%;
+        max-height: 240px;
+        object-fit: cover;
+        display: block;
+    }
+
+    .services-image-preview-empty {
+        font-size: 0.74rem;
+        color: #4d6f95;
+        font-weight: 700;
+        text-align: center;
+        padding: 0.8rem;
+    }
+
+    @media (max-width: 980px) {
+        .services-manage-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 620px) {
+        .services-form-row {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="services-manage-shell">
+    <section class="services-manage-head">
+        <h1>Gestão de Serviços</h1>
+        <p>Cadastre, atualize e desative serviços agrícolas exibidos na aba de serviços do aplicativo.</p>
+    </section>
+
+    <div id="manageStatus" class="services-status"></div>
+
+    <section class="services-manage-grid">
+        <article class="services-manage-card">
+            <h2>Cadastro e edição</h2>
+            <form id="serviceForm" class="services-form">
+                <input type="hidden" id="serviceId" value="">
+
+                <label class="wf-label" for="serviceTitulo">Título</label>
+                <input id="serviceTitulo" required maxlength="160" placeholder="Ex.: Pulverização com Drone">
+
+                <label class="wf-label" for="serviceDescricao">Descrição</label>
+                <textarea id="serviceDescricao" required maxlength="4000" placeholder="Descreva o serviço"></textarea>
+
+                <div class="services-form-row">
+                    <div>
+                        <label class="wf-label" for="servicePreco">Preço</label>
+                        <input id="servicePreco" required maxlength="40" placeholder="Ex.: R$ 250">
+                    </div>
+                    <div>
+                        <label class="wf-label" for="serviceLocal">Local</label>
+                        <input id="serviceLocal" required maxlength="140" placeholder="Ex.: Juazeiro - BA">
+                    </div>
+                </div>
+
+                <label class="wf-label" for="serviceImagem">URL da imagem</label>
+                <input id="serviceImagem" required maxlength="700" placeholder="https://...">
+
+                <div class="services-image-preview" id="serviceImagePreview">
+                    <div class="services-image-preview-empty">Preview da imagem aparecerá aqui.</div>
+                </div>
+
+                <label class="wf-label" for="serviceImagemFile">Upload de imagem (opcional)</label>
+                <input id="serviceImagemFile" type="file" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif">
+                <button type="button" class="services-btn services-btn-secondary" id="serviceUploadBtn">Enviar imagem e usar URL</button>
+
+                <label class="wf-label" for="serviceAtivo">Status</label>
+                <select id="serviceAtivo">
+                    <option value="true">Ativo</option>
+                    <option value="false">Inativo</option>
+                </select>
+
+                <h2 style="margin:0.4rem 0 0.2rem;font-size:0.86rem;">Ficha técnica</h2>
+
+                <div class="services-form-row">
+                    <div>
+                        <label class="wf-label" for="serviceCategoria">Categoria</label>
+                        <input id="serviceCategoria" maxlength="80" placeholder="Ex.: Pulverização, Solo, Irrigação">
+                    </div>
+                    <div>
+                        <label class="wf-label" for="serviceUnidade">Unidade</label>
+                        <input id="serviceUnidade" maxlength="40" placeholder="Ex.: por hectare, por visita">
+                    </div>
+                </div>
+
+                <div class="services-form-row">
+                    <div>
+                        <label class="wf-label" for="servicePrazo">Prazo de atendimento</label>
+                        <input id="servicePrazo" maxlength="80" placeholder="Ex.: até 48 horas">
+                    </div>
+                    <div>
+                        <label class="wf-label" for="serviceDisponibilidade">Disponibilidade</label>
+                        <input id="serviceDisponibilidade" maxlength="120" placeholder="Ex.: seg a sab, 08h-18h">
+                    </div>
+                </div>
+
+                <div class="services-form-row">
+                    <div>
+                        <label class="wf-label" for="serviceAreaAtuacao">Área de atuação</label>
+                        <input id="serviceAreaAtuacao" maxlength="160" placeholder="Ex.: Vale do São Francisco">
+                    </div>
+                    <div>
+                        <label class="wf-label" for="serviceTempoExecucao">Tempo de execução</label>
+                        <input id="serviceTempoExecucao" maxlength="80" placeholder="Ex.: 2 a 4 horas">
+                    </div>
+                </div>
+
+                <label class="wf-label" for="serviceEquipamentos">Equipamentos</label>
+                <textarea id="serviceEquipamentos" maxlength="500" placeholder="Liste os equipamentos e recursos usados"></textarea>
+
+                <label class="wf-label" for="serviceObservacoes">Observações técnicas</label>
+                <textarea id="serviceObservacoes" maxlength="900" placeholder="Informações adicionais para o cliente"></textarea>
+
+                <div class="services-form-actions">
+                    <button type="submit" class="services-btn services-btn-primary" id="serviceSaveBtn">Salvar serviço</button>
+                    <button type="button" class="services-btn services-btn-secondary" id="serviceNewBtn">Novo cadastro</button>
+                </div>
+            </form>
+        </article>
+
+        <article class="services-manage-card">
+            <h2>Serviços cadastrados</h2>
+            <div class="services-list-toolbar">
+                <input id="servicesSearch" placeholder="Buscar por título, local ou preço">
+                <select id="servicesPageSize" title="Itens por página">
+                    <option value="5">5</option>
+                    <option value="10" selected>10</option>
+                    <option value="20">20</option>
+                </select>
+            </div>
+            <div id="servicesList" class="services-list"></div>
+            <div class="services-pager">
+                <button type="button" class="services-btn services-btn-secondary" id="servicesPrevBtn">Anterior</button>
+                <span id="servicesPagerInfo" class="services-pager-info">Página 1 de 1</span>
+                <button type="button" class="services-btn services-btn-secondary" id="servicesNextBtn">Próxima</button>
+            </div>
+        </article>
+    </section>
+</div>
+
+<script>
+    (function setupServicesManagePage() {
+        const role = (() => {
+            try {
+                return JSON.parse(localStorage.getItem('user') || 'null')?.role || null;
+            } catch {
+                return null;
+            }
+        })();
+
+        if (!role || !['admin', 'supplier', 'producer'].includes(role)) {
+            window.location.href = '/services';
+            return;
+        }
+
+        const form = document.getElementById('serviceForm');
+        const statusEl = document.getElementById('manageStatus');
+        const listEl = document.getElementById('servicesList');
+        const newBtn = document.getElementById('serviceNewBtn');
+        const uploadBtn = document.getElementById('serviceUploadBtn');
+        const searchInput = document.getElementById('servicesSearch');
+        const pageSizeSelect = document.getElementById('servicesPageSize');
+        const prevBtn = document.getElementById('servicesPrevBtn');
+        const nextBtn = document.getElementById('servicesNextBtn');
+        const pagerInfo = document.getElementById('servicesPagerInfo');
+        const previewBox = document.getElementById('serviceImagePreview');
+
+        let allServices = [];
+        let currentPage = 1;
+
+        const fields = {
+            id: document.getElementById('serviceId'),
+            titulo: document.getElementById('serviceTitulo'),
+            descricao: document.getElementById('serviceDescricao'),
+            preco: document.getElementById('servicePreco'),
+            local: document.getElementById('serviceLocal'),
+            imagem: document.getElementById('serviceImagem'),
+            imagemFile: document.getElementById('serviceImagemFile'),
+            ativo: document.getElementById('serviceAtivo'),
+            categoria: document.getElementById('serviceCategoria'),
+            unidade: document.getElementById('serviceUnidade'),
+            prazo: document.getElementById('servicePrazo'),
+            disponibilidade: document.getElementById('serviceDisponibilidade'),
+            areaAtuacao: document.getElementById('serviceAreaAtuacao'),
+            tempoExecucao: document.getElementById('serviceTempoExecucao'),
+            equipamentos: document.getElementById('serviceEquipamentos'),
+            observacoes: document.getElementById('serviceObservacoes'),
+        };
+
+        function setImagePreview(url) {
+            const safeUrl = String(url || '').trim();
+            if (!previewBox) return;
+
+            if (!safeUrl) {
+                previewBox.innerHTML = '<div class="services-image-preview-empty">Preview da imagem aparecerá aqui.</div>';
+                return;
+            }
+
+            previewBox.innerHTML = `<img src="${safeUrl}" alt="Preview da imagem do serviço">`;
+            const img = previewBox.querySelector('img');
+            if (!img) return;
+
+            img.onerror = () => {
+                previewBox.innerHTML = '<div class="services-image-preview-empty">Não foi possível carregar o preview dessa imagem.</div>';
+            };
+        }
+
+        function getPageSize() {
+            return Math.max(1, Number(pageSizeSelect.value || 10));
+        }
+
+        function filteredServices() {
+            const term = (searchInput.value || '').trim().toLowerCase();
+            if (!term) return allServices;
+
+            return allServices.filter((service) => {
+                const haystack = `${service.titulo || ''} ${service.local || ''} ${service.preco || ''}`.toLowerCase();
+                return haystack.includes(term);
+            });
+        }
+
+        function pagedServices() {
+            const filtered = filteredServices();
+            const pageSize = getPageSize();
+            const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+
+            if (currentPage > totalPages) currentPage = totalPages;
+            if (currentPage < 1) currentPage = 1;
+
+            const start = (currentPage - 1) * pageSize;
+            const end = start + pageSize;
+
+            return {
+                rows: filtered.slice(start, end),
+                total: filtered.length,
+                totalPages,
+            };
+        }
+
+        function showStatus(message, isError = false) {
+            statusEl.textContent = message;
+            statusEl.classList.toggle('error', isError);
+            statusEl.style.display = 'block';
+        }
+
+        function clearStatus() {
+            statusEl.style.display = 'none';
+            statusEl.textContent = '';
+            statusEl.classList.remove('error');
+        }
+
+        function resetForm() {
+            fields.id.value = '';
+            fields.titulo.value = '';
+            fields.descricao.value = '';
+            fields.preco.value = '';
+            fields.local.value = '';
+            fields.imagem.value = '';
+            fields.imagemFile.value = '';
+            fields.ativo.value = 'true';
+            fields.categoria.value = '';
+            fields.unidade.value = '';
+            fields.prazo.value = '';
+            fields.disponibilidade.value = '';
+            fields.areaAtuacao.value = '';
+            fields.tempoExecucao.value = '';
+            fields.equipamentos.value = '';
+            fields.observacoes.value = '';
+            setImagePreview('');
+            clearStatus();
+        }
+
+        function fillForm(service) {
+            fields.id.value = String(service.id || '');
+            fields.titulo.value = service.titulo || '';
+            fields.descricao.value = service.descricao || '';
+            fields.preco.value = service.preco || '';
+            fields.local.value = service.local || '';
+            fields.imagem.value = service.imagem || '';
+            fields.ativo.value = String(Boolean(service.is_active));
+            const ficha = service.ficha_tecnica || {};
+            fields.categoria.value = ficha.categoria || '';
+            fields.unidade.value = ficha.unidade || '';
+            fields.prazo.value = ficha.prazo_atendimento || '';
+            fields.disponibilidade.value = ficha.disponibilidade || '';
+            fields.areaAtuacao.value = ficha.area_atuacao || '';
+            fields.tempoExecucao.value = ficha.tempo_execucao || '';
+            fields.equipamentos.value = ficha.equipamentos || '';
+            fields.observacoes.value = ficha.observacoes || '';
+            setImagePreview(fields.imagem.value);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function renderList(services) {
+            if (!services.length) {
+                listEl.innerHTML = '<div class="services-item">Nenhum serviço cadastrado.</div>';
+                pagerInfo.textContent = 'Página 1 de 1';
+                prevBtn.disabled = true;
+                nextBtn.disabled = true;
+                return;
+            }
+
+            const { total, totalPages } = pagedServices();
+            pagerInfo.textContent = `Página ${currentPage} de ${totalPages} (${total} itens)`;
+            prevBtn.disabled = currentPage <= 1;
+            nextBtn.disabled = currentPage >= totalPages;
+
+            listEl.innerHTML = services.map((service) => `
+                <article class="services-item">
+                    <div class="services-item-head">
+                        <h3 class="services-item-title">${service.titulo}</h3>
+                        <span class="services-item-badge ${service.is_active ? '' : 'off'}">${service.is_active ? 'ATIVO' : 'INATIVO'}</span>
+                    </div>
+                    <div class="services-item-meta">
+                        <span>${service.preco}</span>
+                        <span>${service.local}</span>
+                    </div>
+                    <div class="services-item-actions">
+                        <button type="button" class="services-btn services-btn-secondary" data-edit-id="${service.id}">Editar</button>
+                        <button type="button" class="services-btn services-btn-secondary" data-toggle-id="${service.id}" data-next-active="${service.is_active ? 'false' : 'true'}">${service.is_active ? 'Desativar' : 'Ativar'}</button>
+                    </div>
+                </article>
+            `).join('');
+
+            listEl.querySelectorAll('[data-edit-id]').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const id = btn.getAttribute('data-edit-id');
+                    const service = services.find((item) => String(item.id) === String(id));
+                    if (service) fillForm(service);
+                });
+            });
+
+            listEl.querySelectorAll('[data-toggle-id]').forEach((btn) => {
+                btn.addEventListener('click', async () => {
+                    const id = btn.getAttribute('data-toggle-id');
+                    const nextActive = btn.getAttribute('data-next-active') === 'true';
+
+                    try {
+                        await apiRequest(`/services/${id}`, 'PATCH', { is_active: nextActive });
+                        showStatus(nextActive ? 'Serviço ativado com sucesso.' : 'Serviço desativado com sucesso.');
+                        await loadServices();
+                    } catch (error) {
+                        showStatus(error.message || 'Falha ao atualizar status do serviço.', true);
+                    }
+                });
+            });
+        }
+
+        async function loadServices() {
+            try {
+                const data = await apiRequest('/services/manage/list');
+                allServices = Array.isArray(data?.services) ? data.services : [];
+                renderList(pagedServices().rows);
+            } catch (error) {
+                showStatus(error.message || 'Falha ao carregar serviços.', true);
+                listEl.innerHTML = '<div class="services-item">Erro ao carregar lista de serviços.</div>';
+            }
+        }
+
+        uploadBtn.addEventListener('click', async () => {
+            const file = fields.imagemFile.files?.[0];
+            if (!file) {
+                showStatus('Selecione uma imagem antes de enviar.', true);
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('/api/uploads/service-image', {
+                    method: 'POST',
+                    headers: token ? { Authorization: `Bearer ${token}` } : {},
+                    body: formData,
+                });
+
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data?.detail || 'Falha no upload da imagem');
+                }
+
+                fields.imagem.value = data.url;
+                setImagePreview(data.url);
+                showStatus('Imagem enviada com sucesso e vinculada ao campo URL.');
+            } catch (error) {
+                showStatus(error.message || 'Erro ao enviar imagem.', true);
+            }
+        });
+
+        fields.imagem.addEventListener('input', () => {
+            setImagePreview(fields.imagem.value);
+        });
+
+        fields.imagemFile.addEventListener('change', () => {
+            const file = fields.imagemFile.files?.[0];
+            if (!file) {
+                setImagePreview(fields.imagem.value);
+                return;
+            }
+
+            const localUrl = URL.createObjectURL(file);
+            setImagePreview(localUrl);
+        });
+
+        searchInput.addEventListener('input', () => {
+            currentPage = 1;
+            renderList(pagedServices().rows);
+        });
+
+        pageSizeSelect.addEventListener('change', () => {
+            currentPage = 1;
+            renderList(pagedServices().rows);
+        });
+
+        prevBtn.addEventListener('click', () => {
+            currentPage -= 1;
+            renderList(pagedServices().rows);
+        });
+
+        nextBtn.addEventListener('click', () => {
+            currentPage += 1;
+            renderList(pagedServices().rows);
+        });
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            clearStatus();
+
+            const payload = {
+                titulo: fields.titulo.value.trim(),
+                descricao: fields.descricao.value.trim(),
+                preco: fields.preco.value.trim(),
+                local: fields.local.value.trim(),
+                imagem: fields.imagem.value.trim(),
+                categoria: fields.categoria.value.trim(),
+                unidade: fields.unidade.value.trim(),
+                prazo_atendimento: fields.prazo.value.trim(),
+                disponibilidade: fields.disponibilidade.value.trim(),
+                area_atuacao: fields.areaAtuacao.value.trim(),
+                tempo_execucao: fields.tempoExecucao.value.trim(),
+                equipamentos: fields.equipamentos.value.trim(),
+                observacoes: fields.observacoes.value.trim(),
+                is_active: fields.ativo.value === 'true',
+            };
+
+            try {
+                if (fields.id.value) {
+                    await apiRequest(`/services/${fields.id.value}`, 'PATCH', payload);
+                    showStatus('Serviço atualizado com sucesso.');
+                } else {
+                    await apiRequest('/services', 'POST', payload);
+                    showStatus('Serviço criado com sucesso.');
+                }
+
+                resetForm();
+                await loadServices();
+            } catch (error) {
+                showStatus(error.message || 'Não foi possível salvar o serviço.', true);
+            }
+        });
+
+        newBtn.addEventListener('click', resetForm);
+
+        loadServices();
+    })();
+</script>
+{% endblock %}

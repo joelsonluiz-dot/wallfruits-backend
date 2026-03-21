@@ -503,6 +503,39 @@ def _ensure_reports_schema_compatibility() -> None:
             conn.execute(text(statement))
 
 
+def _ensure_services_schema_compatibility() -> None:
+    if IS_SQLITE:
+        sqlite_statements = {
+            "ficha_tecnica": "ALTER TABLE services ADD COLUMN ficha_tecnica JSON",
+        }
+
+        with engine.begin() as conn:
+            if not _table_exists(conn, "services"):
+                return
+
+            existing_columns = {
+                row[1]
+                for row in conn.execute(text("PRAGMA table_info(services)"))
+            }
+
+            for column_name, statement in sqlite_statements.items():
+                if column_name not in existing_columns:
+                    conn.execute(text(statement))
+
+        return
+
+    service_statements = [
+        "ALTER TABLE services ADD COLUMN IF NOT EXISTS ficha_tecnica JSONB DEFAULT '{}'::jsonb",
+    ]
+
+    with engine.begin() as conn:
+        if not _table_exists(conn, "services"):
+            return
+
+        for statement in service_statements:
+            conn.execute(text(statement))
+
+
 def _ensure_postgres_schema_compatibility() -> None:
     """Aplica ajustes de compatibilidade para bancos já existentes."""
     _ensure_users_schema_compatibility()
@@ -512,6 +545,7 @@ def _ensure_postgres_schema_compatibility() -> None:
     _enforce_offer_owner_profile_required()
     _ensure_intermediation_schema_compatibility()
     _ensure_reports_schema_compatibility()
+    _ensure_services_schema_compatibility()
 
 
 def init_db():

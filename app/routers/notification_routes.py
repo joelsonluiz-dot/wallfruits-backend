@@ -17,15 +17,18 @@ def list_my_notifications(
     db: Session = Depends(get_db),
     skip: int = Query(0, ge=0),
     limit: int = Query(30, ge=1, le=200),
+    notification_type: str | None = Query(None, min_length=1, max_length=50),
+    only_unread: bool = Query(False),
 ):
-    rows = (
-        db.query(Notification)
-        .filter(Notification.user_id == current_user.id)
-        .order_by(Notification.created_at.desc())
-        .offset(skip)
-        .limit(limit)
-        .all()
-    )
+    query = db.query(Notification).filter(Notification.user_id == current_user.id)
+
+    if notification_type:
+        query = query.filter(Notification.notification_type == notification_type)
+
+    if only_unread:
+        query = query.filter(Notification.is_read.is_(False))
+
+    rows = query.order_by(Notification.created_at.desc()).offset(skip).limit(limit).all()
 
     return [
         NotificationResponse(

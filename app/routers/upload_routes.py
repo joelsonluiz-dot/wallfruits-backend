@@ -24,9 +24,10 @@ UPLOAD_DIR = Path("uploads")
 IMAGES_DIR = UPLOAD_DIR / "images"
 PROFILES_DIR = UPLOAD_DIR / "profiles"
 OFFERS_DIR = UPLOAD_DIR / "offers"
+SERVICES_DIR = UPLOAD_DIR / "services"
 
 # Criar diretórios se não existirem
-for dir_path in [IMAGES_DIR, PROFILES_DIR, OFFERS_DIR]:
+for dir_path in [IMAGES_DIR, PROFILES_DIR, OFFERS_DIR, SERVICES_DIR]:
     dir_path.mkdir(parents=True, exist_ok=True)
 
 ALLOWED_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.webp'}
@@ -183,6 +184,26 @@ async def upload_offer_images(
     }
 
 
+@router.post("/service-image", response_model=dict)
+async def upload_service_image(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.role not in ["admin", "supplier", "producer"]:
+        raise HTTPException(403, "Apenas gestores podem enviar imagens de serviços")
+
+    if not validate_image(file):
+        raise HTTPException(400, "Arquivo inválido. Use apenas imagens JPG, PNG, GIF ou WebP até 5MB")
+
+    filename = save_upload_file(file, SERVICES_DIR)
+
+    return {
+        "filename": filename,
+        "url": f"/api/uploads/services/{filename}",
+        "message": "Imagem de serviço enviada com sucesso"
+    }
+
+
 # -----------------------------
 # GET PROFILE IMAGE
 # -----------------------------
@@ -210,6 +231,22 @@ async def get_profile_image(filename: str):
 async def get_offer_image(filename: str):
 
     file_path = OFFERS_DIR / filename
+
+    if not file_path.exists():
+        raise HTTPException(404, "Imagem não encontrada")
+
+    media_type, _ = mimetypes.guess_type(str(file_path))
+
+    return FileResponse(
+        path=file_path,
+        media_type=media_type or "application/octet-stream",
+        filename=filename
+    )
+
+
+@router.get("/services/{filename}")
+async def get_service_image(filename: str):
+    file_path = SERVICES_DIR / filename
 
     if not file_path.exists():
         raise HTTPException(404, "Imagem não encontrada")
