@@ -1680,6 +1680,53 @@
         #offersRefreshInterval {
             display: none !important;
         }
+
+        .wf-connection-indicator {
+            position: fixed;
+            right: 0.9rem;
+            top: 0.8rem;
+            z-index: 2660;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.38rem;
+            padding: 0.36rem 0.58rem;
+            border-radius: 999px;
+            border: 1px solid rgba(92, 76, 45, 0.2);
+            background: rgba(252, 247, 236, 0.9);
+            box-shadow: 0 8px 20px rgba(58, 46, 24, 0.18);
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #5f6a42;
+            pointer-events: none;
+        }
+
+        .wf-connection-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #2e7d32;
+            box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.18);
+        }
+
+        .wf-connection-indicator.offline {
+            color: #8d2f2f;
+            border-color: rgba(141, 47, 47, 0.24);
+            background: rgba(255, 242, 242, 0.95);
+        }
+
+        .wf-connection-indicator.offline .wf-connection-dot {
+            background: #c0392b;
+            box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.18);
+        }
+
+        body.wf-offline-mode .wf-stagger > *,
+        body.wf-offline-mode .wf-fade-in,
+        body.wf-offline-mode .tilt-card,
+        body.wf-offline-mode .wf-card {
+            animation: none !important;
+            transition: none !important;
+            transform: none !important;
+        }
     </style>
 </head>
 <body>
@@ -1691,6 +1738,11 @@
     <button type="button" class="wf-ai-fab" id="wfAiFab" title="Abrir Agente IA" aria-label="Abrir Agente IA">
         <span class="material-icons">smart_toy</span>
     </button>
+
+    <div class="wf-connection-indicator" id="wfConnectionIndicator" aria-live="polite" role="status">
+        <span class="wf-connection-dot"></span>
+        <span id="wfConnectionText">Online</span>
+    </div>
 
     <div class="wf-app-shell">
         <aside class="wf-sidebar">
@@ -2579,6 +2631,23 @@
             }
         }
 
+        function initConnectionIndicator() {
+            const indicator = document.getElementById('wfConnectionIndicator');
+            const text = document.getElementById('wfConnectionText');
+            if (!indicator || !text) return;
+
+            const update = () => {
+                const online = navigator.onLine;
+                indicator.classList.toggle('offline', !online);
+                text.textContent = online ? 'Online' : 'Sem internet';
+                document.body.classList.toggle('wf-offline-mode', !online);
+            };
+
+            window.addEventListener('online', update);
+            window.addEventListener('offline', update);
+            update();
+        }
+
         function bindLogoutHandler(id) {
             const element = document.getElementById(id);
             if (!element) return;
@@ -2600,6 +2669,7 @@
             setupProfileMenu();
             initHiddenSettingsPanel();
             initKeyboardMenuGuard();
+            initConnectionIndicator();
             setNavAuthState();
             refreshUnreadNotifications();
         });
