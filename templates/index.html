@@ -1071,6 +1071,16 @@
         if (HOME_AUTO_REFRESH_OPTIONS.includes(savedInterval)) {
             homeRefreshIntervalMs = savedInterval;
         }
+
+        if (typeof window.wfIsAutoRefreshEnabled === 'function') {
+            homeRefreshPaused = !window.wfIsAutoRefreshEnabled();
+        }
+        if (typeof window.wfGetRefreshIntervalMs === 'function') {
+            const globalInterval = Number(window.wfGetRefreshIntervalMs());
+            if (HOME_AUTO_REFRESH_OPTIONS.includes(globalInterval)) {
+                homeRefreshIntervalMs = globalInterval;
+            }
+        }
     } catch {
         // ignora indisponibilidade de storage
     }
@@ -1105,6 +1115,17 @@
     }, { passive: true });
 
     renderHomeRefreshControls();
+
+    window.addEventListener('wf:advanced-settings-changed', (event) => {
+        const settings = event.detail || {};
+        homeRefreshPaused = !Boolean(settings.auto_refresh);
+        const globalInterval = Number(settings.refresh_interval_ms || HOME_AUTO_REFRESH_DEFAULT_MS);
+        if (HOME_AUTO_REFRESH_OPTIONS.includes(globalInterval)) {
+            homeRefreshIntervalMs = globalInterval;
+        }
+        renderHomeRefreshControls();
+        restartHomeAutoRefresh();
+    });
 
     updateHeroAuthActions();
     loadHomeOffers();

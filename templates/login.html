@@ -68,13 +68,14 @@
                 <form id="loginForm">
                     <div class="mb-3">
                         <label for="email" class="wf-label">Email</label>
-                        <input type="email" class="wf-input form-control" id="email" placeholder="seu@email.com" required>
+                        <input type="email" class="wf-input form-control" id="email" placeholder="seu@email.com" autocomplete="email" inputmode="email" autocapitalize="off" autocorrect="off" spellcheck="false" required>
                     </div>
                     <div class="mb-4">
                         <label for="password" class="wf-label">Senha</label>
-                        <input type="password" class="wf-input form-control" id="password" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" required>
+                        <input type="password" class="wf-input form-control" id="password" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" autocomplete="current-password" required>
                     </div>
-                    <button type="submit" class="btn btn-wf-primary w-100" style="padding: 0.75rem;">
+                    <div id="loginMsg" style="display:none; padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem; font-size: 0.9rem;"></div>
+                    <button type="submit" id="loginBtn" class="btn btn-wf-primary w-100" style="padding: 0.75rem;">
                         Entrar &rarr;
                     </button>
                 </form>
@@ -98,6 +99,24 @@
 </div>
 
 <script>
+    let loginInFlight = false;
+
+    function setLoginMsg(type, text) {
+        const msgDiv = document.getElementById('loginMsg');
+        if (!msgDiv) return;
+        msgDiv.style.display = 'block';
+        if (type === 'success') {
+            msgDiv.style.background = 'rgba(0,255,136,0.15)';
+            msgDiv.style.border = '1px solid #00ff88';
+            msgDiv.style.color = '#00b573';
+        } else {
+            msgDiv.style.background = 'rgba(255,60,60,0.15)';
+            msgDiv.style.border = '1px solid #ff3c3c';
+            msgDiv.style.color = '#ff6b6b';
+        }
+        msgDiv.textContent = text;
+    }
+
     async function handleOAuthCallbackIfAny() {
         const hashParams = new URLSearchParams(window.location.hash.replace('#', ''));
         const accessToken = hashParams.get('access_token');
@@ -123,10 +142,10 @@
 
             // Remove token/hash da URL para não vazar em histórico.
             window.history.replaceState({}, document.title, window.location.pathname);
-            alert('Login Google realizado com sucesso.');
+            setLoginMsg('success', 'Login Google realizado com sucesso. Redirecionando...');
             window.location.href = '/';
         } catch (error) {
-            alert('Erro ao concluir login Google: ' + error.message);
+            setLoginMsg('error', 'Erro ao concluir login Google: ' + error.message);
         }
     }
 
@@ -136,29 +155,50 @@
 
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
+        if (loginInFlight) return;
+
+        const btn = document.getElementById('loginBtn');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+
+        emailInput.value = emailInput.value.trim().toLowerCase();
+        const email = emailInput.value;
+        const password = passwordInput.value;
+
+        if (!email || !password) {
+            setLoginMsg('error', 'Informe email e senha para entrar.');
+            return;
+        }
+
+        loginInFlight = true;
+        btn.disabled = true;
+        btn.innerHTML = '<span style="display:inline-block;width:1rem;height:1rem;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:0.5rem;"></span> Entrando...';
 
         try {
             const response = await apiRequest('/auth/login', 'POST', { email, password });
             if (response.access_token) {
                 localStorage.setItem('token', response.access_token);
                 localStorage.setItem('user', JSON.stringify(response.user || {}));
-                alert('Login realizado com sucesso. Token salvo no navegador.');
+                setLoginMsg('success', 'Login realizado com sucesso. Redirecionando...');
                 window.location.href = '/';
             } else {
-                alert('Erro no login: ' + (response.detail || 'Credenciais inválidas'));
+                setLoginMsg('error', 'Erro no login: ' + (response.detail || 'Credenciais inválidas'));
             }
         } catch (error) {
-            alert('Erro: ' + error.message);
+            setLoginMsg('error', 'Erro: ' + error.message);
+        } finally {
+            loginInFlight = false;
+            btn.disabled = false;
+            btn.innerHTML = 'Entrar &rarr;';
         }
     });
 
     document.getElementById('clearTokenBtn').addEventListener('click', () => {
         clearSessionToken();
-        alert('Token removido do navegador.');
+        setLoginMsg('success', 'Sessão removida no navegador.');
     });
 
     handleOAuthCallbackIfAny();
 </script>
+<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
 {% endblock %}

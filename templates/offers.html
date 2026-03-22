@@ -2044,6 +2044,16 @@
         if (OFFERS_AUTO_REFRESH_OPTIONS.includes(savedInterval)) {
             offersRefreshIntervalMs = savedInterval;
         }
+
+        if (typeof window.wfIsAutoRefreshEnabled === 'function') {
+            offersRefreshPaused = !window.wfIsAutoRefreshEnabled();
+        }
+        if (typeof window.wfGetRefreshIntervalMs === 'function') {
+            const globalInterval = Number(window.wfGetRefreshIntervalMs());
+            if (OFFERS_AUTO_REFRESH_OPTIONS.includes(globalInterval)) {
+                offersRefreshIntervalMs = globalInterval;
+            }
+        }
     } catch {
         // ignora indisponibilidade de storage
     }
@@ -2078,6 +2088,18 @@
     }, { passive: true });
 
     renderOffersRefreshControls();
+
+    window.addEventListener('wf:advanced-settings-changed', (event) => {
+        const settings = event.detail || {};
+        offersRefreshPaused = !Boolean(settings.auto_refresh);
+        const globalInterval = Number(settings.refresh_interval_ms || OFFERS_AUTO_REFRESH_DEFAULT_MS);
+        if (OFFERS_AUTO_REFRESH_OPTIONS.includes(globalInterval)) {
+            offersRefreshIntervalMs = globalInterval;
+        }
+        renderOffersRefreshControls();
+        restartOffersAutoRefresh();
+    });
+
     saveFilterPrefs();
     setupInfiniteOffersScroll();
     renderFruitChips();

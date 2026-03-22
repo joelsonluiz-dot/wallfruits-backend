@@ -262,6 +262,10 @@
             gap: 0.65rem;
         }
 
+        .wf-topbar {
+            display: none !important;
+        }
+
         .wf-topbar-title {
             font-size: 0.9rem;
             font-weight: 800;
@@ -428,6 +432,20 @@
             bottom: 0;
             z-index: 132;
             padding: 0;
+            pointer-events: none;
+        }
+
+        .wf-mobile-wrap,
+        .wf-mobile-floating-add,
+        .wf-ai-fab {
+            transition: transform 0.22s ease, opacity 0.2s ease;
+        }
+
+        body.wf-keyboard-open .wf-mobile-wrap,
+        body.wf-keyboard-open .wf-mobile-floating-add,
+        body.wf-keyboard-open .wf-ai-fab {
+            transform: translateY(130%);
+            opacity: 0;
             pointer-events: none;
         }
 
@@ -1588,6 +1606,80 @@
             font-size: 0.92rem;
             color: #7a5e22;
         }
+
+        .wf-hidden-settings {
+            position: fixed;
+            right: 12px;
+            bottom: calc(86px + env(safe-area-inset-bottom));
+            width: min(340px, calc(100vw - 20px));
+            border: 1px solid rgba(92, 76, 45, 0.22);
+            border-radius: 14px;
+            background: rgba(252, 247, 236, 0.96);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            padding: 0.85rem;
+            z-index: 2650;
+            display: none;
+            box-shadow: 0 16px 36px rgba(58, 46, 24, 0.24);
+        }
+
+        .wf-hidden-settings.show {
+            display: block;
+            animation: fadeIn 0.2s ease forwards;
+        }
+
+        .wf-hidden-settings-title {
+            font-size: 0.79rem;
+            font-weight: 800;
+            color: #5f6a42;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.55rem;
+        }
+
+        .wf-hidden-settings-note {
+            font-size: 0.73rem;
+            color: var(--wf-text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .wf-settings-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.6rem;
+            font-size: 0.8rem;
+            color: var(--wf-text);
+            margin-bottom: 0.52rem;
+        }
+
+        .wf-settings-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .wf-settings-row select,
+        .wf-settings-row input[type="checkbox"] {
+            accent-color: var(--wf-accent);
+        }
+
+        .wf-settings-row select {
+            min-width: 90px;
+            border: 1px solid var(--wf-border);
+            border-radius: 10px;
+            background: rgba(255,255,255,0.8);
+            color: var(--wf-text);
+            padding: 0.28rem 0.42rem;
+            font-size: 0.78rem;
+        }
+
+        #homeRefreshToggle,
+        #homeRefreshInterval,
+        #communityRefreshToggle,
+        #communityRefreshInterval,
+        #offersRefreshToggle,
+        #offersRefreshInterval {
+            display: none !important;
+        }
     </style>
 </head>
 <body>
@@ -1603,7 +1695,7 @@
     <div class="wf-app-shell">
         <aside class="wf-sidebar">
             <div class="wf-sidebar-header">
-                <a class="wf-brand" href="/">
+                <a class="wf-brand" href="/" id="wfBrandTrigger" title="WallFruits">
                     <span class="wf-brand-dot"></span>
                     WallFruits
                 </a>
@@ -1716,6 +1808,13 @@
         const WF_GET_CACHE_TTL_MS = 12000;
         const WF_GET_CACHE = new Map();
         const WF_INFLIGHT_GET = new Map();
+        const WF_ADV_SETTINGS_KEY = 'wf_hidden_settings_v1';
+        const WF_ADV_DEFAULTS = {
+            auto_refresh: true,
+            refresh_interval_ms: 45000,
+            auto_retry: true,
+            request_timeout_ms: 15000,
+        };
 
         function wfDefaultAvatar() {
             return WF_DEFAULT_AVATAR;
@@ -1743,6 +1842,46 @@
             return window.matchMedia(`(max-width: ${WF_FAST_NAV_BREAKPOINT}px)`).matches;
         }
 
+        function getAdvancedSettings() {
+            try {
+                const raw = localStorage.getItem(WF_ADV_SETTINGS_KEY);
+                if (!raw) return { ...WF_ADV_DEFAULTS };
+                const parsed = JSON.parse(raw);
+                return { ...WF_ADV_DEFAULTS, ...(parsed || {}) };
+            } catch {
+                return { ...WF_ADV_DEFAULTS };
+            }
+        }
+
+        function saveAdvancedSettings(nextSettings) {
+            const merged = { ...WF_ADV_DEFAULTS, ...(nextSettings || {}) };
+            try {
+                localStorage.setItem(WF_ADV_SETTINGS_KEY, JSON.stringify(merged));
+            } catch {
+                // ignora indisponibilidade de storage
+            }
+            window.dispatchEvent(new CustomEvent('wf:advanced-settings-changed', { detail: merged }));
+            return merged;
+        }
+
+        function getAdvancedSetting(key, fallbackValue) {
+            const settings = getAdvancedSettings();
+            return Object.prototype.hasOwnProperty.call(settings, key)
+                ? settings[key]
+                : fallbackValue;
+        }
+
+        function setAdvancedSetting(key, value) {
+            const settings = getAdvancedSettings();
+            settings[key] = value;
+            return saveAdvancedSettings(settings);
+        }
+
+        window.wfGetAdvancedSetting = getAdvancedSetting;
+        window.wfSetAdvancedSetting = setAdvancedSetting;
+        window.wfIsAutoRefreshEnabled = () => Boolean(getAdvancedSetting('auto_refresh', true));
+        window.wfGetRefreshIntervalMs = () => Number(getAdvancedSetting('refresh_interval_ms', 45000));
+
         function isCacheableGetUrl(url) {
             const raw = String(url || '').toLowerCase();
             return (
@@ -1766,6 +1905,7 @@
             let resolvedMethod = method;
             let resolvedData = data;
             let extraHeaders = {};
+            let options = {};
 
             // Compatibilidade com chamadas no formato apiRequest(url, { method, data, headers })
             if (typeof method === 'object' && method !== null) {
@@ -1776,6 +1916,7 @@
                     resolvedData = method.body;
                 }
                 extraHeaders = method.headers || {};
+                options = method.options || {};
             }
 
             const config = {
@@ -1785,8 +1926,15 @@
                     ...extraHeaders,
                 }
             };
+
+            if (resolvedData instanceof FormData) {
+                delete config.headers['Content-Type'];
+            }
+
             if (resolvedData !== null && resolvedData !== undefined) {
                 if (typeof resolvedData === 'string') {
+                    config.body = resolvedData;
+                } else if (resolvedData instanceof FormData) {
                     config.body = resolvedData;
                 } else {
                     config.body = JSON.stringify(resolvedData);
@@ -1813,18 +1961,31 @@
                 }
             }
 
-            const requestPromise = (async () => {
-                const response = await fetch(apiUrl, config);
-                let payload = null;
-                const text = await response.text();
+            const timeoutMs = Number(options.timeoutMs || getAdvancedSetting('request_timeout_ms', 15000));
+            const methodText = String(resolvedMethod || 'GET').toUpperCase();
+            const maxAttempts = Number(options.maxAttempts || ((methodText === 'GET' && getAdvancedSetting('auto_retry', true)) ? 2 : 1));
 
-                if (text) {
+            const requestPromise = (async () => {
+                let attempt = 0;
+
+                while (attempt < maxAttempts) {
+                    attempt += 1;
+                    const controller = new AbortController();
+                    const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+                    config.signal = controller.signal;
+
                     try {
-                        payload = JSON.parse(text);
-                    } catch {
-                        payload = { detail: text };
-                    }
-                }
+                        const response = await fetch(apiUrl, config);
+                        let payload = null;
+                        const text = await response.text();
+
+                        if (text) {
+                            try {
+                                payload = JSON.parse(text);
+                            } catch {
+                                payload = { detail: text };
+                            }
+                        }
 
                 function isRestrictedResourceMessage(message) {
                     if (!message) return false;
@@ -1838,24 +1999,41 @@
                     );
                 }
 
-                if (!response.ok) {
-                    const errorMessage =
-                        payload?.detail ||
-                        payload?.error?.message ||
-                        payload?.message ||
-                        `Erro HTTP ${response.status}`;
+                        if (!response.ok) {
+                            const errorMessage =
+                                payload?.detail ||
+                                payload?.error?.message ||
+                                payload?.message ||
+                                `Erro HTTP ${response.status}`;
 
-                    if (response.status === 403 || isRestrictedResourceMessage(errorMessage)) {
-                        showRestrictedAccessNotice(errorMessage);
+                            if (response.status === 403 || isRestrictedResourceMessage(errorMessage)) {
+                                showRestrictedAccessNotice(errorMessage);
+                            }
+                            throw new Error(errorMessage);
+                        }
+
+                        if (getCacheKey) {
+                            WF_GET_CACHE.set(getCacheKey, { ts: Date.now(), payload });
+                        }
+
+                        window.clearTimeout(timeoutId);
+                        return payload;
+                    } catch (error) {
+                        window.clearTimeout(timeoutId);
+                        const isAbort = error && error.name === 'AbortError';
+                        const canRetry = attempt < maxAttempts;
+                        if (canRetry && (isAbort || methodText === 'GET')) {
+                            await new Promise((resolve) => setTimeout(resolve, 450));
+                            continue;
+                        }
+                        if (isAbort) {
+                            throw new Error('Tempo de resposta excedido. Verifique a internet e tente novamente.');
+                        }
+                        throw error;
                     }
-                    throw new Error(errorMessage);
                 }
 
-                if (getCacheKey) {
-                    WF_GET_CACHE.set(getCacheKey, { ts: Date.now(), payload });
-                }
-
-                return payload;
+                throw new Error('Falha ao processar a requisição.');
             })();
 
             if (getCacheKey) {
@@ -1950,11 +2128,6 @@
             if (actionProfileLink && actionProfileLabel) {
                 actionProfileLink.href = isLogged ? '/me/profile' : '/login';
                 actionProfileLabel.textContent = isLogged ? 'Perfil' : 'Entrar';
-            }
-
-            const topbar = document.querySelector('.wf-topbar');
-            if (topbar) {
-                topbar.style.display = 'flex';
             }
 
             const actionBar = document.getElementById('actionBar');
@@ -2297,6 +2470,115 @@
             });
         }
 
+        function initHiddenSettingsPanel() {
+            const trigger = document.getElementById('wfBrandTrigger');
+            const panel = document.getElementById('wfHiddenSettings');
+            const autoRefresh = document.getElementById('wfAdvancedAutoRefresh');
+            const refreshInterval = document.getElementById('wfAdvancedRefreshInterval');
+            const autoRetry = document.getElementById('wfAdvancedAutoRetry');
+            const timeoutSelect = document.getElementById('wfAdvancedTimeout');
+
+            if (!panel || !autoRefresh || !refreshInterval || !autoRetry || !timeoutSelect) return;
+
+            let taps = 0;
+            let tapTimer = null;
+
+            const syncUi = () => {
+                const settings = getAdvancedSettings();
+                autoRefresh.checked = Boolean(settings.auto_refresh);
+                refreshInterval.value = String(settings.refresh_interval_ms || 45000);
+                autoRetry.checked = Boolean(settings.auto_retry);
+                timeoutSelect.value = String(settings.request_timeout_ms || 15000);
+            };
+
+            const togglePanel = () => {
+                panel.classList.toggle('show');
+                panel.setAttribute('aria-hidden', panel.classList.contains('show') ? 'false' : 'true');
+            };
+
+            if (trigger) {
+                trigger.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    taps += 1;
+                    if (tapTimer) clearTimeout(tapTimer);
+                    tapTimer = setTimeout(() => { taps = 0; }, 1200);
+                    if (taps >= 4) {
+                        togglePanel();
+                        taps = 0;
+                    }
+                });
+            }
+
+            document.addEventListener('keydown', (event) => {
+                if (event.ctrlKey && event.altKey && String(event.key || '').toLowerCase() === 's') {
+                    event.preventDefault();
+                    togglePanel();
+                }
+            });
+
+            autoRefresh.addEventListener('change', (e) => {
+                setAdvancedSetting('auto_refresh', e.target.checked);
+            });
+            refreshInterval.addEventListener('change', (e) => {
+                setAdvancedSetting('refresh_interval_ms', Number(e.target.value || 45000));
+            });
+            autoRetry.addEventListener('change', (e) => {
+                setAdvancedSetting('auto_retry', e.target.checked);
+            });
+            timeoutSelect.addEventListener('change', (e) => {
+                setAdvancedSetting('request_timeout_ms', Number(e.target.value || 15000));
+            });
+
+            document.addEventListener('click', (event) => {
+                if (!panel.classList.contains('show')) return;
+                if (panel.contains(event.target) || (trigger && trigger.contains(event.target))) return;
+                panel.classList.remove('show');
+                panel.setAttribute('aria-hidden', 'true');
+            });
+
+            window.addEventListener('storage', (event) => {
+                if (event.key === WF_ADV_SETTINGS_KEY) syncUi();
+            });
+
+            syncUi();
+        }
+
+        function initKeyboardMenuGuard() {
+            const body = document.body;
+            if (!body) return;
+
+            const refreshKeyboardState = () => {
+                if (!window.visualViewport) return;
+                const keyboardOpen = (window.innerHeight - window.visualViewport.height) > 140;
+                body.classList.toggle('wf-keyboard-open', keyboardOpen);
+            };
+
+            document.addEventListener('focusin', (event) => {
+                if (event.target && event.target.matches('input, textarea, select')) {
+                    body.classList.add('wf-keyboard-open');
+                }
+            });
+
+            document.addEventListener('focusout', (event) => {
+                if (event.target && event.target.matches('input, textarea, select')) {
+                    window.setTimeout(() => {
+                        const active = document.activeElement;
+                        const stillTyping = active && active.matches && active.matches('input, textarea, select');
+                        if (!stillTyping) {
+                            body.classList.remove('wf-keyboard-open');
+                        }
+                        refreshKeyboardState();
+                    }, 90);
+                }
+            });
+
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', refreshKeyboardState);
+                window.visualViewport.addEventListener('scroll', refreshKeyboardState);
+                refreshKeyboardState();
+            }
+        }
+
         function bindLogoutHandler(id) {
             const element = document.getElementById(id);
             if (!element) return;
@@ -2316,6 +2598,8 @@
             setupHelpPopup();
             setupAiAgentModal();
             setupProfileMenu();
+            initHiddenSettingsPanel();
+            initKeyboardMenuGuard();
             setNavAuthState();
             refreshUnreadNotifications();
         });
@@ -2581,6 +2865,35 @@
                     <div class="wf-restricted-actions">
                         <button type="button" class="btn btn-wf-secondary" id="restrictedAccessClose">Entendi</button>
                     </div>
+                </div>
+            </div>
+
+            <div class="wf-hidden-settings" id="wfHiddenSettings" aria-hidden="true">
+                <div class="wf-hidden-settings-title">Configurações ocultas</div>
+                <div class="wf-hidden-settings-note">Abra aqui com 4 cliques no logo WallFruits (ou Ctrl+Alt+S).</div>
+                <div class="wf-settings-row">
+                    <span>Auto-refresh global</span>
+                    <input id="wfAdvancedAutoRefresh" type="checkbox">
+                </div>
+                <div class="wf-settings-row">
+                    <span>Intervalo</span>
+                    <select id="wfAdvancedRefreshInterval">
+                        <option value="20000">20s</option>
+                        <option value="45000">45s</option>
+                        <option value="90000">90s</option>
+                    </select>
+                </div>
+                <div class="wf-settings-row">
+                    <span>Auto retry de rede</span>
+                    <input id="wfAdvancedAutoRetry" type="checkbox">
+                </div>
+                <div class="wf-settings-row">
+                    <span>Timeout de requisição</span>
+                    <select id="wfAdvancedTimeout">
+                        <option value="10000">10s</option>
+                        <option value="15000">15s</option>
+                        <option value="25000">25s</option>
+                    </select>
                 </div>
             </div>
 

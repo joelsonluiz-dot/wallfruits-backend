@@ -1452,6 +1452,16 @@
             if (COMMUNITY_AUTO_REFRESH_OPTIONS.includes(savedInterval)) {
                 postsRefreshIntervalMs = savedInterval;
             }
+
+            if (typeof window.wfIsAutoRefreshEnabled === 'function') {
+                postsRefreshPaused = !window.wfIsAutoRefreshEnabled();
+            }
+            if (typeof window.wfGetRefreshIntervalMs === 'function') {
+                const globalInterval = Number(window.wfGetRefreshIntervalMs());
+                if (COMMUNITY_AUTO_REFRESH_OPTIONS.includes(globalInterval)) {
+                    postsRefreshIntervalMs = globalInterval;
+                }
+            }
         } catch {
             // ignora indisponibilidade de storage
         }
@@ -1468,6 +1478,17 @@
         }
 
         renderCommunityRefreshControls();
+
+        window.addEventListener('wf:advanced-settings-changed', (event) => {
+            const settings = event.detail || {};
+            postsRefreshPaused = !Boolean(settings.auto_refresh);
+            const globalInterval = Number(settings.refresh_interval_ms || COMMUNITY_AUTO_REFRESH_DEFAULT_MS);
+            if (COMMUNITY_AUTO_REFRESH_OPTIONS.includes(globalInterval)) {
+                postsRefreshIntervalMs = globalInterval;
+            }
+            renderCommunityRefreshControls();
+            restartCommunityAutoRefresh();
+        });
 
         setupPostsInfiniteScroll();
         loadNextPostsPage().then(() => {

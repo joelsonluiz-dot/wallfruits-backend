@@ -180,6 +180,8 @@
 </div>
 
 <script>
+    let registerInFlight = false;
+
     async function uploadPublicProfileImage(file) {
         const formData = new FormData();
         formData.append('file', file);
@@ -222,13 +224,25 @@
 
     document.getElementById('registerForm').addEventListener('submit', async (e) => {
         e.preventDefault();
+        if (registerInFlight) return;
+
         const msgDiv = document.getElementById('registerMsg');
         const btn = document.getElementById('registerBtn');
-        const name = document.getElementById('name').value;
-        const email = document.getElementById('email').value;
+        const nameInput = document.getElementById('name');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const phoneInput = document.getElementById('phone');
+        const locationInput = document.getElementById('location');
+
+        nameInput.value = nameInput.value.trim();
+        emailInput.value = emailInput.value.trim().toLowerCase();
+        locationInput.value = locationInput.value.trim();
+
+        const name = nameInput.value;
+        const email = emailInput.value;
         const password = document.getElementById('password').value;
-        const phone = document.getElementById('phone').value;
-        const location = document.getElementById('location').value;
+        const phone = phoneInput.value;
+        const location = locationInput.value;
         const roleEl = document.querySelector('input[name="role"]:checked');
         const profileImageFile = profileImageInput.files && profileImageInput.files[0];
 
@@ -250,6 +264,7 @@
             return;
         }
 
+        registerInFlight = true;
         btn.disabled = true;
         btn.innerHTML = '<span style="display:inline-block;width:1rem;height:1rem;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:0.5rem;"></span> Criando conta...';
         msgDiv.style.display = 'none';
@@ -286,6 +301,8 @@
             msgDiv.style.border = '1px solid #ff3c3c';
             msgDiv.style.color = '#ff6b6b';
             msgDiv.textContent = '✗ ' + (error.message || 'Erro ao criar conta. Tente novamente.');
+        } finally {
+            registerInFlight = false;
             btn.disabled = false;
             btn.innerHTML = 'Criar conta &rarr;';
         }
