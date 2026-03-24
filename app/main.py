@@ -283,7 +283,12 @@ else:
 def _render_template(template_name: str, request: Request, **context: Any):
     if templates is None:
         raise HTTPException(503, "Templates indisponíveis neste ambiente")
-    return templates.TemplateResponse(template_name, {"request": request, **context})
+    # Usa assinatura nomeada para compatibilidade entre versões da Starlette.
+    return templates.TemplateResponse(
+        request=request,
+        name=template_name,
+        context={"request": request, **context},
+    )
 
 
 API_PREFIX = "/api"
