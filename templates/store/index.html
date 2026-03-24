@@ -133,29 +133,67 @@
     }
 
     .ag-categories {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.55rem;
+        display: grid;
+        gap: 0.45rem;
         margin-top: 0.2rem;
     }
 
-    .ag-pill {
-        text-decoration: none;
-        padding: 0.5rem 0.85rem;
-        border-radius: 999px;
-        border: 1px solid rgba(11, 46, 99, 0.14);
-        background: #ffffff;
-        color: #10386f;
-        font-size: 0.72rem;
-        font-weight: 700;
-        transition: all var(--wf-motion-fast) ease;
+    .ag-category-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.42rem;
     }
 
-    .ag-pill:hover,
-    .ag-pill.active {
-        background: #0b2e63;
+    .ag-category-chip {
+        text-decoration: none;
+        border: 1px solid rgba(23, 87, 58, 0.24);
+        border-radius: 999px;
+        background: #ffffff;
+        color: #246243;
+        font-size: 0.73rem;
+        font-weight: 800;
+        padding: 0.34rem 0.66rem;
+        transition: transform var(--wf-motion-fast) ease, box-shadow var(--wf-motion-fast) ease, border-color var(--wf-motion-fast) ease, background-color var(--wf-motion-fast) ease;
+    }
+
+    .ag-category-chip:hover {
+        transform: translateY(-1px);
+        border-color: rgba(23, 87, 58, 0.42);
+        box-shadow: 0 8px 16px rgba(21, 77, 49, 0.14);
+    }
+
+    .ag-category-chip.active {
+        background: linear-gradient(130deg, #1d6f45, #2b8a58);
         color: #fff;
-        border-color: #0b2e63;
+        border-color: transparent;
+        box-shadow: 0 8px 16px rgba(21, 77, 49, 0.22);
+    }
+
+    .ag-active-filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.38rem;
+    }
+
+    .ag-filter-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.28rem;
+        border-radius: 999px;
+        border: 1px solid rgba(21, 82, 129, 0.22);
+        background: linear-gradient(135deg, rgba(242, 251, 255, 0.98), rgba(237, 248, 242, 0.98));
+        color: #1b4e83;
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 0.22rem 0.56rem;
+        text-decoration: none;
+    }
+
+    .ag-filter-chip.clear-all {
+        border-color: rgba(153, 53, 53, 0.24);
+        background: linear-gradient(135deg, rgba(255, 244, 244, 0.98), rgba(255, 236, 236, 0.98));
+        color: #a23333;
+        cursor: pointer;
     }
 
     .ag-row-section {
@@ -395,6 +433,10 @@
             grid-template-columns: 1fr;
             gap: 0.72rem;
         }
+
+        .ag-category-chips {
+            gap: 0.36rem;
+        }
     }
 
     @media (max-width: 768px) {
@@ -523,10 +565,28 @@
     </section>
 
     <section class="ag-categories" id="products">
-        <a href="/store{% if search_query %}?q={{ search_query }}{% endif %}" class="ag-pill {% if not active_category %}active{% endif %}">Todos os departamentos</a>
-        {% for cat in categories %}
-        <a href="/store?category={{ cat.slug }}{% if search_query %}&q={{ search_query }}{% endif %}" class="ag-pill {% if active_category == cat.slug %}active{% endif %}">{{ cat.icon }} {{ cat.name }}</a>
-        {% endfor %}
+        <div class="ag-category-chips">
+            <a href="/store{% if search_query %}?q={{ search_query }}{% endif %}" class="ag-category-chip {% if not active_category %}active{% endif %}">Todos os departamentos</a>
+            {% for cat in categories %}
+            <a href="/store?category={{ cat.slug }}{% if search_query %}&q={{ search_query }}{% endif %}" class="ag-category-chip {% if active_category == cat.slug %}active{% endif %}">{{ cat.icon }} {{ cat.name }}</a>
+            {% endfor %}
+        </div>
+
+        {% if active_category or search_query %}
+        <div class="ag-active-filters">
+            {% if active_category %}
+                {% for cat in categories %}
+                    {% if cat.slug == active_category %}
+                    <span class="ag-filter-chip">Categoria: {{ cat.icon }} {{ cat.name }}</span>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+            {% if search_query %}
+            <span class="ag-filter-chip">Busca: {{ search_query }}</span>
+            {% endif %}
+            <a href="/store" class="ag-filter-chip clear-all">Limpar filtros</a>
+        </div>
+        {% endif %}
     </section>
 
     <section class="ag-row-section">
