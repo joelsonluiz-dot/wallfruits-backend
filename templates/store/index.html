@@ -8,26 +8,26 @@
     }
 
     .ag-store-hero {
+        position: relative;
         border-radius: 22px;
         overflow: hidden;
         border: 1px solid rgba(16, 44, 90, 0.1);
         background: linear-gradient(120deg, #ffe600 0%, #ffd200 42%, #f9f0a2 100%);
         box-shadow: 0 18px 38px rgba(28, 36, 54, 0.16);
-        position: relative;
     }
-        .ag-products-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 0.7rem;
+
+    .ag-store-hero::after {
+        content: "";
         position: absolute;
         inset: 0;
         background: radial-gradient(circle at 78% 18%, rgba(16, 44, 90, 0.2) 0%, transparent 40%);
-            height: 150px;
+        pointer-events: none;
     }
 
     .ag-store-hero-content {
         position: relative;
-        .ag-products-grid {
-            grid-template-columns: 1fr;
+        z-index: 1;
+        display: grid;
         grid-template-columns: 1.3fr 1fr;
         gap: 1rem;
         align-items: center;
@@ -36,8 +36,8 @@
 
     .ag-store-title {
         margin: 0;
-            font-size: clamp(1.2rem, 1.8vw, 1.65rem);
-        line-height: 1.05;
+        font-size: clamp(1.2rem, 1.8vw, 1.65rem);
+        line-height: 1.08;
         letter-spacing: -0.03em;
         color: #0b2e63;
         font-weight: 900;
@@ -47,7 +47,7 @@
         margin: 0.9rem 0 0;
         color: #123c79;
         font-weight: 600;
-            font-size: 0.88rem;
+        font-size: 0.88rem;
         max-width: 58ch;
     }
 
@@ -59,14 +59,23 @@
     }
 
     .ag-hero-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
         text-decoration: none;
         border-radius: 12px;
         padding: 0.55rem 0.85rem;
         font-size: 0.8rem;
-            grid-template-columns: 1fr;
+        font-weight: 800;
         border: 1px solid #0b2e63;
         color: #0b2e63;
         background: rgba(255, 255, 255, 0.78);
+        transition: transform var(--wf-motion-normal) ease, box-shadow var(--wf-motion-normal) ease;
+    }
+
+    .ag-hero-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 16px rgba(11, 46, 99, 0.18);
     }
 
     .ag-hero-btn.primary {
@@ -86,7 +95,7 @@
         padding: 0.75rem 0.9rem;
         color: #0b2e63;
         font-weight: 700;
-           font-size: 0.74rem;
+        font-size: 0.74rem;
     }
 
     .ag-search {
@@ -105,7 +114,7 @@
         background: transparent;
         padding: 0.5rem 0.75rem;
         font-weight: 600;
-            font-size: 0.84rem;
+        font-size: 0.84rem;
         color: #163d77;
     }
 
@@ -119,29 +128,27 @@
         padding: 0.5rem 0.9rem;
         background: #0b2e63;
         color: #fff;
-            font-size: 0.78rem;
+        font-size: 0.78rem;
         font-weight: 700;
     }
 
     .ag-categories {
         display: flex;
-        gap: 0.6rem;
-        overflow-x: auto;
-        padding-bottom: 0.2rem;
-        margin-top: 0.4rem;
+        flex-wrap: wrap;
+        gap: 0.55rem;
+        margin-top: 0.2rem;
     }
 
     .ag-pill {
-        white-space: nowrap;
         text-decoration: none;
         padding: 0.5rem 0.85rem;
         border-radius: 999px;
         border: 1px solid rgba(11, 46, 99, 0.14);
         background: #ffffff;
         color: #10386f;
-            font-size: 0.72rem;
+        font-size: 0.72rem;
         font-weight: 700;
-        transition: all 0.2s ease;
+        transition: all var(--wf-motion-fast) ease;
     }
 
     .ag-pill:hover,
@@ -149,14 +156,6 @@
         background: #0b2e63;
         color: #fff;
         border-color: #0b2e63;
-    }
-
-    .ag-products-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        gap: 0.9rem;
-        margin-top: 0.4rem;
-        align-items: stretch;
     }
 
     .ag-row-section {
@@ -198,6 +197,12 @@
         background: #fff;
         overflow: hidden;
         box-shadow: 0 8px 18px rgba(14, 41, 83, 0.08);
+        transition: transform var(--wf-motion-normal) ease, box-shadow var(--wf-motion-normal) ease;
+    }
+
+    .ag-row-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 24px rgba(14, 41, 83, 0.12);
     }
 
     .ag-row-media {
@@ -243,13 +248,21 @@
         font-weight: 900;
     }
 
+    .ag-products-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.9rem;
+        margin-top: 0.4rem;
+        align-items: stretch;
+    }
+
     .ag-card {
         background: #fff;
         border: 1px solid rgba(17, 53, 105, 0.12);
         border-radius: 16px;
         overflow: hidden;
         box-shadow: 0 8px 22px rgba(14, 41, 83, 0.09);
-        transition: transform 0.22s ease, box-shadow 0.22s ease;
+        transition: transform var(--wf-motion-normal) ease, box-shadow var(--wf-motion-normal) ease;
         height: 100%;
     }
 
@@ -295,7 +308,7 @@
 
     .ag-card-category {
         color: #5f728d;
-        font-size: 0.74rem;
+        font-size: 0.72rem;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.06em;
@@ -304,10 +317,9 @@
     .ag-card-title {
         margin: 0.35rem 0;
         color: #132f5d;
-            font-size: 0.84rem;
+        font-size: 0.84rem;
         font-weight: 800;
         display: -webkit-box;
-        line-clamp: 2;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
@@ -331,7 +343,7 @@
 
     .ag-price {
         color: #0f2f60;
-            font-size: 0.92rem;
+        font-size: 0.92rem;
         font-weight: 900;
         letter-spacing: -0.01em;
     }
@@ -355,54 +367,33 @@
         padding: 2rem 1rem;
         color: #2d4f80;
         font-weight: 700;
+        grid-column: 1 / -1;
+    }
+
+    @media (max-width: 1200px) {
+        .ag-products-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.78rem;
+        }
     }
 
     @media (max-width: 992px) {
         .ag-store-hero-content {
             grid-template-columns: 1fr;
+            padding: 1.3rem;
         }
 
         .ag-store-title {
-            font-size: 1.3rem;
+            font-size: 1.24rem;
         }
 
         .ag-store-subtitle {
-            font-size: 0.84rem;
-        }
-    }
-
-    @media (max-width: 1100px) {
-        .ag-products-grid {
-            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-            gap: 0.75rem;
+            font-size: 0.82rem;
         }
 
-        .ag-card-media {
-            height: 164px;
-        }
-
-        .ag-card-body {
-            min-height: 154px;
-        }
-    }
-
-    @media (max-width: 992px) {
         .ag-products-grid {
             grid-template-columns: 1fr;
-            gap: 0.7rem;
-        }
-
-        .ag-card-media {
-            height: 150px;
-        }
-
-        .ag-card-title {
-            font-size: 0.8rem;
-            min-height: 2.35rem;
-        }
-
-        .ag-price {
-            font-size: 0.86rem;
+            gap: 0.72rem;
         }
     }
 
@@ -412,13 +403,13 @@
         }
 
         .ag-store-hero-content {
-            padding: 1.2rem;
+            padding: 1rem;
             gap: 0.85rem;
         }
 
         .ag-store-title {
-            font-size: 1.08rem;
-            line-height: 1.15;
+            font-size: 1.06rem;
+            line-height: 1.16;
         }
 
         .ag-store-subtitle {
@@ -428,18 +419,11 @@
 
         .ag-hero-btn {
             width: 100%;
-            justify-content: center;
-            text-align: center;
         }
 
         .ag-row-item {
             min-width: 204px;
             max-width: 204px;
-        }
-
-        .ag-products-grid {
-            grid-template-columns: 1fr;
-            gap: 0.65rem;
         }
 
         .ag-card-media {
@@ -468,7 +452,7 @@
 
     @media (max-width: 480px) {
         .ag-store-hero-content {
-            padding: 0.95rem;
+            padding: 0.9rem;
         }
 
         .ag-search {
@@ -477,11 +461,6 @@
 
         .ag-search button {
             width: 100%;
-        }
-
-        .ag-products-grid {
-            grid-template-columns: 1fr;
-            gap: 0.55rem;
         }
 
         .ag-row-item {
