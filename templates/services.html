@@ -61,8 +61,10 @@
 
     .services-category-chips {
         display: flex;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
+        overflow-x: auto;
         gap: 0.44rem;
+        padding-bottom: 0.12rem;
     }
 
     .services-category-chip {
@@ -310,6 +312,10 @@
 
         .service-open-detail-btn {
             min-width: 100%;
+        }
+
+        .services-category-chips {
+            gap: 0.36rem;
         }
     }
 </style>
