@@ -19,6 +19,7 @@ from app.models.offer import Offer
 from app.models.user import User
 from app.repositories.negotiation_message_repository import NegotiationMessageRepository
 from app.repositories.negotiation_repository import NegotiationRepository
+from app.services.ai_telemetry_service import AITelemetryService
 from app.services.profile_service import ProfileService
 
 
@@ -38,6 +39,7 @@ class NegotiationService:
         self.gamification_service = GamificationService(db)
         self.negotiation_repo = NegotiationRepository(db)
         self.message_repo = NegotiationMessageRepository(db)
+        self.telemetry = AITelemetryService(db)
 
     def _emit_intermediation_webhook(
         self,
@@ -152,6 +154,21 @@ class NegotiationService:
 
         self.db.commit()
         self.db.refresh(negotiation)
+
+        self.telemetry.log_event(
+            user_id=user.id,
+            event_type="negotiation_created",
+            entity_type="negotiation",
+            entity_id=str(negotiation.id),
+            metadata={
+                "offer_id": str(offer.id),
+                "proposed_price": float(proposed_price),
+                "quantity": float(quantity),
+                "is_intermediated": bool(is_intermediated),
+            },
+            commit=True,
+        )
+
         return negotiation
 
     def update_negotiation(
@@ -311,6 +328,22 @@ class NegotiationService:
             # Gamificação: pontos para comprador e vendedor
             self._award_negotiation_points(negotiation)
 
+            self.telemetry.log_event(
+                user_id=user.id,
+                event_type="negotiation_completed",
+                entity_type="negotiation",
+                entity_id=str(negotiation.id),
+                metadata={
+                    "deal_closed": True,
+                    "discount_pct": 0.0,
+                    "inactive_days": 0.0,
+                    "response_time_hours": 3.0,
+                    "contact_hour": datetime.now(timezone.utc).hour,
+                    "service_duration_days": 5.0,
+                    "became_inactive": False,
+                },
+            )
+
         negotiation.status = new_status
         self.db.commit()
         self.db.refresh(negotiation)
@@ -380,6 +413,19 @@ class NegotiationService:
         self.message_repo.add(message)
         self.db.commit()
         self.db.refresh(message)
+
+        self.telemetry.log_event(
+            user_id=user.id,
+            event_type="negotiation_message_sent",
+            entity_type="negotiation",
+            entity_id=str(negotiation.id),
+            metadata={
+                "message_size": len(message_text),
+                "contact_hour": datetime.now(timezone.utc).hour,
+            },
+            commit=True,
+        )
+
         return message
 
     def list_messages(self, *, negotiation: Negotiation, user: User, mark_as_read: bool = True) -> list[NegotiationMessage]:

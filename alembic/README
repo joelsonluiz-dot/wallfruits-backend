@@ -1,0 +1,6 @@
+Configuração Alembic para migrações do WallFruits.
+
+Comandos principais:
+- alembic upgrade head
+- alembic downgrade -1
+- alembic revision -m "descricao"

@@ -33,6 +33,7 @@ from app.database.connection import (
 from sqlalchemy.orm import Session
 from app.models import Category, Favorite, Message, Offer, Review, Transaction, User
 from app.routers import (
+    ai_routes,
     store_routes,
     service_routes,
     library_routes,
@@ -53,6 +54,7 @@ from app.routers import (
     review_routes,
     social_routes,
     community_routes,
+    notification_ws_routes,
     transaction_routes,
     upload_routes,
     wallet_routes,
@@ -335,11 +337,13 @@ app.include_router(payment_routes.router, prefix=API_PREFIX)
 app.include_router(social_routes.router, prefix=API_PREFIX)
 app.include_router(community_routes.router, prefix=API_PREFIX)
 app.include_router(notification_routes.router, prefix=API_PREFIX)
+app.include_router(ai_routes.router, prefix=API_PREFIX)
 app.include_router(store_routes.router)  # Loja Agrícola (HTML + API)
 app.include_router(store_routes.router, prefix=API_PREFIX)  # Alias /api/store para chamadas JS
 app.include_router(service_routes.router, prefix=API_PREFIX)
 app.include_router(library_routes.router, prefix=API_PREFIX)
 app.include_router(buyer_client_routes.router, prefix=API_PREFIX)
+app.include_router(notification_ws_routes.router)
 
 if not settings.DEBUG:
     @app.get("/docs", include_in_schema=False)

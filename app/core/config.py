@@ -53,6 +53,13 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379/0"
     REDIS_ENABLED: bool = True
 
+    # AI/LLM
+    LLM_PROVIDER: str = "openai"
+    OPENAI_API_KEY: str = ""
+    OPENAI_MODEL: str = "gpt-4o-mini"
+    AI_CACHE_TTL_SECONDS: int = 120
+    AI_LOW_LATENCY_MODE: bool = True
+
     # Webhooks de dominio
     INTERMEDIATION_WEBHOOK_URL: str = ""
     INTERMEDIATION_WEBHOOK_TIMEOUT_SECONDS: float = 5.0

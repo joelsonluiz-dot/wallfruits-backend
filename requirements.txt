@@ -37,3 +37,10 @@ uvicorn==0.34.0
 websockets==14.1
 resend==2.23.0
 stripe==14.4.1
+celery==5.4.0
+httpx==0.28.1
+joblib==1.5.2
+numpy==2.2.6
+openai==1.109.1
+pandas==2.3.3
+scikit-learn==1.7.2

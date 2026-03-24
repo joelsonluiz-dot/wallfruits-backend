@@ -7,8 +7,10 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Upload
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
+from app.ai.rule_engine import RuleEngine
 from app.core.auth_middleware import get_current_user
 from app.core.config import settings
+from app.core.domain_enums import NegotiationStatus
 from app.services.file_validator import validate_file_content
 from app.services.contract_retention import cleanup_orphan_files
 from app.core.domain_permissions import enforce_negotiation_policy
@@ -435,7 +437,7 @@ def delete_negotiation(
 
 
 @router.patch("/{negotiation_id}/status", response_model=NegotiationResponse)
-def update_negotiation_status(
+async def update_negotiation_status(
     negotiation_id: UUID,
     payload: NegotiationStatusUpdate,
     current_user: User = Depends(get_current_user),
@@ -445,11 +447,17 @@ def update_negotiation_status(
 
     try:
         negotiation = service.get_for_user(negotiation_id=negotiation_id, user=current_user)
-        return service.update_status(
+        updated = service.update_status(
             negotiation=negotiation,
             user=current_user,
             new_status=payload.status,
         )
+
+        if payload.status == NegotiationStatus.COMPLETED.value:
+            rule_engine = RuleEngine(db)
+            await rule_engine.on_negotiation_closed(negotiation=updated)
+
+        return updated
     except ValueError as exc:
         raise _http_error_from_value_error(exc)
 
