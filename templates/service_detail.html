@@ -1,38 +1,22 @@
 {% extends "base.html" %}
 
-{% block title %}Detalhe do Serviço - WallFruits{% endblock %}
+{% block title %}Detalhes do Serviço - WallFruits{% endblock %}
 
 {% block content %}
 <style>
-    .service-detail-page {
+    .service-page {
         max-width: 1080px;
         margin: 0 auto;
         display: grid;
-        gap: 0.95rem;
+        gap: 1rem;
     }
 
-    .service-kpis {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.45rem;
-    }
-
-    .service-kpi {
-        border: 1px solid rgba(18, 76, 120, 0.18);
-        border-radius: 999px;
-        background: #f8fcff;
-        color: #1c557f;
-        font-size: 0.72rem;
-        font-weight: 800;
-        padding: 0.3rem 0.62rem;
-    }
-
-    .service-detail-top {
-        border: 1px solid rgba(18, 76, 120, 0.2);
-        border-radius: 16px;
-        background: linear-gradient(145deg, #f3fbf5, #f4faff);
-        box-shadow: 0 12px 26px rgba(16, 58, 95, 0.12);
-        padding: 0.9rem;
+    .service-head {
+        border-radius: 20px;
+        border: 1px solid rgba(28, 98, 58, 0.24);
+        background: linear-gradient(140deg, #eaf7ee 0%, #edf6ff 66%, #fffdf4 100%);
+        box-shadow: 0 16px 32px rgba(24, 76, 45, 0.13);
+        padding: 1rem;
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -40,76 +24,163 @@
         flex-wrap: wrap;
     }
 
-    .service-detail-top h1 {
+    .service-head h1 {
         margin: 0;
-        color: #184f7f;
-        font-size: 1.1rem;
+        font-size: 1.25rem;
         font-weight: 900;
+        letter-spacing: -0.02em;
+        color: #19583a;
     }
 
-    .service-detail-back {
-        border: none;
-        border-radius: 10px;
-        background: #eaf2fd;
-        color: #2c5d90;
-        font-weight: 800;
+    .service-head p {
+        margin: 0.34rem 0 0;
+        color: #375f86;
+        font-size: 0.84rem;
+        font-weight: 600;
+    }
+
+    .service-head-back {
+        border: 1px solid rgba(20, 82, 128, 0.2);
+        border-radius: 11px;
+        background: #edf4fd;
+        color: #2c5f93;
         font-size: 0.78rem;
-        padding: 0.52rem 0.74rem;
+        font-weight: 800;
         text-decoration: none;
+        padding: 0.54rem 0.76rem;
     }
 
-    .service-detail-card {
-        border: 1px solid rgba(18, 76, 120, 0.2);
-        border-radius: 16px;
+    .service-main {
+        border: 1px solid rgba(21, 84, 127, 0.16);
+        border-radius: 18px;
         background: #fff;
-        box-shadow: 0 12px 28px rgba(17, 61, 97, 0.12);
+        box-shadow: 0 10px 24px rgba(19, 58, 94, 0.12);
         overflow: hidden;
-        display: grid;
-        grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
     }
 
-    .service-detail-cover {
+    .service-hero-image-wrap {
+        border-bottom: 1px solid rgba(21, 84, 127, 0.12);
+        background: #e9f2ec;
+    }
+
+    .service-hero-image {
         width: 100%;
-        height: 100%;
-        min-height: 300px;
+        height: 320px;
         object-fit: cover;
-        background: #eef4f0;
+        display: block;
+        background: #e9f2ec;
     }
 
-    .service-detail-body {
-        padding: 0.95rem;
+    .service-main-body {
+        padding: 1rem;
         display: grid;
-        align-content: start;
-        gap: 0.52rem;
+        gap: 0.86rem;
+    }
+
+    .service-summary {
+        display: grid;
+        gap: 0.55rem;
     }
 
     .service-title {
         margin: 0;
-        color: #1a4f80;
-        font-size: 1.18rem;
+        font-size: 1.26rem;
         font-weight: 900;
-        letter-spacing: -0.01em;
+        color: #1b4d7e;
+        letter-spacing: -0.02em;
+        line-height: 1.26;
+    }
+
+    .service-subline {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.48rem;
+    }
+
+    .service-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        border-radius: 999px;
+        border: 1px solid rgba(20, 82, 129, 0.2);
+        background: linear-gradient(135deg, rgba(243, 251, 255, 0.98), rgba(237, 248, 242, 0.98));
+        color: #225281;
+        font-size: 0.73rem;
+        font-weight: 800;
+        padding: 0.28rem 0.62rem;
     }
 
     .service-description {
         margin: 0;
-        color: #4a6787;
+        color: #4c6a8b;
         font-size: 0.86rem;
-        line-height: 1.45;
+        line-height: 1.5;
+        white-space: pre-wrap;
     }
 
-    .service-meta {
-        margin: 0;
-        color: #2f608f;
-        font-size: 0.8rem;
-        font-weight: 700;
+    .service-layout-grid {
+        display: grid;
+        grid-template-columns: 1.15fr 0.85fr;
+        gap: 0.7rem;
     }
 
-    .service-price {
-        margin: 0;
-        color: #1d6f45;
-        font-size: 1rem;
+    .service-column {
+        display: grid;
+        gap: 0.62rem;
+        align-content: start;
+    }
+
+    .service-card {
+        border: 1px solid rgba(21, 84, 127, 0.14);
+        border-radius: 12px;
+        background: #fff;
+        padding: 0.66rem;
+    }
+
+    .service-card h3 {
+        margin: 0 0 0.28rem;
+        font-size: 0.82rem;
         font-weight: 900;
+        color: #245281;
+    }
+
+    .service-card p {
+        margin: 0;
+        color: #4e6a8b;
+        font-size: 0.78rem;
+        line-height: 1.42;
+        white-space: pre-wrap;
+    }
+
+    .service-kpis {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.46rem;
+    }
+
+    .service-kpi {
+        border: 1px solid rgba(21, 84, 127, 0.14);
+        border-radius: 12px;
+        background: #f8fbff;
+        padding: 0.52rem;
+    }
+
+    .service-kpi-label {
+        margin: 0;
+        color: #5c7491;
+        font-size: 0.66rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+
+    .service-kpi-value {
+        margin: 0.16rem 0 0;
+        color: #1e5282;
+        font-size: 0.8rem;
+        font-weight: 800;
+        line-height: 1.32;
+        word-break: break-word;
     }
 
     .service-provider {
@@ -130,114 +201,165 @@
         font-weight: 800;
     }
 
+    .service-provider-link {
+        border: 1px solid rgba(21, 82, 128, 0.2);
+        border-radius: 10px;
+        background: #edf4fd;
+        color: #2d5f93;
+        text-decoration: none;
+        font-size: 0.74rem;
+        font-weight: 800;
+        padding: 0.44rem 0.62rem;
+    }
+
+    .service-tech-table {
+        border: 1px solid rgba(21, 84, 127, 0.14);
+        border-radius: 12px;
+        overflow: hidden;
+        background: #fff;
+    }
+
+    .service-tech-row {
+        display: grid;
+        grid-template-columns: 170px 1fr;
+        border-top: 1px solid rgba(21, 84, 127, 0.12);
+    }
+
+    .service-tech-row:first-child {
+        border-top: none;
+    }
+
+    .service-tech-key {
+        background: #f4f9ff;
+        color: #375f86;
+        font-size: 0.72rem;
+        font-weight: 800;
+        padding: 0.5rem 0.62rem;
+    }
+
+    .service-tech-value {
+        color: #2b557f;
+        font-size: 0.76rem;
+        font-weight: 700;
+        padding: 0.5rem 0.62rem;
+        word-break: break-word;
+    }
+
     .service-actions {
         display: grid;
-        gap: 0.45rem;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.52rem;
     }
 
-    .service-section {
-        border: 1px solid rgba(18, 76, 120, 0.16);
-        border-radius: 12px;
-        background: #f9fcff;
-        padding: 0.64rem;
-        display: grid;
-        gap: 0.42rem;
-    }
-
-    .service-section-title {
-        margin: 0;
-        color: #1b4f7d;
-        font-size: 0.8rem;
-        font-weight: 900;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-    }
-
-    .service-btn {
+    .service-action {
         border: none;
         border-radius: 12px;
-        font-size: 0.82rem;
+        font-size: 0.81rem;
         font-weight: 800;
         text-decoration: none;
         text-align: center;
-        padding: 0.74rem 0.9rem;
+        padding: 0.76rem 0.85rem;
+        transition: transform var(--wf-motion-normal) ease, box-shadow var(--wf-motion-normal) ease, filter var(--wf-motion-normal) ease;
     }
 
-    .service-btn-primary {
+    .service-action.primary {
         background: linear-gradient(130deg, #1d6f45, #2b8a58);
         color: #fff;
     }
 
-    .service-btn-secondary {
+    .service-action.secondary {
+        border: 1px solid rgba(21, 82, 128, 0.2);
         background: #edf4fd;
-        color: #2d5f93;
+        color: #2c5f93;
     }
 
-    .service-tech-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 0.45rem;
+    .service-action:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 18px rgba(20, 76, 47, 0.2);
     }
 
-    .service-tech-item {
-        border: 1px solid rgba(18, 76, 120, 0.16);
-        border-radius: 10px;
-        background: #f8fbff;
-        padding: 0.45rem;
+    .service-action:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.22), 0 10px 18px rgba(20, 76, 47, 0.2);
     }
 
-    .service-tech-key {
-        color: #597696;
-        font-size: 0.66rem;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-    }
-
-    .service-tech-value {
-        color: #245481;
-        font-size: 0.75rem;
-        font-weight: 700;
-    }
-
+    .service-loading,
+    .service-error,
     .service-state {
-        border: 1px dashed rgba(18, 76, 120, 0.22);
-        border-radius: 14px;
-        padding: 1rem;
-        text-align: center;
-        color: #3f6791;
-        font-weight: 700;
+        border: 1px dashed rgba(18, 78, 123, 0.24);
+        border-radius: 12px;
+        padding: 0.9rem;
+        color: #4a6b8e;
         background: #fff;
+        font-weight: 700;
+        font-size: 0.82rem;
+        text-align: center;
     }
 
-    @media (max-width: 960px) {
-        .service-detail-card {
+    @media (max-width: 900px) {
+        .service-hero-image {
+            height: 250px;
+        }
+
+        .service-layout-grid {
             grid-template-columns: 1fr;
         }
 
-        .service-detail-cover {
-            min-height: 240px;
+        .service-kpis {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
         }
     }
 
     @media (max-width: 560px) {
-        .service-tech-grid {
-            grid-template-columns: 1fr;
+        .service-page {
+            gap: 0.78rem;
+        }
+
+        .service-head {
+            padding: 0.82rem;
+        }
+
+        .service-hero-image {
+            height: 186px;
+        }
+
+        .service-main-body {
+            padding: 0.76rem;
+            gap: 0.64rem;
         }
 
         .service-title {
-            font-size: 1.02rem;
+            font-size: 1.06rem;
+        }
+
+        .service-kpis {
+            grid-template-columns: 1fr;
+        }
+
+        .service-actions {
+            grid-template-columns: 1fr;
+        }
+
+        .service-tech-row {
+            grid-template-columns: 1fr;
+        }
+
+        .service-tech-key {
+            border-bottom: 1px solid rgba(21, 84, 127, 0.1);
         }
     }
 </style>
 
-<div class="service-detail-page">
-    <section class="service-detail-top">
-        <h1>Detalhes completos do serviço</h1>
-        <a class="service-detail-back" href="/services">Voltar para serviços</a>
+<div class="service-page">
+    <section class="service-head">
+        <div>
+            <h1>Detalhes completos do serviço</h1>
+            <p>Visão técnica organizada para contratação com leitura clara em mobile e desktop.</p>
+        </div>
+        <a class="service-head-back" href="/services">Voltar para serviços</a>
     </section>
 
-    <article id="serviceDetailState" class="service-state">Carregando serviço...</article>
+    <article id="serviceDetailState" class="service-loading">Carregando serviço...</article>
 </div>
 
 <script>
@@ -264,66 +386,116 @@
             };
 
             return Object.keys(labels)
-                .map((key) => ({ label: labels[key], value: String(ficha?.[key] || '').trim() }))
-                .filter((row) => row.value.length > 0);
+                .map((key) => ({ key: labels[key], value: String(ficha?.[key] || '').trim() }))
+                .filter((item) => item.value.length > 0);
         }
 
         function buildChatLink(service) {
             const provider = service?.created_by_user;
             if (!provider?.id) return null;
-
             const title = encodeURIComponent(service?.titulo || 'Serviço agrícola');
             const category = encodeURIComponent(String(service?.ficha_tecnica?.categoria || '').trim());
             return `/messages?user_id=${provider.id}&service_id=${service.id}&service_title=${title}&service_category=${category}`;
         }
 
         function renderService(service) {
-            const techRows = buildTechRows(service?.ficha_tecnica || {});
+            const ficha = service?.ficha_tecnica || {};
+            const techRows = buildTechRows(ficha);
             const provider = service?.created_by_user;
             const chatLink = buildChatLink(service);
-            const category = String(service?.ficha_tecnica?.categoria || 'Serviço agrícola').trim() || 'Serviço agrícola';
-            const image = String(service?.imagem || '').trim() || '/static/icon.svg';
 
-            stateEl.className = 'service-detail-card';
+            const title = esc(service?.titulo || 'Serviço');
+            const desc = esc(service?.descricao || 'Sem descrição disponível.');
+            const image = esc(String(service?.imagem || '').trim() || '/static/icon.svg');
+            const local = esc(service?.local || 'Local não informado');
+            const preco = esc(service?.preco || 'Sob consulta');
+            const categoria = esc(String(ficha?.categoria || 'Serviço agrícola').trim() || 'Serviço agrícola');
+            const unidade = esc(String(ficha?.unidade || 'Não informada').trim() || 'Não informada');
+            const prazo = esc(String(ficha?.prazo_atendimento || 'Não informado').trim() || 'Não informado');
+            const disponibilidade = esc(String(ficha?.disponibilidade || 'Não informada').trim() || 'Não informada');
+            const area = esc(String(ficha?.area_atuacao || 'Não informada').trim() || 'Não informada');
+            const execucao = esc(String(ficha?.tempo_execucao || 'Não informado').trim() || 'Não informado');
+            const equipamentos = esc(String(ficha?.equipamentos || 'Não informado').trim() || 'Não informado');
+            const observacoes = esc(String(ficha?.observacoes || 'Sem observações adicionais').trim() || 'Sem observações adicionais');
+
+            stateEl.className = 'service-main';
             stateEl.innerHTML = `
-                <img class="service-detail-cover" src="${esc(image)}" alt="${esc(service.titulo)}" onerror="this.onerror=null; this.src='/static/icon.svg';">
-                <div class="service-detail-body">
-                    <h2 class="service-title">${esc(service.titulo)}</h2>
-                    <p class="service-description">${esc(service.descricao)}</p>
-                    <div class="service-kpis">
-                        <span class="service-kpi">Categoria: ${esc(category)}</span>
-                        <span class="service-kpi">Local: ${esc(service.local || 'Não informado')}</span>
-                        <span class="service-kpi">Preço: ${esc(service.preco || 'Sob consulta')}</span>
-                    </div>
+                <div class="service-hero-image-wrap">
+                    <img class="service-hero-image" src="${image}" alt="${title}" onerror="this.onerror=null; this.src='/static/icon.svg';">
+                </div>
 
-                    <div class="service-section">
-                        <h3 class="service-section-title">Resumo técnico</h3>
-                        <p class="service-meta">📍 ${esc(service.local || 'Local não informado')}</p>
-                        <p class="service-price">${esc(service.preco || 'Sob consulta')}</p>
-                    </div>
-
-                    <div class="service-provider">
-                        <span class="service-provider-name">Prestador: ${esc(provider?.name || 'Não informado')}</span>
-                        ${provider?.id ? `<a class="service-btn service-btn-secondary" href="/users/${provider.id}" target="_blank" rel="noopener">Ver perfil</a>` : ''}
-                    </div>
-
-                    ${techRows.length ? `
-                        <div class="service-section">
-                            <h3 class="service-section-title">Ficha completa</h3>
-                            <div class="service-tech-grid">
-                                ${techRows.map((row) => `
-                                    <div class="service-tech-item">
-                                        <div class="service-tech-key">${esc(row.label)}</div>
-                                        <div class="service-tech-value">${esc(row.value)}</div>
-                                    </div>
-                                `).join('')}
-                            </div>
+                <div class="service-main-body">
+                    <section class="service-summary">
+                        <h2 class="service-title">${title}</h2>
+                        <div class="service-subline">
+                            <span class="service-pill">📍 ${local}</span>
+                            <span class="service-pill">💰 ${preco}</span>
+                            <span class="service-pill">🏷️ ${categoria}</span>
                         </div>
-                    ` : ''}
+                        <p class="service-description">${desc}</p>
+                    </section>
+
+                    <section class="service-layout-grid">
+                        <div class="service-column">
+                            <article class="service-card">
+                                <h3>Disponibilidade</h3>
+                                <p>${disponibilidade}</p>
+                            </article>
+                            <article class="service-card">
+                                <h3>Área de atuação</h3>
+                                <p>${area}</p>
+                            </article>
+                            <article class="service-card">
+                                <h3>Tempo de execução</h3>
+                                <p>${execucao}</p>
+                            </article>
+                            <article class="service-card">
+                                <h3>Equipamentos</h3>
+                                <p>${equipamentos}</p>
+                            </article>
+                            <article class="service-card">
+                                <h3>Observações</h3>
+                                <p>${observacoes}</p>
+                            </article>
+                        </div>
+
+                        <div class="service-column">
+                            <section class="service-kpis">
+                                <article class="service-kpi">
+                                    <p class="service-kpi-label">Categoria</p>
+                                    <p class="service-kpi-value">${categoria}</p>
+                                </article>
+                                <article class="service-kpi">
+                                    <p class="service-kpi-label">Unidade</p>
+                                    <p class="service-kpi-value">${unidade}</p>
+                                </article>
+                                <article class="service-kpi">
+                                    <p class="service-kpi-label">Prazo</p>
+                                    <p class="service-kpi-value">${prazo}</p>
+                                </article>
+                            </section>
+
+                            <section class="service-provider">
+                                <span class="service-provider-name">Prestador: ${esc(provider?.name || 'Não informado')}</span>
+                                ${provider?.id ? `<a class="service-provider-link" href="/users/${provider.id}" target="_blank" rel="noopener">Ver perfil</a>` : ''}
+                            </section>
+
+                            ${techRows.length ? `
+                                <section class="service-tech-table">
+                                    ${techRows.map((item) => `
+                                        <div class="service-tech-row">
+                                            <div class="service-tech-key">${esc(item.key)}</div>
+                                            <div class="service-tech-value">${esc(item.value)}</div>
+                                        </div>
+                                    `).join('')}
+                                </section>
+                            ` : ''}
+                        </div>
+                    </section>
 
                     <div class="service-actions">
-                        ${chatLink ? `<a class="service-btn service-btn-primary" href="${chatLink}">Solicitar orçamento no bate-papo</a>` : '<div class="service-state">Este serviço ainda não possui um divulgador definido para conversar.</div>'}
-                        <a class="service-btn service-btn-secondary" href="/services" target="_blank" rel="noopener">Abrir catálogo em outra aba</a>
+                        ${chatLink ? `<a href="${chatLink}" class="service-action primary">Solicitar orçamento no bate-papo</a>` : '<span class="service-action secondary" style="opacity:.8; pointer-events:none;">Divulgador indisponível</span>'}
+                        <a href="/services" class="service-action secondary">Voltar para serviços</a>
                     </div>
                 </div>
             `;
@@ -331,7 +503,7 @@
 
         async function loadService() {
             if (!serviceId) {
-                stateEl.className = 'service-state';
+                stateEl.className = 'service-error';
                 stateEl.textContent = 'ID de serviço inválido.';
                 return;
             }
@@ -340,7 +512,7 @@
                 const service = await apiRequest(`/services/${serviceId}`);
                 renderService(service || {});
             } catch {
-                stateEl.className = 'service-state';
+                stateEl.className = 'service-error';
                 stateEl.textContent = 'Não foi possível carregar este serviço agora.';
             }
         }
