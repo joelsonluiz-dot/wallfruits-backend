@@ -34,6 +34,11 @@
             --wf-shadow: 0 10px 40px -10px rgba(94, 82, 48, 0.1);
             --wf-sidebar-width: 280px;
             --uib-speed: 2.5s;
+            --wf-floating-gap: 12px;
+            --wf-floating-bottom-offset: calc(78px + env(safe-area-inset-bottom));
+            --wf-focus-ring: 0 0 0 3px rgba(46, 125, 50, 0.22);
+            --wf-motion-fast: 0.16s;
+            --wf-motion-normal: 0.22s;
         }
 
         * { box-sizing: border-box; }
@@ -45,6 +50,17 @@
             min-height: 100vh;
             overflow-x: hidden;
             -webkit-font-smoothing: antialiased;
+            text-rendering: optimizeLegibility;
+        }
+
+        .wf-section-rhythm {
+            display: grid;
+            gap: clamp(0.8rem, 1.4vw, 1.15rem);
+        }
+
+        .wf-heavy-list > * {
+            content-visibility: auto;
+            contain-intrinsic-size: 260px;
         }
 
         /* 🌌 Super Aurora Background */
@@ -292,7 +308,7 @@
         .wf-publish-global-btn {
             position: fixed;
             right: 1rem;
-            top: 0.9rem;
+            top: 3.2rem;
             z-index: 140;
             display: none;
             align-items: center;
@@ -549,7 +565,7 @@
         .wf-mobile-floating-add {
             position: fixed;
             right: 1rem;
-            bottom: calc(78px + env(safe-area-inset-bottom));
+            bottom: var(--wf-floating-bottom-offset);
             z-index: 151;
             display: none;
             border: none;
@@ -1071,6 +1087,17 @@
         .wf-stagger > *:nth-child(5) { animation-delay: 0.25s; }
         .wf-stagger > *:nth-child(6) { animation-delay: 0.3s; }
 
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+        }
+
         /* Select */
         .wf-select {
             background: rgba(255,255,255,0.6) !important;
@@ -1099,6 +1126,112 @@
         a.wf-link:hover {
             opacity: 0.8;
             color: var(--wf-accent);
+        }
+
+        .wf-skip-link {
+            position: fixed;
+            left: 0.8rem;
+            top: 0.8rem;
+            z-index: 2800;
+            padding: 0.52rem 0.72rem;
+            border-radius: 10px;
+            border: 1px solid rgba(11, 46, 99, 0.32);
+            background: #ffffff;
+            color: #0b2e63;
+            font-size: 0.74rem;
+            font-weight: 800;
+            text-decoration: none;
+            box-shadow: 0 10px 20px rgba(16, 44, 90, 0.2);
+            transform: translateY(-150%);
+            transition: transform var(--wf-motion-fast) ease;
+        }
+
+        .wf-skip-link:focus-visible {
+            transform: translateY(0);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.22), 0 10px 20px rgba(16, 44, 90, 0.2);
+        }
+
+        .wf-shell-main:focus {
+            outline: none;
+        }
+
+        :where(
+            button,
+            [role="button"],
+            a.btn,
+            .wf-nav-link,
+            .wf-nav-btn,
+            .wf-mobile-nav-item,
+            .wf-mobile-floating-add,
+            .wf-menu-toggle,
+            .wf-popup-item,
+            .wf-popup-close,
+            .wf-profile-trigger,
+            .wf-profile-link,
+            .offers-live-btn,
+            .offers-fruit-chip,
+            .offers-filter-trigger,
+            .offers-filter-chip-remove,
+            .services-category-chip,
+            .service-open-tab-btn,
+            .service-detail-btn,
+            .community-refresh-btn,
+            .community-upload,
+            .community-send-btn,
+            .post-admin-trigger,
+            .post-admin-item
+        ) {
+            transition: box-shadow var(--wf-motion-normal) ease, transform var(--wf-motion-normal) ease, border-color var(--wf-motion-normal) ease, background-color var(--wf-motion-normal) ease;
+        }
+
+        :where(
+            button,
+            [role="button"],
+            a.btn,
+            .wf-nav-link,
+            .wf-nav-btn,
+            .wf-mobile-nav-item,
+            .wf-mobile-floating-add,
+            .wf-menu-toggle,
+            .wf-popup-item,
+            .wf-popup-close,
+            .wf-profile-trigger,
+            .wf-profile-link,
+            .offers-live-btn,
+            .offers-fruit-chip,
+            .offers-filter-trigger,
+            .offers-filter-chip-remove,
+            .services-category-chip,
+            .service-open-tab-btn,
+            .service-detail-btn,
+            .community-refresh-btn,
+            .community-upload,
+            .community-send-btn,
+            .post-admin-trigger,
+            .post-admin-item
+        ):focus-visible {
+            outline: none;
+            box-shadow: var(--wf-focus-ring);
+        }
+
+        :where(
+            button,
+            [role="button"],
+            a.btn,
+            .offers-live-btn,
+            .offers-fruit-chip,
+            .offers-filter-trigger,
+            .services-category-chip,
+            .service-open-tab-btn,
+            .service-detail-btn,
+            .community-refresh-btn,
+            .community-upload,
+            .community-send-btn,
+            .post-admin-trigger,
+            .post-admin-item
+        ):active {
+            transform: scale(0.98);
         }
 
         /* Responsive */
@@ -1155,7 +1288,21 @@
             .wf-ai-fab {
                 right: 1rem;
                 left: auto;
-                bottom: calc(150px + env(safe-area-inset-bottom));
+                bottom: calc(var(--wf-floating-bottom-offset) + 72px + var(--wf-floating-gap));
+            }
+
+            .wf-connection-indicator {
+                left: 0.74rem;
+                right: auto;
+                top: 0.74rem;
+                max-width: 122px;
+            }
+
+            #wfConnectionText {
+                max-width: 74px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
             }
 
             #navNotifBadge {
@@ -1296,7 +1443,7 @@
                 width: 52px;
                 height: 52px;
                 right: 0.72rem;
-                bottom: calc(76px + env(safe-area-inset-bottom));
+                bottom: calc(72px + env(safe-area-inset-bottom));
             }
 
             .wf-mobile-notif-badge {
@@ -1320,7 +1467,7 @@
             }
 
             .wf-publish-global-btn {
-                top: 0.65rem;
+                top: 3.25rem;
                 right: 0.65rem;
                 font-size: 0.7rem;
                 padding: 0.44rem 0.62rem;
@@ -1332,9 +1479,16 @@
 
             .wf-ai-fab {
                 right: 0.72rem;
-                bottom: calc(138px + env(safe-area-inset-bottom));
+                bottom: calc(72px + env(safe-area-inset-bottom) + 64px + var(--wf-floating-gap));
                 width: 54px;
                 height: 54px;
+            }
+
+            .wf-connection-indicator {
+                left: 0.66rem;
+                top: 0.72rem;
+                padding: 0.3rem 0.5rem;
+                font-size: 0.66rem;
             }
 
             .wf-ai-modal {
@@ -1413,7 +1567,7 @@
         .wf-ai-fab {
             position: fixed;
             right: 1rem;
-            bottom: calc(154px + env(safe-area-inset-bottom));
+            bottom: calc(var(--wf-floating-bottom-offset) + 74px + var(--wf-floating-gap));
             z-index: 2550;
             width: 58px;
             height: 58px;
@@ -1684,7 +1838,7 @@
         .wf-connection-indicator {
             position: fixed;
             right: 0.9rem;
-            top: 0.8rem;
+            top: 0.9rem;
             z-index: 2660;
             display: inline-flex;
             align-items: center;
@@ -1730,6 +1884,8 @@
     </style>
 </head>
 <body>
+    <a href="#wfMainContent" class="wf-skip-link">Pular para conteúdo principal</a>
+
     <a href="/store/manage/dashboard" class="wf-publish-global-btn" id="globalPublishProductBtn" title="Publicar produto">
         <span>+</span>
         <span class="wf-publish-label">Publicar Produto</span>
@@ -1838,7 +1994,7 @@
             </div>
         </aside>
 
-        <main class="wf-shell-main">
+        <main class="wf-shell-main" id="wfMainContent" tabindex="-1">
             <div class="wf-topbar">
                 <div>
                     <div class="wf-topbar-title">Mercado digital do agro</div>
@@ -2689,12 +2845,12 @@
 </main>
 </div>
 
-            <button class="wf-mobile-floating-add" id="actionFloatingButton" type="button" title="Abrir ações rápidas">
+            <button class="wf-mobile-floating-add" id="actionFloatingButton" type="button" title="Abrir ações rápidas" aria-label="Abrir ações rápidas">
                 <span class="material-icons">add</span>
             </button>
 
             <!-- Botão menu lateral (mobile/tablet) -->
-            <button class="wf-menu-toggle" id="btnToggleMenuRight" title="Menu">
+            <button class="wf-menu-toggle" id="btnToggleMenuRight" title="Menu" aria-label="Abrir menu lateral">
                 <span class="material-icons">menu</span>
             </button>
 

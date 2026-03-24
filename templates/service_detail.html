@@ -11,6 +11,22 @@
         gap: 0.95rem;
     }
 
+    .service-kpis {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+    }
+
+    .service-kpi {
+        border: 1px solid rgba(18, 76, 120, 0.18);
+        border-radius: 999px;
+        background: #f8fcff;
+        color: #1c557f;
+        font-size: 0.72rem;
+        font-weight: 800;
+        padding: 0.3rem 0.62rem;
+    }
+
     .service-detail-top {
         border: 1px solid rgba(18, 76, 120, 0.2);
         border-radius: 16px;
@@ -117,6 +133,24 @@
     .service-actions {
         display: grid;
         gap: 0.45rem;
+    }
+
+    .service-section {
+        border: 1px solid rgba(18, 76, 120, 0.16);
+        border-radius: 12px;
+        background: #f9fcff;
+        padding: 0.64rem;
+        display: grid;
+        gap: 0.42rem;
+    }
+
+    .service-section-title {
+        margin: 0;
+        color: #1b4f7d;
+        font-size: 0.8rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
     }
 
     .service-btn {
@@ -247,15 +281,26 @@
             const techRows = buildTechRows(service?.ficha_tecnica || {});
             const provider = service?.created_by_user;
             const chatLink = buildChatLink(service);
+            const category = String(service?.ficha_tecnica?.categoria || 'Serviço agrícola').trim() || 'Serviço agrícola';
+            const image = String(service?.imagem || '').trim() || '/static/icon.svg';
 
             stateEl.className = 'service-detail-card';
             stateEl.innerHTML = `
-                <img class="service-detail-cover" src="${esc(service.imagem)}" alt="${esc(service.titulo)}">
+                <img class="service-detail-cover" src="${esc(image)}" alt="${esc(service.titulo)}" onerror="this.onerror=null; this.src='/static/icon.svg';">
                 <div class="service-detail-body">
                     <h2 class="service-title">${esc(service.titulo)}</h2>
                     <p class="service-description">${esc(service.descricao)}</p>
-                    <p class="service-meta">📍 ${esc(service.local)}</p>
-                    <p class="service-price">${esc(service.preco)}</p>
+                    <div class="service-kpis">
+                        <span class="service-kpi">Categoria: ${esc(category)}</span>
+                        <span class="service-kpi">Local: ${esc(service.local || 'Não informado')}</span>
+                        <span class="service-kpi">Preço: ${esc(service.preco || 'Sob consulta')}</span>
+                    </div>
+
+                    <div class="service-section">
+                        <h3 class="service-section-title">Resumo técnico</h3>
+                        <p class="service-meta">📍 ${esc(service.local || 'Local não informado')}</p>
+                        <p class="service-price">${esc(service.preco || 'Sob consulta')}</p>
+                    </div>
 
                     <div class="service-provider">
                         <span class="service-provider-name">Prestador: ${esc(provider?.name || 'Não informado')}</span>
@@ -263,13 +308,16 @@
                     </div>
 
                     ${techRows.length ? `
-                        <div class="service-tech-grid">
-                            ${techRows.map((row) => `
-                                <div class="service-tech-item">
-                                    <div class="service-tech-key">${esc(row.label)}</div>
-                                    <div class="service-tech-value">${esc(row.value)}</div>
-                                </div>
-                            `).join('')}
+                        <div class="service-section">
+                            <h3 class="service-section-title">Ficha completa</h3>
+                            <div class="service-tech-grid">
+                                ${techRows.map((row) => `
+                                    <div class="service-tech-item">
+                                        <div class="service-tech-key">${esc(row.label)}</div>
+                                        <div class="service-tech-value">${esc(row.value)}</div>
+                                    </div>
+                                `).join('')}
+                            </div>
                         </div>
                     ` : ''}
 

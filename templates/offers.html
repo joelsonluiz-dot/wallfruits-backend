@@ -46,6 +46,18 @@
         align-items: center;
         gap: 0.28rem;
         cursor: pointer;
+        transition: transform var(--wf-motion-normal) ease, box-shadow var(--wf-motion-normal) ease, border-color var(--wf-motion-normal) ease;
+    }
+
+    .offers-live-btn:hover {
+        transform: translateY(-1px);
+        border-color: rgba(0, 212, 170, 0.4);
+        box-shadow: 0 8px 16px rgba(0, 140, 110, 0.18);
+    }
+
+    .offers-live-btn:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.22), 0 8px 16px rgba(0, 140, 110, 0.18);
     }
 
     .offers-live-btn.is-paused {
@@ -58,6 +70,11 @@
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 0.88rem;
+    }
+
+    .offers-list > * {
+        content-visibility: auto;
+        contain-intrinsic-size: 220px;
     }
 
     .offers-filters {
@@ -91,7 +108,7 @@
         font-weight: 800;
         padding: 0.3rem 0.62rem;
         cursor: pointer;
-        transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+        transition: transform var(--wf-motion-fast) ease, box-shadow var(--wf-motion-fast) ease, border-color var(--wf-motion-fast) ease;
     }
 
     .offers-fruit-chip.active {
@@ -160,7 +177,18 @@
         align-items: center;
         justify-content: center;
         position: relative;
-        transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+        transition: transform var(--wf-motion-fast) ease, box-shadow var(--wf-motion-fast) ease, border-color var(--wf-motion-fast) ease, background var(--wf-motion-fast) ease;
+    }
+
+    .offers-filter-trigger:hover {
+        transform: translateY(-1px);
+        border-color: rgba(21, 82, 129, 0.36);
+        box-shadow: 0 8px 16px rgba(20, 72, 114, 0.18);
+    }
+
+    .offers-filter-trigger:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.22), 0 8px 16px rgba(20, 72, 114, 0.18);
     }
 
     .offers-filter-trigger.is-active {
@@ -232,13 +260,18 @@
         overflow: hidden;
         text-decoration: none;
         color: inherit;
-        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        transition: transform var(--wf-motion-normal) ease, box-shadow var(--wf-motion-normal) ease, border-color var(--wf-motion-normal) ease;
     }
 
     .offers-store-card:hover {
         transform: translateY(-2px);
         border-color: rgba(24, 99, 57, 0.35);
         box-shadow: 0 16px 26px rgba(23, 74, 47, 0.18);
+    }
+
+    .offers-store-card:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.22), 0 16px 26px rgba(23, 74, 47, 0.18);
     }
 
     .offers-store-media {
@@ -310,7 +343,7 @@
     .offers-new-toast {
         position: fixed;
         right: 1rem;
-        bottom: calc(92px + env(safe-area-inset-bottom));
+        bottom: calc(226px + env(safe-area-inset-bottom));
         z-index: 1420;
         display: none;
         align-items: center;
@@ -370,13 +403,18 @@
         box-shadow: 0 10px 22px rgba(21, 49, 88, 0.1);
         overflow: hidden;
         cursor: pointer;
-        transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+        transition: transform var(--wf-motion-normal) ease, border-color var(--wf-motion-normal) ease, box-shadow var(--wf-motion-normal) ease;
     }
 
     .produto-card:hover {
         transform: translateY(-2px);
         border-color: rgba(46, 125, 50, 0.35);
         box-shadow: 0 14px 26px rgba(22, 74, 40, 0.16);
+    }
+
+    .produto-card:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.22), 0 14px 26px rgba(22, 74, 40, 0.16);
     }
 
     .produto-img-wrap {
@@ -538,7 +576,7 @@
         border-radius: 999px;
         background: rgba(247, 253, 255, 0.9);
         color: #194a82;
-        transition: all 0.2s ease;
+        transition: transform var(--wf-motion-normal) ease, box-shadow var(--wf-motion-normal) ease, border-color var(--wf-motion-normal) ease, background-color var(--wf-motion-normal) ease;
     }
 
     .action-primary,
@@ -565,6 +603,13 @@
     .action-side:hover {
         transform: translateY(-1px);
         border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .action-primary:focus-visible,
+    .action-secondary:focus-visible,
+    .action-side:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.22);
     }
 
     .card-side {
@@ -742,7 +787,7 @@
     @media (max-width: 840px) {
         .offers-new-toast {
             right: 0.75rem;
-            bottom: calc(84px + env(safe-area-inset-bottom));
+            bottom: calc(208px + env(safe-area-inset-bottom));
             padding: 0.4rem 0.64rem;
             font-size: 0.71rem;
             box-shadow: 0 10px 18px rgba(6, 24, 37, 0.26);
@@ -885,9 +930,9 @@
     <div class="skeleton-card"></div>
 </div>
 <div id="offersLoadMoreSentinel" style="height:2px;"></div>
-<div id="offersLoadMoreStatus" class="offers-count" style="margin-top:0.45rem;"></div>
+<div id="offersLoadMoreStatus" class="offers-count" style="margin-top:0.45rem;" role="status" aria-live="polite" aria-atomic="true"></div>
 
-<button id="offersNewToast" class="offers-new-toast" type="button" aria-label="Ver novas ofertas">
+<button id="offersNewToast" class="offers-new-toast" type="button" aria-label="Ver novas ofertas" aria-live="polite" aria-atomic="true" aria-hidden="true">
     <span class="material-icons">north</span>
     <span id="offersNewToastText">Novas ofertas disponíveis</span>
 </button>
@@ -1010,12 +1055,14 @@
         if (!toast || !text) return;
         text.textContent = message;
         toast.style.display = 'inline-flex';
+        toast.setAttribute('aria-hidden', 'false');
     }
 
     function hideOffersToast() {
         const toast = document.getElementById('offersNewToast');
         if (!toast) return;
         toast.style.display = 'none';
+        toast.setAttribute('aria-hidden', 'true');
     }
 
     function restartOffersAutoRefresh() {
@@ -1174,7 +1221,7 @@
         const bookmarked = isBookmarked(offer.id);
 
         return `
-            <article class="produto-card" data-offer-id="${offer.id}">
+            <article class="produto-card" data-offer-id="${offer.id}" tabindex="0" role="link" aria-label="Abrir detalhes da oferta ${escapeHtml(offer.product_name)}">
                 <div class="produto-img-wrap">
                     <img class="produto-img" src="${escapeHtml(getOfferImage(offer))}" alt="Imagem de ${escapeHtml(offer.product_name)}" onerror="this.onerror=null;this.src='${escapeHtml(getRealProductFallbackImage(offer.product_name, offer.category))}'">
                 </div>
@@ -1212,19 +1259,19 @@
                         <div class="mini-meta-grid">${metaCards}</div>
 
                         <div class="product-actions">
-                            <button class="action-primary" onclick="notifyProducer('${offer.id}', event)">Avisar</button>
-                            <button class="action-secondary" onclick="reserveOffer('${offer.id}', event)">Reservar</button>
+                            <button type="button" class="action-primary" aria-label="Avisar produtor da oferta ${escapeHtml(offer.product_name || 'produto')}" onclick="notifyProducer('${offer.id}', event)">Avisar</button>
+                            <button type="button" class="action-secondary" aria-label="Reservar oferta de ${escapeHtml(offer.product_name || 'produto')}" onclick="reserveOffer('${offer.id}', event)">Reservar</button>
                         </div>
                     </div>
 
                     <div class="card-side">
-                        <button class="action-side ${offer.is_favorited ? 'active-like' : ''}" title="Curtir" onclick="toggleLike('${offer.id}', event)">
+                        <button type="button" class="action-side ${offer.is_favorited ? 'active-like' : ''}" title="Curtir" aria-label="Curtir oferta ${escapeHtml(offer.product_name || 'produto')}" onclick="toggleLike('${offer.id}', event)">
                             <span class="material-symbols-outlined">favorite</span>
                         </button>
-                        <button class="action-side ${bookmarked ? 'active-bookmark' : ''}" title="Bookmark" onclick="toggleBookmark('${offer.id}', event)">
+                        <button type="button" class="action-side ${bookmarked ? 'active-bookmark' : ''}" title="Bookmark" aria-label="Salvar oferta ${escapeHtml(offer.product_name || 'produto')}" onclick="toggleBookmark('${offer.id}', event)">
                             <span class="material-symbols-outlined">bookmark</span>
                         </button>
-                        <button class="action-side" title="Chat" onclick="openChat('${offer.id}', event)">
+                        <button type="button" class="action-side" title="Chat" aria-label="Abrir chat sobre oferta ${escapeHtml(offer.product_name || 'produto')}" onclick="openChat('${offer.id}', event)">
                             <span class="material-symbols-outlined">chat</span>
                         </button>
                         <div class="open-tip">abrir detalhes</div>
@@ -1384,6 +1431,14 @@
                 const offerId = card.dataset.offerId;
                 if (!offerId) return;
 
+                window.location.href = `/offers/${offerId}`;
+            });
+
+            card.addEventListener('keydown', (event) => {
+                if (event.key !== 'Enter' && event.key !== ' ') return;
+                const offerId = card.dataset.offerId;
+                if (!offerId) return;
+                event.preventDefault();
                 window.location.href = `/offers/${offerId}`;
             });
         });

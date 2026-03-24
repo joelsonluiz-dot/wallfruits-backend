@@ -32,14 +32,42 @@
         font-weight: 600;
     }
 
+    .services-search-row {
+        margin-top: 0.64rem;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.45rem;
+    }
+
+    .services-search-wrap {
+        position: relative;
+    }
+
+    .services-search-wrap .material-icons {
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 18px;
+        color: #4d6f91;
+        pointer-events: none;
+    }
+
+    .services-search-input {
+        padding-left: 2rem !important;
+    }
+
     .services-category-chips {
         margin-top: 0.72rem;
         display: flex;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
+        overflow-x: auto;
         gap: 0.42rem;
+        padding-bottom: 0.12rem;
     }
 
     .services-category-chip {
+        flex: 0 0 auto;
         border: 1px solid rgba(23, 87, 58, 0.24);
         border-radius: 999px;
         background: #ffffff;
@@ -48,7 +76,18 @@
         font-weight: 800;
         padding: 0.34rem 0.62rem;
         cursor: pointer;
-        transition: all 0.18s ease;
+        transition: transform var(--wf-motion-fast) ease, box-shadow var(--wf-motion-fast) ease, border-color var(--wf-motion-fast) ease, background-color var(--wf-motion-fast) ease;
+    }
+
+    .services-category-chip:hover {
+        transform: translateY(-1px);
+        border-color: rgba(23, 87, 58, 0.42);
+        box-shadow: 0 8px 16px rgba(21, 77, 49, 0.14);
+    }
+
+    .services-category-chip:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.22), 0 8px 16px rgba(21, 77, 49, 0.14);
     }
 
     .services-category-chip.active {
@@ -56,6 +95,43 @@
         color: #fff;
         border-color: transparent;
         box-shadow: 0 8px 16px rgba(21, 77, 49, 0.22);
+    }
+
+    .services-active-filters {
+        margin-top: 0.55rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+    }
+
+    .services-filter-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.28rem;
+        border-radius: 999px;
+        border: 1px solid rgba(21, 82, 129, 0.22);
+        background: linear-gradient(135deg, rgba(242, 251, 255, 0.98), rgba(237, 248, 242, 0.98));
+        color: #1b4e83;
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 0.22rem 0.56rem;
+    }
+
+    .services-filter-chip button {
+        border: none;
+        background: transparent;
+        color: #2f638f;
+        font-size: 0.84rem;
+        line-height: 1;
+        padding: 0;
+        cursor: pointer;
+    }
+
+    .services-filter-chip.clear-all {
+        border-color: rgba(153, 53, 53, 0.24);
+        background: linear-gradient(135deg, rgba(255, 244, 244, 0.98), rgba(255, 236, 236, 0.98));
+        color: #a23333;
+        cursor: pointer;
     }
 
     .services-grid {
@@ -70,6 +146,11 @@
         gap: 0.65rem;
     }
 
+    .services-list > * {
+        content-visibility: auto;
+        contain-intrinsic-size: 190px;
+    }
+
     .service-card {
         border: 1px solid rgba(21, 84, 127, 0.18);
         border-radius: 14px;
@@ -77,13 +158,18 @@
         box-shadow: 0 10px 22px rgba(16, 56, 98, 0.12);
         overflow: hidden;
         cursor: pointer;
-        transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+        transition: transform var(--wf-motion-normal) ease, box-shadow var(--wf-motion-normal) ease, border-color var(--wf-motion-normal) ease;
     }
 
     .service-card:hover {
         transform: translateY(-2px);
         border-color: rgba(25, 103, 63, 0.34);
         box-shadow: 0 16px 28px rgba(21, 67, 48, 0.17);
+    }
+
+    .service-card:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.22), 0 16px 28px rgba(21, 67, 48, 0.17);
     }
 
     .service-card.active {
@@ -163,6 +249,18 @@
         font-size: 0.7rem;
         font-weight: 800;
         padding: 0.3rem 0.52rem;
+        transition: transform var(--wf-motion-normal) ease, box-shadow var(--wf-motion-normal) ease, border-color var(--wf-motion-normal) ease;
+    }
+
+    .service-open-tab-btn:hover {
+        transform: translateY(-1px);
+        border-color: rgba(24, 83, 130, 0.36);
+        box-shadow: 0 8px 16px rgba(22, 70, 108, 0.16);
+    }
+
+    .service-open-tab-btn:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.22), 0 8px 16px rgba(22, 70, 108, 0.16);
     }
 
     .service-detail {
@@ -192,7 +290,18 @@
         margin: 0;
         font-size: 1.03rem;
         font-weight: 900;
-        color: #1a4d7f;
+    }
+
+    .service-detail-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 18px rgba(20, 76, 47, 0.2);
+        filter: saturate(1.05);
+    }
+
+    .service-detail-btn:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.22), 0 10px 18px rgba(20, 76, 47, 0.2);
+        color: #fff;
     }
 
     .service-detail-text {
@@ -252,6 +361,7 @@
         font-weight: 800;
         padding: 0.75rem 0.9rem;
         width: 100%;
+        transition: transform var(--wf-motion-normal) ease, box-shadow var(--wf-motion-normal) ease, filter var(--wf-motion-normal) ease;
     }
 
     .service-detail-btn.secondary {
@@ -320,7 +430,14 @@
     <section class="services-hero">
         <h1>Serviços Agrícolas</h1>
         <p>Escolha um serviço para ver detalhes e solicitar atendimento especializado na sua região.</p>
+        <div class="services-search-row">
+            <div class="services-search-wrap">
+                <span class="material-icons">search</span>
+                <input id="servicesSearchInput" class="wf-input form-control services-search-input" type="text" placeholder="Buscar por serviço, descrição, local ou categoria">
+            </div>
+        </div>
         <div id="servicesCategoryChips" class="services-category-chips"></div>
+        <div id="servicesActiveFilters" class="services-active-filters"></div>
     </section>
 
     <section class="services-grid">
@@ -368,6 +485,8 @@
         let allServices = [];
         let officialCategories = [];
         let selectedCategory = 'Todas';
+        let servicesSearchTerm = '';
+        let servicesSearchDebounce = null;
 
         if (!listEl || !detailEl || !chipsEl) return;
 
@@ -381,10 +500,30 @@
             return String(value || '').trim().toLowerCase();
         }
 
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text ?? '';
+            return div.innerHTML;
+        }
+
         function filteredServices() {
-            if (selectedCategory === 'Todas') return allServices;
-            const target = normalizeCategory(selectedCategory);
-            return allServices.filter((service) => normalizeCategory(getServiceCategory(service)) === target);
+            const targetCategory = normalizeCategory(selectedCategory);
+            const targetSearch = normalizeCategory(servicesSearchTerm);
+
+            return allServices.filter((service) => {
+                const category = normalizeCategory(getServiceCategory(service));
+                const categoryMatches = selectedCategory === 'Todas' || category === targetCategory;
+                if (!categoryMatches) return false;
+
+                if (!targetSearch) return true;
+                const haystack = normalizeCategory([
+                    service?.titulo,
+                    service?.descricao,
+                    service?.local,
+                    getServiceCategory(service),
+                ].join(' '));
+                return haystack.includes(targetSearch);
+            });
         }
 
         function buildServiceDetailUrl(service) {
@@ -413,10 +552,68 @@
                 chip.addEventListener('click', () => {
                     selectedCategory = chip.getAttribute('data-category') || 'Todas';
                     renderCategoryChips();
+                    renderActiveFilterChips();
 
                     const filtered = filteredServices();
                     if (!filtered.length) {
                         renderError('Nenhum serviço encontrado para essa categoria.');
+                        return;
+                    }
+
+                    renderList(filtered, filtered[0].id);
+                    renderDetail(filtered[0]);
+                });
+            });
+        }
+
+        function renderActiveFilterChips() {
+            const chips = document.getElementById('servicesActiveFilters');
+            if (!chips) return;
+
+            const labels = [];
+            if (servicesSearchTerm) {
+                labels.push({ key: 'search', label: `Busca: ${escapeHtml(servicesSearchTerm)}` });
+            }
+            if (selectedCategory !== 'Todas') {
+                labels.push({ key: 'category', label: `Categoria: ${escapeHtml(selectedCategory)}` });
+            }
+
+            if (!labels.length) {
+                chips.innerHTML = '';
+                return;
+            }
+
+            labels.push({ key: 'clearAll', label: 'Limpar filtros' });
+
+            chips.innerHTML = labels.map((item) => `
+                <span class="services-filter-chip ${item.key === 'clearAll' ? 'clear-all' : ''}" data-services-chip="${item.key}">
+                    <span>${item.label}</span>
+                    ${item.key === 'clearAll' ? '' : '<button type="button" aria-label="Remover filtro">×</button>'}
+                </span>
+            `).join('');
+
+            chips.querySelectorAll('[data-services-chip]').forEach((chip) => {
+                chip.addEventListener('click', () => {
+                    const key = chip.getAttribute('data-services-chip');
+                    if (key === 'search') {
+                        servicesSearchTerm = '';
+                        const searchInput = document.getElementById('servicesSearchInput');
+                        if (searchInput) searchInput.value = '';
+                    } else if (key === 'category') {
+                        selectedCategory = 'Todas';
+                    } else if (key === 'clearAll') {
+                        servicesSearchTerm = '';
+                        selectedCategory = 'Todas';
+                        const searchInput = document.getElementById('servicesSearchInput');
+                        if (searchInput) searchInput.value = '';
+                    }
+
+                    renderCategoryChips();
+                    renderActiveFilterChips();
+
+                    const filtered = filteredServices();
+                    if (!filtered.length) {
+                        renderError('Nenhum serviço encontrado para os filtros selecionados.');
                         return;
                     }
 
@@ -459,13 +656,18 @@
 
         function renderDetail(service) {
             const chatUrl = buildServiceChatUrl(service);
+            const serviceTitle = escapeHtml(service.titulo || 'Serviço');
+            const serviceDesc = escapeHtml(service.descricao || '');
+            const serviceLocal = escapeHtml(service.local || 'Local não informado');
+            const servicePrice = escapeHtml(service.preco || 'Sob consulta');
+            const serviceImage = escapeHtml(service.imagem || '/static/icon.svg');
             detailEl.innerHTML = `
-                <img class="service-detail-cover" src="${service.imagem}" alt="${service.titulo}">
+                <img class="service-detail-cover" src="${serviceImage}" alt="${serviceTitle}" onerror="this.onerror=null; this.src='/static/icon.svg';">
                 <div class="service-detail-body">
-                    <h2 class="service-detail-title">${service.titulo}</h2>
-                    <p class="service-detail-text">${service.descricao}</p>
-                    <p class="service-detail-location">📍 ${service.local}</p>
-                    <p class="service-detail-price">${service.preco}</p>
+                    <h2 class="service-detail-title">${serviceTitle}</h2>
+                    <p class="service-detail-text">${serviceDesc}</p>
+                    <p class="service-detail-location">📍 ${serviceLocal}</p>
+                    <p class="service-detail-price">${servicePrice}</p>
                     ${renderTech(service)}
                     ${chatUrl ? `<a href="${chatUrl}" class="service-detail-btn">Solicitar orçamento no bate-papo</a>` : '<div class="service-empty">Este serviço ainda não possui divulgador definido para conversar.</div>'}
                     <a href="${buildServiceDetailUrl(service)}" target="_blank" rel="noopener" class="service-detail-btn secondary">Abrir detalhes completos em outra aba</a>
@@ -475,17 +677,17 @@
 
         function renderList(services, activeId) {
             listEl.innerHTML = services.map((service) => `
-                <article class="service-card ${service.id === activeId ? 'active' : ''}" data-service-id="${service.id}">
+                <article class="service-card ${service.id === activeId ? 'active' : ''}" data-service-id="${escapeHtml(String(service.id))}" tabindex="0" role="link" aria-label="Abrir detalhes do serviço ${escapeHtml(service.titulo || 'Serviço')}">
                     <div class="service-card-inner">
                         <div class="service-thumb">
-                            <img src="${service.imagem}" alt="${service.titulo}">
+                            <img src="${escapeHtml(service.imagem || '/static/icon.svg')}" alt="${escapeHtml(service.titulo || 'Serviço')}" onerror="this.onerror=null; this.src='/static/icon.svg';">
                         </div>
                         <div>
-                            <h3 class="service-title">${service.titulo}</h3>
-                            <p class="service-desc">${service.descricao}</p>
+                            <h3 class="service-title">${escapeHtml(service.titulo || 'Serviço')}</h3>
+                            <p class="service-desc">${escapeHtml(service.descricao || '')}</p>
                             <div class="service-meta">
-                                <span class="service-location">${service.local}</span>
-                                <span class="service-price">${service.preco}</span>
+                                <span class="service-location">${escapeHtml(service.local || 'Local não informado')}</span>
+                                <span class="service-price">${escapeHtml(service.preco || 'Sob consulta')}</span>
                             </div>
                             <div class="service-card-actions">
                                 <a href="${buildServiceDetailUrl(service)}" target="_blank" rel="noopener" class="service-open-tab-btn" onclick="event.stopPropagation()">Abrir detalhes</a>
@@ -498,8 +700,19 @@
             listEl.querySelectorAll('.service-card').forEach((card) => {
                 card.addEventListener('click', () => {
                     const serviceId = card.getAttribute('data-service-id');
-                    const selected = services.find((item) => item.id === serviceId);
+                    const selected = services.find((item) => String(item.id) === String(serviceId));
                     if (!selected) return;
+                    window.location.href = buildServiceDetailUrl(selected);
+                });
+
+                card.addEventListener('keydown', (event) => {
+                    if (event.key !== 'Enter' && event.key !== ' ') return;
+                    const target = event.target instanceof Element ? event.target : null;
+                    if (target && target.closest('a, button, input, textarea, select')) return;
+                    const serviceId = card.getAttribute('data-service-id');
+                    const selected = services.find((item) => String(item.id) === String(serviceId));
+                    if (!selected) return;
+                    event.preventDefault();
                     window.location.href = buildServiceDetailUrl(selected);
                 });
             });
@@ -520,6 +733,41 @@
         async function loadServices() {
             renderLoading();
 
+            const searchInput = document.getElementById('servicesSearchInput');
+            if (searchInput && !searchInput.dataset.bound) {
+                searchInput.dataset.bound = '1';
+
+                const applyServicesSearch = () => {
+                    servicesSearchTerm = (searchInput.value || '').trim();
+                    renderActiveFilterChips();
+                    const filtered = filteredServices();
+                    if (!filtered.length) {
+                        renderError('Nenhum serviço encontrado para os filtros selecionados.');
+                        return;
+                    }
+                    renderList(filtered, filtered[0].id);
+                    renderDetail(filtered[0]);
+                };
+
+                searchInput.addEventListener('input', () => {
+                    if (servicesSearchDebounce) {
+                        window.clearTimeout(servicesSearchDebounce);
+                    }
+                    servicesSearchDebounce = window.setTimeout(() => {
+                        applyServicesSearch();
+                    }, 220);
+                });
+
+                searchInput.addEventListener('keydown', (event) => {
+                    if (event.key !== 'Enter') return;
+                    event.preventDefault();
+                    if (servicesSearchDebounce) {
+                        window.clearTimeout(servicesSearchDebounce);
+                    }
+                    applyServicesSearch();
+                });
+            }
+
             try {
                 const [servicesData, categoriesData] = await Promise.all([
                     apiRequest('/services'),
@@ -538,6 +786,7 @@
                 allServices = services;
                 selectedCategory = 'Todas';
                 renderCategoryChips();
+                renderActiveFilterChips();
                 renderList(allServices, allServices[0].id);
                 renderDetail(allServices[0]);
             } catch {
@@ -550,6 +799,7 @@
                 officialCategories = [];
                 selectedCategory = 'Todas';
                 renderCategoryChips();
+                renderActiveFilterChips();
                 renderList(allServices, allServices[0].id);
                 renderDetail(allServices[0]);
             }

@@ -10,6 +10,13 @@ from app.auth.jwt_handler import decode_token
 security = HTTPBearer(auto_error=False)
 
 
+def _normalize_email(email: str | None) -> str | None:
+    if not isinstance(email, str):
+        return None
+    normalized = email.strip().lower()
+    return normalized or None
+
+
 def _resolve_user_from_payload(db: Session, payload: dict) -> Optional[User]:
     user_id = payload.get("user_id")
     if user_id:
@@ -22,8 +29,9 @@ def _resolve_user_from_payload(db: Session, payload: dict) -> Optional[User]:
             return user
 
     email = payload.get("email")
-    if email:
-        return db.query(User).filter(User.email == email).first()
+    normalized_email = _normalize_email(email)
+    if normalized_email:
+        return db.query(User).filter(User.email == normalized_email).first()
 
     return None
 

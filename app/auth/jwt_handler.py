@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+from uuid import uuid4
 from jose import jwt, JWTError
 from fastapi import HTTPException, status
 import logging
@@ -26,16 +27,25 @@ def create_access_token(data: dict, expires_delta: int | None = None) -> str:
     """
     try:
         to_encode = data.copy()
+        now = datetime.now(timezone.utc)
         
         # Definir tempo de expiração
         if expires_delta:
-            expire = datetime.now(timezone.utc) + timedelta(minutes=expires_delta)
+            expire = now + timedelta(minutes=expires_delta)
         else:
-            expire = datetime.now(timezone.utc) + timedelta(
+            expire = now + timedelta(
                 minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
             )
         
-        to_encode.update({"exp": expire})
+        to_encode.update(
+            {
+                "exp": expire,
+                "iat": now,
+                "nbf": now,
+                "jti": uuid4().hex,
+                "token_type": "access",
+            }
+        )
         
         # Codificar token
         encoded_jwt = jwt.encode(
@@ -79,6 +89,14 @@ def decode_token(token: str) -> dict:
         if user_id is None:
             raise JWTError("payload sem user_id")
 
+        token_type = payload.get("token_type")
+        if token_type and token_type != "access":
+            raise JWTError("token_type invalido")
+
+        email = payload.get("email")
+        if isinstance(email, str) and email.strip():
+            payload["email"] = email.strip().lower()
+
         return payload
     except JWTError as e:
         logger.debug(f"Token local invalido, tentando Supabase: {e}")
@@ -97,8 +115,9 @@ def decode_token(token: str) -> dict:
 
             return {
                 "supabase_user_id": supabase_user_id,
-                "email": email,
+                "email": str(email).strip().lower(),
                 "role": metadata.get("role"),
+                "token_type": "access",
             }
         except SupabaseAuthError as e:
             logger.warning(f"Token Supabase invalido: {e.message}")

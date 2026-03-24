@@ -3,6 +3,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.responses import RedirectResponse
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
+from datetime import datetime, timezone
 import logging
 
 from app.core.config import settings
@@ -39,12 +40,25 @@ router = APIRouter(
 
 logger = logging.getLogger("wallfruits_api")
 bearer_security = HTTPBearer(auto_error=False)
+INVALID_CREDENTIALS_MESSAGE = "Credenciais inválidas"
 
 
 def _normalize_role(role: str | None) -> str:
     if role in {"buyer", "producer", "supplier", "admin"}:
         return role
     return "buyer"
+
+
+def _normalize_email(email: str) -> str:
+    return (email or "").strip().lower()
+
+
+def _deactivate_existing_tokens(db: Session, user_id: int, token_type: str) -> None:
+    db.query(AuthToken).filter(
+        AuthToken.user_id == user_id,
+        AuthToken.token_type == token_type,
+        AuthToken.used.is_(False),
+    ).update({"used": True}, synchronize_session=False)
 
 
 def _login_response(db_user: User, access_token: str) -> dict:
@@ -59,6 +73,16 @@ def _login_response(db_user: User, access_token: str) -> dict:
             "profile_image": db_user.profile_image,
         }
     }
+
+
+def _touch_last_login(db: Session, db_user: User) -> None:
+    try:
+        db_user.last_login = datetime.now(timezone.utc)
+        db.commit()
+        db.refresh(db_user)
+    except SQLAlchemyError as exc:
+        db.rollback()
+        logger.warning("Falha ao atualizar last_login user_id=%s: %s", db_user.id, exc)
 
 
 def _get_or_create_local_user_from_supabase(
@@ -179,7 +203,7 @@ def exchange_supabase_token(
         raise HTTPException(status_code, exc.message)
 
     supabase_user_id = supabase_user.get("id")
-    email = supabase_user.get("email")
+    email = _normalize_email(supabase_user.get("email") or "")
     metadata = supabase_user.get("user_metadata") or {}
 
     if not supabase_user_id or not email:
@@ -211,9 +235,10 @@ def exchange_supabase_token(
 @router.post("/register", response_model=UserResponse)
 def register_user(user: UserCreate, db: Session = Depends(get_db)):
     ensure_auth_schema_ready()
+    normalized_email = _normalize_email(str(user.email))
 
     try:
-        existing_user = db.query(User.id).filter(User.email == user.email).first()
+        existing_user = db.query(User.id).filter(User.email == normalized_email).first()
     except SQLAlchemyError as e:
         logger.error(f"Erro ao consultar email existente: {e}", exc_info=True)
         raise HTTPException(500, "Erro ao validar email no banco")
@@ -228,7 +253,7 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
     if supabase_auth_enabled() and (settings.SUPABASE_ANON_KEY.strip() or settings.SUPABASE_SERVICE_ROLE_KEY.strip()):
         try:
             supabase_user = create_user_with_password(
-                email=user.email,
+                email=normalized_email,
                 password=user.password,
                 user_metadata={
                     "name": user.name,
@@ -250,7 +275,7 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
 
     new_user = User(
         name=user.name,
-        email=user.email,
+        email=normalized_email,
         password=hashed_password,
         supabase_user_id=supabase_user_id,
         role=user.role,
@@ -318,12 +343,13 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
 @router.post("/login")
 def login(user: UserLogin, db: Session = Depends(get_db)):
     ensure_auth_schema_ready()
+    normalized_email = _normalize_email(str(user.email))
 
     should_try_local_login = True
 
     if supabase_password_auth_enabled():
         try:
-            auth_data = sign_in_with_password(user.email, user.password)
+            auth_data = sign_in_with_password(normalized_email, user.password)
         except SupabaseAuthError as exc:
             if exc.status_code in {400, 401, 422}:
                 # Fallback: permite login de usuários locais (ex.: admin bootstrap)
@@ -336,7 +362,7 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
             access_token = auth_data.get("access_token")
             supabase_user = auth_data.get("user") or {}
             supabase_user_id = supabase_user.get("id")
-            email = supabase_user.get("email") or user.email
+            email = _normalize_email(supabase_user.get("email") or normalized_email)
             metadata = supabase_user.get("user_metadata") or {}
 
             if not access_token or not supabase_user_id or not email:
@@ -359,25 +385,29 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
             if not db_user.is_active:
                 raise HTTPException(403, "Conta desativada")
 
+            _touch_last_login(db, db_user)
+
             return _login_response(db_user, access_token)
 
     if not should_try_local_login:
-        raise HTTPException(401, "Credenciais inválidas")
+        raise HTTPException(401, INVALID_CREDENTIALS_MESSAGE)
 
     try:
-        db_user = db.query(User).filter(User.email == user.email).first()
+        db_user = db.query(User).filter(User.email == normalized_email).first()
     except SQLAlchemyError as e:
         logger.error(f"Erro ao consultar usuario para login: {e}", exc_info=True)
         raise HTTPException(500, "Erro ao consultar usuário no banco")
 
     if not db_user:
-        raise HTTPException(401, "Credenciais inválidas")
+        raise HTTPException(401, INVALID_CREDENTIALS_MESSAGE)
 
     if not verify_password(user.password, db_user.password):
-        raise HTTPException(401, "Credenciais inválidas")
+        raise HTTPException(401, INVALID_CREDENTIALS_MESSAGE)
 
     if not db_user.is_active:
         raise HTTPException(403, "Conta desativada")
+
+    _touch_last_login(db, db_user)
 
     token = create_access_token({
         "user_id": db_user.id,
@@ -479,6 +509,9 @@ def change_password(
     if len(resolved_new_password) < 6:
         raise HTTPException(400, "Nova senha deve ter pelo menos 6 caracteres")
 
+    if verify_password(resolved_new_password, current_user.password):
+        raise HTTPException(400, "Nova senha deve ser diferente da atual")
+
     if supabase_auth_enabled() and credentials:
         try:
             update_supabase_password(credentials.credentials, resolved_new_password)
@@ -491,7 +524,12 @@ def change_password(
             raise HTTPException(400, "Senha atual incorreta")
 
     current_user.password = hash_password(resolved_new_password)
-    db.commit()
+    try:
+        db.commit()
+    except SQLAlchemyError as exc:
+        db.rollback()
+        logger.error("Erro ao persistir troca de senha local: %s", exc, exc_info=True)
+        raise HTTPException(500, "Erro ao atualizar senha")
 
     return {"message": "Senha alterada com sucesso"}
 
@@ -503,16 +541,26 @@ def change_password(
 def forgot_password(email: str = Body(..., embed=True), db: Session = Depends(get_db)):
     """Envia link de reset de senha por e-mail."""
     # Sempre retorna 200 para não revelar se o e-mail existe (segurança)
-    user = db.query(User).filter(User.email == email, User.is_active.is_(True)).first()
+    normalized_email = _normalize_email(email)
+    user = db.query(User).filter(User.email == normalized_email, User.is_active.is_(True)).first()
     if not user:
         return {"message": "Se o e-mail estiver cadastrado, você receberá as instruções."}
 
-    token_obj = AuthToken.new_reset(user.id)
-    db.add(token_obj)
-    db.commit()
+    try:
+        _deactivate_existing_tokens(db, user.id, "password_reset")
+        token_obj = AuthToken.new_reset(user.id)
+        db.add(token_obj)
+        db.commit()
+    except SQLAlchemyError as exc:
+        db.rollback()
+        logger.error("Erro ao gerar token de reset: %s", exc, exc_info=True)
+        return {"message": "Se o e-mail estiver cadastrado, você receberá as instruções."}
 
     reset_url = f"{settings.FRONTEND_URL}/reset-password?token={token_obj.token}"
-    send_password_reset_email(to=user.email, name=user.name, reset_url=reset_url)
+    try:
+        send_password_reset_email(to=user.email, name=user.name, reset_url=reset_url)
+    except Exception as exc:
+        logger.warning("Falha ao enviar e-mail de reset para user_id=%s: %s", user.id, exc)
 
     return {"message": "Se o e-mail estiver cadastrado, você receberá as instruções."}
 
@@ -539,9 +587,19 @@ def reset_password(
     if not user:
         raise HTTPException(404, "Usuário não encontrado.")
 
+    if verify_password(new_password, user.password):
+        raise HTTPException(400, "A nova senha deve ser diferente da atual.")
+
     user.password = hash_password(new_password)
     token_obj.used = True
-    db.commit()
+
+    try:
+        _deactivate_existing_tokens(db, user.id, "password_reset")
+        db.commit()
+    except SQLAlchemyError as exc:
+        db.rollback()
+        logger.error("Erro ao redefinir senha para user_id=%s: %s", user.id, exc, exc_info=True)
+        raise HTTPException(500, "Erro ao redefinir senha")
 
     return {"message": "Senha redefinida com sucesso. Faça login com a nova senha."}
 
@@ -558,12 +616,21 @@ def send_verification_email(
     if current_user.is_verified:
         return {"message": "E-mail já verificado."}
 
-    token_obj = AuthToken.new_verify(current_user.id)
-    db.add(token_obj)
-    db.commit()
+    try:
+        _deactivate_existing_tokens(db, current_user.id, "email_verify")
+        token_obj = AuthToken.new_verify(current_user.id)
+        db.add(token_obj)
+        db.commit()
+    except SQLAlchemyError as exc:
+        db.rollback()
+        logger.error("Erro ao gerar token de verificação para user_id=%s: %s", current_user.id, exc, exc_info=True)
+        raise HTTPException(500, "Erro ao gerar token de verificação")
 
     verify_url = f"{settings.FRONTEND_URL}/verify-email?token={token_obj.token}"
-    send_email_verification(to=current_user.email, name=current_user.name, verify_url=verify_url)
+    try:
+        send_email_verification(to=current_user.email, name=current_user.name, verify_url=verify_url)
+    except Exception as exc:
+        logger.warning("Falha ao enviar e-mail de verificação para user_id=%s: %s", current_user.id, exc)
 
     return {"message": "E-mail de verificação enviado."}
 
@@ -585,6 +652,13 @@ def verify_email(token: str, db: Session = Depends(get_db)):
 
     user.is_verified = True
     token_obj.used = True
-    db.commit()
+
+    try:
+        _deactivate_existing_tokens(db, user.id, "email_verify")
+        db.commit()
+    except SQLAlchemyError as exc:
+        db.rollback()
+        logger.error("Erro ao confirmar e-mail para user_id=%s: %s", user.id, exc, exc_info=True)
+        raise HTTPException(500, "Erro ao confirmar e-mail")
 
     return {"message": "E-mail verificado com sucesso."}

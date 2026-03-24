@@ -39,7 +39,11 @@ class AuthToken(Base):
         )
 
     def is_valid(self) -> bool:
+        expires_at = self.expires_at
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+
         return (
             not self.used
-            and datetime.now(timezone.utc) < self.expires_at.replace(tzinfo=timezone.utc)
+            and datetime.now(timezone.utc) < expires_at
         )

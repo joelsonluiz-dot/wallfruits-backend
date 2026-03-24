@@ -52,6 +52,18 @@
         align-items: center;
         gap: 0.28rem;
         cursor: pointer;
+        transition: transform var(--wf-motion-normal) ease, box-shadow var(--wf-motion-normal) ease, border-color var(--wf-motion-normal) ease;
+    }
+
+    .community-refresh-btn:hover {
+        transform: translateY(-1px);
+        border-color: rgba(0, 212, 170, 0.42);
+        box-shadow: 0 8px 16px rgba(0, 140, 110, 0.2);
+    }
+
+    .community-refresh-btn:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.22), 0 8px 16px rgba(0, 140, 110, 0.2);
     }
 
     .community-refresh-btn.is-paused {
@@ -107,6 +119,17 @@
         font-size: 0.8rem;
         font-weight: 800;
         cursor: pointer;
+        transition: transform var(--wf-motion-normal) ease, box-shadow var(--wf-motion-normal) ease, border-color var(--wf-motion-normal) ease;
+    }
+
+    .community-upload:hover {
+        transform: translateY(-1px);
+        border-color: rgba(46, 125, 50, 0.44);
+        box-shadow: 0 8px 16px rgba(34, 95, 41, 0.16);
+    }
+
+    .community-upload:focus-within {
+        box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.22), 0 8px 16px rgba(34, 95, 41, 0.16);
     }
 
     .community-upload input {
@@ -124,6 +147,18 @@
         display: inline-flex;
         gap: 0.28rem;
         align-items: center;
+        transition: transform var(--wf-motion-normal) ease, box-shadow var(--wf-motion-normal) ease, filter var(--wf-motion-normal) ease;
+    }
+
+    .community-send-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 18px rgba(22, 86, 30, 0.24);
+        filter: saturate(1.05);
+    }
+
+    .community-send-btn:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.22), 0 10px 18px rgba(22, 86, 30, 0.24);
     }
 
     .community-preview {
@@ -152,6 +187,11 @@
     .community-feed {
         display: grid;
         gap: 0.65rem;
+    }
+
+    .community-feed > * {
+        content-visibility: auto;
+        contain-intrinsic-size: 240px;
     }
 
     .community-feed-status {
@@ -202,7 +242,7 @@
     .post-card.feed-enter.is-in {
         opacity: 1;
         transform: translateY(0);
-        transition: opacity 0.2s ease, transform 0.2s ease;
+        transition: opacity var(--wf-motion-normal) ease, transform var(--wf-motion-normal) ease;
     }
 
     .post-main {
@@ -210,6 +250,7 @@
         grid-template-columns: auto 1fr;
         gap: 0.65rem;
         padding: 0.72rem;
+        position: relative;
     }
 
     .post-avatar {
@@ -234,6 +275,83 @@
         align-items: center;
         gap: 0.4rem;
         flex-wrap: wrap;
+    }
+
+    .post-admin-menu {
+        margin-left: auto;
+        position: relative;
+    }
+
+    .post-admin-trigger {
+        border: 1px solid rgba(11, 46, 99, 0.16);
+        background: #f4f9ff;
+        color: #1f4b85;
+        border-radius: 10px;
+        width: 30px;
+        height: 30px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: transform var(--wf-motion-normal) ease, box-shadow var(--wf-motion-normal) ease, border-color var(--wf-motion-normal) ease;
+    }
+
+    .post-admin-trigger:hover {
+        transform: translateY(-1px);
+        border-color: rgba(11, 46, 99, 0.34);
+        box-shadow: 0 8px 16px rgba(16, 44, 90, 0.14);
+    }
+
+    .post-admin-trigger:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.22), 0 8px 16px rgba(16, 44, 90, 0.14);
+    }
+
+    .post-admin-trigger .material-icons {
+        font-size: 1.04rem;
+    }
+
+    .post-admin-pop {
+        position: absolute;
+        right: 0;
+        top: calc(100% + 0.3rem);
+        z-index: 5;
+        min-width: 170px;
+        border: 1px solid rgba(11, 46, 99, 0.16);
+        border-radius: 10px;
+        background: #ffffff;
+        box-shadow: 0 10px 22px rgba(16, 44, 90, 0.16);
+        padding: 0.3rem;
+        display: none;
+    }
+
+    .post-admin-menu.is-open .post-admin-pop {
+        display: grid;
+        gap: 0.24rem;
+    }
+
+    .post-admin-item {
+        border: 1px solid rgba(176, 46, 65, 0.22);
+        background: #fff6f7;
+        color: #8f2437;
+        border-radius: 8px;
+        font-size: 0.68rem;
+        font-weight: 800;
+        padding: 0.36rem 0.44rem;
+        text-align: left;
+        transition: transform var(--wf-motion-normal) ease, box-shadow var(--wf-motion-normal) ease, border-color var(--wf-motion-normal) ease, background-color var(--wf-motion-normal) ease;
+    }
+
+    .post-admin-item:hover {
+        transform: translateY(-1px);
+        border-color: rgba(176, 46, 65, 0.42);
+        background: #ffeef0;
+        box-shadow: 0 8px 14px rgba(131, 33, 49, 0.14);
+    }
+
+    .post-admin-item:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(176, 46, 65, 0.2), 0 8px 14px rgba(131, 33, 49, 0.14);
     }
 
     .post-user {
@@ -315,6 +433,16 @@
         gap: 0.2rem;
         cursor: pointer;
         min-height: 34px;
+        transition: transform var(--wf-motion-normal) ease, box-shadow var(--wf-motion-normal) ease, border-color var(--wf-motion-normal) ease;
+    }
+
+    .post-action-btn:hover {
+        transform: translateY(-1px);
+    }
+
+    .post-action-btn:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.22);
     }
 
     .post-action-btn .material-icons {
@@ -412,6 +540,12 @@
         background: #fff;
     }
 
+    .post-comment-input:focus {
+        outline: none;
+        border-color: rgba(46, 125, 50, 0.56);
+        box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.16);
+    }
+
     .post-comment-send {
         border: none;
         border-radius: 999px;
@@ -421,6 +555,18 @@
         font-weight: 800;
         padding: 0.4rem 0.68rem;
         min-height: 34px;
+        transition: transform var(--wf-motion-normal) ease, box-shadow var(--wf-motion-normal) ease, filter var(--wf-motion-normal) ease;
+    }
+
+    .post-comment-send:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 18px rgba(22, 86, 30, 0.22);
+        filter: saturate(1.05);
+    }
+
+    .post-comment-send:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.22), 0 10px 18px rgba(22, 86, 30, 0.22);
     }
 
     .img-modal {
@@ -455,7 +601,7 @@
     .community-toast {
         position: fixed;
         right: 1rem;
-        bottom: calc(92px + env(safe-area-inset-bottom));
+        bottom: calc(226px + env(safe-area-inset-bottom));
         z-index: 1420;
         display: none;
         align-items: center;
@@ -498,7 +644,7 @@
 
         .community-toast {
             right: 0.75rem;
-            bottom: calc(84px + env(safe-area-inset-bottom));
+            bottom: calc(208px + env(safe-area-inset-bottom));
             padding: 0.4rem 0.64rem;
             font-size: 0.71rem;
             box-shadow: 0 10px 18px rgba(6, 24, 37, 0.26);
@@ -612,14 +758,14 @@
 
     <section id="communityFeed" class="community-feed" aria-live="polite"></section>
     <div id="communityFeedSentinel" style="height:2px;"></div>
-    <div id="communityFeedStatus" class="community-feed-status"></div>
+    <div id="communityFeedStatus" class="community-feed-status" role="status" aria-live="polite" aria-atomic="true"></div>
 </div>
 
 <div id="communityImgModal" class="img-modal" role="dialog" aria-modal="true" aria-label="Imagem ampliada">
     <img id="communityModalImg" alt="Imagem do post em tamanho ampliado">
 </div>
 
-<button id="communityToast" class="community-toast" type="button" aria-label="Ver novos posts">
+<button id="communityToast" class="community-toast" type="button" aria-label="Ver novos posts" aria-live="polite" aria-atomic="true" aria-hidden="true">
     <span class="material-icons">north</span>
     <span id="communityToastText">Novos posts disponíveis</span>
 </button>
@@ -678,12 +824,14 @@
             if (!toast || !text) return;
             text.textContent = message;
             toast.style.display = 'inline-flex';
+            toast.setAttribute('aria-hidden', 'false');
         }
 
         function hideCommunityToast() {
             const toast = document.getElementById('communityToast');
             if (!toast) return;
             toast.style.display = 'none';
+            toast.setAttribute('aria-hidden', 'true');
         }
 
         function renderCommunityRefreshControls() {
@@ -1212,6 +1360,18 @@
                                     <a class="post-user-link" href="${escapeHtml(profileUrlByUserId(post.author?.id || 0))}" onclick="event.stopPropagation()"><span class="post-user">${escapeHtml(post.author?.name || 'Produtor Rural')}</span></a>
                                     <span class="post-badge">${escapeHtml(post.author?.role || 'Membro')}</span>
                                     <span class="post-date">${escapeHtml(fmtDate(post.created_at))}</span>
+                                    ${isAdmin ? `
+                                        <div class="post-admin-menu" data-admin-menu="${escapeHtml(post.id)}">
+                                            <button class="post-admin-trigger" type="button" data-admin-toggle="${escapeHtml(post.id)}" aria-label="Ações de moderação" aria-haspopup="menu" aria-expanded="false">
+                                                <span class="material-icons">more_vert</span>
+                                            </button>
+                                            <div class="post-admin-pop" data-admin-pop="${escapeHtml(post.id)}" role="menu" aria-label="Ações de moderação">
+                                                <button class="post-admin-item" type="button" role="menuitem" data-mod-hide-post="${escapeHtml(post.id)}">Ocultar post</button>
+                                                <button class="post-admin-item" type="button" role="menuitem" data-mod-remove-post="${escapeHtml(post.id)}">Excluir post</button>
+                                                <button class="post-admin-item" type="button" role="menuitem" data-mod-block-post-user="${escapeHtml(post.author?.id || 0)}">Bloquear autor</button>
+                                            </div>
+                                        </div>
+                                    ` : ''}
                                 </div>
 
                                 <p class="post-text">${escapeHtml(post.content || '')}</p>
@@ -1235,20 +1395,6 @@
                                         <span class="material-icons">share</span>
                                         <span>${Number(post.shares_count || 0)}</span>
                                     </button>
-                                    ${isAdmin ? `
-                                        <button class="post-action-btn moderation" type="button" data-mod-hide-post="${escapeHtml(post.id)}">
-                                            <span class="material-icons">visibility_off</span>
-                                            <span>Ocultar</span>
-                                        </button>
-                                        <button class="post-action-btn moderation" type="button" data-mod-remove-post="${escapeHtml(post.id)}">
-                                            <span class="material-icons">delete</span>
-                                            <span>Remover</span>
-                                        </button>
-                                        <button class="post-action-btn moderation" type="button" data-mod-block-post-user="${escapeHtml(post.author?.id || 0)}">
-                                            <span class="material-icons">block</span>
-                                            <span>Bloquear</span>
-                                        </button>
-                                    ` : ''}
                                 </div>
 
                                 <div class="post-comments" data-comments-wrap="${escapeHtml(post.id)}">
@@ -1272,73 +1418,127 @@
         }
 
         function bindPostActions() {
-            document.querySelectorAll('[data-like-post]').forEach((button) => {
-                button.addEventListener('click', () => {
-                    const postId = Number(button.getAttribute('data-like-post'));
+            function closePostAdminMenus() {
+                document.querySelectorAll('[data-admin-menu]').forEach((menu) => {
+                    menu.classList.remove('is-open');
+                    const trigger = menu.querySelector('[data-admin-toggle]');
+                    if (trigger) {
+                        trigger.setAttribute('aria-expanded', 'false');
+                    }
+                });
+            }
+
+            if (!document.body.dataset.communityAdminMenuBound) {
+                document.body.dataset.communityAdminMenuBound = '1';
+                document.addEventListener('click', () => {
+                    closePostAdminMenus();
+                });
+                document.addEventListener('keydown', (event) => {
+                    if (event.key === 'Escape') {
+                        closePostAdminMenus();
+                    }
+                });
+            }
+
+            if (!feed || feed.dataset.communityDelegated === '1') {
+                return;
+            }
+
+            feed.dataset.communityDelegated = '1';
+
+            feed.addEventListener('click', (event) => {
+                const target = event.target instanceof Element ? event.target : null;
+                if (!target) return;
+
+                if (target.closest('[data-admin-pop]')) {
+                    event.stopPropagation();
+                }
+
+                const adminToggle = target.closest('[data-admin-toggle]');
+                if (adminToggle) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    const menu = adminToggle.closest('[data-admin-menu]');
+                    if (!menu) return;
+                    const shouldOpen = !menu.classList.contains('is-open');
+                    closePostAdminMenus();
+                    if (shouldOpen) {
+                        menu.classList.add('is-open');
+                        adminToggle.setAttribute('aria-expanded', 'true');
+                    }
+                    return;
+                }
+
+                const likeButton = target.closest('[data-like-post]');
+                if (likeButton) {
+                    const postId = Number(likeButton.getAttribute('data-like-post'));
                     toggleLike(postId);
-                });
-            });
+                    return;
+                }
 
-            document.querySelectorAll('[data-share-post]').forEach((button) => {
-                button.addEventListener('click', () => {
-                    const postId = Number(button.getAttribute('data-share-post'));
+                const shareButton = target.closest('[data-share-post]');
+                if (shareButton) {
+                    const postId = Number(shareButton.getAttribute('data-share-post'));
                     sharePost(postId);
-                });
-            });
+                    return;
+                }
 
-            document.querySelectorAll('[data-mod-hide-post]').forEach((button) => {
-                button.addEventListener('click', () => {
-                    const postId = Number(button.getAttribute('data-mod-hide-post'));
+                const hidePostButton = target.closest('[data-mod-hide-post]');
+                if (hidePostButton) {
+                    const postId = Number(hidePostButton.getAttribute('data-mod-hide-post'));
                     moderateHidePost(postId);
-                });
-            });
+                    return;
+                }
 
-            document.querySelectorAll('[data-mod-remove-post]').forEach((button) => {
-                button.addEventListener('click', () => {
-                    const postId = Number(button.getAttribute('data-mod-remove-post'));
+                const removePostButton = target.closest('[data-mod-remove-post]');
+                if (removePostButton) {
+                    const postId = Number(removePostButton.getAttribute('data-mod-remove-post'));
                     moderateRemovePost(postId);
-                });
-            });
+                    return;
+                }
 
-            document.querySelectorAll('[data-mod-block-post-user]').forEach((button) => {
-                button.addEventListener('click', () => {
-                    const userId = Number(button.getAttribute('data-mod-block-post-user'));
+                const blockUserButton = target.closest('[data-mod-block-post-user]');
+                if (blockUserButton) {
+                    const userId = Number(blockUserButton.getAttribute('data-mod-block-post-user'));
                     moderateBlockUser(userId);
-                });
-            });
+                    return;
+                }
 
-            document.querySelectorAll('[data-toggle-comments]').forEach((button) => {
-                button.addEventListener('click', () => {
-                    const postId = Number(button.getAttribute('data-toggle-comments'));
+                const toggleCommentsButton = target.closest('[data-toggle-comments]');
+                if (toggleCommentsButton) {
+                    const postId = Number(toggleCommentsButton.getAttribute('data-toggle-comments'));
                     toggleComments(postId);
-                });
-            });
+                    return;
+                }
 
-            document.querySelectorAll('[data-comment-send]').forEach((button) => {
-                button.addEventListener('click', () => {
-                    const postId = Number(button.getAttribute('data-comment-send'));
+                const commentSendButton = target.closest('[data-comment-send]');
+                if (commentSendButton) {
+                    const postId = Number(commentSendButton.getAttribute('data-comment-send'));
                     const inputEl = document.querySelector(`[data-comment-input="${postId}"]`);
                     submitComment(postId, inputEl);
-                });
-            });
+                    return;
+                }
 
-            document.querySelectorAll('[data-comment-input]').forEach((inputEl) => {
-                inputEl.addEventListener('keydown', (event) => {
-                    if (event.key !== 'Enter') return;
-                    event.preventDefault();
-                    const postId = Number(inputEl.getAttribute('data-comment-input'));
-                    submitComment(postId, inputEl);
-                });
-            });
-
-            document.querySelectorAll('[data-open-img]').forEach((img) => {
-                img.addEventListener('click', () => {
-                    const postId = Number(img.getAttribute('data-open-img'));
+                const image = target.closest('[data-open-img]');
+                if (image) {
+                    const postId = Number(image.getAttribute('data-open-img'));
                     const post = postsCache.find((item) => Number(item.id) === postId);
                     if (!post || !post.image_url) return;
                     modalImg.src = post.image_url;
                     modal.style.display = 'flex';
-                });
+                }
+            });
+
+            feed.addEventListener('keydown', (event) => {
+                const target = event.target instanceof Element ? event.target : null;
+                if (!target || event.key !== 'Enter') return;
+
+                const inputEl = target.closest('[data-comment-input]');
+                if (!inputEl) return;
+
+                event.preventDefault();
+                const postId = Number(inputEl.getAttribute('data-comment-input'));
+                submitComment(postId, inputEl);
             });
         }
 
