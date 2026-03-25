@@ -2620,6 +2620,7 @@
             const overlay = document.getElementById('wfAiModalOverlay');
             const close = document.getElementById('wfAiModalClose');
 
+            // Só o botão flutuante abre o modal!
             if (fab) {
                 fab.addEventListener('click', () => {
                     closePopup();
@@ -2637,6 +2638,14 @@
                     if (event.target === overlay) closeAiAgentModal();
                 });
             }
+
+            // Garante que NENHUM link para /ai_agent abre modal
+            setTimeout(() => {
+                document.querySelectorAll('a[href="/ai_agent"]').forEach(link => {
+                    link.onclick = null;
+                    link.removeEventListener && link.removeEventListener('click', openAiAgentModal);
+                });
+            }, 500);
         }
 
         function closeProfileMenu() {
