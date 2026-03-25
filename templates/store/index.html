@@ -2,6 +2,12 @@
 
 {% block content %}
 <style>
+    /* Força o container principal a não ultrapassar a largura da tela */
+    .ag-store-shell {
+        max-width: 100vw;
+        box-sizing: border-box;
+        padding: 0.5rem;
+    }
     .ag-store-shell {
         display: grid;
         gap: 1rem;
@@ -32,6 +38,8 @@
         gap: 1rem;
         align-items: center;
         padding: 2rem;
+        width: 100%;
+        box-sizing: border-box;
     }
 
     .ag-store-title {
@@ -292,6 +300,8 @@
         gap: 0.9rem;
         margin-top: 0.4rem;
         align-items: stretch;
+        width: 100%;
+        box-sizing: border-box;
     }
 
     .ag-card {
@@ -418,83 +428,90 @@
     @media (max-width: 992px) {
         .ag-store-hero-content {
             grid-template-columns: 1fr;
-            padding: 1.3rem;
+            padding: 1.1rem 0.5rem;
         }
 
         .ag-store-title {
-            font-size: 1.24rem;
+            font-size: 1.1rem;
         }
 
         .ag-store-subtitle {
-            font-size: 0.82rem;
+            font-size: 0.8rem;
         }
 
         .ag-products-grid {
             grid-template-columns: 1fr;
-            gap: 0.72rem;
+            gap: 0.65rem;
         }
 
         .ag-category-chips {
-            gap: 0.36rem;
+            gap: 0.28rem;
+        }
+
+        .ag-row-item {
+            min-width: 98vw;
+            max-width: 98vw;
         }
     }
 
     @media (max-width: 768px) {
         .ag-store-hero {
-            border-radius: 16px;
+            border-radius: 12px;
         }
 
         .ag-store-hero-content {
-            padding: 1rem;
-            gap: 0.85rem;
+            padding: 0.7rem 0.2rem;
+            gap: 0.5rem;
         }
 
         .ag-store-title {
-            font-size: 1.06rem;
-            line-height: 1.16;
+            font-size: 0.98rem;
+            line-height: 1.12;
         }
 
         .ag-store-subtitle {
-            font-size: 0.78rem;
-            margin-top: 0.65rem;
+            font-size: 0.74rem;
+            margin-top: 0.5rem;
         }
 
         .ag-hero-btn {
             width: 100%;
+            font-size: 0.74rem;
+            padding: 0.45rem 0.6rem;
         }
 
         .ag-row-item {
-            min-width: 204px;
-            max-width: 204px;
+            min-width: 96vw;
+            max-width: 96vw;
         }
 
         .ag-card-media {
-            height: 146px;
+            height: 110px;
         }
 
         .ag-card-body {
-            min-height: 146px;
-            padding: 0.72rem;
+            min-height: 110px;
+            padding: 0.5rem;
         }
 
         .ag-card-title {
-            font-size: 0.78rem;
-            min-height: 2.2rem;
+            font-size: 0.7rem;
+            min-height: 1.7rem;
         }
 
         .ag-card-meta {
-            font-size: 0.7rem;
+            font-size: 0.65rem;
         }
 
         .ag-buy-btn {
-            font-size: 0.71rem;
-            padding: 0.42rem 0.62rem;
+            font-size: 0.65rem;
+            padding: 0.32rem 0.5rem;
         }
     }
 
     @media (max-width: 480px) {
         .ag-store-hero-content {
-            padding: 0.9rem;
+            padding: 0.4rem 0.05rem;
         }
 
         .ag-search {
@@ -506,31 +523,31 @@
         }
 
         .ag-row-item {
-            min-width: 182px;
-            max-width: 182px;
+            min-width: 94vw;
+            max-width: 94vw;
         }
 
         .ag-card-media {
-            height: 124px;
+            height: 90px;
         }
 
         .ag-card-body {
-            padding: 0.62rem;
-            min-height: 136px;
+            padding: 0.38rem;
+            min-height: 90px;
         }
 
         .ag-card-title {
-            font-size: 0.74rem;
-            min-height: 2.1rem;
+            font-size: 0.62rem;
+            min-height: 1.2rem;
         }
 
         .ag-price {
-            font-size: 0.82rem;
+            font-size: 0.7rem;
         }
 
         .ag-buy-btn {
-            font-size: 0.68rem;
-            padding: 0.38rem 0.56rem;
+            font-size: 0.6rem;
+            padding: 0.22rem 0.36rem;
         }
     }
 </style>
