@@ -5,14 +5,16 @@ services:
     region: oregon
     plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    startCommand: alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.0
       - key: DEBUG
         value: false
       - key: REDIS_ENABLED
-        value: false
+        value: true
+      - key: REDIS_URL
+        sync: false
       - key: DATABASE_URL
         value: __SET_SUPABASE_DATABASE_URL__
       - key: SECRET_KEY
@@ -33,7 +35,44 @@ services:
         value: __SET_SUPABASE_ANON_KEY__
       - key: SUPABASE_SERVICE_ROLE_KEY
         value: __SET_SUPABASE_SERVICE_ROLE_KEY__
+      - key: LLM_PROVIDER
+        value: openai
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-4o-mini
+      - key: AI_CACHE_TTL_SECONDS
+        value: 120
+      - key: AI_LOW_LATENCY_MODE
+        value: true
       - key: CORS_ORIGINS
         value: '["https://wallfruits-backend.onrender.com","https://wallfruits-api.onrender.com"]'
       - key: ALLOWED_HOSTS
         value: '["wallfruits-backend.onrender.com","wallfruits-api.onrender.com"]'
+
+  - type: worker
+    name: wallfruits-ai-worker
+    env: python
+    region: oregon
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: celery -A app.celery_app.celery_app worker --loglevel=info --concurrency=2
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.0
+      - key: DEBUG
+        value: false
+      - key: REDIS_ENABLED
+        value: true
+      - key: REDIS_URL
+        sync: false
+      - key: DATABASE_URL
+        value: __SET_SUPABASE_DATABASE_URL__
+      - key: SECRET_KEY
+        sync: false
+      - key: LLM_PROVIDER
+        value: openai
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-4o-mini
