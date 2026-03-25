@@ -1933,7 +1933,34 @@
 
             <div class="wf-nav-group">
                 <div class="wf-group-title">Módulos</div>
-                <a class="wf-nav-link" href="/ai_agent" id="navAgendaIA">Agenda Inteligente</a>
+                <a class="wf-nav-link d-none d-lg-flex" href="/ai_agent" id="navAgendaIA">Agenda Inteligente</a>
+                    <!-- Popup de ações rápidas (mobile/tablet) -->
+                    <div class="wf-popup-overlay" id="wfQuickActionsPopup">
+                        <div class="wf-popup-content">
+                            <div class="wf-popup-drag-handle"></div>
+                            <div class="wf-popup-items">
+                                <a class="wf-popup-item" href="/ai_agent">
+                                    <span class="material-icons">smart_toy</span>
+                                    <span>Agenda Inteligente</span>
+                                </a>
+                                <!-- ...outros itens do popup, se houver... -->
+                            </div>
+                            <button class="wf-popup-close" onclick="document.getElementById('wfQuickActionsPopup').classList.remove('show')">Fechar</button>
+                        </div>
+                    </div>
+                    <script>
+                    // Exibe o popup de ações rápidas ao clicar no botão + (mobile/tablet)
+                    document.addEventListener('DOMContentLoaded', function() {
+                        var fab = document.getElementById('wfAiFab');
+                        if (fab) {
+                            fab.addEventListener('click', function(e) {
+                                e.preventDefault();
+                                var popup = document.getElementById('wfQuickActionsPopup');
+                                if (popup) popup.classList.add('show');
+                            });
+                        }
+                    });
+                    </script>
                 <a class="wf-nav-link" href="/gamification" id="navGamification" style="display:none;">Gamificação</a>
                 <a class="wf-nav-link" href="/reputation" id="navReputation" style="display:none;">Reputação</a>
                 <a class="wf-nav-link" href="/intermediation" id="navIntermediation" style="display:none;">Mediação</a>
