@@ -44,6 +44,7 @@
         width: 100%;
         box-sizing: border-box;
         word-break: break-word;
+        min-width: 0;
     }
 
     .ag-store-title {
@@ -54,6 +55,7 @@
         color: #0b2e63;
         font-weight: 900;
         word-break: break-word;
+        min-width: 0;
     }
 
     .ag-store-subtitle {
@@ -64,6 +66,7 @@
         max-width: 58ch;
         line-height: 1.25;
         word-break: break-word;
+        min-width: 0;
     }
 
     .ag-hero-actions {
@@ -156,12 +159,13 @@
     .ag-category-chips {
         display: flex;
         flex-wrap: nowrap;
-        gap: 0.42rem;
+        gap: 0.32rem;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
         padding-bottom: 0.2rem;
         scrollbar-width: thin;
         scrollbar-color: #e0e0e0 #fff;
+        min-width: 0;
     }
 
     .ag-category-chip {
@@ -170,11 +174,12 @@
         border-radius: 999px;
         background: #ffffff;
         color: #246243;
-        font-size: clamp(0.68rem, 1.8vw, 0.85rem);
+        font-size: clamp(0.62rem, 1.5vw, 0.82rem);
         font-weight: 800;
-        padding: 0.32rem 0.62rem;
+        padding: 0.22rem 0.48rem;
         transition: transform var(--wf-motion-fast) ease, box-shadow var(--wf-motion-fast) ease, border-color var(--wf-motion-fast) ease, background-color var(--wf-motion-fast) ease;
         white-space: nowrap;
+        min-width: 0;
     }
 
     .ag-category-chip:hover {
@@ -412,20 +417,21 @@
         letter-spacing: -0.01em;
     }
 
-    .ag-buy-btn {
-        border: none;
-        border-radius: 11px;
-        background: #00a650;
-        color: #fff;
+    .ag-hero-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        border-radius: 12px;
+        padding: clamp(0.32rem, 1vw, 0.55rem) clamp(0.5rem, 2vw, 0.85rem);
+        font-size: clamp(0.7rem, 2vw, 0.8rem);
         font-weight: 800;
-        font-size: 0.75rem;
-        padding: 0.45rem 0.72rem;
-        white-space: nowrap;
+        border: 1px solid #0b2e63;
+        color: #0b2e63;
+        background: rgba(255, 255, 255, 0.78);
+        transition: transform var(--wf-motion-normal) ease, box-shadow var(--wf-motion-normal) ease;
+        min-width: 0;
     }
-
-    .ag-empty {
-        text-align: center;
-        border: 1px dashed rgba(16, 51, 102, 0.26);
         border-radius: 16px;
         background: #fff;
         padding: 2rem 1rem;
@@ -456,6 +462,22 @@
         }
         .ag-store-shell {
             grid-template-columns: 1fr;
+            width: 100vw !important;
+            max-width: 100vw !important;
+            padding: clamp(0.2rem, 2vw, 0.8rem) !important;
+        }
+        .ag-store-hero,
+        .ag-store-hero-content,
+        .ag-categories,
+        .ag-category-chips,
+        .ag-row-section,
+        .ag-row-strip,
+        .ag-products-grid {
+            width: 100vw !important;
+            max-width: 100vw !important;
+            min-width: 0 !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
         }
     }
     @media (max-width: 992px) {
@@ -477,17 +499,17 @@
             gap: 0.28rem;
         }
         .ag-row-item {
-            min-width: 98vw;
-            max-width: 98vw;
+            min-width: clamp(160px, 60vw, 228px);
+            max-width: clamp(160px, 90vw, 228px);
+            scroll-snap-align: start;
+            text-decoration: none;
+            border: 1px solid rgba(17, 53, 105, 0.12);
+            border-radius: 14px;
+            background: #fff;
+            overflow: hidden;
+            box-shadow: 0 8px 18px rgba(14, 41, 83, 0.08);
+            transition: transform var(--wf-motion-normal) ease, box-shadow var(--wf-motion-normal) ease;
         }
-    }
-
-    @media (max-width: 768px) {
-        .ag-store-hero {
-            border-radius: 12px;
-        }
-        .ag-store-hero-content {
-            padding: clamp(0.5rem, 2vw, 0.9rem) clamp(0.1rem, 2vw, 0.3rem);
             gap: 0.5rem;
         }
         .ag-store-title {
@@ -518,14 +540,15 @@
             font-size: 0.7rem;
             min-height: 1.7rem;
         }
-        .ag-card-meta {
-            font-size: 0.65rem;
+        .ag-card-media {
+            position: relative;
+            background: linear-gradient(180deg, #f6fbff 0%, #edf4fb 100%);
+            height: clamp(90px, 28vw, 176px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 0;
         }
-        .ag-buy-btn {
-            font-size: 0.65rem;
-            padding: 0.32rem 0.5rem;
-        }
-    }
 
     @media (max-width: 480px) {
         .ag-store-hero-content {
@@ -545,11 +568,12 @@
             height: 90px;
         }
         .ag-card-body {
-            padding: 0.38rem;
-            min-height: 90px;
+            padding: clamp(0.32rem, 2vw, 0.6rem);
+            display: flex;
+            flex-direction: column;
+            min-height: clamp(80px, 18vw, 120px);
+            min-width: 0;
         }
-        .ag-card-title {
-            font-size: 0.62rem;
             min-height: 1.2rem;
         }
         .ag-price {
