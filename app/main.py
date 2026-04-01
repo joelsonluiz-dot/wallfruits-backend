@@ -22,9 +22,10 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from app.auth import auth_routes
-from app.cache.redis_client import check_redis_connection
+from app.cache.redis_client import check_redis_connection, delete_cache, get_cache, set_cache
 from app.core.auth_middleware import get_current_user_optional, get_current_user
 from app.core.config import settings
+from app.core.domain_enums import SubscriptionPlanType, SubscriptionStatus
 from app.database.connection import (
     check_database_connection,
     init_db,
@@ -33,7 +34,7 @@ from app.database.connection import (
     get_db,
 )
 from sqlalchemy.orm import Session
-from app.models import Category, Favorite, Message, Offer, Review, Transaction, User
+from app.models import Category, Favorite, Message, Offer, Review, Subscription, Transaction, User
 from app.routers import (
     ai_routes,
     store_routes,
@@ -332,6 +333,121 @@ def _render_template(template_name: str, request: Request, **context: Any):
     )
 
 
+AGENDA_TEMP_ACCESS_TTL_SECONDS = 300
+AGENDA_TEMP_ACCESS_KEY_PREFIX = "agenda:temp:access"
+AGENDA_TEMP_REVOKED_KEY_PREFIX = "agenda:temp:revoked"
+
+
+def _agenda_temp_access_key(user_id: int) -> str:
+    return f"{AGENDA_TEMP_ACCESS_KEY_PREFIX}:{user_id}"
+
+
+def _agenda_temp_revoked_key(user_id: int) -> str:
+    return f"{AGENDA_TEMP_REVOKED_KEY_PREFIX}:{user_id}"
+
+
+def _is_admin_user(user: User) -> bool:
+    role = str(getattr(user, "role", "") or "").lower().strip()
+    return bool(getattr(user, "is_superuser", False) or role == "admin")
+
+
+def _has_active_paid_subscription(db: Session, user: User) -> bool:
+    paid_plans = {SubscriptionPlanType.PRO.value, SubscriptionPlanType.PREMIUM.value}
+    now = datetime.now(timezone.utc)
+
+    rows = (
+        db.query(Subscription)
+        .filter(
+            Subscription.user_id == user.id,
+            Subscription.status == SubscriptionStatus.ACTIVE.value,
+            Subscription.plan_type.in_(tuple(paid_plans)),
+        )
+        .all()
+    )
+
+    for row in rows:
+        if row.end_date is None:
+            return True
+
+        end_date = row.end_date
+        if end_date.tzinfo is None:
+            end_date = end_date.replace(tzinfo=timezone.utc)
+        if end_date >= now:
+            return True
+
+    return False
+
+
+def _is_agenda_entitled(db: Session, user: User) -> bool:
+    return _is_admin_user(user) or _has_active_paid_subscription(db, user)
+
+
+def _parse_cache_datetime(value: str | None) -> datetime | None:
+    if not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed
+
+
+def _user_last_login_dt(user: User) -> datetime | None:
+    last_login = getattr(user, "last_login", None)
+    if not last_login:
+        return None
+    if last_login.tzinfo is None:
+        return last_login.replace(tzinfo=timezone.utc)
+    return last_login
+
+
+def _revoke_temporary_agenda_access(user: User):
+    delete_cache(_agenda_temp_access_key(user.id))
+    set_cache(
+        _agenda_temp_revoked_key(user.id),
+        datetime.now(timezone.utc).isoformat(),
+        expire=60 * 60 * 24 * 14,
+    )
+
+
+def _is_temporary_access_revoked_for_login(user: User) -> bool:
+    revoked_dt = _parse_cache_datetime(get_cache(_agenda_temp_revoked_key(user.id)))
+    if revoked_dt is None:
+        return False
+
+    last_login = _user_last_login_dt(user)
+    if last_login and revoked_dt < last_login:
+        delete_cache(_agenda_temp_revoked_key(user.id))
+        return False
+
+    return True
+
+
+def _resolve_or_create_temp_agenda_expires_at(user: User) -> int | None:
+    now = datetime.now(timezone.utc)
+    last_login = _user_last_login_dt(user)
+    temp_key = _agenda_temp_access_key(user.id)
+    start_dt = _parse_cache_datetime(get_cache(temp_key))
+
+    if start_dt and last_login and start_dt < last_login:
+        start_dt = None
+        delete_cache(temp_key)
+
+    if start_dt is None:
+        start_dt = now
+        set_cache(temp_key, start_dt.isoformat(), expire=60 * 60 * 24)
+
+    expires_at = int(start_dt.timestamp()) + AGENDA_TEMP_ACCESS_TTL_SECONDS
+    if now.timestamp() >= expires_at:
+        _revoke_temporary_agenda_access(user)
+        return None
+
+    return expires_at
+
+
 API_PREFIX = "/api"
 
 
@@ -460,6 +576,24 @@ async def login_page(request: Request):
 async def register_page(request: Request):
     """Página de registro."""
     return _render_template("register.html", request)
+
+
+@app.get("/forgot-password")
+async def forgot_password_page(request: Request):
+    """Página para solicitar recuperação de senha por e-mail."""
+    return _render_template("forgot_password.html", request)
+
+
+@app.get("/forgot-password/confirmation")
+async def forgot_password_confirmation_page(request: Request):
+    """Página de confirmação após solicitar recuperação de senha."""
+    return _render_template("forgot_password_confirmation.html", request)
+
+
+@app.get("/reset-password")
+async def reset_password_page(request: Request):
+    """Página para redefinir senha usando token enviado por e-mail."""
+    return _render_template("reset_password.html", request)
 
 
 @app.get("/offers")
@@ -762,10 +896,47 @@ async def store_products_api(
 @app.get("/ai-agent")
 async def ai_agent_page(
     request: Request,
-    current_user: User = Depends(get_current_user_optional),
+    db: Session = Depends(get_db),
+    current_user: User | None = Depends(get_current_user_optional),
 ):
     """Interface web do assistente IA embutida no botão flutuante."""
-    return _render_template("ai_agent.html", request, current_user=current_user)
+    if current_user is None:
+        next_path = request.url.path
+        return RedirectResponse(url=f"/login?next={next_path}", status_code=307)
+
+    if _is_agenda_entitled(db, current_user):
+        return _render_template(
+            "ai_agent.html",
+            request,
+            current_user=current_user,
+            agenda_is_entitled=True,
+            agenda_temporary_access=False,
+            agenda_access_expires_at=None,
+        )
+
+    if _is_temporary_access_revoked_for_login(current_user):
+        return _render_template(
+            "ai_agent_access_denied.html",
+            request,
+            current_user=current_user,
+        )
+
+    expires_at = _resolve_or_create_temp_agenda_expires_at(current_user)
+    if expires_at is None:
+        return _render_template(
+            "ai_agent_access_denied.html",
+            request,
+            current_user=current_user,
+        )
+
+    return _render_template(
+        "ai_agent.html",
+        request,
+        current_user=current_user,
+        agenda_is_entitled=False,
+        agenda_temporary_access=True,
+        agenda_access_expires_at=expires_at,
+    )
 
 
 @app.get("/ai_agent")
@@ -895,6 +1066,19 @@ async def ai_agent_ask(
         )
 
     return {"answer": answer}
+
+
+@app.post("/api/agenda/access/revoke")
+async def revoke_agenda_temporary_access(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Revoga acesso temporário da agenda para não assinantes/admin."""
+    if _is_agenda_entitled(db, current_user):
+        return {"revoked": False, "reason": "entitled"}
+
+    _revoke_temporary_agenda_access(current_user)
+    return {"revoked": True}
 
 
 @app.get("/mobile-preview")

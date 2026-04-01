@@ -1270,6 +1270,7 @@
         submitting: false,
         profileLoaded: false,
     };
+    const AUTH_NEXT = encodeURIComponent(`${window.location.pathname}${window.location.search}`);
     const REAL_PRODUCT_IMAGES = {
         banana: 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?auto=format&fit=crop&w=1200&q=80',
         manga: 'https://images.unsplash.com/photo-1591073113125-e46713c829ed?auto=format&fit=crop&w=1200&q=80',
@@ -1287,6 +1288,19 @@
         const div = document.createElement('div');
         div.textContent = text ?? '';
         return div.innerHTML;
+    }
+
+    function redirectGuestToAuth() {
+        const goToLogin = window.confirm('Para continuar esta ação, entre na sua conta. Clique em OK para Login ou Cancelar para Criar conta.');
+        window.location.href = goToLogin ? `/login?next=${AUTH_NEXT}` : `/register?next=${AUTH_NEXT}`;
+    }
+
+    function ensureAuthenticatedAction() {
+        if (localStorage.getItem('token')) {
+            return true;
+        }
+        redirectGuestToAuth();
+        return false;
     }
 
     function normalizeText(value) {
@@ -2023,10 +2037,7 @@
             return;
         }
 
-        if (!localStorage.getItem('token')) {
-            window.location.href = '/login';
-            return;
-        }
+        if (!ensureAuthenticatedAction()) return;
 
         const content = `Aviso de interesse: tenho interesse na oferta "${offer.product_name}" e gostaria de alinhar detalhes de quantidade, entrega e pagamento.`;
 
@@ -2057,10 +2068,7 @@
         const offer = offersStore.get(offerId);
         if (!offer) return;
 
-        if (!localStorage.getItem('token')) {
-            window.location.href = '/login';
-            return;
-        }
+        if (!ensureAuthenticatedAction()) return;
 
         openReserveModal(offer);
     }
@@ -2071,10 +2079,7 @@
         const offer = offersStore.get(offerId);
         if (!offer) return;
 
-        if (!localStorage.getItem('token')) {
-            window.location.href = '/login';
-            return;
-        }
+        if (!ensureAuthenticatedAction()) return;
 
         try {
             if (offer.is_favorited) {
@@ -2095,6 +2100,8 @@
     function toggleBookmark(offerId, event) {
         event.stopPropagation();
 
+        if (!ensureAuthenticatedAction()) return;
+
         const shouldEnable = !isBookmarked(offerId);
         setBookmarked(offerId, shouldEnable);
         event.currentTarget.classList.toggle('active-bookmark', shouldEnable);
@@ -2110,10 +2117,7 @@
             return;
         }
 
-        if (!localStorage.getItem('token')) {
-            window.location.href = '/login';
-            return;
-        }
+        if (!ensureAuthenticatedAction()) return;
 
         window.location.href = `/messages?user_id=${offer.owner_data.id}&offer_id=${offer.id}`;
     }

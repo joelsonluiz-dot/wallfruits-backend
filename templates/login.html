@@ -49,6 +49,22 @@
         font-size: 0.9rem;
         color: var(--wf-text-secondary);
     }
+    .wf-password-wrap {
+        position: relative;
+    }
+    .wf-password-toggle {
+        position: absolute;
+        right: 0.55rem;
+        top: 50%;
+        transform: translateY(-50%);
+        border: 1px solid var(--wf-border);
+        background: rgba(255,255,255,0.92);
+        color: var(--wf-text-secondary);
+        border-radius: 8px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        padding: 0.2rem 0.45rem;
+    }
     @media (max-width: 480px) {
         .auth-card { max-width: 100%; }
         .auth-header h1 { font-size: 1.5rem; }
@@ -72,7 +88,13 @@
                     </div>
                     <div class="mb-4">
                         <label for="password" class="wf-label">Senha</label>
-                        <input type="password" class="wf-input form-control" id="password" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" autocomplete="current-password" required>
+                        <div class="wf-password-wrap">
+                            <input type="password" class="wf-input form-control" id="password" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" autocomplete="current-password" required>
+                            <button type="button" class="wf-password-toggle" id="toggleLoginPassword">Mostrar</button>
+                        </div>
+                        <div style="margin-top:0.45rem;text-align:right;">
+                            <a href="/forgot-password" class="wf-link" style="font-size:0.84rem;">Esqueci minha senha</a>
+                        </div>
                     </div>
                     <div id="loginMsg" style="display:none; padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem; font-size: 0.9rem;"></div>
                     <button type="submit" id="loginBtn" class="btn btn-wf-primary w-100" style="padding: 0.75rem;">
@@ -196,6 +218,13 @@
     document.getElementById('clearTokenBtn').addEventListener('click', () => {
         clearSessionToken();
         setLoginMsg('success', 'Sessão removida no navegador.');
+    });
+
+    document.getElementById('toggleLoginPassword').addEventListener('click', (event) => {
+        const input = document.getElementById('password');
+        const showing = input.type === 'text';
+        input.type = showing ? 'password' : 'text';
+        event.currentTarget.textContent = showing ? 'Mostrar' : 'Ocultar';
     });
 
     handleOAuthCallbackIfAny();

@@ -398,6 +398,22 @@
             return div.innerHTML;
         }
 
+        function redirectGuestToAuth() {
+            const next = encodeURIComponent(`${window.location.pathname}${window.location.search}`);
+            const goToLogin = window.confirm('Para continuar esta ação, entre na sua conta. Clique em OK para Login ou Cancelar para Criar conta.');
+            window.location.href = goToLogin ? `/login?next=${next}` : `/register?next=${next}`;
+        }
+
+        function ensureAuthenticatedAction(event) {
+            if (localStorage.getItem('token')) return true;
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            redirectGuestToAuth();
+            return false;
+        }
+
         function filteredServices() {
             const targetCategory = normalizeCategory(selectedCategory);
             const targetSearch = normalizeCategory(servicesSearchTerm);
@@ -551,6 +567,12 @@
                     if (!selected) return;
                     event.preventDefault();
                     window.location.href = buildServiceDetailUrl(selected);
+                });
+            });
+
+            listEl.querySelectorAll('.service-open-detail-btn, .service-open-tab-btn').forEach((link) => {
+                link.addEventListener('click', (event) => {
+                    ensureAuthenticatedAction(event);
                 });
             });
         }

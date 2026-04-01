@@ -703,7 +703,32 @@
             box-shadow: 0 8px 18px rgba(58, 46, 24, 0.18);
         }
 
+        .wf-community-toggle {
+            position: fixed;
+            top: 0.9rem;
+            right: 4rem;
+            width: 44px;
+            height: 44px;
+            border: 1px solid rgba(92, 76, 45, 0.22);
+            border-radius: 12px;
+            background: rgba(252, 247, 236, 0.84);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: var(--wf-text);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 152;
+            cursor: pointer;
+            text-decoration: none;
+            box-shadow: 0 8px 18px rgba(58, 46, 24, 0.18);
+        }
+
         .wf-menu-toggle .material-icons {
+            font-size: 1.35rem;
+        }
+
+        .wf-community-toggle .material-icons {
             font-size: 1.35rem;
         }
 
@@ -1239,6 +1264,18 @@
             display: none;
         }
 
+        @media (min-width: 993px) {
+            .wf-shell-main {
+                padding-bottom: 0 !important;
+            }
+
+            .wf-mobile-wrap,
+            .wf-mobile-floating-add,
+            .wf-popup-overlay {
+                display: none !important;
+            }
+        }
+
         @media (max-width: 992px) {
             .wf-section-title { font-size: 1.6rem; }
             .wf-app-shell {
@@ -1251,7 +1288,7 @@
             }
 
             .wf-shell-main {
-                padding-bottom: 122px;
+                padding-bottom: 108px;
             }
 
             .wf-topbar {
@@ -1267,6 +1304,10 @@
             }
 
             .wf-menu-toggle {
+                display: inline-flex;
+            }
+
+            .wf-community-toggle {
                 display: inline-flex;
             }
 
@@ -1369,7 +1410,7 @@
             }
 
             .wf-shell-main {
-                padding-bottom: 112px;
+                padding-bottom: 100px;
             }
 
             .wf-mobile-nav-label {
@@ -1410,7 +1451,7 @@
             }
 
             .wf-shell-main {
-                padding-bottom: 104px;
+                padding-bottom: 92px;
             }
 
             .wf-mobile-wrap {
@@ -1455,6 +1496,13 @@
                 height: 40px;
                 top: 0.7rem;
                 right: 0.7rem;
+            }
+
+            .wf-community-toggle {
+                width: 40px;
+                height: 40px;
+                top: 0.7rem;
+                right: 3.75rem;
             }
 
             .wf-sidebar-right {
@@ -1903,18 +1951,13 @@
             <div class="wf-popup-drag-handle"></div>
             <div class="wf-popup-items">
                 <a class="wf-popup-item" href="/ai-agent">
-                    <span class="material-icons">smart_toy</span>
-                    <span>Agenda Inteligente</span>
+                    <span class="material-icons">event</span>
+                    <span>Agenda Comercial</span>
                 </a>
                 <!-- ...outros itens do popup, se houver... -->
             </div>
             <button class="wf-popup-close" onclick="document.getElementById('wfQuickActionsPopup').classList.remove('show')">Fechar</button>
         </div>
-    </div>
-
-    <div class="wf-connection-indicator" id="wfConnectionIndicator" aria-live="polite" role="status">
-        <span class="wf-connection-dot"></span>
-        <span id="wfConnectionText">Online</span>
     </div>
 
     <div class="wf-app-shell">
@@ -1950,15 +1993,15 @@
 
             <div class="wf-nav-group">
                 <div class="wf-group-title">Módulos</div>
-                <a class="wf-nav-link d-none d-lg-flex" href="/ai-agent" id="navAgendaIA">Agenda Inteligente</a>
+                <a class="wf-nav-link" href="/ai-agent" id="navAgendaIA">Agenda Comercial</a>
                     <!-- Popup de ações rápidas (mobile/tablet) -->
                     <div class="wf-popup-overlay" id="wfQuickActionsPopup">
                         <div class="wf-popup-content">
                             <div class="wf-popup-drag-handle"></div>
                             <div class="wf-popup-items">
                                 <a class="wf-popup-item" href="/ai-agent">
-                                    <span class="material-icons">smart_toy</span>
-                                    <span>Agenda Inteligente</span>
+                                    <span class="material-icons">event</span>
+                                    <span>Agenda Comercial</span>
                                 </a>
                                 <!-- ...outros itens do popup, se houver... -->
                             </div>
@@ -2059,8 +2102,11 @@
         const WF_DEFAULT_AVATAR = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320"><rect width="320" height="320" fill="%23edf2f7"/><circle cx="160" cy="112" r="58" fill="%2373899f"/><path d="M48 284c0-62 50-112 112-112s112 50 112 112" fill="%2373899f"/></svg>';
         const WF_FAST_NAV_BREAKPOINT = 992;
         const WF_GET_CACHE_TTL_MS = 12000;
+        const WF_GET_CACHE_PERSIST_TTL_MS = 45000;
+        const WF_GET_CACHE_SESSION_KEY = 'wf_get_cache_v1';
         const WF_GET_CACHE = new Map();
         const WF_INFLIGHT_GET = new Map();
+        const WF_PREFETCHED_PAGES = new Set();
         const WF_ADV_SETTINGS_KEY = 'wf_hidden_settings_v1';
         const WF_ADV_DEFAULTS = {
             auto_refresh: true,
@@ -2151,6 +2197,49 @@
             return `${scope}::${url}`;
         }
 
+        function readPersistentGetCache(key) {
+            try {
+                const now = Date.now();
+                const raw = sessionStorage.getItem(WF_GET_CACHE_SESSION_KEY);
+                if (!raw) return null;
+                const parsed = JSON.parse(raw);
+                const entry = parsed?.[key];
+                if (!entry || typeof entry !== 'object') return null;
+                if (now - Number(entry.ts || 0) > WF_GET_CACHE_PERSIST_TTL_MS) return null;
+                return entry.payload ?? null;
+            } catch {
+                return null;
+            }
+        }
+
+        function writePersistentGetCache(key, payload) {
+            try {
+                const now = Date.now();
+                const raw = sessionStorage.getItem(WF_GET_CACHE_SESSION_KEY);
+                const parsed = raw ? JSON.parse(raw) : {};
+                parsed[key] = { ts: now, payload };
+
+                Object.keys(parsed).forEach((cacheKey) => {
+                    const ts = Number(parsed?.[cacheKey]?.ts || 0);
+                    if (!ts || now - ts > WF_GET_CACHE_PERSIST_TTL_MS) {
+                        delete parsed[cacheKey];
+                    }
+                });
+
+                sessionStorage.setItem(WF_GET_CACHE_SESSION_KEY, JSON.stringify(parsed));
+            } catch {
+                // ignora indisponibilidade de storage
+            }
+        }
+
+        function clearPersistentGetCache() {
+            try {
+                sessionStorage.removeItem(WF_GET_CACHE_SESSION_KEY);
+            } catch {
+                // ignora indisponibilidade de storage
+            }
+        }
+
         async function apiRequest(url, method = 'GET', data = null) {
             const isAbsolute = url.startsWith('http://') || url.startsWith('https://');
             const apiUrl = isAbsolute || url.startsWith('/api') ? url : `/api${url.startsWith('/') ? url : `/${url}`}`;
@@ -2206,6 +2295,12 @@
                 const cached = WF_GET_CACHE.get(getCacheKey);
                 if (cached && now - cached.ts < WF_GET_CACHE_TTL_MS) {
                     return cached.payload;
+                }
+
+                const persisted = readPersistentGetCache(getCacheKey);
+                if (persisted !== null) {
+                    WF_GET_CACHE.set(getCacheKey, { ts: now, payload: persisted });
+                    return persisted;
                 }
 
                 const inflight = WF_INFLIGHT_GET.get(getCacheKey);
@@ -2267,6 +2362,7 @@
 
                         if (getCacheKey) {
                             WF_GET_CACHE.set(getCacheKey, { ts: Date.now(), payload });
+                            writePersistentGetCache(getCacheKey, payload);
                         }
 
                         window.clearTimeout(timeoutId);
@@ -2302,12 +2398,64 @@
         function clearSessionToken() {
             localStorage.removeItem('token');
             localStorage.removeItem('user');
+            clearPersistentGetCache();
+        }
+
+        function prefetchRoute(url) {
+            const href = String(url || '').trim();
+            if (!href || href.startsWith('/api') || href.startsWith('javascript:') || href.startsWith('#')) return;
+            if (WF_PREFETCHED_PAGES.has(href)) return;
+            WF_PREFETCHED_PAGES.add(href);
+
+            fetch(href, {
+                method: 'GET',
+                credentials: 'same-origin',
+                headers: { 'X-WF-Prefetch': '1' },
+            }).catch(() => {});
+        }
+
+        function setupFastNavigationPrefetch() {
+            const importantRoutes = ['/', '/offers', '/ai-agent', '/services', '/community', '/store'];
+            if ('requestIdleCallback' in window) {
+                window.requestIdleCallback(() => {
+                    importantRoutes.forEach(prefetchRoute);
+                }, { timeout: 1500 });
+            } else {
+                setTimeout(() => {
+                    importantRoutes.forEach(prefetchRoute);
+                }, 350);
+            }
+
+            document.addEventListener('pointerenter', (event) => {
+                const target = event.target instanceof Element ? event.target.closest('a[href]') : null;
+                if (!target) return;
+                const href = target.getAttribute('href') || '';
+                if (!href.startsWith('/')) return;
+                prefetchRoute(href);
+            }, true);
+
+            document.addEventListener('touchstart', (event) => {
+                const target = event.target instanceof Element ? event.target.closest('a[href]') : null;
+                if (!target) return;
+                const href = target.getAttribute('href') || '';
+                if (!href.startsWith('/')) return;
+                prefetchRoute(href);
+            }, { passive: true, capture: true });
         }
 
         function setElementDisplay(id, visible) {
             const element = document.getElementById(id);
             if (!element) return;
             element.style.display = visible ? '' : 'none';
+        }
+
+        function isMobileOrTabletViewport() {
+            return window.matchMedia('(max-width: 992px)').matches;
+        }
+
+        function isHomePagePath() {
+            const path = String(window.location.pathname || '').toLowerCase();
+            return path === '/' || path === '/index' || path === '/home';
         }
 
         function setNavAuthState() {
@@ -2348,6 +2496,7 @@
             setElementDisplay('navStrategy', isAdmin);
 
             setElementDisplay('actionExplore', true);
+            setElementDisplay('actionAgenda', true);
             setElementDisplay('actionNewOffer', isLogged);
             setElementDisplay('actionMessages', isLogged);
             setElementDisplay('actionHelp', isLogged);
@@ -2379,13 +2528,31 @@
             const actionProfileLink = document.getElementById('actionProfileLink');
             const actionProfileLabel = document.getElementById('actionProfileLabel');
             if (actionProfileLink && actionProfileLabel) {
-                actionProfileLink.href = isLogged ? '/me/profile' : '/login';
+                actionProfileLink.href = isLogged ? '/me/profile' : '/login?next=/me/profile';
                 actionProfileLabel.textContent = isLogged ? 'Perfil' : 'Entrar';
+
+                actionProfileLink.onclick = (event) => {
+                    const hasToken = Boolean(localStorage.getItem('token'));
+                    if (!hasToken) {
+                        event.preventDefault();
+                        window.location.href = '/login?next=/me/profile';
+                    }
+                };
             }
 
             const actionBar = document.getElementById('actionBar');
             if (actionBar) {
-                actionBar.classList.toggle('mobile-visible', true);
+                actionBar.classList.toggle('mobile-visible', isMobileOrTabletViewport());
+            }
+
+            const quickActionsFabLegacy = document.getElementById('wfQuickActionsBtn');
+            if (quickActionsFabLegacy) {
+                quickActionsFabLegacy.style.display = isHomePagePath() ? '' : 'none';
+            }
+
+            const quickActionsFab = document.getElementById('actionFloatingButton');
+            if (quickActionsFab) {
+                quickActionsFab.style.display = isHomePagePath() ? '' : 'none';
             }
 
             if (!isLogged) {
@@ -2879,9 +3046,13 @@
             setupProfileMenu();
             initHiddenSettingsPanel();
             initKeyboardMenuGuard();
-            initConnectionIndicator();
+            setupFastNavigationPrefetch();
             setNavAuthState();
             refreshUnreadNotifications();
+        });
+
+        window.addEventListener('resize', () => {
+            setNavAuthState();
         });
 
         if ('serviceWorker' in navigator) {
@@ -2908,6 +3079,11 @@
                 <span class="material-icons">menu</span>
             </button>
 
+            <!-- Botão comunidade (mobile/tablet) -->
+            <a class="wf-community-toggle" id="btnCommunityQuickNav" href="/community" title="Comunidade" aria-label="Ir para comunidade">
+                <span class="material-icons">groups</span>
+            </a>
+
             <!-- Menu inferior (mobile/tablet) -->
             <div class="wf-mobile-wrap" id="actionBar">
                 <nav class="wf-bottom-menu" aria-label="Menu inferior">
@@ -2918,24 +3094,23 @@
                                 <span class="wf-mobile-nav-label">Início</span>
                             </a>
                         </li>
-                        <li class="wf-mobile-nav-slot" id="actionCommunity">
-                            <a href="/community" class="wf-mobile-nav-item" title="Comunidade">
-                                <span class="material-icons wf-mobile-nav-icon">groups</span>
-                                <span class="wf-mobile-nav-label">Comunidade</span>
-                            </a>
-                        </li>
-
-                        <li class="wf-mobile-nav-slot" id="actionServices">
-                            <a href="/services" class="wf-mobile-nav-item" title="Serviços">
-                                <span class="material-icons wf-mobile-nav-icon">engineering</span>
-                                <span class="wf-mobile-nav-label">Serviços</span>
-                            </a>
-                        </li>
                         <li class="wf-mobile-nav-slot" id="actionExplore">
                             <a href="/offers" class="wf-mobile-nav-item" title="Ofertas">
                                 <span class="material-icons wf-mobile-nav-icon">local_offer</span>
                                 <span class="wf-mobile-notif-badge" id="dockNotifBadge">0</span>
                                 <span class="wf-mobile-nav-label">Ofertas</span>
+                            </a>
+                        </li>
+                        <li class="wf-mobile-nav-slot" id="actionAgenda">
+                            <a href="/ai-agent" class="wf-mobile-nav-item" title="Agenda IA">
+                                <span class="material-icons wf-mobile-nav-icon">event</span>
+                                <span class="wf-mobile-nav-label">Agenda IA</span>
+                            </a>
+                        </li>
+                        <li class="wf-mobile-nav-slot" id="actionServices">
+                            <a href="/services" class="wf-mobile-nav-item" title="Serviços">
+                                <span class="material-icons wf-mobile-nav-icon">engineering</span>
+                                <span class="wf-mobile-nav-label">Serviços</span>
                             </a>
                         </li>
                         <li class="wf-mobile-nav-slot" id="actionProfile">
@@ -2983,7 +3158,7 @@
                         </a>
                         <a href="#" class="wf-popup-item wf-mobile-hide-help" id="actionPopupHelp" data-open-help-popup="1" style="display:none;">
                             <span class="material-icons">help</span>
-                            <span>Ajuda</span>
+                            <span>Central de ajuda</span>
                         </a>
                         <a href="/strategy" class="wf-popup-item" id="actionPopupFeatured" style="display:none;">
                             <span class="material-icons">star</span>
@@ -2996,6 +3171,10 @@
                         <a href="/messages" class="wf-popup-item" id="actionMessages" style="display:none;">
                             <span class="material-icons">chat</span>
                             <span>Mensagens</span>
+                        </a>
+                        <a href="/ai-agent" class="wf-popup-item" id="actionAgenda">
+                            <span class="material-icons">event</span>
+                            <span>Agenda</span>
                         </a>
                         <a href="/offers/new" class="wf-popup-item" id="actionNewOffer" style="display:none;">
                             <span class="material-icons">add_circle</span>
@@ -3119,20 +3298,20 @@
             <div class="wf-help-popup-overlay" id="helpPopupOverlay" aria-hidden="true">
                 <div class="wf-help-popup" role="dialog" aria-modal="true" aria-label="Ajuda WallFruits">
                     <div class="wf-help-popup-head">
-                        <span>Central de Ajuda WallFruits</span>
+                        <span>Suporte IA WallFruits</span>
                         <button class="wf-help-popup-close" id="helpPopupClose" type="button">Fechar</button>
                     </div>
-                    <iframe src="/ai-agent" loading="lazy" title="Ajuda WallFruits"></iframe>
+                    <iframe src="/ai-agent" loading="lazy" title="Suporte IA WallFruits"></iframe>
                 </div>
             </div>
 
             <div class="wf-ai-modal-overlay" id="wfAiModalOverlay" aria-hidden="true">
-                <div class="wf-ai-modal" role="dialog" aria-modal="true" aria-label="Agente IA WallFruits">
+                <div class="wf-ai-modal" role="dialog" aria-modal="true" aria-label="Suporte IA WallFruits">
                     <div class="wf-ai-modal-head">
-                        <span>Agente IA WallFruits</span>
+                        <span>Suporte IA WallFruits</span>
                         <button class="wf-ai-modal-close" id="wfAiModalClose" type="button">Fechar</button>
                     </div>
-                    <iframe src="/ai-agent" loading="lazy" title="Agente IA WallFruits"></iframe>
+                    <iframe src="/ai-agent" loading="lazy" title="Suporte IA WallFruits"></iframe>
                 </div>
             </div>
 

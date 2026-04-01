@@ -454,38 +454,6 @@
         text-decoration: none;
     }
 
-    .store-mobile-nav {
-        position: fixed;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(255, 255, 255, 0.97);
-        border-top: 1px solid #d6e7d8;
-        display: grid;
-        grid-template-columns: repeat(5, 1fr);
-        z-index: 30;
-        padding-bottom: env(safe-area-inset-bottom);
-    }
-
-    .store-mobile-link {
-        padding: 0.5rem 0.25rem 0.45rem;
-        text-align: center;
-        text-decoration: none;
-        color: #5a735f;
-        font-size: 0.62rem;
-        font-weight: 700;
-        display: grid;
-        justify-items: center;
-        gap: 0.14rem;
-    }
-
-    .store-mobile-link.active {
-        color: var(--store-green);
-    }
-
-    .store-mobile-link .material-symbols-outlined {
-        font-size: 1.2rem;
-    }
 
     @keyframes shimmer {
         to { transform: translateX(100%); }
@@ -548,10 +516,6 @@
             align-items: center;
         }
 
-        .store-mobile-nav {
-            display: none;
-        }
-
         .store-fab {
             bottom: 1.2rem;
         }
@@ -567,7 +531,7 @@
         <form id="storeSearchForm" class="store-top-row">
             <div class="store-search-wrap">
                 <span class="material-symbols-outlined">search</span>
-                <input id="searchInput" class="store-search-input" type="text" placeholder="Buscar produtos, pragas ou diagnósticos..." value="{{ search_query or '' }}">
+                <input id="searchInput" class="store-search-input" type="text" placeholder="Buscar produtos, categorias ou fornecedores..." value="{{ search_query or '' }}">
             </div>
             <div class="store-icon-group">
                 <button type="button" class="store-icon-btn" title="Localização"><span class="material-symbols-outlined">location_on</span></button>
@@ -583,6 +547,7 @@
             <a class="store-side-link" href="/store/cart">Carrinho <span class="material-symbols-outlined">shopping_cart</span></a>
             <a class="store-side-link" href="/store/orders">Pedidos <span class="material-symbols-outlined">local_shipping</span></a>
             <a class="store-side-link" href="/store/proposals">Propostas <span class="material-symbols-outlined">request_quote</span></a>
+            <a class="store-side-link" href="/ai-agent">Agenda <span class="material-symbols-outlined">event</span></a>
             <a class="store-side-link" href="/store/manage/dashboard">Gestão <span class="material-symbols-outlined">dashboard</span></a>
         </aside>
 
@@ -596,7 +561,7 @@
                     <div class="store-kpi">{{ products|length }} itens no catálogo</div>
                     <div class="store-kpi">Filtros por cultura e praga</div>
                     <div class="store-kpi">Carrinho e propostas por volume</div>
-                    <div class="store-kpi">Diagnóstico IA integrado</div>
+                    <div class="store-kpi">Agenda de reservas integrada</div>
                 </div>
             </section>
 
@@ -629,15 +594,17 @@
 
             <section class="store-ai-card">
                 <div>
-                    <p class="store-ai-title">Diagnóstico com IA</p>
-                    <p class="store-ai-copy">Envie uma foto da planta e receba recomendações técnicas com produtos compatíveis.</p>
+                    <p class="store-ai-title">Agenda Inteligente</p>
+                    <p class="store-ai-copy">Gerencie reservas, lembretes e prioridades da operação comercial em um só lugar.</p>
                 </div>
-                <a href="/ai-agent" class="store-ai-btn">Analisar planta</a>
+                <a href="/ai-agent" class="store-ai-btn">Abrir agenda</a>
             </section>
 
             <section>
                 <div id="productsState" class="store-state" style="display:none;"></div>
                 <div id="productsGrid" class="store-products"></div>
+                <div id="storeLoadMoreSentinel" style="height:2px;"></div>
+                <div id="storeLoadMoreStatus" class="store-state" style="display:none;margin-top:0.6rem;padding:0.6rem;"></div>
             </section>
         </main>
     </div>
@@ -648,14 +615,6 @@
     <span>Carrinho</span>
 </a>
 
-<nav class="store-mobile-nav">
-    <a href="/" class="store-mobile-link"><span class="material-symbols-outlined">home</span><span>Home</span></a>
-    <a href="/ai-agent" class="store-mobile-link"><span class="material-symbols-outlined">psychology</span><span>Diagnóstico</span></a>
-    <a href="/store" class="store-mobile-link active"><span class="material-symbols-outlined">storefront</span><span>Produtos</span></a>
-    <a href="/strategy" class="store-mobile-link"><span class="material-symbols-outlined">event</span><span>Agenda</span></a>
-    <a href="/profile" class="store-mobile-link"><span class="material-symbols-outlined">person</span><span>Perfil</span></a>
-</nav>
-
 <script>
     (function setupStoreMarketplace() {
         const state = {
@@ -665,6 +624,9 @@
             pest: '',
             priceRange: '',
             favorites: new Set(),
+            allProducts: [],
+            visibleCount: 0,
+            pageSize: 12,
         };
 
         const productsGrid = document.getElementById('productsGrid');
@@ -676,6 +638,9 @@
         const pestFilter = document.getElementById('pestFilter');
         const priceFilter = document.getElementById('priceFilter');
         const activeFilters = document.getElementById('activeFilters');
+        const loadMoreSentinel = document.getElementById('storeLoadMoreSentinel');
+        const loadMoreStatus = document.getElementById('storeLoadMoreStatus');
+        let storeObserver = null;
 
         function money(value) {
             return `R$ ${Number(value || 0).toFixed(2)}`;
@@ -750,15 +715,19 @@
             }
         }
 
-        function renderProducts(products) {
-            if (!products.length) {
+        function renderProducts(products, append = false) {
+            if (!products.length && !append) {
                 productsGrid.innerHTML = '';
                 showState('Nenhum produto encontrado. Ajuste os filtros para ampliar o resultado.', 'info');
+                if (loadMoreStatus) {
+                    loadMoreStatus.style.display = 'none';
+                    loadMoreStatus.textContent = '';
+                }
                 return;
             }
 
             hideState();
-            productsGrid.innerHTML = products.map((product, index) => {
+            const cards = products.map((product, index) => {
                 const id = String(product.id);
                 const isFav = state.favorites.has(id);
                 const hasPromo = Number(product.promotional_price || 0) > 0 && Number(product.promotional_price) < Number(product.price || 0);
@@ -798,6 +767,12 @@
                 `;
             }).join('');
 
+            if (append) {
+                productsGrid.insertAdjacentHTML('beforeend', cards);
+            } else {
+                productsGrid.innerHTML = cards;
+            }
+
             productsGrid.querySelectorAll('[data-favorite-id]').forEach((btn) => {
                 btn.addEventListener('click', () => {
                     const id = String(btn.getAttribute('data-favorite-id'));
@@ -836,6 +811,49 @@
                     }
                 });
             });
+        }
+
+        function appendNextProducts() {
+            const nextChunk = state.allProducts.slice(state.visibleCount, state.visibleCount + state.pageSize);
+            if (!nextChunk.length) {
+                if (loadMoreStatus) {
+                    loadMoreStatus.style.display = state.allProducts.length ? 'block' : 'none';
+                    loadMoreStatus.textContent = state.allProducts.length ? 'Você chegou ao fim dos produtos.' : '';
+                }
+                return;
+            }
+
+            renderProducts(nextChunk, state.visibleCount > 0);
+            state.visibleCount += nextChunk.length;
+
+            if (loadMoreStatus) {
+                if (state.visibleCount < state.allProducts.length) {
+                    loadMoreStatus.style.display = 'block';
+                    loadMoreStatus.textContent = 'Role para carregar mais produtos...';
+                } else {
+                    loadMoreStatus.style.display = 'block';
+                    loadMoreStatus.textContent = 'Você chegou ao fim dos produtos.';
+                }
+            }
+        }
+
+        function setupInfiniteScroll() {
+            if (!loadMoreSentinel) return;
+            if (storeObserver) storeObserver.disconnect();
+
+            storeObserver = new IntersectionObserver((entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        appendNextProducts();
+                    }
+                });
+            }, {
+                root: null,
+                rootMargin: '240px 0px',
+                threshold: 0,
+            });
+
+            storeObserver.observe(loadMoreSentinel);
         }
 
         function updateUrl() {
@@ -880,10 +898,17 @@
                 const data = await response.json();
                 fillDropdown(cropFilter, data.filters?.crops || [], state.crop);
                 fillDropdown(pestFilter, data.filters?.pests || [], state.pest);
-                renderProducts(Array.isArray(data.products) ? data.products : []);
+                state.allProducts = Array.isArray(data.products) ? data.products : [];
+                state.visibleCount = 0;
+                productsGrid.innerHTML = '';
+                appendNextProducts();
             } catch (error) {
                 productsGrid.innerHTML = '';
                 showState(error.message || 'Erro inesperado ao carregar a vitrine.', 'error');
+                if (loadMoreStatus) {
+                    loadMoreStatus.style.display = 'none';
+                    loadMoreStatus.textContent = '';
+                }
             }
         }
 
@@ -919,6 +944,7 @@
         });
 
         readFavorites();
+        setupInfiniteScroll();
         loadProducts();
     })();
 </script>

@@ -89,6 +89,22 @@
         object-fit: cover;
         display: none;
     }
+    .wf-password-wrap {
+        position: relative;
+    }
+    .wf-password-toggle {
+        position: absolute;
+        right: 0.55rem;
+        top: 50%;
+        transform: translateY(-50%);
+        border: 1px solid var(--wf-border);
+        background: rgba(255,255,255,0.92);
+        color: var(--wf-text-secondary);
+        border-radius: 8px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        padding: 0.2rem 0.45rem;
+    }
     @media (max-width: 480px) {
         .auth-card { max-width: 100%; }
         .auth-header h1 { font-size: 1.5rem; }
@@ -119,7 +135,10 @@
                     </div>
                     <div class="mb-3">
                         <label for="password" class="wf-label">Senha</label>
-                        <input type="password" class="wf-input form-control" id="password" placeholder="Mínimo 6 caracteres" required>
+                        <div class="wf-password-wrap">
+                            <input type="password" class="wf-input form-control" id="password" placeholder="Mínimo 6 caracteres" required>
+                            <button type="button" class="wf-password-toggle" id="toggleRegisterPassword">Mostrar</button>
+                        </div>
                     </div>
                     <div class="row g-3 mb-3">
                         <div class="col-6">
@@ -174,7 +193,7 @@
         </div>
 
         <div class="auth-footer">
-            Já tem conta? <a href="/login" class="wf-link">Entrar</a>
+            Já tem conta? <a href="/login" class="wf-link">Entrar</a> • <a href="/forgot-password" class="wf-link">Recuperar senha</a>
         </div>
     </div>
 </div>
@@ -220,6 +239,13 @@
 
         profileImagePreview.src = URL.createObjectURL(file);
         profileImagePreview.style.display = 'block';
+    });
+
+    document.getElementById('toggleRegisterPassword').addEventListener('click', (event) => {
+        const input = document.getElementById('password');
+        const showing = input.type === 'text';
+        input.type = showing ? 'password' : 'text';
+        event.currentTarget.textContent = showing ? 'Mostrar' : 'Ocultar';
     });
 
     document.getElementById('registerForm').addEventListener('submit', async (e) => {

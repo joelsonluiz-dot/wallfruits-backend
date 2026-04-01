@@ -354,6 +354,65 @@
         gap: 0.48rem;
     }
 
+    .agenda-watermark {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 20;
+        opacity: 0.08;
+        background-image: repeating-linear-gradient(
+            -24deg,
+            transparent 0,
+            transparent 160px,
+            rgba(20, 84, 58, 0.22) 160px,
+            rgba(20, 84, 58, 0.22) 220px
+        );
+    }
+
+    .agenda-lock-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 25;
+        background: rgba(20, 38, 25, 0.85);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+    }
+
+    .agenda-lock-overlay.show {
+        display: flex;
+    }
+
+    .agenda-lock-card {
+        max-width: 520px;
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        border-radius: 14px;
+        background: #f8fffa;
+        padding: 1rem;
+        color: #1b4f33;
+        text-align: center;
+        box-shadow: 0 16px 38px rgba(0, 0, 0, 0.28);
+    }
+
+    .agenda-lock-card h3 {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 900;
+    }
+
+    .agenda-lock-card p {
+        margin: 0.55rem 0 0;
+        font-size: 0.82rem;
+        color: #2e5f44;
+    }
+
+    @media print {
+        body * {
+            visibility: hidden !important;
+        }
+    }
+
     @media (max-width: 1180px) {
         .agenda-layout { grid-template-columns: 1fr; }
         .agenda-mini-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -366,6 +425,18 @@
 </style>
 
 <div class="agenda-shell">
+    <div class="agenda-watermark" aria-hidden="true"></div>
+    <div class="agenda-lock-overlay" id="agendaLockOverlay" aria-hidden="true">
+        <div class="agenda-lock-card">
+            <h3>Acesso encerrado</h3>
+            <p id="agendaLockMessage">Seu acesso temporário da Agenda Inteligente foi encerrado.</p>
+            <div style="margin-top:0.75rem;display:flex;justify-content:center;gap:0.5rem;flex-wrap:wrap;">
+                <a href="/" class="btn btn-wf-secondary">Voltar</a>
+                <a href="/profile" class="btn btn-wf-primary">Ver assinatura</a>
+            </div>
+        </div>
+    </div>
+
     <section class="agenda-hero">
         <h1>Agenda Inteligente WallFruits</h1>
         <p>Calendário real com reservas, decisões por peso configurável e alertas proativos automáticos.</p>
@@ -542,11 +613,15 @@
 <script>
     (function setupAgendaAgent() {
         const IS_ADMIN = "{{ 'true' if current_user and current_user.role == 'admin' else 'false' }}" === 'true';
+        const AGENDA_TEMPORARY_ACCESS = "{{ 'true' if agenda_temporary_access else 'false' }}" === 'true';
+        const AGENDA_ACCESS_EXPIRES_AT = Number("{{ agenda_access_expires_at or 0 }}");
         const state = {
             profile: null,
             calendarView: 'month',
             anchorDate: new Date().toISOString().slice(0, 10),
         };
+        let accessLocked = false;
+        let tempAccessTimer = null;
 
         const statusBox = document.getElementById('agendaStatus');
         const historyGrid = document.getElementById('historyGrid');
@@ -569,6 +644,8 @@
         const calendarReloadBtn = document.getElementById('calendarReloadBtn');
         const calendarTodayBtn = document.getElementById('calendarTodayBtn');
         const calendarContainer = document.getElementById('calendarContainer');
+        const lockOverlay = document.getElementById('agendaLockOverlay');
+        const lockMessage = document.getElementById('agendaLockMessage');
 
         const agendaEventForm = document.getElementById('agendaEventForm');
         const eventTitle = document.getElementById('eventTitle');
@@ -584,6 +661,87 @@
                 return false;
             }
             return true;
+        }
+
+        function lockAgendaAccess(message) {
+            if (accessLocked) return;
+            accessLocked = true;
+
+            if (statusBox) {
+                statusBox.className = 'wf-alert wf-alert-error';
+                statusBox.textContent = message;
+            }
+
+            if (lockMessage) {
+                lockMessage.textContent = message;
+            }
+
+            if (lockOverlay) {
+                lockOverlay.classList.add('show');
+                lockOverlay.setAttribute('aria-hidden', 'false');
+            }
+        }
+
+        function revokeTemporaryAccess(reason) {
+            if (!AGENDA_TEMPORARY_ACCESS || accessLocked) return;
+
+            lockAgendaAccess(reason);
+
+            fetch('/api/agenda/access/revoke', {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
+                },
+                keepalive: true,
+            }).catch(() => {});
+
+            window.setTimeout(() => {
+                window.location.href = '/ai-agent';
+            }, 1200);
+        }
+
+        function setupTemporaryAccessGuards() {
+            if (!AGENDA_TEMPORARY_ACCESS) return;
+
+            const msRemaining = Math.max(0, (AGENDA_ACCESS_EXPIRES_AT * 1000) - Date.now());
+            if (msRemaining <= 0) {
+                revokeTemporaryAccess('Seu acesso temporário de 5 minutos foi encerrado.');
+                return;
+            }
+
+            tempAccessTimer = window.setTimeout(() => {
+                revokeTemporaryAccess('Seu acesso temporário de 5 minutos foi encerrado.');
+            }, msRemaining);
+
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    revokeTemporaryAccess('Seu acesso temporário foi encerrado ao sair da aba da Agenda.');
+                }
+            });
+
+            window.addEventListener('pagehide', () => {
+                revokeTemporaryAccess('Seu acesso temporário foi encerrado ao sair da aba da Agenda.');
+            });
+
+            window.addEventListener('beforeunload', () => {
+                revokeTemporaryAccess('Seu acesso temporário foi encerrado ao sair da aba da Agenda.');
+            });
+        }
+
+        function setupCaptureHardening() {
+            document.addEventListener('contextmenu', (event) => {
+                event.preventDefault();
+            });
+
+            document.addEventListener('keydown', (event) => {
+                const key = String(event.key || '').toLowerCase();
+                if (key === 'printscreen') {
+                    event.preventDefault();
+                }
+                if ((event.ctrlKey || event.metaKey) && (key === 'p' || key === 's')) {
+                    event.preventDefault();
+                }
+            });
         }
 
         function appendMessage(kind, text) {
@@ -926,6 +1084,9 @@
 
         async function init() {
             if (!requireAuth()) return;
+
+            setupCaptureHardening();
+            setupTemporaryAccessGuards();
 
             try {
                 calendarAnchor.value = state.anchorDate;
