@@ -854,6 +854,183 @@
             white-space: nowrap;
         }
     }
+
+    .reserve-modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(13, 33, 26, 0.64);
+        backdrop-filter: blur(2px);
+        z-index: 1400;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.8rem;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition: opacity 220ms ease, visibility 220ms ease;
+    }
+
+    .reserve-modal-backdrop.show {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+    }
+
+    .reserve-modal {
+        width: min(980px, 100%);
+        max-height: 94vh;
+        overflow: auto;
+        border-radius: 16px;
+        background: linear-gradient(145deg, #fbfffc, #f6fbf9 45%, #fdf7ee 100%);
+        border: 1px solid rgba(33, 98, 62, 0.22);
+        box-shadow: 0 24px 48px rgba(12, 38, 28, 0.35);
+        padding: 0.95rem;
+        display: grid;
+        gap: 0.8rem;
+        transform: translateY(20px) scale(0.98);
+        opacity: 0;
+        transition: transform 220ms ease, opacity 220ms ease;
+    }
+
+    .reserve-modal-backdrop.show .reserve-modal {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+
+    .reserve-modal-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.6rem; }
+    .reserve-modal-title { margin: 0; font-size: 1.04rem; font-weight: 900; color: #165037; }
+    .reserve-modal-sub { margin: 0.2rem 0 0; font-size: 0.78rem; color: #587263; }
+    .reserve-close {
+        border: none;
+        width: 34px;
+        height: 34px;
+        border-radius: 9px;
+        background: #e8f3ec;
+        color: #1d643f;
+        font-size: 1.18rem;
+        font-weight: 800;
+    }
+
+    .reserve-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.7rem;
+    }
+
+    .reserve-card {
+        border: 1px solid rgba(24, 95, 58, 0.18);
+        border-radius: 12px;
+        background: #ffffff;
+        padding: 0.65rem;
+        display: grid;
+        gap: 0.55rem;
+    }
+
+    .reserve-card h3 {
+        margin: 0;
+        font-size: 0.82rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #285f44;
+        font-weight: 900;
+    }
+
+    .reserve-price-strip {
+        border: 1px dashed rgba(20, 97, 56, 0.38);
+        border-radius: 10px;
+        background: #f2fbf4;
+        padding: 0.54rem;
+        display: grid;
+        gap: 0.2rem;
+    }
+
+    .reserve-price-strip small { color: #4f6f5e; font-size: 0.72rem; }
+    .reserve-price-strip strong { color: #1d6a41; font-size: 0.95rem; }
+
+    .reserve-choice-row {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.45rem;
+    }
+
+    .reserve-choice {
+        border: 1px solid #d7eadc;
+        border-radius: 10px;
+        background: #fcfffd;
+        padding: 0.5rem;
+        display: grid;
+        gap: 0.18rem;
+        cursor: pointer;
+    }
+
+    .reserve-choice input { margin-right: 0.2rem; }
+    .reserve-choice .lbl { font-size: 0.73rem; color: #325d45; font-weight: 800; }
+    .reserve-choice .sub { font-size: 0.67rem; color: #64816f; }
+
+    .reserve-fields { display: grid; gap: 0.55rem; }
+    .reserve-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 0.52rem; }
+    .reserve-three-col { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; }
+
+    .reserve-field { display: grid; gap: 0.24rem; }
+    .reserve-field label { font-size: 0.71rem; font-weight: 800; color: #365e48; }
+    .reserve-field .is-invalid {
+        border-color: #c0392b !important;
+        box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.12);
+        background: #fff8f7;
+    }
+
+    .reserve-field-error {
+        min-height: 0.95rem;
+        font-size: 0.68rem;
+        color: #a93226;
+        font-weight: 700;
+    }
+
+    .reserve-summary {
+        border: 1px solid rgba(24, 95, 58, 0.2);
+        border-radius: 10px;
+        background: #f8fcf8;
+        padding: 0.58rem;
+        display: grid;
+        gap: 0.24rem;
+        font-size: 0.76rem;
+        color: #305741;
+    }
+
+    .reserve-summary .total { font-size: 0.89rem; font-weight: 900; color: #1f6a3f; }
+
+    .reserve-warning {
+        border-radius: 10px;
+        border: 1px solid rgba(178, 103, 35, 0.36);
+        background: #fff7eb;
+        color: #805321;
+        font-size: 0.73rem;
+        padding: 0.54rem;
+    }
+
+    .reserve-modal-actions { display: flex; justify-content: flex-end; gap: 0.5rem; flex-wrap: wrap; }
+
+    @media (prefers-reduced-motion: reduce) {
+        .reserve-modal-backdrop,
+        .reserve-modal {
+            transition: none;
+        }
+    }
+
+    @media (max-width: 900px) {
+        .reserve-grid,
+        .reserve-two-col,
+        .reserve-three-col,
+        .reserve-choice-row {
+            grid-template-columns: 1fr;
+        }
+
+        .reserve-modal {
+            padding: 0.78rem;
+            max-height: 96vh;
+        }
+    }
 </style>
 
 <a href="/messages" class="messages-float-btn" title="Minhas mensagens">
@@ -937,6 +1114,118 @@
     <span id="offersNewToastText">Novas ofertas disponíveis</span>
 </button>
 
+<div id="reserveOfferModal" class="reserve-modal-backdrop" aria-hidden="true">
+    <div class="reserve-modal" role="dialog" aria-modal="true" aria-labelledby="reserveOfferTitle">
+        <div class="reserve-modal-head">
+            <div>
+                <h2 id="reserveOfferTitle" class="reserve-modal-title">Reservar oferta</h2>
+                <p id="reserveOfferSubtitle" class="reserve-modal-sub">Configure quantidade, preço e data da reserva.</p>
+            </div>
+            <button type="button" class="reserve-close" id="reserveOfferCloseBtn" aria-label="Fechar">×</button>
+        </div>
+
+        <div class="reserve-grid">
+            <section class="reserve-card">
+                <h3>Preço e Quantidade</h3>
+                <div id="reserveFormAlert" class="wf-alert wf-alert-error" style="display:none;" role="status" aria-live="polite"></div>
+                <div class="reserve-price-strip">
+                    <small>Taxa de reserva por kg</small>
+                    <strong id="reserveFeeHeader">R$ 0,005/kg (0,5 centavo)</strong>
+                </div>
+
+                <div class="reserve-choice-row" id="reservePricingModeWrap">
+                    <label class="reserve-choice">
+                        <span><input type="radio" name="reservePricingMode" value="min"> <span class="lbl">Preço mínimo</span></span>
+                        <span class="sub" id="reserveMinPriceLabel">R$ -</span>
+                    </label>
+                    <label class="reserve-choice">
+                        <span><input type="radio" name="reservePricingMode" value="market" checked> <span class="lbl">Preço sugerido</span></span>
+                        <span class="sub" id="reserveMarketPriceLabel">R$ -</span>
+                    </label>
+                    <label class="reserve-choice">
+                        <span><input type="radio" name="reservePricingMode" value="free"> <span class="lbl">Preço livre</span></span>
+                        <span class="sub" id="reserveMaxPriceLabel">Acima do máximo</span>
+                    </label>
+                </div>
+
+                <div class="reserve-fields">
+                    <div class="reserve-three-col">
+                        <div class="reserve-field">
+                            <label for="reserveBoxesInput">Quantidade de caixas</label>
+                            <input id="reserveBoxesInput" class="wf-input form-control" type="number" min="1" step="1" value="1">
+                            <div class="reserve-field-error" id="reserveBoxesInputError"></div>
+                        </div>
+                        <div class="reserve-field">
+                            <label for="reserveBoxWeightInput">Peso por caixa (kg)</label>
+                            <input id="reserveBoxWeightInput" class="wf-input form-control" type="number" min="0.1" step="0.1" value="1">
+                            <div class="reserve-field-error" id="reserveBoxWeightInputError"></div>
+                        </div>
+                        <div class="reserve-field">
+                            <label for="reserveDateInput">Data da reserva</label>
+                            <input id="reserveDateInput" class="wf-input form-control" type="date">
+                            <div class="reserve-field-error" id="reserveDateInputError"></div>
+                        </div>
+                    </div>
+                    <div class="reserve-field" id="reserveFreePriceField" style="display:none;">
+                        <label for="reserveFreePriceInput">Preço livre por kg (R$)</label>
+                        <input id="reserveFreePriceInput" class="wf-input form-control" type="number" min="0" step="0.01" placeholder="Digite o valor que deseja pagar">
+                        <div class="reserve-field-error" id="reserveFreePriceInputError"></div>
+                    </div>
+                    <div class="reserve-summary" id="reserveSummary"></div>
+                </div>
+            </section>
+
+            <section class="reserve-card">
+                <h3>Identificação e Contato</h3>
+                <div class="reserve-fields">
+                    <div class="reserve-two-col">
+                        <div class="reserve-field">
+                            <label for="reserveContactName">Nome</label>
+                            <input id="reserveContactName" class="wf-input form-control" type="text" maxlength="120" placeholder="Seu nome completo">
+                            <div class="reserve-field-error" id="reserveContactNameError"></div>
+                        </div>
+                        <div class="reserve-field">
+                            <label for="reserveContactPhone">Contato</label>
+                            <input id="reserveContactPhone" class="wf-input form-control" type="text" maxlength="40" inputmode="numeric" placeholder="Telefone ou WhatsApp">
+                            <div class="reserve-field-error" id="reserveContactPhoneError"></div>
+                        </div>
+                    </div>
+                    <div class="reserve-field">
+                        <label for="reserveContactAddress">Endereço</label>
+                        <textarea id="reserveContactAddress" class="wf-input form-control" rows="2" maxlength="300" placeholder="Endereço para referência logística"></textarea>
+                        <div class="reserve-field-error" id="reserveContactAddressError"></div>
+                    </div>
+                    <div class="reserve-two-col">
+                        <div class="reserve-field">
+                            <label for="reserveDeliveryMethod">Entrega</label>
+                            <select id="reserveDeliveryMethod" class="wf-input form-control">
+                                <option value="pickup">Retirada</option>
+                                <option value="delivery">Entrega</option>
+                            </select>
+                        </div>
+                        <div class="reserve-field">
+                            <label for="reservePaymentMethod">Pagamento</label>
+                            <select id="reservePaymentMethod" class="wf-input form-control">
+                                <option value="transfer">Transferência</option>
+                                <option value="cash">Dinheiro</option>
+                                <option value="card">Cartão</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="reserve-warning">
+                        Cancelamentos de reserva podem gerar cobrança de taxas administrativas e, em casos recorrentes, banimento da conta.
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <div class="reserve-modal-actions">
+            <button type="button" class="btn btn-wf-secondary" id="reserveOfferCancelBtn">Cancelar</button>
+            <button type="button" class="btn btn-wf-primary" id="reserveOfferSubmitBtn">Confirmar reserva</button>
+        </div>
+    </div>
+</div>
+
 <script>
     const offersStore = new Map();
     const BOOKMARK_STORAGE_KEY = 'wf_offer_bookmarks';
@@ -974,6 +1263,12 @@
         prefetch: null,
         signature: '',
         items: [],
+    };
+    const RESERVATION_FEE_PER_KG = 0.005;
+    const reserveModalState = {
+        offer: null,
+        submitting: false,
+        profileLoaded: false,
     };
     const REAL_PRODUCT_IMAGES = {
         banana: 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?auto=format&fit=crop&w=1200&q=80',
@@ -1107,6 +1402,442 @@
             return 'R$ -';
         }
         return `R$ ${Number(value).toFixed(2)}`;
+    }
+
+    function normalizeDecimal(value, fallback = 0) {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : fallback;
+    }
+
+    function toDateInputValue(dateLike) {
+        if (!dateLike) return '';
+        const str = String(dateLike).slice(0, 10);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(str)) return '';
+        return str;
+    }
+
+    function todayDateInputValue() {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        const d = String(now.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    }
+
+    function getSelectedReservePricingMode() {
+        const selected = document.querySelector('input[name="reservePricingMode"]:checked');
+        return selected?.value || 'market';
+    }
+
+    function getOfferMarketPrice(offer) {
+        return normalizeDecimal(offer?.price_per_kg ?? offer?.price_avg_kg ?? offer?.price);
+    }
+
+    function getOfferMinPrice(offer) {
+        return normalizeDecimal(offer?.price_min_kg ?? getOfferMarketPrice(offer));
+    }
+
+    function getOfferMaxPrice(offer) {
+        return normalizeDecimal(offer?.price_max_kg ?? getOfferMarketPrice(offer));
+    }
+
+    function computeReserveUnitPrice(offer, mode, freePriceValue) {
+        const min = getOfferMinPrice(offer);
+        const market = getOfferMarketPrice(offer);
+        if (mode === 'min') return min;
+        if (mode === 'free') return normalizeDecimal(freePriceValue, 0);
+        return market;
+    }
+
+    function formatBrazilPhone(value) {
+        const digits = String(value || '').replace(/\D/g, '').slice(0, 11);
+        if (!digits) return '';
+        if (digits.length <= 2) return `(${digits}`;
+        if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+        if (digits.length <= 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+        return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+    }
+
+    function clearReserveAlert() {
+        const alertBox = document.getElementById('reserveFormAlert');
+        if (!alertBox) return;
+        alertBox.style.display = 'none';
+        alertBox.textContent = '';
+    }
+
+    function showReserveAlert(message) {
+        const alertBox = document.getElementById('reserveFormAlert');
+        if (!alertBox) return;
+        alertBox.style.display = 'block';
+        alertBox.textContent = message;
+    }
+
+    function clearReserveFieldError(inputId) {
+        const input = document.getElementById(inputId);
+        const errorBox = document.getElementById(`${inputId}Error`);
+        if (input) input.classList.remove('is-invalid');
+        if (errorBox) errorBox.textContent = '';
+    }
+
+    function setReserveFieldError(inputId, message) {
+        const input = document.getElementById(inputId);
+        const errorBox = document.getElementById(`${inputId}Error`);
+        if (input) input.classList.add('is-invalid');
+        if (errorBox) errorBox.textContent = message;
+    }
+
+    function clearAllReserveFieldErrors() {
+        [
+            'reserveBoxesInput',
+            'reserveBoxWeightInput',
+            'reserveDateInput',
+            'reserveFreePriceInput',
+            'reserveContactName',
+            'reserveContactPhone',
+            'reserveContactAddress',
+        ].forEach(clearReserveFieldError);
+    }
+
+    function validateReserveForm(offer) {
+        clearReserveAlert();
+        clearAllReserveFieldErrors();
+
+        const mode = getSelectedReservePricingMode();
+        const boxes = Math.max(1, Math.floor(normalizeDecimal(document.getElementById('reserveBoxesInput')?.value, 0)));
+        const boxWeight = normalizeDecimal(document.getElementById('reserveBoxWeightInput')?.value, 0);
+        const freePrice = normalizeDecimal(document.getElementById('reserveFreePriceInput')?.value, 0);
+        const dateValue = document.getElementById('reserveDateInput')?.value || '';
+        const deliveryMethod = document.getElementById('reserveDeliveryMethod')?.value || 'pickup';
+        const paymentMethod = document.getElementById('reservePaymentMethod')?.value || 'transfer';
+        const contactName = (document.getElementById('reserveContactName')?.value || '').trim();
+        const contactPhone = (document.getElementById('reserveContactPhone')?.value || '').trim();
+        const contactAddress = (document.getElementById('reserveContactAddress')?.value || '').trim();
+
+        let valid = true;
+
+        const minAllowed = Math.max(1, Math.floor(normalizeDecimal(offer.min_order, 1)));
+        if (!Number.isFinite(boxes) || boxes < minAllowed) {
+            setReserveFieldError('reserveBoxesInput', `Mínimo de ${minAllowed} caixas para esta oferta.`);
+            valid = false;
+        }
+
+        if (!Number.isFinite(boxWeight) || boxWeight <= 0) {
+            setReserveFieldError('reserveBoxWeightInput', 'Informe um peso por caixa válido.');
+            valid = false;
+        }
+
+        if (!dateValue) {
+            setReserveFieldError('reserveDateInput', 'Selecione a data da reserva.');
+            valid = false;
+        }
+
+        const startDate = toDateInputValue(offer.reservation_start);
+        const endDate = toDateInputValue(offer.reservation_end);
+        if (dateValue && startDate && dateValue < startDate) {
+            setReserveFieldError('reserveDateInput', `A data deve ser a partir de ${startDate}.`);
+            valid = false;
+        }
+        if (dateValue && endDate && dateValue > endDate) {
+            setReserveFieldError('reserveDateInput', `A data deve ser até ${endDate}.`);
+            valid = false;
+        }
+
+        if (mode === 'free') {
+            const minPrice = getOfferMinPrice(offer);
+            if (!Number.isFinite(freePrice) || freePrice < minPrice) {
+                setReserveFieldError('reserveFreePriceInput', `Preço livre deve ser >= ${toCurrency(minPrice)}.`);
+                valid = false;
+            }
+        }
+
+        if (!contactName || contactName.length < 3) {
+            setReserveFieldError('reserveContactName', 'Informe seu nome completo.');
+            valid = false;
+        }
+
+        const phoneDigits = contactPhone.replace(/\D/g, '');
+        if (phoneDigits.length < 10) {
+            setReserveFieldError('reserveContactPhone', 'Informe um telefone válido com DDD.');
+            valid = false;
+        }
+
+        if (deliveryMethod === 'delivery' && !contactAddress) {
+            setReserveFieldError('reserveContactAddress', 'Endereço obrigatório para entrega.');
+            valid = false;
+        }
+
+        if (!valid) {
+            showReserveAlert('Revise os campos destacados para concluir a reserva.');
+            return { valid: false };
+        }
+
+        return {
+            valid: true,
+            payload: {
+                quantity: boxes,
+                delivery_method: deliveryMethod,
+                delivery_address: contactAddress || null,
+                reservation_date: new Date(`${dateValue}T12:00:00`).toISOString(),
+                pricing_mode: mode,
+                offered_unit_price: mode === 'free' ? freePrice : null,
+                contact_name: contactName || null,
+                contact_phone: contactPhone || null,
+                contact_address: contactAddress || null,
+                payment_method: paymentMethod,
+            },
+        };
+    }
+
+    function updateReserveSummary() {
+        const offer = reserveModalState.offer;
+        const summary = document.getElementById('reserveSummary');
+        const freeField = document.getElementById('reserveFreePriceField');
+        const freeInput = document.getElementById('reserveFreePriceInput');
+        if (!offer || !summary) return;
+
+        const boxes = Math.max(1, Math.floor(normalizeDecimal(document.getElementById('reserveBoxesInput')?.value, 1)));
+        const boxWeight = Math.max(0.1, normalizeDecimal(document.getElementById('reserveBoxWeightInput')?.value, normalizeDecimal(offer.box_weight_kg, 1)));
+        const quantityKg = boxes * boxWeight;
+
+        const mode = getSelectedReservePricingMode();
+        if (freeField) {
+            freeField.style.display = mode === 'free' ? 'grid' : 'none';
+        }
+
+        const unitPrice = computeReserveUnitPrice(offer, mode, freeInput?.value);
+        const subtotal = quantityKg * unitPrice;
+        const fee = quantityKg * RESERVATION_FEE_PER_KG;
+        const grandTotal = subtotal + fee;
+
+        const modeLabel = mode === 'min' ? 'Preço mínimo' : (mode === 'free' ? 'Preço livre' : 'Preço sugerido');
+        const unitText = mode === 'free' && unitPrice <= 0 ? 'Informe um valor no preço livre' : toCurrency(unitPrice);
+
+        summary.innerHTML = `
+            <div><strong>Resumo</strong></div>
+            <div>Caixas: <strong>${boxes}</strong> • Peso total: <strong>${quantityKg.toFixed(2)} kg</strong></div>
+            <div>Modo: <strong>${modeLabel}</strong> • Valor/kg: <strong>${unitText}</strong></div>
+            <div>Subtotal: <strong>${toCurrency(subtotal)}</strong></div>
+            <div>Taxa de reserva (${toCurrency(RESERVATION_FEE_PER_KG)}/kg): <strong>${toCurrency(fee)}</strong></div>
+            <div class="total">Total estimado: ${toCurrency(grandTotal)}</div>
+        `;
+    }
+
+    async function hydrateReserveContactDefaults() {
+        if (reserveModalState.profileLoaded) return;
+        try {
+            const me = await apiRequest('/auth/me');
+            const nameInput = document.getElementById('reserveContactName');
+            const phoneInput = document.getElementById('reserveContactPhone');
+            const addressInput = document.getElementById('reserveContactAddress');
+
+            if (nameInput && !nameInput.value.trim()) {
+                nameInput.value = me?.name || '';
+            }
+            if (phoneInput && !phoneInput.value.trim()) {
+                phoneInput.value = me?.phone || me?.whatsapp || '';
+            }
+            if (addressInput && !addressInput.value.trim()) {
+                addressInput.value = me?.address || '';
+            }
+            reserveModalState.profileLoaded = true;
+        } catch {
+            // segue sem prefill quando /auth/me falhar
+        }
+    }
+
+    function openReserveModal(offer) {
+        const modal = document.getElementById('reserveOfferModal');
+        const title = document.getElementById('reserveOfferTitle');
+        const subtitle = document.getElementById('reserveOfferSubtitle');
+        const minLabel = document.getElementById('reserveMinPriceLabel');
+        const marketLabel = document.getElementById('reserveMarketPriceLabel');
+        const maxLabel = document.getElementById('reserveMaxPriceLabel');
+        const feeHeader = document.getElementById('reserveFeeHeader');
+        const boxesInput = document.getElementById('reserveBoxesInput');
+        const boxWeightInput = document.getElementById('reserveBoxWeightInput');
+        const dateInput = document.getElementById('reserveDateInput');
+        const freePriceInput = document.getElementById('reserveFreePriceInput');
+
+        if (!modal || !offer) return;
+
+        reserveModalState.offer = offer;
+
+        const minPrice = getOfferMinPrice(offer);
+        const marketPrice = getOfferMarketPrice(offer);
+        const maxPrice = getOfferMaxPrice(offer);
+
+        if (title) {
+            title.textContent = `Reservar ${offer.product_name || 'oferta'}`;
+        }
+
+        const startDate = toDateInputValue(offer.reservation_start);
+        const endDate = toDateInputValue(offer.reservation_end);
+        if (subtitle) {
+            const range = startDate || endDate
+                ? `Período de reserva: ${startDate || 'imediato'} até ${endDate || 'sem limite'}.`
+                : 'Sem período restrito de reserva informado na ficha técnica.';
+            subtitle.textContent = `${range} Configure quantidade, preço e data da reserva.`;
+        }
+
+        if (minLabel) minLabel.textContent = toCurrency(minPrice);
+        if (marketLabel) marketLabel.textContent = toCurrency(marketPrice);
+        if (maxLabel) maxLabel.textContent = `Pode pagar acima de ${toCurrency(maxPrice)}`;
+        if (feeHeader) feeHeader.textContent = `${toCurrency(RESERVATION_FEE_PER_KG)}/kg (0,5 centavo por kg)`;
+
+        if (boxesInput) {
+            const minOrder = Math.max(1, Math.floor(normalizeDecimal(offer.min_order, 1)));
+            boxesInput.min = String(minOrder);
+            boxesInput.value = String(minOrder);
+        }
+
+        if (boxWeightInput) {
+            boxWeightInput.value = String(Math.max(0.1, normalizeDecimal(offer.box_weight_kg, 1)));
+        }
+
+        if (dateInput) {
+            const today = todayDateInputValue();
+            dateInput.min = startDate || today;
+            if (endDate) {
+                dateInput.max = endDate;
+            } else {
+                dateInput.removeAttribute('max');
+            }
+
+            let defaultDate = today;
+            if (startDate && defaultDate < startDate) defaultDate = startDate;
+            if (endDate && defaultDate > endDate) defaultDate = endDate;
+            dateInput.value = defaultDate;
+        }
+
+        if (freePriceInput) {
+            freePriceInput.value = '';
+            freePriceInput.min = String(minPrice);
+        }
+
+        const marketRadio = document.querySelector('input[name="reservePricingMode"][value="market"]');
+        if (marketRadio) marketRadio.checked = true;
+
+        clearReserveAlert();
+        clearAllReserveFieldErrors();
+
+        modal.classList.add('show');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+        hydrateReserveContactDefaults();
+        updateReserveSummary();
+        if (boxesInput) boxesInput.focus();
+    }
+
+    function closeReserveModal() {
+        const modal = document.getElementById('reserveOfferModal');
+        if (!modal) return;
+        modal.classList.remove('show');
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+        reserveModalState.offer = null;
+        reserveModalState.submitting = false;
+        clearReserveAlert();
+        clearAllReserveFieldErrors();
+    }
+
+    async function submitReserveModal() {
+        const offer = reserveModalState.offer;
+        if (!offer || reserveModalState.submitting) return;
+
+        const validation = validateReserveForm(offer);
+        if (!validation.valid) return;
+
+        const submitBtn = document.getElementById('reserveOfferSubmitBtn');
+        const originalText = submitBtn?.textContent || 'Confirmar reserva';
+        reserveModalState.submitting = true;
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Reservando...';
+        }
+
+        try {
+            await apiRequest('/transactions', 'POST', {
+                offer_id: offer.id,
+                ...validation.payload,
+                notes: 'Reserva criada pelo modal de ofertas.',
+            });
+
+            closeReserveModal();
+            alert('Reserva registrada com sucesso. Você será redirecionado para Meus pedidos.');
+            window.location.href = '/orders';
+        } catch (error) {
+            alert(error.message || 'Nao foi possivel reservar agora.');
+        } finally {
+            reserveModalState.submitting = false;
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            }
+        }
+    }
+
+    function setupReserveOfferModal() {
+        const modal = document.getElementById('reserveOfferModal');
+        const closeBtn = document.getElementById('reserveOfferCloseBtn');
+        const cancelBtn = document.getElementById('reserveOfferCancelBtn');
+        const submitBtn = document.getElementById('reserveOfferSubmitBtn');
+        const deliveryMethodSelect = document.getElementById('reserveDeliveryMethod');
+        const contactAddress = document.getElementById('reserveContactAddress');
+        const contactPhone = document.getElementById('reserveContactPhone');
+
+        if (!modal) return;
+
+        if (closeBtn) closeBtn.addEventListener('click', closeReserveModal);
+        if (cancelBtn) cancelBtn.addEventListener('click', closeReserveModal);
+        if (submitBtn) submitBtn.addEventListener('click', submitReserveModal);
+
+        modal.addEventListener('click', (event) => {
+            if (event.target === modal) {
+                closeReserveModal();
+            }
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && modal.classList.contains('show')) {
+                closeReserveModal();
+            }
+        });
+
+        document.querySelectorAll('input[name="reservePricingMode"]').forEach((node) => {
+            node.addEventListener('change', updateReserveSummary);
+        });
+
+        ['reserveBoxesInput', 'reserveBoxWeightInput', 'reserveDateInput', 'reserveFreePriceInput'].forEach((id) => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('input', updateReserveSummary);
+                el.addEventListener('change', updateReserveSummary);
+                el.addEventListener('input', () => clearReserveFieldError(id));
+            }
+        });
+
+        ['reserveContactName', 'reserveContactAddress'].forEach((id) => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('input', () => clearReserveFieldError(id));
+            }
+        });
+
+        if (contactPhone) {
+            contactPhone.addEventListener('input', () => {
+                contactPhone.value = formatBrazilPhone(contactPhone.value);
+                clearReserveFieldError('reserveContactPhone');
+            });
+        }
+
+        if (deliveryMethodSelect && contactAddress) {
+            deliveryMethodSelect.addEventListener('change', () => {
+                contactAddress.required = deliveryMethodSelect.value === 'delivery';
+                if (deliveryMethodSelect.value !== 'delivery') {
+                    clearReserveFieldError('reserveContactAddress');
+                }
+            });
+        }
     }
 
     function fallbackImageSvg(label) {
@@ -1331,28 +2062,7 @@
             return;
         }
 
-        const defaultQty = Number(offer.min_order || 1);
-        const rawQty = prompt(`Quantidade para reservar (${offer.unit || 'kg'}):`, String(defaultQty));
-        if (rawQty === null) return;
-
-        const qty = Number(rawQty);
-        if (!qty || qty <= 0) {
-            alert('Quantidade invalida.');
-            return;
-        }
-
-        try {
-            await apiRequest('/transactions', 'POST', {
-                offer_id: offer.id,
-                quantity: qty,
-                delivery_method: 'pickup',
-                payment_method: 'transfer',
-            });
-            alert('Reserva registrada com sucesso. Acompanhe em Meus pedidos.');
-            window.location.href = '/orders';
-        } catch (error) {
-            alert(error.message || 'Nao foi possivel reservar agora.');
-        }
+        openReserveModal(offer);
     }
 
     async function toggleLike(offerId, event) {
@@ -2162,6 +2872,7 @@
     loadFeaturedStoreProducts();
     loadMessagesBadge();
     setupOffersFilterPopup();
+    setupReserveOfferModal();
     renderActiveFilterChips();
     restartOffersAutoRefresh();
 

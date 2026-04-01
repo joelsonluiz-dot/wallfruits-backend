@@ -1,80 +1,50 @@
 {% extends "base.html" %}
 
+{% block title %}Checkout | WallFruits Store{% endblock %}
+
 {% block content %}
 <style>
-    .checkout-wrap {
-        display: grid;
-        grid-template-columns: 1.35fr 0.95fr;
-        gap: 0.95rem;
-    }
-
+    .checkout-wrap { display: grid; grid-template-columns: 1.35fr 0.95fr; gap: 0.9rem; }
     .checkout-card {
-        border: 1px solid rgba(11, 46, 99, 0.12);
+        border: 1px solid #d7e7d9;
         border-radius: 16px;
         background: #fff;
-        box-shadow: 0 10px 24px rgba(16, 44, 90, 0.1);
+        box-shadow: 0 10px 24px rgba(30, 85, 34, 0.1);
         padding: 0.9rem;
     }
-
-    .checkout-title {
-        margin: 0 0 0.8rem;
-        color: #10356a;
-        font-size: 1.26rem;
-        font-weight: 900;
-    }
-
-    .checkout-item {
-        display: flex;
-        justify-content: space-between;
-        gap: 0.6rem;
-        padding: 0.4rem 0;
-        border-bottom: 1px solid rgba(11, 46, 99, 0.08);
-        font-size: 0.82rem;
-    }
-
-    .checkout-item:last-child {
-        border-bottom: none;
-    }
-
+    .checkout-title { margin: 0 0 0.8rem; color: #2E7D32; font-size: 1.22rem; font-weight: 900; }
+    .checkout-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+    .checkout-item { display: flex; justify-content: space-between; gap: 0.55rem; padding: 0.38rem 0; border-bottom: 1px solid #e2eee4; font-size: 0.8rem; }
+    .checkout-item:last-child { border-bottom: none; }
     .checkout-total {
-        margin-top: 0.55rem;
-        padding-top: 0.55rem;
-        border-top: 1px solid rgba(11, 46, 99, 0.12);
+        margin-top: 0.5rem;
+        padding-top: 0.5rem;
+        border-top: 1px solid #dce9de;
         display: flex;
         justify-content: space-between;
         font-weight: 900;
-        color: #0f2f60;
-        font-size: 0.98rem;
+        color: #2E7D32;
     }
 
-    .checkout-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 0.6rem;
+    .btn-spinner {
+        width: 14px;
+        height: 14px;
+        border: 2px solid rgba(255, 255, 255, 0.45);
+        border-top-color: #fff;
+        border-radius: 50%;
+        display: inline-block;
+        animation: wfSpin 0.8s linear infinite;
+        margin-right: 0.35rem;
+        vertical-align: -2px;
+    }
+
+    @keyframes wfSpin {
+        to { transform: rotate(360deg); }
     }
 
     @media (max-width: 992px) {
-        .checkout-wrap {
-            grid-template-columns: 1fr;
-        }
-
-        .checkout-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-
-    @media (max-width: 480px) {
-        .checkout-card {
-            padding: 0.72rem;
-        }
-
-        .checkout-title {
-            font-size: 1.08rem;
-        }
-
-        .checkout-item {
-            font-size: 0.76rem;
-        }
+        .checkout-wrap { grid-template-columns: 1fr; }
+        .checkout-grid { grid-template-columns: 1fr; }
     }
 </style>
 
@@ -85,7 +55,7 @@
 
         <div class="checkout-grid">
             <div>
-                <label class="wf-label">Nome do destinatario</label>
+                <label class="wf-label">Nome do destinatário</label>
                 <input class="wf-input form-control" id="shipName" placeholder="Nome completo">
             </div>
             <div>
@@ -101,8 +71,8 @@
                 <input class="wf-input form-control" id="shipState" placeholder="UF">
             </div>
             <div style="grid-column: 1 / -1;">
-                <label class="wf-label">Endereco completo</label>
-                <input class="wf-input form-control" id="shipAddress" placeholder="Rua, numero, bairro, complemento">
+                <label class="wf-label">Endereço completo</label>
+                <input class="wf-input form-control" id="shipAddress" placeholder="Rua, número, bairro, complemento">
             </div>
             <div>
                 <label class="wf-label">CEP</label>
@@ -113,8 +83,8 @@
                 <select class="wf-select form-select" id="paymentMethod">
                     <option value="pix">Pix</option>
                     <option value="boleto">Boleto</option>
-                    <option value="cartao">Cartao</option>
-                    <option value="transferencia">Transferencia</option>
+                    <option value="cartao">Cartão</option>
+                    <option value="transferencia">Transferência</option>
                 </select>
             </div>
         </div>
@@ -126,12 +96,9 @@
     </section>
 
     <aside class="checkout-card">
-        <h2 class="h6 mb-2">Resumo do pedido</h2>
+        <h2 class="h6 mb-2" style="color:#2E7D32;font-weight:900;">Resumo do pedido</h2>
         <div id="checkoutItems"></div>
-        <div class="checkout-total">
-            <span>Total</span>
-            <span id="checkoutTotal">R$ 0.00</span>
-        </div>
+        <div class="checkout-total"><span>Total</span><span id="checkoutTotal">R$ 0.00</span></div>
     </aside>
 </div>
 
@@ -141,16 +108,54 @@
         const totalEl = document.getElementById('checkoutTotal');
         const btnFinish = document.getElementById('btnFinishPurchase');
         const feedback = document.getElementById('checkoutFeedback');
-        let currentCart = { items: [], total_amount: 0 };
 
         function money(val) {
             return `R$ ${Number(val || 0).toFixed(2)}`;
         }
 
+        function escapeHtml(value) {
+            const div = document.createElement('div');
+            div.textContent = String(value ?? '');
+            return div.innerHTML;
+        }
+
         function showMessage(type, text) {
             if (!feedback) return;
             const cls = type === 'error' ? 'wf-alert wf-alert-error' : 'wf-alert wf-alert-info';
-            feedback.innerHTML = `<div class="${cls}">${text}</div>`;
+            const wrap = document.createElement('div');
+            wrap.className = cls;
+            wrap.textContent = String(text || '');
+            feedback.innerHTML = '';
+            feedback.appendChild(wrap);
+        }
+
+        function onlyDigits(value) {
+            return String(value || '').replace(/\D/g, '');
+        }
+
+        function formatPhone(value) {
+            const digits = onlyDigits(value).slice(0, 11);
+            if (digits.length <= 2) return digits ? `(${digits}` : '';
+            if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+            if (digits.length <= 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+            return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+        }
+
+        function formatCep(value) {
+            const digits = onlyDigits(value).slice(0, 8);
+            if (digits.length <= 5) return digits;
+            return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+        }
+
+        function setButtonLoading(btn, loading, label = 'Concluir compra') {
+            if (!btn) return;
+            if (!btn.dataset.defaultLabel) {
+                btn.dataset.defaultLabel = btn.textContent || label;
+            }
+            btn.disabled = loading;
+            btn.innerHTML = loading
+                ? `<span class="btn-spinner" aria-hidden="true"></span>Processando...`
+                : (btn.dataset.defaultLabel || label);
         }
 
         function requireAuth() {
@@ -164,7 +169,7 @@
         function renderSummary(cart) {
             const items = Array.isArray(cart.items) ? cart.items : [];
             if (!items.length) {
-                itemsEl.innerHTML = '<div class="wf-alert wf-alert-info">Seu carrinho esta vazio para checkout.</div>';
+                itemsEl.innerHTML = '<div class="wf-alert wf-alert-info">Seu carrinho está vazio para checkout.</div>';
                 totalEl.textContent = money(0);
                 btnFinish.disabled = true;
                 return;
@@ -172,7 +177,7 @@
 
             itemsEl.innerHTML = items.map((item) => `
                 <div class="checkout-item">
-                    <span>${item.product_name} x${item.quantity}</span>
+                    <span>${escapeHtml(item.product_name)} x${item.quantity}</span>
                     <strong>${money(item.subtotal)}</strong>
                 </div>
             `).join('');
@@ -184,8 +189,8 @@
         async function loadCart() {
             if (!requireAuth()) return;
             try {
-                currentCart = await apiRequest('/store/cart/items');
-                renderSummary(currentCart);
+                const cart = await apiRequest('/store/cart/items');
+                renderSummary(cart);
             } catch (error) {
                 showMessage('error', error.message || 'Falha ao carregar checkout.');
             }
@@ -194,17 +199,38 @@
         btnFinish.addEventListener('click', async () => {
             if (!requireAuth()) return;
 
+            setButtonLoading(btnFinish, true);
+
             const shippingAddress = {
-                name: document.getElementById('shipName').value,
-                phone: document.getElementById('shipPhone').value,
-                city: document.getElementById('shipCity').value,
-                state: document.getElementById('shipState').value,
-                address: document.getElementById('shipAddress').value,
-                zip: document.getElementById('shipZip').value,
+                name: (document.getElementById('shipName').value || '').trim(),
+                phone: (document.getElementById('shipPhone').value || '').trim(),
+                city: (document.getElementById('shipCity').value || '').trim(),
+                state: (document.getElementById('shipState').value || '').trim().toUpperCase(),
+                address: (document.getElementById('shipAddress').value || '').trim(),
+                zip: (document.getElementById('shipZip').value || '').trim(),
             };
 
-            if (!shippingAddress.name || !shippingAddress.address || !shippingAddress.city) {
-                showMessage('error', 'Preencha nome, cidade e endereco para concluir a compra.');
+            if (!shippingAddress.name || !shippingAddress.address || !shippingAddress.city || !shippingAddress.state) {
+                showMessage('error', 'Preencha nome, cidade e endereço para concluir a compra.');
+                setButtonLoading(btnFinish, false);
+                return;
+            }
+
+            if (shippingAddress.state.length !== 2) {
+                showMessage('error', 'Informe a UF com 2 letras. Ex.: SP');
+                setButtonLoading(btnFinish, false);
+                return;
+            }
+
+            if (onlyDigits(shippingAddress.phone).length < 10) {
+                showMessage('error', 'Informe um telefone válido com DDD.');
+                setButtonLoading(btnFinish, false);
+                return;
+            }
+
+            if (onlyDigits(shippingAddress.zip).length !== 8) {
+                showMessage('error', 'Informe um CEP válido com 8 dígitos.');
+                setButtonLoading(btnFinish, false);
                 return;
             }
 
@@ -213,14 +239,37 @@
                     payment_method: document.getElementById('paymentMethod').value,
                     shipping_address: shippingAddress,
                 });
-                showMessage('ok', `Compra concluida com sucesso. Pedido #${result.order_id}.`);
+                showMessage('ok', `Compra concluída com sucesso. Pedido #${result.order_id}.`);
                 setTimeout(() => {
                     window.location.href = '/store/orders';
                 }, 1400);
             } catch (error) {
-                showMessage('error', error.message || 'Nao foi possivel concluir a compra.');
+                showMessage('error', error.message || 'Não foi possível concluir a compra.');
+                setButtonLoading(btnFinish, false);
             }
         });
+
+        const phoneInput = document.getElementById('shipPhone');
+        const zipInput = document.getElementById('shipZip');
+        const stateInput = document.getElementById('shipState');
+
+        if (phoneInput) {
+            phoneInput.addEventListener('input', () => {
+                phoneInput.value = formatPhone(phoneInput.value);
+            });
+        }
+
+        if (zipInput) {
+            zipInput.addEventListener('input', () => {
+                zipInput.value = formatCep(zipInput.value);
+            });
+        }
+
+        if (stateInput) {
+            stateInput.addEventListener('input', () => {
+                stateInput.value = String(stateInput.value || '').replace(/[^a-zA-Z]/g, '').slice(0, 2).toUpperCase();
+            });
+        }
 
         loadCart();
     })();

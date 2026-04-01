@@ -1,184 +1,72 @@
 {% extends "base.html" %}
 
+{% block title %}Pedidos | WallFruits Store{% endblock %}
+
 {% block content %}
 <style>
-    .orders-shell {
-        display: grid;
-        gap: 0.9rem;
-    }
-
-    .orders-head {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 0.7rem;
-        flex-wrap: wrap;
-    }
-
-    .orders-head h1 {
-        margin: 0;
-        font-size: 1.32rem;
-        font-weight: 900;
-        color: #10366b;
-    }
-
-    .orders-list {
-        display: grid;
-        gap: 0.75rem;
-    }
-
+    .orders-shell { display: grid; gap: 0.85rem; }
+    .orders-head { display: flex; justify-content: space-between; align-items: center; gap: 0.65rem; flex-wrap: wrap; }
+    .orders-head h1 { margin: 0; color: #2E7D32; font-size: 1.26rem; font-weight: 900; }
+    .orders-list { display: grid; gap: 0.68rem; }
     .order-card {
-        border: 1px solid rgba(11, 46, 99, 0.12);
-        border-radius: 16px;
+        border: 1px solid #d8e7d9;
+        border-radius: 15px;
         background: #fff;
-        box-shadow: 0 10px 24px rgba(16, 44, 90, 0.1);
-        padding: 0.8rem;
+        box-shadow: 0 10px 22px rgba(30, 85, 34, 0.1);
+        padding: 0.75rem;
         display: grid;
-        gap: 0.65rem;
-    }
-
-    .order-top {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
         gap: 0.6rem;
-        flex-wrap: wrap;
     }
-
-    .order-title {
-        margin: 0;
-        font-size: 0.92rem;
-        font-weight: 900;
-        color: #123568;
-    }
-
-    .order-meta {
-        margin: 0.2rem 0 0;
-        font-size: 0.74rem;
-        color: #5a7395;
-    }
-
+    .order-top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
+    .order-title { margin: 0; color: #1f5e29; font-size: 0.9rem; font-weight: 900; }
+    .order-meta { margin: 0.16rem 0 0; color: #607764; font-size: 0.72rem; }
     .order-pill {
         border-radius: 999px;
-        padding: 0.28rem 0.65rem;
+        padding: 0.26rem 0.6rem;
+        border: 1px solid #cfe3d1;
+        background: #f3fbf4;
+        color: #2f6d37;
         font-size: 0.66rem;
         font-weight: 800;
         text-transform: uppercase;
-        letter-spacing: 0.04em;
-        border: 1px solid rgba(11, 46, 99, 0.12);
-        background: #f0f6ff;
-        color: #134477;
     }
+    .order-items { border: 1px solid #dde9de; border-radius: 12px; background: #fbfffc; padding: 0.52rem; display: grid; gap: 0.28rem; }
+    .order-item-row { display: flex; justify-content: space-between; gap: 0.45rem; font-size: 0.75rem; color: #35583b; }
 
-    .order-items {
-        border: 1px solid rgba(11, 46, 99, 0.08);
-        border-radius: 12px;
-        padding: 0.55rem;
-        background: #fbfdff;
-        display: grid;
-        gap: 0.32rem;
-    }
-
-    .order-item-row {
-        display: flex;
-        justify-content: space-between;
-        gap: 0.5rem;
-        font-size: 0.76rem;
-        color: #234774;
-    }
-
-    .order-timeline {
-        position: relative;
-        display: grid;
-        gap: 0.45rem;
-        padding-left: 1.25rem;
-    }
-
+    .order-timeline { position: relative; display: grid; gap: 0.42rem; padding-left: 1.2rem; }
     .order-timeline::before {
         content: "";
         position: absolute;
-        left: 7px;
-        top: 2px;
-        bottom: 2px;
+        left: 6px;
+        top: 0;
+        bottom: 0;
         width: 2px;
-        background: #d7e7fb;
+        background: #d9e9db;
     }
-
     .timeline-step {
         position: relative;
+        border: 1px solid #dce9de;
         border-radius: 10px;
-        padding: 0.48rem 0.6rem;
-        border: 1px solid rgba(11, 46, 99, 0.08);
-        background: #ffffff;
+        background: #fff;
+        padding: 0.42rem 0.56rem;
     }
-
     .timeline-step::before {
         content: "";
         position: absolute;
-        left: -1.03rem;
-        top: 0.78rem;
+        left: -0.95rem;
+        top: 0.72rem;
         width: 10px;
         height: 10px;
         border-radius: 50%;
-        border: 2px solid #9ab8dc;
+        border: 2px solid #9fbca4;
         background: #fff;
     }
-
-    .timeline-step.done {
-        border-color: rgba(22, 103, 52, 0.2);
-        background: #f3fff7;
-    }
-
-    .timeline-step.done::before {
-        border-color: #1e8a4a;
-        background: #1e8a4a;
-    }
-
-    .timeline-step.active {
-        border-color: rgba(18, 75, 117, 0.3);
-        background: #ecf7ff;
-    }
-
-    .timeline-title {
-        margin: 0;
-        font-size: 0.76rem;
-        font-weight: 800;
-        color: #123e74;
-    }
-
-    .timeline-desc {
-        margin: 0.18rem 0 0;
-        font-size: 0.7rem;
-        color: #5a7395;
-    }
-
-    .timeline-eta {
-        margin: 0.16rem 0 0;
-        font-size: 0.66rem;
-        color: #6e86a6;
-    }
-
-    @media (max-width: 640px) {
-        .order-card {
-            padding: 0.62rem;
-            border-radius: 12px;
-        }
-
-        .order-title {
-            font-size: 0.84rem;
-        }
-
-        .order-meta,
-        .order-item-row,
-        .timeline-title,
-        .timeline-desc {
-            font-size: 0.68rem;
-        }
-
-        .timeline-eta {
-            font-size: 0.64rem;
-        }
-    }
+    .timeline-step.done { background: #f3fbf4; border-color: #cae2cd; }
+    .timeline-step.done::before { border-color: #2E7D32; background: #2E7D32; }
+    .timeline-step.active { background: #fff8ee; border-color: #ffdcae; }
+    .timeline-title { margin: 0; font-size: 0.74rem; font-weight: 800; color: #2f5a36; }
+    .timeline-desc { margin: 0.16rem 0 0; font-size: 0.68rem; color: #647d69; }
+    .timeline-eta { margin: 0.14rem 0 0; font-size: 0.64rem; color: #7b917f; }
 </style>
 
 <div class="orders-shell">
@@ -217,6 +105,12 @@
             return `R$ ${Number(value || 0).toFixed(2)}`;
         }
 
+        function escapeHtml(value) {
+            const div = document.createElement('div');
+            div.textContent = String(value ?? '');
+            return div.innerHTML;
+        }
+
         function formatDate(dateIso) {
             if (!dateIso) return '-';
             const dt = new Date(dateIso);
@@ -225,35 +119,29 @@
         }
 
         function statusLabel(status) {
-            const map = {
-                pending: 'Pendente',
-                paid: 'Pago',
-                shipped: 'Enviado',
-                delivered: 'Entregue',
-                cancelled: 'Cancelado',
-            };
+            const map = { pending: 'Pendente', paid: 'Pago', shipped: 'Enviado', delivered: 'Entregue', cancelled: 'Cancelado' };
             return map[status] || status;
         }
 
         function renderOrders(orders) {
             if (!orders.length) {
-                list.innerHTML = '<div class="wf-alert wf-alert-info">Voce ainda nao possui pedidos concluidos.</div>';
+                list.innerHTML = '<div class="wf-alert wf-alert-info">Você ainda não possui pedidos concluídos.</div>';
                 return;
             }
 
             list.innerHTML = orders.map((order) => {
                 const itemsHtml = (order.items || []).map((item) => `
                     <div class="order-item-row">
-                        <span>${item.product_name} x${item.quantity}</span>
+                        <span>${escapeHtml(item.product_name)} x${item.quantity}</span>
                         <strong>${money(item.subtotal)}</strong>
                     </div>
                 `).join('');
 
                 const timelineHtml = (order.timeline || []).map((step) => `
                     <article class="timeline-step ${step.done ? 'done' : ''} ${step.active ? 'active' : ''}">
-                        <h3 class="timeline-title">${step.title}</h3>
-                        <p class="timeline-desc">${step.description}</p>
-                        <p class="timeline-eta">${step.done ? 'Concluido em: ' : 'Previsao: '}${formatDate(step.eta)}</p>
+                        <h3 class="timeline-title">${escapeHtml(step.title)}</h3>
+                        <p class="timeline-desc">${escapeHtml(step.description)}</p>
+                        <p class="timeline-eta">${step.done ? 'Concluído em: ' : 'Previsão: '}${formatDate(step.eta)}</p>
                     </article>
                 `).join('');
 
@@ -262,22 +150,20 @@
                         <div class="order-top">
                             <div>
                                 <h2 class="order-title">Pedido #${order.id}</h2>
-                                <p class="order-meta">Criado em ${formatDate(order.created_at)} | Pagamento: ${String(order.payment_method || '-').toUpperCase()}</p>
+                                <p class="order-meta">Criado em ${formatDate(order.created_at)} | Pagamento: ${escapeHtml(String(order.payment_method || '-').toUpperCase())}</p>
                             </div>
-                            <div class="order-pill">${statusLabel(order.status)}</div>
+                            <div class="order-pill">${escapeHtml(statusLabel(order.status))}</div>
                         </div>
 
                         <div class="order-items">
                             ${itemsHtml}
-                            <div class="order-item-row" style="border-top:1px solid rgba(11,46,99,0.1);padding-top:0.35rem;">
+                            <div class="order-item-row" style="border-top:1px solid #dce9de;padding-top:0.35rem;">
                                 <strong>Total</strong>
                                 <strong>${money(order.total_amount)}</strong>
                             </div>
                         </div>
 
-                        <div class="order-timeline">
-                            ${timelineHtml}
-                        </div>
+                        <div class="order-timeline">${timelineHtml}</div>
                     </article>
                 `;
             }).join('');
@@ -287,10 +173,9 @@
             if (!requireAuth()) return;
             try {
                 const data = await apiRequest('/store/orders/my');
-                const orders = Array.isArray(data?.orders) ? data.orders : [];
-                renderOrders(orders);
+                renderOrders(Array.isArray(data?.orders) ? data.orders : []);
             } catch (error) {
-                showMessage('error', error.message || 'Nao foi possivel carregar seus pedidos.');
+                showMessage('error', error.message || 'Não foi possível carregar seus pedidos.');
             }
         }
 

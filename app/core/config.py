@@ -59,6 +59,8 @@ class Settings(BaseSettings):
     OPENAI_MODEL: str = "gpt-4o-mini"
     AI_CACHE_TTL_SECONDS: int = 120
     AI_LOW_LATENCY_MODE: bool = True
+    AGENDA_PREDICTIVE_WORKER_ENABLED: bool = True
+    AGENDA_PREDICTIVE_WORKER_INTERVAL_SECONDS: int = 120
 
     # Webhooks de dominio
     INTERMEDIATION_WEBHOOK_URL: str = ""
@@ -163,6 +165,9 @@ def get_settings() -> Settings:
 
     if settings.RATE_LIMIT_SENSITIVE_MAX_REQUESTS < 1:
         raise RuntimeError("RATE_LIMIT_SENSITIVE_MAX_REQUESTS deve ser >= 1")
+
+    if settings.AGENDA_PREDICTIVE_WORKER_INTERVAL_SECONDS < 30:
+        raise RuntimeError("AGENDA_PREDICTIVE_WORKER_INTERVAL_SECONDS deve ser >= 30")
 
     if settings.INTERMEDIATION_WEBHOOK_TIMEOUT_SECONDS <= 0:
         raise RuntimeError("INTERMEDIATION_WEBHOOK_TIMEOUT_SECONDS deve ser > 0")

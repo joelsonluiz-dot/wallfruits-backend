@@ -1,5 +1,6 @@
 """App principal da API WallFruits com startup e observabilidade robustos."""
 
+import asyncio
 from contextlib import asynccontextmanager
 from collections import defaultdict, deque
 from datetime import datetime, timezone
@@ -27,6 +28,7 @@ from app.core.config import settings
 from app.database.connection import (
     check_database_connection,
     init_db,
+    SessionLocal,
     wait_for_database_ready,
     get_db,
 )
@@ -59,6 +61,7 @@ from app.routers import (
     upload_routes,
     wallet_routes,
 )
+from app.services.agenda_proactive_service import emit_predictive_notifications_for_all_users
 
 
 os.makedirs("logs", exist_ok=True)
@@ -174,7 +177,43 @@ async def lifespan(app_obj: FastAPI):
         if settings.STRICT_STARTUP:
             raise
 
-    yield
+    async def _agenda_predictive_worker() -> None:
+        interval = max(30, int(settings.AGENDA_PREDICTIVE_WORKER_INTERVAL_SECONDS))
+        logger.info("Agenda predictive worker iniciado (intervalo=%ss)", interval)
+
+        while True:
+            try:
+                db = SessionLocal()
+                try:
+                    result = emit_predictive_notifications_for_all_users(db)
+                    if result.get("predictive_notifications_created", 0) > 0:
+                        db.commit()
+                        logger.info(
+                            "Agenda predictive worker: users=%s notifications=%s",
+                            result.get("users_scanned", 0),
+                            result.get("predictive_notifications_created", 0),
+                        )
+                finally:
+                    db.close()
+            except Exception as exc:
+                logger.error("Falha no agenda predictive worker: %s", exc, exc_info=True)
+
+            await asyncio.sleep(interval)
+
+    worker_task: asyncio.Task | None = None
+    if app_obj.state.startup_ok and settings.AGENDA_PREDICTIVE_WORKER_ENABLED:
+        worker_task = asyncio.create_task(_agenda_predictive_worker())
+        app_obj.state.agenda_predictive_worker_task = worker_task
+
+    try:
+        yield
+    finally:
+        if worker_task and not worker_task.done():
+            worker_task.cancel()
+            try:
+                await worker_task
+            except asyncio.CancelledError:
+                logger.info("Agenda predictive worker encerrado")
 
 
 app = FastAPI(
@@ -624,14 +663,123 @@ async def store_featured_products(limit: int = 8, db: Session = Depends(get_db))
     return {"products": payload, "total": len(payload)}
 
 
+@app.get("/api/store/products")
+async def store_products_api(
+    q: str | None = None,
+    category: str | None = None,
+    crop: str | None = None,
+    pest: str | None = None,
+    price_range: str | None = None,
+    db: Session = Depends(get_db),
+):
+    """Lista de produtos da loja com filtros para UI dinâmica da vitrine."""
+    from app.models.store_models import Product, ProductCategory, ProductStatus
+
+    query = db.query(Product).filter(Product.status == ProductStatus.PUBLISHED)
+
+    if category:
+        query = query.join(ProductCategory).filter(ProductCategory.slug == category)
+
+    if q:
+        like_q = f"%{q}%"
+        query = query.filter(Product.name.ilike(like_q))
+
+    products = query.order_by(Product.is_featured.desc(), Product.created_at.desc()).all()
+
+    def _spec_text(product: Product, key: str) -> str:
+        specs = product.specifications if isinstance(product.specifications, dict) else {}
+        return str(specs.get(key) or "").strip()
+
+    if crop:
+        crop_l = crop.lower()
+        products = [
+            item for item in products if crop_l in _spec_text(item, "Culturas recomendadas").lower()
+        ]
+
+    if pest:
+        pest_l = pest.lower()
+        products = [
+            item
+            for item in products
+            if pest_l in _spec_text(item, "Uso indicado").lower()
+            or pest_l in (str(item.description or "").lower())
+        ]
+
+    if price_range:
+        bounds = re.match(r"^(\d+)-(\d+)$", str(price_range).strip())
+        if bounds:
+            min_p = float(bounds.group(1))
+            max_p = float(bounds.group(2))
+            products = [
+                item for item in products if min_p <= float(item.price or 0) <= max_p
+            ]
+
+    crops: set[str] = set()
+    pests: set[str] = set()
+    for item in db.query(Product).filter(Product.status == ProductStatus.PUBLISHED).all():
+        crops_value = _spec_text(item, "Culturas recomendadas")
+        pests_value = _spec_text(item, "Uso indicado")
+
+        if crops_value:
+            for part in crops_value.split(","):
+                cleaned = part.strip()
+                if cleaned:
+                    crops.add(cleaned)
+
+        if pests_value:
+            for part in pests_value.split(","):
+                cleaned = part.strip()
+                if cleaned:
+                    pests.add(cleaned)
+
+    payload = []
+    for item in products:
+        image = item.images[0] if isinstance(item.images, list) and item.images else None
+        payload.append(
+            {
+                "id": item.id,
+                "name": item.name,
+                "slug": item.slug,
+                "price": float(item.price or 0),
+                "promotional_price": float(item.promotional_price or 0),
+                "stock_quantity": int(item.stock_quantity or 0),
+                "is_featured": bool(item.is_featured),
+                "category": item.category.name if item.category else "Categoria",
+                "image": image,
+            }
+        )
+
+    return {
+        "products": payload,
+        "total": len(payload),
+        "filters": {
+            "crops": sorted(crops),
+            "pests": sorted(pests),
+        },
+    }
+
+
 @app.get("/ai-agent")
-async def ai_agent_page(request: Request):
+async def ai_agent_page(
+    request: Request,
+    current_user: User = Depends(get_current_user_optional),
+):
     """Interface web do assistente IA embutida no botão flutuante."""
-    return _render_template("ai_agent.html", request)
+    return _render_template("ai_agent.html", request, current_user=current_user)
+
+
+@app.get("/ai_agent")
+async def ai_agent_page_legacy_alias():
+    """Alias legado para preservar links antigos da agenda inteligente."""
+    return RedirectResponse(url="/ai-agent", status_code=307)
 
 
 @app.post("/api/ai-agent/ask")
-async def ai_agent_ask(payload: dict[str, Any], db: Session = Depends(get_db)):
+async def ai_agent_ask(
+    payload: dict[str, Any],
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_optional),
+):
     """Responde perguntas sobre os módulos da plataforma WallFruits."""
     question = str(payload.get("question") or "").strip()
     if not question:
@@ -646,6 +794,58 @@ async def ai_agent_ask(payload: dict[str, Any], db: Session = Depends(get_db)):
         "Posso ajudar com tudo da WallFruits: login, ofertas, loja agro, mensagens, notificações, "
         "negociações, pagamentos, reputação, perfil e painel admin. Diga exatamente o que você precisa fazer."
     )
+
+    if current_user:
+        from app.models.ai_models import UserBehaviorLog
+        from app.models.notification import Notification
+        from app.models.store_models import Order, QuoteRequest, QuoteRequestStatus
+
+        profile_row = (
+            db.query(UserBehaviorLog)
+            .filter(
+                UserBehaviorLog.user_id == current_user.id,
+                UserBehaviorLog.event_type == "agenda_profile_updated",
+            )
+            .order_by(UserBehaviorLog.created_at.desc())
+            .first()
+        )
+        agenda_profile = profile_row.meta_json if profile_row and isinstance(profile_row.meta_json, dict) else {}
+
+        total_orders = (
+            db.query(Order)
+            .filter(Order.customer_id == current_user.id, Order.payment_method != "cart_open")
+            .count()
+        )
+        pending_quotes = (
+            db.query(QuoteRequest)
+            .filter(
+                QuoteRequest.requester_id == current_user.id,
+                QuoteRequest.status == QuoteRequestStatus.PENDING,
+            )
+            .count()
+        )
+        unread_notifications = (
+            db.query(Notification)
+            .filter(Notification.user_id == current_user.id, Notification.is_read.is_(False))
+            .count()
+        )
+
+        if has("resumo", "meu perfil", "meus dados", "minha agenda", "status"):
+            mode = agenda_profile.get("autonomy_mode", "assistida")
+            answer = (
+                f"Resumo do seu contexto, {current_user.name}: modo da agenda = {mode}; "
+                f"pedidos na loja = {total_orders}; propostas pendentes = {pending_quotes}; "
+                f"notificações não lidas = {unread_notifications}. "
+                "Posso decidir próximas ações com base nisso e no seu objetivo configurado na Agenda Inteligente."
+            )
+        elif has("agenda", "autônoma", "autonoma", "decisão", "decisao"):
+            mode = agenda_profile.get("autonomy_mode", "assistida")
+            goal = agenda_profile.get("main_goal", "produtividade")
+            answer = (
+                f"Sua Agenda Inteligente está em modo {mode} com foco em {goal}. "
+                "Ela cruza histórico de compras, propostas, notificações e atividades para priorizar ações. "
+                "Abra /ai-agent para revisar ou atualizar suas preferências de autonomia e recomendações."
+            )
 
     if has("login", "entrar", "senha", "credencial", "acesso"):
         answer = (

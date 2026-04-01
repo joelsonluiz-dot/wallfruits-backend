@@ -1,179 +1,946 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Agente IA WallFruits</title>
-  <style>
+{% extends "base.html" %}
+
+{% block title %}Agenda Inteligente | WallFruits{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,500,0,0" />
+<style>
     :root {
-      --ai-bg: #f5f8fc;
-      --ai-card: #ffffff;
-      --ai-border: #d9e4f2;
-      --ai-primary: #0b2e63;
-      --ai-secondary: #0f8a4a;
-      --ai-muted: #5a6f8c;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: Manrope, -apple-system, BlinkMacSystemFont, sans-serif;
-      background: var(--ai-bg);
-      color: #102743;
-    }
-    .wrap {
-      height: 100vh;
-      display: grid;
-      grid-template-rows: auto 1fr auto;
-      padding: 0.8rem;
-      gap: 0.7rem;
-    }
-    .head {
-      background: linear-gradient(120deg, #ffdf00 0%, #ffe971 100%);
-      border: 1px solid rgba(11, 46, 99, 0.14);
-      border-radius: 14px;
-      padding: 0.75rem 0.9rem;
-    }
-    .head h1 {
-      margin: 0;
-      font-size: 1rem;
-      color: var(--ai-primary);
-      font-weight: 900;
-      letter-spacing: -0.01em;
-    }
-    .head p {
-      margin: 0.35rem 0 0;
-      color: #1f467f;
-      font-size: 0.8rem;
-      font-weight: 600;
-    }
-    .chat {
-      background: var(--ai-card);
-      border: 1px solid var(--ai-border);
-      border-radius: 14px;
-      overflow: auto;
-      padding: 0.75rem;
-      display: grid;
-      gap: 0.55rem;
-    }
-    .msg {
-      max-width: 90%;
-      padding: 0.62rem 0.78rem;
-      border-radius: 12px;
-      font-size: 0.86rem;
-      line-height: 1.45;
-      white-space: pre-wrap;
-    }
-    .msg.user {
-      margin-left: auto;
-      background: #0b2e63;
-      color: #fff;
-    }
-    .msg.ai {
-      margin-right: auto;
-      background: #eef4fb;
-      border: 1px solid #d4e2f4;
-      color: #193b6b;
-    }
-    .composer {
-      background: var(--ai-card);
-      border: 1px solid var(--ai-border);
-      border-radius: 14px;
-      padding: 0.5rem;
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 0.5rem;
-    }
-    .composer textarea {
-      border: none;
-      resize: none;
-      min-height: 44px;
-      max-height: 120px;
-      padding: 0.55rem 0.6rem;
-      font-family: inherit;
-      font-size: 0.88rem;
-      color: #183b6b;
-      background: transparent;
-    }
-    .composer textarea:focus { outline: none; }
-    .composer button {
-      border: none;
-      border-radius: 10px;
-      background: var(--ai-secondary);
-      color: #fff;
-      font-weight: 800;
-      padding: 0 0.9rem;
-      min-width: 88px;
-      cursor: pointer;
-    }
-  </style>
-</head>
-<body>
-  <div class="wrap">
-    <header class="head">
-      <h1>Assistente Inteligente WallFruits</h1>
-      <p>Pergunte sobre contas, ofertas, loja agro, pagamentos, negociações, perfil, notificações e uso da plataforma.</p>
-    </header>
-
-    <main class="chat" id="chatBox">
-      <div class="msg ai">Olá! Sou o assistente da WallFruits. Posso responder dúvidas sobre toda a plataforma e orientar você em qualquer fluxo.</div>
-    </main>
-
-    <form class="composer" id="chatForm">
-      <textarea id="questionInput" placeholder="Digite sua pergunta..."></textarea>
-      <button type="submit">Enviar</button>
-    </form>
-  </div>
-
-  <script>
-    const chatBox = document.getElementById('chatBox');
-    const chatForm = document.getElementById('chatForm');
-    const input = document.getElementById('questionInput');
-
-    function appendMessage(kind, text) {
-      const node = document.createElement('div');
-      node.className = `msg ${kind}`;
-      node.textContent = text;
-      chatBox.appendChild(node);
-      chatBox.scrollTop = chatBox.scrollHeight;
+        --ag-green: #2E7D32;
+        --ag-green-soft: #66BB6A;
+        --ag-orange: #FF9800;
+        --ag-border: #d7e8d9;
+        --ag-muted: #617665;
     }
 
-    async function askAgent(question) {
-      const token = localStorage.getItem('token');
-      const headers = { 'Content-Type': 'application/json' };
-      if (token) headers['Authorization'] = `Bearer ${token}`;
+    .agenda-shell { display: grid; gap: 0.9rem; }
 
-      const response = await fetch('/api/ai-agent/ask', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ question }),
-      });
-
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        throw new Error(data?.detail || data?.message || `Erro HTTP ${response.status}`);
-      }
-      return data;
+    .agenda-hero {
+        border: 1px solid var(--ag-border);
+        border-radius: 16px;
+        padding: 0.9rem;
+        background: linear-gradient(120deg, #eaf7ec 0%, #f7fbf8 54%, #fff7ed 100%);
+        box-shadow: 0 12px 24px rgba(46, 125, 50, 0.12);
     }
 
-    chatForm.addEventListener('submit', async (event) => {
-      event.preventDefault();
-      const question = input.value.trim();
-      if (!question) return;
+    .agenda-hero h1 { margin: 0; color: var(--ag-green); font-size: 1.2rem; font-weight: 900; }
+    .agenda-hero p { margin: 0.34rem 0 0; color: #4e6554; font-size: 0.82rem; }
 
-      appendMessage('user', question);
-      input.value = '';
-      input.disabled = true;
+    .agenda-layout {
+        display: grid;
+        grid-template-columns: 1.35fr 1fr;
+        gap: 0.9rem;
+    }
 
-      try {
-        const result = await askAgent(question);
-        appendMessage('ai', result.answer || 'Não consegui responder agora.');
-      } catch (err) {
-        appendMessage('ai', `Erro ao consultar assistente: ${err.message || 'falha inesperada'}`);
-      } finally {
-        input.disabled = false;
-        input.focus();
-      }
-    });
-  </script>
-</body>
-</html>
+    .agenda-card {
+        border: 1px solid var(--ag-border);
+        border-radius: 16px;
+        background: #fff;
+        box-shadow: 0 10px 22px rgba(46, 125, 50, 0.1);
+        overflow: hidden;
+    }
+
+    .agenda-card-head {
+        padding: 0.72rem 0.82rem;
+        border-bottom: 1px solid #e2eee3;
+        display: flex;
+        justify-content: space-between;
+        gap: 0.4rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .agenda-card-head h2 {
+        margin: 0;
+        font-size: 0.9rem;
+        color: #2a5f31;
+        font-weight: 900;
+    }
+
+    .agenda-card-body { padding: 0.8rem; }
+
+    .agenda-badge {
+        border-radius: 999px;
+        border: 1px solid #cfe2d1;
+        background: #f2faf3;
+        color: #2f6f36;
+        font-size: 0.67rem;
+        padding: 0.18rem 0.52rem;
+        font-weight: 800;
+    }
+
+    .agenda-mini-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.45rem;
+    }
+
+    .agenda-kpi {
+        border: 1px solid #ddebe0;
+        border-radius: 12px;
+        background: #fcfffc;
+        padding: 0.5rem;
+    }
+
+    .agenda-kpi .k { font-size: 0.64rem; color: #6b826f; text-transform: uppercase; font-weight: 700; }
+    .agenda-kpi .v { margin-top: 0.2rem; font-size: 0.96rem; color: #1f5d28; font-weight: 900; }
+
+    .agenda-slots, .agenda-actions { display: grid; gap: 0.42rem; }
+
+    .agenda-slot {
+        border: 1px solid #d9e9db;
+        border-radius: 12px;
+        background: #fff;
+        padding: 0.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.76rem;
+    }
+
+    .agenda-action {
+        border: 1px solid #dbeadd;
+        border-radius: 12px;
+        background: #fff;
+        padding: 0.54rem;
+    }
+
+    .agenda-action h3 { margin: 0; font-size: 0.82rem; color: #24592b; font-weight: 800; }
+    .agenda-action p { margin: 0.25rem 0 0; color: #58705c; font-size: 0.74rem; }
+
+    .agenda-action-row {
+        margin-top: 0.44rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.44rem;
+        flex-wrap: wrap;
+    }
+
+    .agenda-priority {
+        border-radius: 999px;
+        padding: 0.18rem 0.5rem;
+        font-size: 0.64rem;
+        font-weight: 800;
+        text-transform: uppercase;
+    }
+
+    .agenda-priority.alta { background: #ffe6e6; color: #9d3838; }
+    .agenda-priority.media { background: #fff5e1; color: #9a6508; }
+    .agenda-priority.baixa { background: #edf7ee; color: #2f6f36; }
+
+    .agenda-link-btn {
+        text-decoration: none;
+        border-radius: 10px;
+        background: var(--ag-green);
+        color: #fff;
+        font-size: 0.72rem;
+        font-weight: 800;
+        padding: 0.34rem 0.58rem;
+        border: none;
+    }
+
+    .agenda-link-btn.secondary {
+        background: #edf7ee;
+        border: 1px solid #cde3cf;
+        color: #2b6a33;
+    }
+
+    .agenda-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 0.42rem;
+        flex-wrap: wrap;
+        margin-bottom: 0.55rem;
+    }
+
+    .agenda-toolbar select,
+    .agenda-toolbar input,
+    .agenda-form input,
+    .agenda-form textarea,
+    .agenda-form select {
+        border: 1px solid #d4e7d6;
+        border-radius: 10px;
+        padding: 0.45rem;
+        font-size: 0.76rem;
+        background: #fff;
+    }
+
+    .agenda-calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 0.35rem;
+    }
+
+    .agenda-day {
+        border: 1px solid #dcebdd;
+        border-radius: 10px;
+        background: #fff;
+        min-height: 96px;
+        padding: 0.35rem;
+        display: grid;
+        gap: 0.25rem;
+    }
+
+    .agenda-day-head {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.66rem;
+        color: #517058;
+        font-weight: 800;
+    }
+
+    .agenda-day-chip {
+        border-radius: 999px;
+        background: #eef7ef;
+        color: #2d6d35;
+        border: 1px solid #d5e8d7;
+        font-size: 0.62rem;
+        padding: 0.1rem 0.35rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .agenda-day-chip.dragging {
+        opacity: 0.5;
+    }
+
+    .agenda-day.drop-target {
+        outline: 2px dashed #66BB6A;
+        outline-offset: 1px;
+        background: #f5fff6;
+    }
+
+    .agenda-week-list, .agenda-day-list { display: grid; gap: 0.38rem; }
+
+    .agenda-event-item {
+        border: 1px solid #dbeadd;
+        border-radius: 10px;
+        padding: 0.45rem;
+        background: #fff;
+        display: flex;
+        justify-content: space-between;
+        gap: 0.4rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .agenda-event-title { font-size: 0.76rem; font-weight: 800; color: #245a2c; }
+    .agenda-event-meta { font-size: 0.68rem; color: #5d7362; }
+
+    .agenda-form { display: grid; gap: 0.46rem; margin-top: 0.65rem; }
+    .agenda-form-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.42rem; }
+
+    .agenda-chat-box {
+        max-height: 240px;
+        overflow: auto;
+        display: grid;
+        gap: 0.38rem;
+    }
+
+    .agenda-msg {
+        border-radius: 12px;
+        padding: 0.5rem 0.62rem;
+        font-size: 0.76rem;
+        line-height: 1.42;
+        max-width: 92%;
+        white-space: pre-wrap;
+    }
+
+    .agenda-msg.ai { background: #eef7ef; border: 1px solid #d8eadb; color: #2b5f32; }
+    .agenda-msg.user { margin-left: auto; background: #2E7D32; color: #fff; }
+
+    .agenda-composer {
+        margin-top: 0.55rem;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 0.42rem;
+    }
+
+    .agenda-composer textarea {
+        border: 1px solid #d4e7d6;
+        border-radius: 12px;
+        padding: 0.5rem;
+        min-height: 42px;
+        resize: vertical;
+        font-size: 0.78rem;
+    }
+
+    .agenda-composer button {
+        border: none;
+        border-radius: 10px;
+        background: var(--ag-orange);
+        color: #fff;
+        font-weight: 800;
+        padding: 0 0.74rem;
+    }
+
+    .agenda-modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(20, 40, 24, 0.46);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1200;
+        padding: 0.8rem;
+    }
+
+    .agenda-modal.show { display: flex; }
+
+    .agenda-modal-card {
+        width: min(760px, 100%);
+        border-radius: 16px;
+        border: 1px solid #d4e8d7;
+        background: #fff;
+        box-shadow: 0 18px 34px rgba(20, 70, 30, 0.2);
+        overflow: hidden;
+    }
+
+    .agenda-modal-head {
+        background: linear-gradient(130deg, #2E7D32 0%, #4fa657 100%);
+        color: #fff;
+        padding: 0.82rem 0.9rem;
+    }
+
+    .agenda-modal-head h3 { margin: 0; font-size: 0.95rem; font-weight: 900; }
+    .agenda-modal-head p { margin: 0.24rem 0 0; font-size: 0.75rem; opacity: 0.92; }
+
+    .agenda-questions { padding: 0.76rem; display: grid; gap: 0.66rem; }
+
+    .agenda-question {
+        border: 1px solid #e0ece2;
+        border-radius: 12px;
+        padding: 0.6rem;
+        background: #fbfffb;
+    }
+
+    .agenda-question p { margin: 0 0 0.42rem; font-size: 0.77rem; color: #315a38; font-weight: 800; }
+    .agenda-options { display: flex; gap: 0.45rem; flex-wrap: wrap; }
+
+    .agenda-options label {
+        border: 1px solid #d5e7d8;
+        border-radius: 999px;
+        padding: 0.26rem 0.52rem;
+        font-size: 0.7rem;
+        color: #3f6647;
+        cursor: pointer;
+        font-weight: 700;
+        background: #fff;
+    }
+
+    .agenda-weight-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.45rem;
+    }
+
+    .agenda-weight {
+        border: 1px solid #dcebdd;
+        border-radius: 10px;
+        padding: 0.4rem;
+        background: #fff;
+    }
+
+    .agenda-weight small { display: block; color: #59725e; font-size: 0.66rem; margin-bottom: 0.2rem; }
+    .agenda-weight input[type="range"] { width: 100%; }
+
+    .agenda-modal-foot {
+        border-top: 1px solid #e2eee3;
+        padding: 0.72rem 0.78rem;
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.48rem;
+    }
+
+    @media (max-width: 1180px) {
+        .agenda-layout { grid-template-columns: 1fr; }
+        .agenda-mini-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 780px) {
+        .agenda-calendar-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .agenda-form-row, .agenda-weight-grid, .agenda-composer { grid-template-columns: 1fr; }
+    }
+</style>
+
+<div class="agenda-shell">
+    <section class="agenda-hero">
+        <h1>Agenda Inteligente WallFruits</h1>
+        <p>Calendário real com reservas, decisões por peso configurável e alertas proativos automáticos.</p>
+    </section>
+
+    <div class="agenda-layout">
+        <section class="agenda-card">
+            <div class="agenda-card-head">
+                <h2>Decisões e Planejamento</h2>
+                <div style="display:flex;gap:0.35rem;align-items:center;flex-wrap:wrap;">
+                    <button type="button" class="agenda-link-btn secondary" id="openOnboardingBtn">Configurar pesos</button>
+                    <span class="agenda-badge" id="decisionModeBadge">modo: assistida</span>
+                </div>
+            </div>
+            <div class="agenda-card-body">
+                <div id="agendaStatus" class="wf-alert wf-alert-info">Carregando plano inteligente...</div>
+
+                <div class="agenda-mini-grid" id="historyGrid"></div>
+
+                <h3 style="margin:0.7rem 0 0.32rem;font-size:0.8rem;color:#2c6133;font-weight:900;">Melhores horários</h3>
+                <div class="agenda-slots" id="bestSlots"></div>
+
+                <h3 style="margin:0.7rem 0 0.32rem;font-size:0.8rem;color:#2c6133;font-weight:900;">Ações priorizadas</h3>
+                <div class="agenda-actions" id="actionsList"></div>
+            </div>
+        </section>
+
+        <section class="agenda-card">
+            <div class="agenda-card-head">
+                <h2>Agente pessoal</h2>
+                <a href="/strategy" class="agenda-badge" style="text-decoration:none;">Métricas</a>
+            </div>
+            <div class="agenda-card-body">
+                <div class="agenda-chat-box" id="chatBox">
+                    <div class="agenda-msg ai">Estou pronto para decidir com base no seu histórico e nos pesos que você definir.</div>
+                </div>
+                <form id="chatForm" class="agenda-composer">
+                    <textarea id="questionInput" placeholder="Ex: o que devo priorizar hoje?"></textarea>
+                    <button type="submit">Enviar</button>
+                </form>
+            </div>
+        </section>
+    </div>
+
+    <section class="agenda-card">
+        <div class="agenda-card-head">
+            <h2>Calendário de Reservas (Dia/Semana/Mês)</h2>
+            <span class="agenda-badge">tempo real</span>
+        </div>
+        <div class="agenda-card-body">
+            <div class="agenda-toolbar">
+                <select id="calendarView">
+                    <option value="day">Dia</option>
+                    <option value="week">Semana</option>
+                    <option value="month" selected>Mês</option>
+                </select>
+                <input type="date" id="calendarAnchor">
+                <button type="button" class="agenda-link-btn secondary" id="calendarTodayBtn">Hoje</button>
+                <button type="button" class="agenda-link-btn" id="calendarReloadBtn">Atualizar</button>
+            </div>
+
+            <div id="calendarContainer"></div>
+
+            <h3 style="margin:0.8rem 0 0.38rem;font-size:0.8rem;color:#2c6133;font-weight:900;">Criar reserva/evento</h3>
+            <form id="agendaEventForm" class="agenda-form">
+                <div class="agenda-form-row">
+                    <input type="text" id="eventTitle" placeholder="Título do evento" required>
+                    <select id="eventType">
+                        <option value="reservation">Reserva</option>
+                        <option value="meeting">Reunião</option>
+                        <option value="task">Tarefa</option>
+                        <option value="reminder">Lembrete</option>
+                    </select>
+                </div>
+                <textarea id="eventDescription" rows="2" placeholder="Descrição"></textarea>
+                <div class="agenda-form-row">
+                    <input type="datetime-local" id="eventStart" required>
+                    <input type="datetime-local" id="eventEnd" required>
+                </div>
+                <div class="agenda-form-row">
+                    <input type="text" id="eventLocation" placeholder="Local (opcional)">
+                    <button type="submit" class="agenda-link-btn">Salvar evento</button>
+                </div>
+            </form>
+        </div>
+    </section>
+</div>
+
+<div class="agenda-modal" id="agendaOnboardingModal">
+    <div class="agenda-modal-card">
+        <div class="agenda-modal-head">
+            <h3>Configurar Agenda Inteligente</h3>
+            <p>Defina autonomia, objetivos e pesos de prioridade para decisões automáticas.</p>
+        </div>
+
+        <form id="agendaOnboardingForm" class="agenda-questions">
+            <section class="agenda-question">
+                <p>1) Nível de autonomia</p>
+                <div class="agenda-options">
+                    <label><input type="radio" name="autonomy_mode" value="assistida" checked>Assistida</label>
+                    <label><input type="radio" name="autonomy_mode" value="semi_autonoma">Semi-autônoma</label>
+                    <label><input type="radio" name="autonomy_mode" value="autonoma">Autônoma</label>
+                </div>
+            </section>
+
+            <section class="agenda-question">
+                <p>2) Objetivo principal</p>
+                <div class="agenda-options">
+                    <label><input type="radio" name="main_goal" value="produtividade" checked>Produtividade</label>
+                    <label><input type="radio" name="main_goal" value="economia">Economia</label>
+                    <label><input type="radio" name="main_goal" value="vendas">Aumentar vendas</label>
+                    <label><input type="radio" name="main_goal" value="reducao_risco">Reduzir risco</label>
+                </div>
+            </section>
+
+            <section class="agenda-question">
+                <p>3) Estilo de decisão</p>
+                <div class="agenda-options">
+                    <label><input type="radio" name="decision_style" value="conservador">Conservador</label>
+                    <label><input type="radio" name="decision_style" value="equilibrado" checked>Equilibrado</label>
+                    <label><input type="radio" name="decision_style" value="agressivo">Agressivo</label>
+                </div>
+            </section>
+
+            <section class="agenda-question">
+                <p>4) Período preferido para contatos</p>
+                <div class="agenda-options">
+                    <label><input type="radio" name="preferred_contact_period" value="manha" checked>Manhã</label>
+                    <label><input type="radio" name="preferred_contact_period" value="tarde">Tarde</label>
+                    <label><input type="radio" name="preferred_contact_period" value="noite">Noite</label>
+                    <label><input type="radio" name="preferred_contact_period" value="comercial">Comercial</label>
+                </div>
+            </section>
+
+            <section class="agenda-question">
+                <p>5) Fontes para decisão</p>
+                <div class="agenda-options">
+                    <label><input type="checkbox" name="wants_purchase_based_actions" checked>Compras</label>
+                    <label><input type="checkbox" name="wants_offer_alerts" checked>Ofertas</label>
+                    <label><input type="checkbox" name="wants_service_alerts" checked>Serviços</label>
+                </div>
+            </section>
+
+            <section class="agenda-question">
+                <p>6) Pesos configuráveis de prioridade (0 a 100)</p>
+                <div class="agenda-weight-grid">
+                    <div class="agenda-weight">
+                        <small>Compras</small>
+                        <input type="range" min="0" max="100" value="30" id="weightPurchases" name="weight_purchases">
+                    </div>
+                    <div class="agenda-weight">
+                        <small>Serviços</small>
+                        <input type="range" min="0" max="100" value="20" id="weightServices" name="weight_services">
+                    </div>
+                    <div class="agenda-weight">
+                        <small>Ofertas</small>
+                        <input type="range" min="0" max="100" value="25" id="weightOffers" name="weight_offers">
+                    </div>
+                    <div class="agenda-weight">
+                        <small>Notificações</small>
+                        <input type="range" min="0" max="100" value="25" id="weightNotifications" name="weight_notifications">
+                    </div>
+                </div>
+            </section>
+        </form>
+
+        <div class="agenda-modal-foot">
+            <button type="button" class="btn btn-wf-secondary" id="agendaSkipBtn">Fechar</button>
+            <button type="button" class="btn btn-wf-primary" id="agendaSaveBtn">Salvar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function setupAgendaAgent() {
+        const IS_ADMIN = "{{ 'true' if current_user and current_user.role == 'admin' else 'false' }}" === 'true';
+        const state = {
+            profile: null,
+            calendarView: 'month',
+            anchorDate: new Date().toISOString().slice(0, 10),
+        };
+
+        const statusBox = document.getElementById('agendaStatus');
+        const historyGrid = document.getElementById('historyGrid');
+        const bestSlots = document.getElementById('bestSlots');
+        const actionsList = document.getElementById('actionsList');
+        const decisionModeBadge = document.getElementById('decisionModeBadge');
+
+        const chatBox = document.getElementById('chatBox');
+        const chatForm = document.getElementById('chatForm');
+        const questionInput = document.getElementById('questionInput');
+
+        const onboardingModal = document.getElementById('agendaOnboardingModal');
+        const onboardingForm = document.getElementById('agendaOnboardingForm');
+        const saveBtn = document.getElementById('agendaSaveBtn');
+        const skipBtn = document.getElementById('agendaSkipBtn');
+        const openOnboardingBtn = document.getElementById('openOnboardingBtn');
+
+        const calendarView = document.getElementById('calendarView');
+        const calendarAnchor = document.getElementById('calendarAnchor');
+        const calendarReloadBtn = document.getElementById('calendarReloadBtn');
+        const calendarTodayBtn = document.getElementById('calendarTodayBtn');
+        const calendarContainer = document.getElementById('calendarContainer');
+
+        const agendaEventForm = document.getElementById('agendaEventForm');
+        const eventTitle = document.getElementById('eventTitle');
+        const eventType = document.getElementById('eventType');
+        const eventDescription = document.getElementById('eventDescription');
+        const eventStart = document.getElementById('eventStart');
+        const eventEnd = document.getElementById('eventEnd');
+        const eventLocation = document.getElementById('eventLocation');
+
+        function requireAuth() {
+            if (!localStorage.getItem('token')) {
+                window.location.href = '/login';
+                return false;
+            }
+            return true;
+        }
+
+        function appendMessage(kind, text) {
+            const node = document.createElement('div');
+            node.className = `agenda-msg ${kind}`;
+            node.textContent = text;
+            chatBox.appendChild(node);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function autonomyLabel(mode) {
+            const map = { assistida: 'assistida', semi_autonoma: 'semi-autônoma', autonoma: 'autônoma' };
+            return map[mode] || 'assistida';
+        }
+
+        function readProfilePayload() {
+            const data = new FormData(onboardingForm);
+            return {
+                autonomy_mode: String(data.get('autonomy_mode') || 'assistida'),
+                main_goal: String(data.get('main_goal') || 'produtividade'),
+                decision_style: String(data.get('decision_style') || 'equilibrado'),
+                preferred_contact_period: String(data.get('preferred_contact_period') || 'manha'),
+                wants_purchase_based_actions: Boolean(data.get('wants_purchase_based_actions')),
+                wants_offer_alerts: Boolean(data.get('wants_offer_alerts')),
+                wants_service_alerts: Boolean(data.get('wants_service_alerts')),
+                weight_purchases: Number(data.get('weight_purchases') || 30),
+                weight_services: Number(data.get('weight_services') || 20),
+                weight_offers: Number(data.get('weight_offers') || 25),
+                weight_notifications: Number(data.get('weight_notifications') || 25),
+            };
+        }
+
+        function applyProfileToForm(profile) {
+            const mapping = [
+                ['autonomy_mode', profile.autonomy_mode || 'assistida'],
+                ['main_goal', profile.main_goal || 'produtividade'],
+                ['decision_style', profile.decision_style || 'equilibrado'],
+                ['preferred_contact_period', profile.preferred_contact_period || 'manha'],
+            ];
+
+            mapping.forEach(([name, value]) => {
+                const node = onboardingForm.querySelector(`input[name="${name}"][value="${value}"]`);
+                if (node) node.checked = true;
+            });
+
+            const cbPurchases = onboardingForm.querySelector('input[name="wants_purchase_based_actions"]');
+            const cbOffers = onboardingForm.querySelector('input[name="wants_offer_alerts"]');
+            const cbServices = onboardingForm.querySelector('input[name="wants_service_alerts"]');
+
+            if (cbPurchases) cbPurchases.checked = Boolean(profile.wants_purchase_based_actions ?? true);
+            if (cbOffers) cbOffers.checked = Boolean(profile.wants_offer_alerts ?? true);
+            if (cbServices) cbServices.checked = Boolean(profile.wants_service_alerts ?? true);
+
+            const wp = document.getElementById('weightPurchases');
+            const ws = document.getElementById('weightServices');
+            const wo = document.getElementById('weightOffers');
+            const wn = document.getElementById('weightNotifications');
+            if (wp) wp.value = String(profile.weight_purchases ?? 30);
+            if (ws) ws.value = String(profile.weight_services ?? 20);
+            if (wo) wo.value = String(profile.weight_offers ?? 25);
+            if (wn) wn.value = String(profile.weight_notifications ?? 25);
+        }
+
+        function renderPlan(plan) {
+            state.profile = plan.profile || {};
+            statusBox.className = 'wf-alert wf-alert-info';
+            if (IS_ADMIN) {
+                statusBox.textContent = `Plano atualizado em ${new Date(plan.generated_at).toLocaleString('pt-BR')} • alertas proativos: ${plan.proactive_alerts_created || 0} • alertas preditivos: ${plan.predictive_alerts_created || 0}`;
+            } else {
+                statusBox.textContent = `Plano atualizado em ${new Date(plan.generated_at).toLocaleString('pt-BR')}`;
+            }
+            decisionModeBadge.textContent = `modo: ${autonomyLabel(plan.decision_mode)}`;
+
+            const history = plan.history || {};
+            historyGrid.innerHTML = `
+                <article class="agenda-kpi"><div class="k">Pedidos</div><div class="v">${history.store_orders || 0}</div></article>
+                <article class="agenda-kpi"><div class="k">Propostas</div><div class="v">${history.pending_quotes || 0}</div></article>
+                <article class="agenda-kpi"><div class="k">Notificações</div><div class="v">${history.unread_notifications || 0}</div></article>
+                <article class="agenda-kpi"><div class="k">Ofertas</div><div class="v">${history.my_offers || 0}</div></article>
+                <article class="agenda-kpi"><div class="k">Serviços</div><div class="v">${history.my_services || 0}</div></article>
+                <article class="agenda-kpi"><div class="k">Transações</div><div class="v">${history.my_transactions || 0}</div></article>
+                <article class="agenda-kpi"><div class="k">Reservas futuras</div><div class="v">${history.upcoming_reservations || 0}</div></article>
+                ${IS_ADMIN ? `<article class="agenda-kpi"><div class="k">Peso compras</div><div class="v">${(plan.decision_weights?.purchases || 0).toFixed(0)}%</div></article>` : ''}
+            `;
+
+            const slots = Array.isArray(plan.best_slots) ? plan.best_slots : [];
+            bestSlots.innerHTML = slots.length ? slots.map((slot) => `
+                <article class="agenda-slot">
+                    <div><strong>${String(slot.hour).padStart(2, '0')}:00</strong> • ${slot.reason || '-'}</div>
+                    <span class="agenda-badge">${(Number(slot.score || 0) * 100).toFixed(1)}%</span>
+                </article>
+            `).join('') : '<div class="wf-alert wf-alert-info">Sem horários sugeridos.</div>';
+
+            const actions = Array.isArray(plan.actions) ? plan.actions : [];
+            actionsList.innerHTML = actions.length ? actions.map((action) => `
+                <article class="agenda-action">
+                    <h3>${action.title || 'Ação sugerida'}</h3>
+                    <p>${action.description || ''}</p>
+                    <div class="agenda-action-row">
+                        <span class="agenda-priority ${action.priority || 'media'}">${IS_ADMIN ? `${action.priority || 'media'} • ${Number(action.score || 0).toFixed(0)}%` : (action.priority || 'media')}</span>
+                        <a class="agenda-link-btn" href="${action.cta || '/'}">Executar</a>
+                    </div>
+                </article>
+            `).join('') : '<div class="wf-alert wf-alert-info">Sem ações no momento.</div>';
+        }
+
+        function renderCalendar(data) {
+            const view = data?.view || 'month';
+            const days = Array.isArray(data?.days) ? data.days : [];
+
+            if (view === 'month') {
+                calendarContainer.innerHTML = `
+                    <div class="agenda-calendar-grid">
+                        ${days.map((day) => `
+                            <article class="agenda-day" data-drop-date="${day.date}">
+                                <div class="agenda-day-head">
+                                    <span>${String(day.day || '').padStart(2, '0')}</span>
+                                    <span>${day.count || 0} evt</span>
+                                </div>
+                                ${(Array.isArray(day.events) ? day.events : []).slice(0, 4).map((evt) => `<div class="agenda-day-chip" draggable="true" data-event-id="${evt.id}">${evt.title}</div>`).join('') || '<div class="agenda-day-chip">Livre</div>'}
+                            </article>
+                        `).join('')}
+                    </div>
+                `;
+                bindDragAndDrop();
+                return;
+            }
+
+            if (view === 'week') {
+                calendarContainer.innerHTML = `
+                    <div class="agenda-week-list">
+                        ${days.map((day) => `
+                            <article class="agenda-event-item" data-drop-date="${day.date}">
+                                <div>
+                                    <div class="agenda-event-title">${day.date} • ${day.weekday || ''}</div>
+                                    <div class="agenda-event-meta">${day.count || 0} evento(s)</div>
+                                </div>
+                                <div style="display:grid;gap:0.2rem;min-width:220px;">
+                                    ${(Array.isArray(day.events) ? day.events : []).slice(0, 5).map((evt) => `<span class="agenda-badge" draggable="true" data-event-id="${evt.id}">${new Date(evt.starts_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} • ${evt.title}</span>`).join('') || '<span class="agenda-badge">Sem eventos</span>'}
+                                </div>
+                            </article>
+                        `).join('')}
+                    </div>
+                `;
+                bindDragAndDrop();
+                return;
+            }
+
+            calendarContainer.innerHTML = `
+                <div class="agenda-day-list">
+                    ${(Array.isArray(days[0]?.events) ? days[0].events : []).map((evt) => `
+                        <article class="agenda-event-item">
+                            <div>
+                                <div class="agenda-event-title">${evt.title}</div>
+                                <div class="agenda-event-meta">${new Date(evt.starts_at).toLocaleString('pt-BR')} • ${evt.event_type}</div>
+                            </div>
+                            <button class="agenda-link-btn secondary" data-cancel-event="${evt.id}">Cancelar</button>
+                        </article>
+                    `).join('') || '<div class="wf-alert wf-alert-info">Sem eventos neste dia.</div>'}
+                </div>
+            `;
+
+            calendarContainer.querySelectorAll('[data-cancel-event]').forEach((btn) => {
+                btn.addEventListener('click', async () => {
+                    const id = Number(btn.getAttribute('data-cancel-event'));
+                    try {
+                        await apiRequest(`/ai/agenda/events/${id}`, 'DELETE');
+                        await loadCalendar();
+                        await loadPlan();
+                    } catch (error) {
+                        alert(error.message || 'Falha ao cancelar evento.');
+                    }
+                });
+            });
+        }
+
+        async function moveEventByDrag(eventId, targetDate) {
+            await apiRequest(`/ai/agenda/events/${eventId}/move`, 'PATCH', {
+                target_date: targetDate,
+            });
+            await loadCalendar();
+            await loadPlan();
+            statusBox.className = 'wf-alert wf-alert-info';
+            statusBox.textContent = 'Evento movido com sucesso via arrastar e soltar.';
+        }
+
+        function bindDragAndDrop() {
+            const draggables = calendarContainer.querySelectorAll('[data-event-id]');
+            const dropTargets = calendarContainer.querySelectorAll('[data-drop-date]');
+
+            draggables.forEach((node) => {
+                node.addEventListener('dragstart', (ev) => {
+                    node.classList.add('dragging');
+                    ev.dataTransfer?.setData('text/plain', String(node.getAttribute('data-event-id') || ''));
+                    ev.dataTransfer.effectAllowed = 'move';
+                });
+                node.addEventListener('dragend', () => {
+                    node.classList.remove('dragging');
+                    dropTargets.forEach((target) => target.classList.remove('drop-target'));
+                });
+            });
+
+            dropTargets.forEach((target) => {
+                target.addEventListener('dragover', (ev) => {
+                    ev.preventDefault();
+                    target.classList.add('drop-target');
+                });
+                target.addEventListener('dragleave', () => {
+                    target.classList.remove('drop-target');
+                });
+                target.addEventListener('drop', async (ev) => {
+                    ev.preventDefault();
+                    target.classList.remove('drop-target');
+                    const eventId = Number(ev.dataTransfer?.getData('text/plain') || 0);
+                    const dateStr = String(target.getAttribute('data-drop-date') || '');
+                    if (!eventId || !dateStr) return;
+                    try {
+                        await moveEventByDrag(eventId, dateStr);
+                    } catch (error) {
+                        statusBox.className = 'wf-alert wf-alert-error';
+                        statusBox.textContent = IS_ADMIN ? (error.message || 'Falha ao mover evento.') : 'Não foi possível mover o evento agora. Tente novamente.';
+                    }
+                });
+            });
+        }
+
+        async function loadProfile() {
+            const response = await apiRequest('/ai/agenda/profile');
+            return response?.profile || {};
+        }
+
+        async function loadPlan() {
+            const plan = await apiRequest('/ai/agenda/plan');
+            renderPlan(plan);
+        }
+
+        async function loadCalendar() {
+            const response = await apiRequest(`/ai/agenda/events?view=${encodeURIComponent(state.calendarView)}&anchor_date=${encodeURIComponent(state.anchorDate)}`);
+            renderCalendar(response);
+        }
+
+        async function saveProfile() {
+            const payload = readProfilePayload();
+            await apiRequest('/ai/agenda/profile', 'POST', payload);
+            onboardingModal.classList.remove('show');
+            await loadPlan();
+        }
+
+        async function createEvent() {
+            const payload = {
+                title: String(eventTitle.value || '').trim(),
+                description: String(eventDescription.value || '').trim() || null,
+                event_type: String(eventType.value || 'reservation'),
+                starts_at: new Date(eventStart.value).toISOString(),
+                ends_at: new Date(eventEnd.value).toISOString(),
+                location: String(eventLocation.value || '').trim() || null,
+                is_all_day: false,
+                meta_json: { source: 'agenda_ui' },
+            };
+
+            await apiRequest('/ai/agenda/events', 'POST', payload);
+            agendaEventForm.reset();
+            await loadCalendar();
+            await loadPlan();
+        }
+
+        async function askAgent(question) {
+            const result = await apiRequest('/ai-agent/ask', 'POST', { question });
+            return result?.answer || 'Não consegui responder agora.';
+        }
+
+        chatForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const question = String(questionInput.value || '').trim();
+            if (!question) return;
+
+            appendMessage('user', question);
+            questionInput.value = '';
+            questionInput.disabled = true;
+
+            try {
+                appendMessage('ai', await askAgent(question));
+            } catch (error) {
+                appendMessage('ai', `Erro ao consultar agente: ${error.message || 'falha inesperada'}`);
+            } finally {
+                questionInput.disabled = false;
+                questionInput.focus();
+            }
+        });
+
+        saveBtn.addEventListener('click', async () => {
+            try {
+                await saveProfile();
+                appendMessage('ai', 'Configuração atualizada. Recalculei as prioridades com os novos pesos.');
+            } catch (error) {
+                alert(IS_ADMIN ? (error.message || 'Falha ao salvar configuração.') : 'Não foi possível salvar agora. Tente novamente em instantes.');
+            }
+        });
+
+        skipBtn.addEventListener('click', () => onboardingModal.classList.remove('show'));
+        openOnboardingBtn.addEventListener('click', () => onboardingModal.classList.add('show'));
+
+        calendarView.addEventListener('change', async () => {
+            state.calendarView = calendarView.value;
+            await loadCalendar();
+        });
+
+        calendarAnchor.addEventListener('change', async () => {
+            state.anchorDate = calendarAnchor.value;
+            await loadCalendar();
+        });
+
+        calendarReloadBtn.addEventListener('click', async () => {
+            await loadCalendar();
+            await loadPlan();
+        });
+
+        calendarTodayBtn.addEventListener('click', async () => {
+            state.anchorDate = new Date().toISOString().slice(0, 10);
+            calendarAnchor.value = state.anchorDate;
+            await loadCalendar();
+        });
+
+        agendaEventForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            if (!eventTitle.value || !eventStart.value || !eventEnd.value) {
+                alert('Preencha título, início e fim do evento.');
+                return;
+            }
+
+            try {
+                await createEvent();
+                statusBox.className = 'wf-alert wf-alert-info';
+                statusBox.textContent = 'Evento salvo com sucesso e plano recalculado.';
+            } catch (error) {
+                statusBox.className = 'wf-alert wf-alert-error';
+                statusBox.textContent = IS_ADMIN ? (error.message || 'Falha ao salvar evento.') : 'Não foi possível salvar o evento agora. Tente novamente.';
+            }
+        });
+
+        async function init() {
+            if (!requireAuth()) return;
+
+            try {
+                calendarAnchor.value = state.anchorDate;
+                const profile = await loadProfile();
+                applyProfileToForm(profile);
+                if (!profile.onboarding_complete) onboardingModal.classList.add('show');
+                await loadPlan();
+                await loadCalendar();
+            } catch (error) {
+                statusBox.className = 'wf-alert wf-alert-error';
+                statusBox.textContent = IS_ADMIN ? (error.message || 'Erro ao carregar agenda inteligente.') : 'Não foi possível carregar a agenda agora.';
+            }
+        }
+
+        init();
+    })();
+</script>
+{% endblock %}

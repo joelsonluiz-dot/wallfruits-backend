@@ -1,77 +1,42 @@
 {% extends "base.html" %}
 
+{% block title %}Propostas | WallFruits Store{% endblock %}
+
 {% block content %}
 <style>
-    .proposal-shell {
-        display: grid;
-        gap: 0.9rem;
-    }
-
-    .proposal-head {
-        display: flex;
-        justify-content: space-between;
-        gap: 0.7rem;
-        align-items: center;
-        flex-wrap: wrap;
-    }
-
-    .proposal-head h1 {
-        margin: 0;
-        font-size: 1.3rem;
-        font-weight: 900;
-        color: #113769;
-    }
-
-    .proposal-list {
-        display: grid;
-        gap: 0.65rem;
-    }
-
+    .proposal-shell { display: grid; gap: 0.85rem; }
+    .proposal-head { display: flex; justify-content: space-between; gap: 0.7rem; align-items: center; flex-wrap: wrap; }
+    .proposal-head h1 { margin: 0; font-size: 1.24rem; font-weight: 900; color: #2E7D32; }
+    .proposal-list { display: grid; gap: 0.65rem; }
     .proposal-card {
-        border: 1px solid rgba(11, 46, 99, 0.12);
+        border: 1px solid #d6e7d8;
         border-radius: 14px;
         background: #fff;
-        box-shadow: 0 10px 20px rgba(16, 44, 90, 0.08);
-        padding: 0.78rem;
+        box-shadow: 0 10px 20px rgba(30, 85, 34, 0.1);
+        padding: 0.76rem;
         display: grid;
         grid-template-columns: 1fr auto;
         gap: 0.65rem;
         align-items: center;
     }
-
-    .proposal-title {
-        margin: 0;
-        font-size: 0.9rem;
-        font-weight: 800;
-        color: #123568;
-    }
-
-    .proposal-meta {
-        margin: 0.2rem 0 0;
-        color: #5c7597;
-        font-size: 0.74rem;
-    }
-
+    .proposal-title { margin: 0; color: #1f5e29; font-size: 0.88rem; font-weight: 800; }
+    .proposal-meta { margin: 0.18rem 0 0; color: #607764; font-size: 0.74rem; }
     .proposal-badge {
         border-radius: 999px;
         padding: 0.28rem 0.62rem;
-        font-size: 0.68rem;
+        font-size: 0.66rem;
         font-weight: 800;
         text-transform: uppercase;
-        letter-spacing: 0.05em;
+        letter-spacing: 0.04em;
     }
-
-    .proposal-badge.pending { background: #fff4cf; color: #7a5800; }
-    .proposal-badge.reviewed { background: #dff3ff; color: #124b75; }
-    .proposal-badge.accepted { background: #dbf6e5; color: #155f33; }
-    .proposal-badge.rejected { background: #ffe0e4; color: #842632; }
-    .proposal-badge.cancelled { background: #ececf0; color: #4f5460; }
+    .proposal-badge.pending { background: #fff4dc; color: #8a5b00; }
+    .proposal-badge.reviewed { background: #ecf7ff; color: #1f5b85; }
+    .proposal-badge.accepted { background: #e5f7ea; color: #1f6a35; }
+    .proposal-badge.rejected { background: #ffe8ea; color: #8e2f38; }
+    .proposal-badge.cancelled { background: #f0f1f3; color: #59616c; }
 
     @media (max-width: 768px) {
-        .proposal-card {
-            grid-template-columns: 1fr;
-            align-items: flex-start;
-        }
+        .proposal-card { grid-template-columns: 1fr; align-items: flex-start; }
     }
 </style>
 
@@ -96,7 +61,17 @@
         function showMessage(type, text) {
             if (!feedback) return;
             const cls = type === 'error' ? 'wf-alert wf-alert-error' : 'wf-alert wf-alert-info';
-            feedback.innerHTML = `<div class="${cls}">${text}</div>`;
+            const wrap = document.createElement('div');
+            wrap.className = cls;
+            wrap.textContent = String(text || '');
+            feedback.innerHTML = '';
+            feedback.appendChild(wrap);
+        }
+
+        function escapeHtml(value) {
+            const div = document.createElement('div');
+            div.textContent = String(value ?? '');
+            return div.innerHTML;
         }
 
         function requireAuth() {
@@ -110,7 +85,7 @@
         function statusLabel(status) {
             const map = {
                 pending: 'Pendente',
-                reviewed: 'Em analise',
+                reviewed: 'Em análise',
                 accepted: 'Aceita',
                 rejected: 'Recusada',
                 cancelled: 'Cancelada',
@@ -126,20 +101,20 @@
                 const quotes = Array.isArray(data?.quotes) ? data.quotes : [];
 
                 if (!quotes.length) {
-                    list.innerHTML = '<div class="wf-alert wf-alert-info">Voce ainda nao enviou propostas por volume.</div>';
+                    list.innerHTML = '<div class="wf-alert wf-alert-info">Você ainda não enviou propostas por volume.</div>';
                     return;
                 }
 
                 list.innerHTML = quotes.map((quote) => `
                     <article class="proposal-card">
                         <div>
-                            <h2 class="proposal-title">${quote.product_name}</h2>
-                            <p class="proposal-meta">Fornecedor: ${quote.supplier_name}</p>
-                            <p class="proposal-meta">Quantidade: ${Number(quote.requested_quantity).toFixed(2)} ${quote.unit || 'un'} | Preco alvo: ${quote.target_price ? `R$ ${Number(quote.target_price).toFixed(2)}` : 'nao informado'}</p>
-                            ${quote.message ? `<p class="proposal-meta">Mensagem: ${quote.message}</p>` : ''}
-                            <a href="/store/product/${quote.product_slug}" class="btn btn-sm btn-outline-primary mt-1">Ver produto</a>
+                            <h2 class="proposal-title">${escapeHtml(quote.product_name)}</h2>
+                            <p class="proposal-meta">Fornecedor: ${escapeHtml(quote.supplier_name)}</p>
+                            <p class="proposal-meta">Quantidade: ${Number(quote.requested_quantity).toFixed(2)} ${quote.unit || 'un'} | Preço alvo: ${quote.target_price ? `R$ ${Number(quote.target_price).toFixed(2)}` : 'não informado'}</p>
+                            ${quote.message ? `<p class="proposal-meta">Mensagem: ${escapeHtml(quote.message)}</p>` : ''}
+                            <a href="/store/product/${encodeURIComponent(quote.product_slug || '')}" class="btn btn-sm btn-outline-success mt-1">Ver produto</a>
                         </div>
-                        <span class="proposal-badge ${quote.status}">${statusLabel(quote.status)}</span>
+                        <span class="proposal-badge ${escapeHtml(quote.status)}">${escapeHtml(statusLabel(quote.status))}</span>
                     </article>
                 `).join('');
             } catch (error) {

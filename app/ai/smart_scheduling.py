@@ -20,6 +20,7 @@ class SmartSchedulingAI:
         location_lat: float,
         location_lon: float,
         availability: list[int] | None = None,
+        persist_suggestions: bool = True,
     ) -> list[dict]:
         availability = availability or [8, 9, 10, 14, 15, 16]
 
@@ -58,21 +59,22 @@ class SmartSchedulingAI:
         suggestions.sort(key=lambda s: s["score"], reverse=True)
         top = suggestions[:3]
 
-        for item in top:
-            self.db.add(
-                AISuggestion(
-                    user_id=user_id,
-                    module="smart_scheduling",
-                    suggestion_type="best_time",
-                    title="Melhor horário sugerido",
-                    content=f"Agende em torno de {item['hour']:02d}:00 para maior chance de sucesso.",
-                    priority="high" if item["score"] >= 0.75 else "medium",
-                    confidence=item["score"],
-                    meta_json={"hour": item["hour"], "weather_score": weather_score},
+        if persist_suggestions:
+            for item in top:
+                self.db.add(
+                    AISuggestion(
+                        user_id=user_id,
+                        module="smart_scheduling",
+                        suggestion_type="best_time",
+                        title="Melhor horário sugerido",
+                        content=f"Agende em torno de {item['hour']:02d}:00 para maior chance de sucesso.",
+                        priority="high" if item["score"] >= 0.75 else "medium",
+                        confidence=item["score"],
+                        meta_json={"hour": item["hour"], "weather_score": weather_score},
+                    )
                 )
-            )
 
-        self.db.commit()
+            self.db.commit()
         return top
 
     def build_natural_language_summary(self, slots: list[dict]) -> str:

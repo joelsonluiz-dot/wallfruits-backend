@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from typing import Optional, Dict
 from uuid import UUID
 from decimal import Decimal
@@ -12,8 +12,20 @@ class TransactionCreate(BaseModel):
     delivery_method: str = Field("pickup", pattern="^(pickup|delivery)$")
     delivery_address: Optional[str] = None
     delivery_date: Optional[datetime] = None
+    reservation_date: Optional[datetime] = None
+    pricing_mode: str = Field("market", pattern="^(market|min|free)$")
+    offered_unit_price: Optional[Decimal] = Field(None, gt=0)
+    contact_name: Optional[str] = Field(None, max_length=120)
+    contact_phone: Optional[str] = Field(None, max_length=40)
+    contact_address: Optional[str] = Field(None, max_length=300)
     notes: Optional[str] = Field(None, max_length=500)
     payment_method: str = Field(..., pattern="^(cash|card|transfer)$")
+
+    @model_validator(mode="after")
+    def validate_pricing_payload(self):
+        if self.pricing_mode == "free" and self.offered_unit_price is None:
+            raise ValueError("Informe o preço por kg para o modo livre")
+        return self
 
 
 class TransactionUpdate(BaseModel):
@@ -38,7 +50,15 @@ class TransactionResponse(BaseModel):
     delivery_method: str
     delivery_address: Optional[str]
     delivery_date: Optional[datetime]
+    reservation_date: Optional[datetime]
     notes: Optional[str]
+    pricing_mode: Optional[str]
+    negotiated_unit_price: Optional[Decimal]
+    reservation_fee_per_kg: Optional[Decimal]
+    reservation_fee_total: Optional[Decimal]
+    contact_name: Optional[str]
+    contact_phone: Optional[str]
+    contact_address: Optional[str]
 
     payment_method: str
     payment_status: str

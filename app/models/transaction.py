@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, String, Numeric, DateTime, Integer, Text, ForeignKey
+from sqlalchemy import Column, String, Numeric, DateTime, Integer, Text, ForeignKey, JSON
 from sqlalchemy.sql import func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
@@ -28,7 +28,18 @@ class Transaction(Base):
     delivery_method = Column(String(50), default="pickup")  # pickup, delivery
     delivery_address = Column(Text)
     delivery_date = Column(DateTime(timezone=True))
+    reservation_date = Column(DateTime(timezone=True))
     notes = Column(Text)
+
+    # Informações adicionais da reserva
+    pricing_mode = Column(String(20), default="market")  # market, min, free
+    negotiated_unit_price = Column(Numeric(10, 2))
+    reservation_fee_per_kg = Column(Numeric(10, 4), default=0.005)
+    reservation_fee_total = Column(Numeric(10, 2))
+    contact_name = Column(String(120))
+    contact_phone = Column(String(40))
+    contact_address = Column(Text)
+    reservation_metadata = Column(JSON)
 
     # Controle de pagamento
     payment_method = Column(String(50))  # cash, card, transfer

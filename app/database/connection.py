@@ -536,6 +536,55 @@ def _ensure_services_schema_compatibility() -> None:
             conn.execute(text(statement))
 
 
+def _ensure_transactions_schema_compatibility() -> None:
+    if IS_SQLITE:
+        sqlite_statements = {
+            "reservation_date": "ALTER TABLE transactions ADD COLUMN reservation_date DATETIME",
+            "pricing_mode": "ALTER TABLE transactions ADD COLUMN pricing_mode VARCHAR(20) DEFAULT 'market'",
+            "negotiated_unit_price": "ALTER TABLE transactions ADD COLUMN negotiated_unit_price NUMERIC(10,2)",
+            "reservation_fee_per_kg": "ALTER TABLE transactions ADD COLUMN reservation_fee_per_kg NUMERIC(10,4) DEFAULT 0.005",
+            "reservation_fee_total": "ALTER TABLE transactions ADD COLUMN reservation_fee_total NUMERIC(10,2)",
+            "contact_name": "ALTER TABLE transactions ADD COLUMN contact_name VARCHAR(120)",
+            "contact_phone": "ALTER TABLE transactions ADD COLUMN contact_phone VARCHAR(40)",
+            "contact_address": "ALTER TABLE transactions ADD COLUMN contact_address TEXT",
+            "reservation_metadata": "ALTER TABLE transactions ADD COLUMN reservation_metadata JSON",
+        }
+
+        with engine.begin() as conn:
+            if not _table_exists(conn, "transactions"):
+                return
+
+            existing_columns = {
+                row[1]
+                for row in conn.execute(text("PRAGMA table_info(transactions)"))
+            }
+
+            for column_name, statement in sqlite_statements.items():
+                if column_name not in existing_columns:
+                    conn.execute(text(statement))
+
+        return
+
+    transaction_statements = [
+        "ALTER TABLE transactions ADD COLUMN IF NOT EXISTS reservation_date TIMESTAMPTZ",
+        "ALTER TABLE transactions ADD COLUMN IF NOT EXISTS pricing_mode VARCHAR(20) DEFAULT 'market'",
+        "ALTER TABLE transactions ADD COLUMN IF NOT EXISTS negotiated_unit_price NUMERIC(10,2)",
+        "ALTER TABLE transactions ADD COLUMN IF NOT EXISTS reservation_fee_per_kg NUMERIC(10,4) DEFAULT 0.005",
+        "ALTER TABLE transactions ADD COLUMN IF NOT EXISTS reservation_fee_total NUMERIC(10,2)",
+        "ALTER TABLE transactions ADD COLUMN IF NOT EXISTS contact_name VARCHAR(120)",
+        "ALTER TABLE transactions ADD COLUMN IF NOT EXISTS contact_phone VARCHAR(40)",
+        "ALTER TABLE transactions ADD COLUMN IF NOT EXISTS contact_address TEXT",
+        "ALTER TABLE transactions ADD COLUMN IF NOT EXISTS reservation_metadata JSONB",
+    ]
+
+    with engine.begin() as conn:
+        if not _table_exists(conn, "transactions"):
+            return
+
+        for statement in transaction_statements:
+            conn.execute(text(statement))
+
+
 def _ensure_postgres_schema_compatibility() -> None:
     """Aplica ajustes de compatibilidade para bancos já existentes."""
     _ensure_users_schema_compatibility()
@@ -546,6 +595,7 @@ def _ensure_postgres_schema_compatibility() -> None:
     _ensure_intermediation_schema_compatibility()
     _ensure_reports_schema_compatibility()
     _ensure_services_schema_compatibility()
+    _ensure_transactions_schema_compatibility()
 
 
 def init_db():

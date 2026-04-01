@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request, Depends, Form, HTTPException, status
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from datetime import timedelta
 from app.database.connection import get_db
 from app.core.auth_middleware import get_current_user
@@ -96,6 +96,40 @@ class QuoteRequestIn(BaseModel):
 class CheckoutIn(BaseModel):
     payment_method: str = Field(default="pix")
     shipping_address: dict = Field(default_factory=dict)
+
+    @model_validator(mode="after")
+    def validate_checkout(self):
+        allowed_methods = {"pix", "boleto", "cartao", "transferencia"}
+        method = (self.payment_method or "pix").strip().lower()
+        if method not in allowed_methods:
+            raise ValueError("Forma de pagamento invalida")
+
+        if not isinstance(self.shipping_address, dict):
+            raise ValueError("Endereco de entrega invalido")
+
+        required_fields = ["name", "phone", "city", "state", "address", "zip"]
+        normalized = {}
+        for key in required_fields:
+            value = str(self.shipping_address.get(key, "") or "").strip()
+            if not value:
+                raise ValueError(f"Campo obrigatorio ausente em shipping_address: {key}")
+            normalized[key] = value
+
+        normalized["state"] = normalized["state"].upper()
+        if len(normalized["state"]) != 2:
+            raise ValueError("UF invalida no endereco de entrega")
+
+        phone_digits = re.sub(r"\D", "", normalized["phone"])
+        if len(phone_digits) < 10:
+            raise ValueError("Telefone invalido no endereco de entrega")
+
+        zip_digits = re.sub(r"\D", "", normalized["zip"])
+        if len(zip_digits) != 8:
+            raise ValueError("CEP invalido no endereco de entrega")
+
+        self.payment_method = method
+        self.shipping_address = normalized
+        return self
 
 
 def _build_order_timeline(order: Order) -> list[dict]:
@@ -426,7 +460,7 @@ async def complete_checkout(payload: CheckoutIn, db: Session = Depends(get_db), 
 
     _recompute_order_total(cart)
     cart.status = OrderStatus.PAID
-    cart.payment_method = (payload.payment_method or "pix").strip().lower() or "pix"
+    cart.payment_method = payload.payment_method
     cart.shipping_address = payload.shipping_address or {}
 
     db.commit()

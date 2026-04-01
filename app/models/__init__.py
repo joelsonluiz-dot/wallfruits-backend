@@ -32,6 +32,7 @@ from .service import Service
 from .library_item import LibraryItem
 from .buyer_client import BuyerClient, BuyerClientPolicy, BuyerClientSlotPurchase
 from .ai_models import UserBehaviorLog, AISuggestion, Prediction, EmbeddingRecord, AIChatMessage
+from .agenda_event import AgendaEvent
 
 __all__ = [
     "User",
@@ -82,4 +83,5 @@ __all__ = [
     "Prediction",
     "EmbeddingRecord",
     "AIChatMessage",
+    "AgendaEvent",
 ]

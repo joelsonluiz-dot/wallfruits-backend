@@ -1,781 +1,925 @@
 {% extends "base.html" %}
 
+{% block title %}Loja Agro | WallFruits{% endblock %}
+
 {% block content %}
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,500,0,0" />
 <style>
-    /* Força o container principal a não ultrapassar a largura da tela */
-    html, body {
-        max-width: 100vw;
-        overflow-x: hidden;
-    {% extends "base.html" %}
-
-    {% block title %}Loja - WallFruits{% endblock %}
-
-    {% block content %}
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,400,0,0" />
-    <style>
-        /* Copiado e adaptado do modelo de ofertas para responsividade e chips */
-        .offers-header, .store-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-            flex-wrap: wrap;
-            gap: 0.8rem;
-        }
-        .store-header h1 {
-            font-size: 2rem;
-            font-weight: 800;
-            letter-spacing: -1px;
-            margin: 0;
-        }
-        .store-count {
-            color: var(--wf-text-secondary);
-            font-size: 0.85rem;
-            margin-top: 0.2rem;
-        }
-        .store-search-row {
-            display: grid;
-            grid-template-columns: 1fr auto;
-            gap: 0.5rem;
-            margin-bottom: 0.65rem;
-        }
-        .store-search-wrap {
-            position: relative;
-        }
-        .store-search-wrap .material-symbols-outlined {
-            position: absolute;
-            left: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 18px;
-            color: var(--wf-text-secondary);
-        }
-        .store-search-input {
-            padding-left: 2rem !important;
-        }
-        .store-chips {
-            display: flex;
-            flex-wrap: nowrap;
-            gap: 0.4rem;
-            margin-bottom: 0.7rem;
-            align-items: center;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            padding-bottom: 0.2rem;
-            scrollbar-width: none;
-        }
-        .store-chips::-webkit-scrollbar {
-            display: none;
-        }
-        .store-chip {
-            border: 1px solid rgba(17, 73, 125, 0.2);
-            border-radius: 999px;
-            background: linear-gradient(135deg, rgba(242, 250, 255, 0.96), rgba(235, 247, 240, 0.98));
-            color: #1a4b81;
-            font-size: 0.72rem;
-            font-weight: 800;
-            padding: 0.3rem 0.62rem;
-            cursor: pointer;
-            transition: transform var(--wf-motion-fast) ease, box-shadow var(--wf-motion-fast) ease, border-color var(--wf-motion-fast) ease;
-            white-space: nowrap;
-        }
-        .store-chip.active {
-            color: #ffffff;
-            border-color: rgba(29, 111, 69, 0.62);
-            background: linear-gradient(130deg, #1d6f45, #2b8a58);
-            box-shadow: 0 8px 16px rgba(18, 83, 51, 0.22);
-        }
-        .store-active-filters {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.4rem;
-            margin-bottom: 0.7rem;
-        }
-        .store-filter-chip {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.3rem;
-            border-radius: 999px;
-            border: 1px solid rgba(21, 82, 129, 0.22);
-            background: linear-gradient(135deg, rgba(242, 251, 255, 0.98), rgba(237, 248, 242, 0.98));
-            color: #1b4e83;
-            font-size: 0.72rem;
-            font-weight: 700;
-            padding: 0.24rem 0.58rem;
-        }
-        .store-filter-chip.clear-all {
-            border-color: rgba(153, 53, 53, 0.24);
-            background: linear-gradient(135deg, rgba(255, 244, 244, 0.98), rgba(255, 236, 236, 0.98));
-            color: #a23333;
-            cursor: pointer;
-        }
-        .store-list {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 0.88rem;
-        }
-        @media (max-width: 1024px) {
-            .store-list {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
-
-    <div class="store-header">
-        <div>
-            <h1>Loja <span class="wf-gradient-text">Agro</span></h1>
-            <div class="store-count">{{ products|length }} produtos</div>
-        </div>
-        <a href="/store/manage/dashboard" class="btn btn-wf-secondary" id="storeCreateProductBtn" style="display:none;">+ Cadastrar produto</a>
-    </div>
-
-    <div class="store-search-row">
-        <div class="store-search-wrap">
-            <span class="material-symbols-outlined">search</span>
-            <input class="wf-input form-control store-search-input" type="text" name="q" value="{{ search_query or '' }}" placeholder="Buscar produto, fornecedor ou categoria">
-        </div>
-    </div>
-
-    <div class="store-chips">
-        <a href="/store{% if search_query %}?q={{ search_query }}{% endif %}" class="store-chip {% if not active_category %}active{% endif %}">Todos</a>
-        {% for cat in categories %}
-        <a href="/store?category={{ cat.slug }}{% if search_query %}&q={{ search_query }}{% endif %}" class="store-chip {% if active_category == cat.slug %}active{% endif %}">{{ cat.icon }} {{ cat.name }}</a>
-        {% endfor %}
-    </div>
-
-    {% if active_category or search_query %}
-    <div class="store-active-filters">
-        {% if active_category %}
-            {% for cat in categories %}
-                {% if cat.slug == active_category %}
-                <span class="store-filter-chip">Categoria: {{ cat.icon }} {{ cat.name }}</span>
-                {% endif %}
-            {% endfor %}
-        {% endif %}
-        {% if search_query %}
-        <span class="store-filter-chip">Busca: {{ search_query }}</span>
-        {% endif %}
-        <a href="/store" class="store-filter-chip clear-all">Limpar filtros</a>
-    </div>
-    {% endif %}
-
-    <div class="store-list">
-        {% for product in products %}
-        <div class="produto-card">
-            <div class="produto-img-wrap">
-                {% if product.images %}
-                <img src="{{ product.images[0] }}" alt="{{ product.name }}" class="produto-img">
-                {% else %}
-                <div style="font-size:2.2rem;">📦</div>
-                {% endif %}
-            </div>
-            <div class="produto-content">
-                <div>
-                    <div class="fruta-nome">{{ product.name }}</div>
-                    <div class="price-box">
-                        <div class="price-col">
-                            <span class="price-label">Preço</span>
-                            <span class="price-val">R$ {{ "%.2f"|format(product.price) }}</span>
-                        </div>
-                        <div class="price-col">
-                            <span class="price-label">Categoria</span>
-                            <span class="price-val">{{ product.category.name }}</span>
-                        </div>
-                        <div class="price-col">
-                            <span class="price-label">Estoque</span>
-                            <span class="price-val">{{ product.stock_quantity }}</span>
-                        </div>
-                    </div>
-                    <div class="mini-meta-grid">
-                        <div class="mini-meta-card">
-                            <div class="mini-meta-top">Fornecedor</div>
-                            <div class="mini-meta-val">{{ product.supplier.name }}</div>
-                        </div>
-                        <div class="mini-meta-card">
-                            <div class="mini-meta-top">Categoria</div>
-                            <div class="mini-meta-val">{{ product.category.name }}</div>
-                        </div>
-                        <div class="mini-meta-card">
-                            <div class="mini-meta-top">ID</div>
-                            <div class="mini-meta-val">{{ product.id }}</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="product-actions">
-                    <a href="/store/product/{{ product.slug }}" class="action-primary">Ver produto</a>
-                </div>
-            </div>
-        </div>
-        {% else %}
-        <div class="empty-state">
-            Nenhum produto encontrado.<br>
-            Ajuste a busca, troque de categoria ou publique novos itens.
-        </div>
-        {% endfor %}
-    </div>
-    {% endblock %}
-        white-space: nowrap;
-        min-width: 0;
+    :root {
+        --store-green: #2E7D32;
+        --store-green-soft: #66BB6A;
+        --store-bg: #F5F5F5;
+        --store-white: #FFFFFF;
+        --store-highlight: #FF9800;
+        --store-text: #1f2a21;
+        --store-muted: #607264;
+        --store-border: #dbe7dc;
+        --store-shadow: 0 12px 28px rgba(30, 85, 34, 0.12);
+        --store-radius: 14px;
     }
 
-    .ag-category-chip:hover {
-        transform: translateY(-1px);
-        border-color: rgba(23, 87, 58, 0.42);
-        box-shadow: 0 8px 16px rgba(21, 77, 49, 0.14);
+    .store-page {
+        display: grid;
+        gap: 0.9rem;
+        color: var(--store-text);
     }
 
-    .ag-category-chip.active {
-        background: linear-gradient(130deg, #1d6f45, #2b8a58);
-        color: #fff;
-        border-color: transparent;
-        box-shadow: 0 8px 16px rgba(21, 77, 49, 0.22);
+    .store-topbar {
+        position: sticky;
+        top: 0.6rem;
+        z-index: 20;
+        background: rgba(255, 255, 255, 0.95);
+        border: 1px solid var(--store-border);
+        border-radius: var(--store-radius);
+        box-shadow: 0 10px 26px rgba(30, 85, 34, 0.1);
+        padding: 0.72rem;
+        backdrop-filter: blur(8px);
     }
 
-    .ag-active-filters {
+    .store-top-row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 0.55rem;
+        align-items: center;
+    }
+
+    .store-search-wrap {
+        position: relative;
+    }
+
+    .store-search-wrap .material-symbols-outlined {
+        position: absolute;
+        left: 0.6rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--store-muted);
+        font-size: 1.1rem;
+    }
+
+    .store-search-input {
+        width: 100%;
+        border: 1px solid var(--store-border);
+        border-radius: 12px;
+        padding: 0.58rem 0.7rem 0.58rem 2.15rem;
+        font-size: 0.9rem;
+        background: var(--store-white);
+    }
+
+    .store-icon-group {
         display: flex;
-        flex-wrap: wrap;
-        gap: 0.38rem;
+        gap: 0.35rem;
     }
 
-    .ag-filter-chip {
+    .store-icon-btn {
+        border: 1px solid var(--store-border);
+        background: var(--store-white);
+        border-radius: 10px;
+        width: 38px;
+        height: 38px;
         display: inline-flex;
         align-items: center;
-        gap: 0.28rem;
-        border-radius: 999px;
-        border: 1px solid rgba(21, 82, 129, 0.22);
-        background: linear-gradient(135deg, rgba(242, 251, 255, 0.98), rgba(237, 248, 242, 0.98));
-        color: #1b4e83;
-        font-size: 0.7rem;
-        font-weight: 700;
-        padding: 0.22rem 0.56rem;
-        text-decoration: none;
-    }
-
-    .ag-filter-chip.clear-all {
-        border-color: rgba(153, 53, 53, 0.24);
-        background: linear-gradient(135deg, rgba(255, 244, 244, 0.98), rgba(255, 236, 236, 0.98));
-        color: #a23333;
-        cursor: pointer;
-    }
-
-    .ag-row-section {
-        margin-top: 0.35rem;
-    }
-
-    .ag-row-head {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 0.8rem;
-        margin-bottom: 0.55rem;
-        flex-wrap: wrap;
-    }
-
-    .ag-row-title {
-        margin: 0;
-        color: #0f2f60;
-        font-size: 0.96rem;
-        font-weight: 900;
-        letter-spacing: -0.01em;
-    }
-
-    .ag-row-strip {
-        display: flex;
-        gap: 0.72rem;
-        overflow-x: auto;
-        padding: 0.18rem 0.08rem 0.35rem;
-        scroll-snap-type: x proximity;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: thin;
-        scrollbar-color: #e0e0e0 #fff;
-    }
-
-    .ag-row-item {
-        min-width: 228px;
-        max-width: 228px;
-        scroll-snap-align: start;
-        text-decoration: none;
-        border: 1px solid rgba(17, 53, 105, 0.12);
-        border-radius: 14px;
-        background: #fff;
-        overflow: hidden;
-        box-shadow: 0 8px 18px rgba(14, 41, 83, 0.08);
-        transition: transform var(--wf-motion-normal) ease, box-shadow var(--wf-motion-normal) ease;
-    }
-
-    .ag-row-item:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 12px 24px rgba(14, 41, 83, 0.12);
-    }
-
-    .ag-row-media {
-        height: 112px;
-        background: linear-gradient(180deg, #f6fbff 0%, #edf4fb 100%);
-        display: flex;
-        align-items: center;
         justify-content: center;
+        color: var(--store-green);
+        transition: transform 0.18s ease, box-shadow 0.18s ease;
     }
 
-    .ag-row-media img {
-        max-height: 92%;
-        max-width: 92%;
-        object-fit: contain;
+    .store-icon-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 14px rgba(46, 125, 50, 0.15);
     }
 
-    .ag-row-body {
-        padding: 0.62rem;
+    .store-layout {
         display: grid;
-        gap: 0.28rem;
+        gap: 0.9rem;
     }
 
-    .ag-row-cat {
-        color: #5f728d;
-        font-size: 0.66rem;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
+    .store-sidebar {
+        display: none;
     }
 
-    .ag-row-name {
+    .store-main {
+        display: grid;
+        gap: 0.9rem;
+    }
+
+    .store-hero {
+        background: linear-gradient(120deg, #e8f5e9 0%, #f1f8e9 42%, #fff8ef 100%);
+        border: 1px solid #cfe4d1;
+        border-radius: 16px;
+        padding: 1rem;
+        display: grid;
+        gap: 0.7rem;
+        box-shadow: var(--store-shadow);
+    }
+
+    .store-hero h1 {
         margin: 0;
-        color: #123568;
-        font-size: 0.76rem;
-        font-weight: 800;
-        line-height: 1.25;
-        min-height: 1.9rem;
-    }
-
-    .ag-row-price {
-        color: #0f2f60;
-        font-size: 0.82rem;
+        font-size: 1.2rem;
         font-weight: 900;
+        color: var(--store-green);
     }
 
-    .ag-products-grid {
+    .store-hero p {
+        margin: 0;
+        color: #496050;
+        font-size: 0.84rem;
+    }
+
+    .store-kpis {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 0.88rem;
-        margin-top: 0.4rem;
-        align-items: stretch;
-        width: 100%;
-        box-sizing: border-box;
+        gap: 0.42rem;
     }
 
-    .ag-card {
-        background: #fff;
-        border: 1px solid rgba(17, 53, 105, 0.12);
+    .store-kpi {
         border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 6px 16px rgba(14, 41, 83, 0.08);
-        transition: transform var(--wf-motion-normal) ease, box-shadow var(--wf-motion-normal) ease;
-        height: 100%;
-    }
-
-    .ag-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 14px 28px rgba(14, 41, 83, 0.15);
-    }
-
-    .ag-card-media {
-        position: relative;
-        background: linear-gradient(180deg, #f6fbff 0%, #edf4fb 100%);
-        height: 176px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .ag-card-media img {
-        max-width: 92%;
-        max-height: 90%;
-        object-fit: contain;
-    }
-
-    .ag-tag {
-        position: absolute;
-        left: 10px;
-        top: 10px;
-        border-radius: 999px;
-        padding: 0.18rem 0.55rem;
-        font-size: 0.68rem;
-        background: #ffe082;
-        color: #5e4300;
-        font-weight: 800;
-        border: 1px solid #f4c437;
-    }
-
-    .ag-card-body {
-        padding: 0.6rem;
-        display: flex;
-        flex-direction: column;
-        min-height: 120px;
-    }
-
-    .ag-card-category {
-        color: #5f728d;
+        border: 1px solid #d8e9db;
+        background: rgba(255, 255, 255, 0.8);
+        padding: 0.55rem;
         font-size: 0.72rem;
         font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
+        color: #3d5944;
     }
 
-    .ag-card-title {
-        margin: 0.25rem 0;
-        color: #132f5d;
-        font-size: 0.78rem;
-        font-weight: 800;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        min-height: 1.7rem;
-    }
-
-    .ag-card-meta {
-        margin: 0;
-        color: #677b95;
-        font-size: 0.7rem;
-        font-weight: 600;
-    }
-
-    .ag-card-footer {
-        margin-top: auto;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
+    .store-filters {
+        border: 1px solid var(--store-border);
+        border-radius: 16px;
+        background: var(--store-white);
+        padding: 0.78rem;
+        display: grid;
         gap: 0.6rem;
     }
 
-    .ag-price {
-        color: #0f2f60;
-        font-size: 0.92rem;
-        font-weight: 900;
-        letter-spacing: -0.01em;
+    .store-filters-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
     }
 
-    .ag-hero-btn {
+    .store-filters select {
+        border: 1px solid #cfe1d1;
+        border-radius: 10px;
+        padding: 0.5rem;
+        font-size: 0.84rem;
+        color: #2f4c37;
+        background: #fff;
+    }
+
+    .store-chip-row {
+        display: flex;
+        gap: 0.42rem;
+        overflow-x: auto;
+        padding-bottom: 0.1rem;
+        scrollbar-width: thin;
+    }
+
+    .store-chip {
+        border: 1px solid #cbe2cd;
+        border-radius: 999px;
+        background: #f8fff8;
+        color: #2e6a34;
+        font-size: 0.74rem;
+        font-weight: 800;
+        padding: 0.34rem 0.62rem;
+        white-space: nowrap;
+        cursor: pointer;
+        text-decoration: none;
+    }
+
+    .store-chip.active {
+        background: var(--store-green);
+        border-color: var(--store-green);
+        color: #fff;
+    }
+
+    .store-active-filters {
+        display: flex;
+        gap: 0.42rem;
+        flex-wrap: wrap;
+    }
+
+    .store-active-filter {
+        border-radius: 999px;
+        border: 1px solid #dfebe0;
+        background: #f4fbf5;
+        color: #3d6144;
+        font-size: 0.7rem;
+        padding: 0.22rem 0.5rem;
+        font-weight: 700;
+    }
+
+    .store-ai-card {
+        border: 1px solid #ffd7a0;
+        background: linear-gradient(130deg, #fff8ef 0%, #ffedcf 100%);
+        border-radius: 16px;
+        padding: 0.85rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.7rem;
+    }
+
+    .store-ai-title {
+        margin: 0;
+        color: #7a4a06;
+        font-size: 0.96rem;
+        font-weight: 900;
+    }
+
+    .store-ai-copy {
+        margin: 0.18rem 0 0;
+        color: #8e5a0c;
+        font-size: 0.74rem;
+    }
+
+    .store-ai-btn {
+        border: none;
+        border-radius: 10px;
+        background: var(--store-highlight);
+        color: #fff;
+        font-weight: 800;
+        font-size: 0.76rem;
+        padding: 0.5rem 0.66rem;
+        text-decoration: none;
+    }
+
+    .store-products {
+        display: grid;
+        gap: 0.7rem;
+        grid-template-columns: 1fr;
+    }
+
+    .store-card {
+        border: 1px solid #d5e5d6;
+        border-radius: 16px;
+        overflow: hidden;
+        background: #fff;
+        display: grid;
+        grid-template-rows: 148px 1fr;
+        box-shadow: 0 10px 20px rgba(24, 82, 28, 0.08);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        opacity: 0;
+        animation: revealUp 0.38s ease forwards;
+    }
+
+    .store-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 14px 24px rgba(24, 82, 28, 0.14);
+    }
+
+    .store-card-media {
+        background: linear-gradient(180deg, #f0f8f1 0%, #e8f5e9 100%);
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 0.5rem;
+    }
+
+    .store-card-media img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+    }
+
+    .store-tag {
+        position: absolute;
+        left: 0.5rem;
+        top: 0.5rem;
+        border-radius: 999px;
+        font-size: 0.66rem;
+        padding: 0.22rem 0.48rem;
+        font-weight: 800;
+        border: 1px solid transparent;
+    }
+
+    .store-tag.offer {
+        background: #fff2de;
+        color: #b96400;
+        border-color: #ffd6a1;
+    }
+
+    .store-tag.recommended {
+        background: #e8f6ea;
+        color: #2e7d32;
+        border-color: #c7e7cb;
+    }
+
+    .store-fav-btn {
+        position: absolute;
+        right: 0.5rem;
+        top: 0.5rem;
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        border: 1px solid #d7e7d9;
+        background: rgba(255, 255, 255, 0.9);
+        color: #67826a;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        text-decoration: none;
-        border-radius: 12px;
-        padding: clamp(0.32rem, 1vw, 0.55rem) clamp(0.5rem, 2vw, 0.85rem);
-        font-size: clamp(0.7rem, 2vw, 0.8rem);
+        transition: transform 0.18s ease;
+    }
+
+    .store-fav-btn.active {
+        color: #d64040;
+        border-color: #f1b3b3;
+        background: #fff3f3;
+    }
+
+    .store-card-body {
+        padding: 0.75rem;
+        display: grid;
+        gap: 0.5rem;
+    }
+
+    .store-category {
+        margin: 0;
+        color: #537257;
+        font-size: 0.66rem;
         font-weight: 800;
-        border: 1px solid #0b2e63;
-        color: #0b2e63;
-        background: rgba(255, 255, 255, 0.78);
-        transition: transform var(--wf-motion-normal) ease, box-shadow var(--wf-motion-normal) ease;
-        min-width: 0;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
     }
-        border-radius: 16px;
+
+    .store-name {
+        margin: 0;
+        font-size: 0.88rem;
+        font-weight: 800;
+        color: #1d3222;
+        min-height: 2.1rem;
+    }
+
+    .store-price-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 0.45rem;
+    }
+
+    .store-price {
+        margin: 0;
+        color: #1e7d32;
+        font-size: 1.04rem;
+        font-weight: 900;
+    }
+
+    .store-old-price {
+        margin: 0;
+        color: #90a392;
+        font-size: 0.74rem;
+        text-decoration: line-through;
+    }
+
+    .store-action-row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 0.42rem;
+    }
+
+    .store-btn {
+        border: none;
+        border-radius: 10px;
+        background: var(--store-green);
+        color: #fff;
+        font-size: 0.76rem;
+        font-weight: 800;
+        padding: 0.45rem 0.58rem;
+        text-align: center;
+        text-decoration: none;
+    }
+
+    .store-btn.ghost {
+        background: #edf7ee;
+        color: #2f6e36;
+        border: 1px solid #cfe5d1;
+    }
+
+    .btn-spinner {
+        width: 13px;
+        height: 13px;
+        border: 2px solid rgba(46, 125, 50, 0.3);
+        border-top-color: #2E7D32;
+        border-radius: 50%;
+        display: inline-block;
+        animation: wfSpin 0.8s linear infinite;
+        vertical-align: -2px;
+    }
+
+    .store-state {
+        border: 1px solid #d8e8da;
+        border-radius: 14px;
         background: #fff;
-        padding: 2rem 1rem;
-        color: #2d4f80;
+        color: #47634c;
+        padding: 1.1rem 0.85rem;
+        text-align: center;
+        font-size: 0.84rem;
         font-weight: 700;
-        grid-column: 1 / -1;
     }
 
-    @media (max-width: 1200px) {
-        .ag-store-shell {
-            grid-template-columns: 1fr;
+    .store-skeleton {
+        border-radius: 14px;
+        border: 1px solid #dceadd;
+        background: #fff;
+        height: 248px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .store-skeleton::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.7), transparent);
+        transform: translateX(-100%);
+        animation: shimmer 1.2s infinite;
+    }
+
+    .store-fab {
+        position: fixed;
+        right: 1rem;
+        bottom: calc(90px + env(safe-area-inset-bottom));
+        border: none;
+        border-radius: 999px;
+        background: var(--store-highlight);
+        color: #fff;
+        box-shadow: 0 12px 24px rgba(255, 152, 0, 0.36);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.36rem;
+        font-weight: 800;
+        font-size: 0.74rem;
+        padding: 0.7rem 0.86rem;
+        z-index: 40;
+        text-decoration: none;
+    }
+
+    .store-mobile-nav {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.97);
+        border-top: 1px solid #d6e7d8;
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        z-index: 30;
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .store-mobile-link {
+        padding: 0.5rem 0.25rem 0.45rem;
+        text-align: center;
+        text-decoration: none;
+        color: #5a735f;
+        font-size: 0.62rem;
+        font-weight: 700;
+        display: grid;
+        justify-items: center;
+        gap: 0.14rem;
+    }
+
+    .store-mobile-link.active {
+        color: var(--store-green);
+    }
+
+    .store-mobile-link .material-symbols-outlined {
+        font-size: 1.2rem;
+    }
+
+    @keyframes shimmer {
+        to { transform: translateX(100%); }
+    }
+
+    @keyframes revealUp {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (min-width: 768px) {
+        .store-filters-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
         }
-        .ag-products-grid {
-            grid-template-columns: 1fr;
-            gap: 0.78rem;
+
+        .store-products {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .store-kpis {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
         }
     }
 
-    @media (max-width: 1100px) {
-        .wf-app-shell {
-            grid-template-columns: 1fr !important;
-        }
-        .wf-sidebar {
-            display: none !important;
-        }
-        .wf-mobile-nav {
-            display: flex !important;
-        }
-        .ag-store-shell {
-            grid-template-columns: 1fr;
-            width: 100vw !important;
-            max-width: 100vw !important;
-            padding: clamp(0.2rem, 2vw, 0.8rem) !important;
-        }
-        .ag-store-hero,
-        .ag-store-hero-content,
-        .ag-categories,
-        .ag-category-chips,
-        .ag-row-section,
-        .ag-row-strip,
-        .ag-products-grid {
-            width: 100vw !important;
-            max-width: 100vw !important;
-            min-width: 0 !important;
-            margin-left: 0 !important;
-            margin-right: 0 !important;
+    @media (min-width: 1024px) {
+        .store-products {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
         }
     }
-    @media (max-width: 992px) {
-        .ag-store-hero-content {
-            grid-template-columns: 1fr;
-            padding: clamp(0.7rem, 2vw, 1.1rem) clamp(0.2rem, 2vw, 0.5rem);
+
+    @media (min-width: 1240px) {
+        .store-layout {
+            grid-template-columns: 250px minmax(0, 1fr);
+            align-items: start;
         }
-        .ag-store-title {
-            font-size: clamp(0.98rem, 3vw, 1.2rem);
-        }
-        .ag-store-subtitle {
-            font-size: clamp(0.74rem, 2vw, 0.9rem);
-        }
-        .ag-products-grid {
-            grid-template-columns: 1fr;
-            gap: 0.65rem;
-        }
-        .ag-category-chips {
-            gap: 0.28rem;
-        }
-        .ag-row-item {
-            min-width: clamp(160px, 60vw, 228px);
-            max-width: clamp(160px, 90vw, 228px);
-            scroll-snap-align: start;
-            text-decoration: none;
-            border: 1px solid rgba(17, 53, 105, 0.12);
-            border-radius: 14px;
+
+        .store-sidebar {
+            display: grid;
+            gap: 0.58rem;
+            position: sticky;
+            top: 1.1rem;
+            border: 1px solid var(--store-border);
+            border-radius: 16px;
             background: #fff;
-            overflow: hidden;
-            box-shadow: 0 8px 18px rgba(14, 41, 83, 0.08);
-            transition: transform var(--wf-motion-normal) ease, box-shadow var(--wf-motion-normal) ease;
-        }
-            gap: 0.5rem;
-        }
-        .ag-store-title {
-            font-size: clamp(0.85rem, 3vw, 1.1rem);
-            line-height: 1.18;
-        }
-        .ag-store-subtitle {
-            font-size: clamp(0.68rem, 2vw, 0.82rem);
-            margin-top: 0.5rem;
-        }
-        .ag-hero-btn {
-            width: 100%;
-            font-size: 0.74rem;
-            padding: 0.45rem 0.6rem;
-        }
-        .ag-row-item {
-            min-width: 96vw;
-            max-width: 96vw;
-        }
-        .ag-card-media {
-            height: 110px;
-        }
-        .ag-card-body {
-            min-height: 110px;
-            padding: 0.5rem;
-        }
-        .ag-card-title {
-            font-size: 0.7rem;
-            min-height: 1.7rem;
-        }
-        .ag-card-media {
-            position: relative;
-            background: linear-gradient(180deg, #f6fbff 0%, #edf4fb 100%);
-            height: clamp(90px, 28vw, 176px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-width: 0;
+            padding: 0.75rem;
+            box-shadow: 0 10px 24px rgba(24, 82, 28, 0.1);
         }
 
-    @media (max-width: 480px) {
-        .ag-store-hero-content {
-            padding: clamp(0.2rem, 2vw, 0.4rem) clamp(0.01rem, 2vw, 0.08rem);
-        }
-        .ag-search {
-            grid-template-columns: 1fr;
-        }
-        .ag-search button {
-            width: 100%;
-        }
-        .ag-row-item {
-            min-width: 94vw;
-            max-width: 94vw;
-        }
-        .ag-card-media {
-            height: 90px;
-        }
-        .ag-card-body {
-            padding: clamp(0.32rem, 2vw, 0.6rem);
+        .store-side-link {
+            text-decoration: none;
+            border-radius: 10px;
+            border: 1px solid #dce9de;
+            background: #f8fcf8;
+            color: #386840;
+            font-size: 0.8rem;
+            font-weight: 800;
+            padding: 0.54rem;
             display: flex;
-            flex-direction: column;
-            min-height: clamp(80px, 18vw, 120px);
-            min-width: 0;
+            justify-content: space-between;
+            align-items: center;
         }
-            min-height: 1.2rem;
+
+        .store-mobile-nav {
+            display: none;
         }
-        .ag-price {
-            font-size: 0.7rem;
+
+        .store-fab {
+            bottom: 1.2rem;
         }
-        .ag-buy-btn {
-            font-size: 0.6rem;
-            padding: 0.22rem 0.36rem;
+
+        .store-products {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
         }
     }
 </style>
 
-<div class="ag-store-shell">
-    <section class="ag-store-hero">
-        <div class="ag-store-hero-content">
-            <div>
-                <h1 class="ag-store-title">Loja Agro Profissional: Insumos, Defensivos, Implementos, EPI e Ferramentas</h1>
-                <p class="ag-store-subtitle">Marketplace de compra para o agronegocio com foco em produtividade no campo. Aqui voce encontra produtos para operacao agricola, manutencao e protecao da equipe.</p>
-
-                <div class="ag-hero-actions">
-                    <a href="/store/manage/dashboard" class="ag-hero-btn primary" id="storeCreateProductBtn" style="display:none;">Cadastrar novo produto</a>
-                    <a href="/store/manage/dashboard" class="ag-hero-btn" id="storeManageBtn" style="display:none;">Gerenciar loja</a>
-                    <span class="ag-hero-btn" id="storeSupplierTip">Para publicar produtos, entre como Fornecedor ou Admin.</span>
-                </div>
-
-                <form class="ag-search" method="GET" action="/store">
-                    <input type="text" name="q" value="{{ search_query or '' }}" placeholder="Busque por adubo, inseticida, pulverizador, EPI, ferramenta...">
-                    {% if active_category %}
-                    <input type="hidden" name="category" value="{{ active_category }}">
-                    {% endif %}
-                    <button type="submit">Buscar</button>
-                </form>
+<div class="store-page">
+    <header class="store-topbar">
+        <form id="storeSearchForm" class="store-top-row">
+            <div class="store-search-wrap">
+                <span class="material-symbols-outlined">search</span>
+                <input id="searchInput" class="store-search-input" type="text" placeholder="Buscar produtos, pragas ou diagnósticos..." value="{{ search_query or '' }}">
             </div>
-            <div class="ag-hero-kpis">
-                <div class="ag-kpi">Catalogo tecnico com categorias reais do agro</div>
-                <div class="ag-kpi">Fornecedores e admins publicam produtos com especificacao completa</div>
-                <div class="ag-kpi">Painel de gestao para vendas, estoque e destaque comercial</div>
+            <div class="store-icon-group">
+                <button type="button" class="store-icon-btn" title="Localização"><span class="material-symbols-outlined">location_on</span></button>
+                <a class="store-icon-btn" href="/notifications" title="Notificações"><span class="material-symbols-outlined">notifications</span></a>
+                <a class="store-icon-btn" href="/profile" title="Perfil"><span class="material-symbols-outlined">person</span></a>
             </div>
-        </div>
-    </section>
+        </form>
+    </header>
 
-    <section class="ag-categories" id="products">
-        <div class="ag-category-chips">
-            <a href="/store{% if search_query %}?q={{ search_query }}{% endif %}" class="ag-category-chip {% if not active_category %}active{% endif %}">Todos os departamentos</a>
-            {% for cat in categories %}
-            <a href="/store?category={{ cat.slug }}{% if search_query %}&q={{ search_query }}{% endif %}" class="ag-category-chip {% if active_category == cat.slug %}active{% endif %}">{{ cat.icon }} {{ cat.name }}</a>
-            {% endfor %}
-        </div>
+    <div class="store-layout">
+        <aside class="store-sidebar">
+            <a class="store-side-link" href="/store">Produtos <span class="material-symbols-outlined">storefront</span></a>
+            <a class="store-side-link" href="/store/cart">Carrinho <span class="material-symbols-outlined">shopping_cart</span></a>
+            <a class="store-side-link" href="/store/orders">Pedidos <span class="material-symbols-outlined">local_shipping</span></a>
+            <a class="store-side-link" href="/store/proposals">Propostas <span class="material-symbols-outlined">request_quote</span></a>
+            <a class="store-side-link" href="/store/manage/dashboard">Gestão <span class="material-symbols-outlined">dashboard</span></a>
+        </aside>
 
-        {% if active_category or search_query %}
-        <div class="ag-active-filters">
-            {% if active_category %}
-                {% for cat in categories %}
-                    {% if cat.slug == active_category %}
-                    <span class="ag-filter-chip">Categoria: {{ cat.icon }} {{ cat.name }}</span>
-                    {% endif %}
-                {% endfor %}
-            {% endif %}
-            {% if search_query %}
-            <span class="ag-filter-chip">Busca: {{ search_query }}</span>
-            {% endif %}
-            <a href="/store" class="ag-filter-chip clear-all">Limpar filtros</a>
-        </div>
-        {% endif %}
-    </section>
+        <main class="store-main">
+            <section class="store-hero">
+                <div>
+                    <h1>Marketplace Agro WallFruits</h1>
+                    <p>Escolha insumos, defensivos e soluções com foco em produtividade no campo.</p>
+                </div>
+                <div class="store-kpis">
+                    <div class="store-kpi">{{ products|length }} itens no catálogo</div>
+                    <div class="store-kpi">Filtros por cultura e praga</div>
+                    <div class="store-kpi">Carrinho e propostas por volume</div>
+                    <div class="store-kpi">Diagnóstico IA integrado</div>
+                </div>
+            </section>
 
-    <section class="ag-row-section">
-        <div class="ag-row-head">
-            <h2 class="ag-row-title">Vitrine em destaque</h2>
-        </div>
-        <div class="ag-row-strip">
-            {% for product in products if product.is_featured %}
-            <a href="/store/product/{{ product.slug }}" class="ag-row-item">
-                <div class="ag-row-media">
-                    {% if product.images %}
-                    <img src="{{ product.images[0] }}" alt="{{ product.name }}">
-                    {% else %}
-                    <div style="font-size:2.2rem;">📦</div>
-                    {% endif %}
-                </div>
-                <div class="ag-row-body">
-                    <span class="ag-row-cat">{{ product.category.name }}</span>
-                    <h3 class="ag-row-name">{{ product.name }}</h3>
-                    <span class="ag-row-price">R$ {{ "%.2f"|format(product.price) }}</span>
-                </div>
-            </a>
-            {% else %}
-            {% for product in products[:8] %}
-            <a href="/store/product/{{ product.slug }}" class="ag-row-item">
-                <div class="ag-row-media">
-                    {% if product.images %}
-                    <img src="{{ product.images[0] }}" alt="{{ product.name }}">
-                    {% else %}
-                    <div style="font-size:2.2rem;">📦</div>
-                    {% endif %}
-                </div>
-                <div class="ag-row-body">
-                    <span class="ag-row-cat">{{ product.category.name }}</span>
-                    <h3 class="ag-row-name">{{ product.name }}</h3>
-                    <span class="ag-row-price">R$ {{ "%.2f"|format(product.price) }}</span>
-                </div>
-            </a>
-            {% endfor %}
-            {% endfor %}
-        </div>
-    </section>
-
-    <section class="ag-products-grid">
-        {% for product in products %}
-        <article class="ag-card tilt-card">
-            <a href="/store/product/{{ product.slug }}" class="text-decoration-none">
-                <div class="ag-card-media">
-                    {% if product.images %}
-                    <img src="{{ product.images[0] }}" alt="{{ product.name }}">
-                    {% else %}
-                    <div style="font-size: 3rem;">📦</div>
-                    {% endif %}
-                    {% if product.is_featured %}
-                    <span class="ag-tag">Destaque</span>
-                    {% elif product.stock_quantity < 8 %}
-                    <span class="ag-tag">Estoque curto</span>
-                    {% endif %}
+            <section class="store-filters">
+                <div class="store-chip-row" id="categoryChips">
+                    <a class="store-chip {% if not active_category %}active{% endif %}" data-category="" href="#">Todos</a>
+                    {% for cat in categories %}
+                    <a class="store-chip {% if active_category == cat.slug %}active{% endif %}" data-category="{{ cat.slug }}" href="#">{{ cat.icon or '🌱' }} {{ cat.name }}</a>
+                    {% endfor %}
                 </div>
 
-                <div class="ag-card-body">
-                    <p class="ag-card-category">{{ product.category.name }}</p>
-                    <h3 class="ag-card-title">{{ product.name }}</h3>
-                    <p class="ag-card-meta">Fornecedor: {{ product.supplier.name }}</p>
-                    <div class="ag-card-footer">
-                        <span class="ag-price">R$ {{ "%.2f"|format(product.price) }}</span>
-                        <button type="button" class="ag-buy-btn">Ver oferta</button>
-                    </div>
+                <div class="store-filters-grid">
+                    <select id="cropFilter">
+                        <option value="">Tipo de cultura</option>
+                    </select>
+                    <select id="pestFilter">
+                        <option value="">Doença / praga</option>
+                    </select>
+                    <select id="priceFilter">
+                        <option value="">Faixa de preço</option>
+                        <option value="0-100">Até R$ 100</option>
+                        <option value="100-500">R$ 100 a R$ 500</option>
+                        <option value="500-1500">R$ 500 a R$ 1.500</option>
+                        <option value="1500-999999">Acima de R$ 1.500</option>
+                    </select>
                 </div>
-            </a>
-        </article>
-        {% else %}
-        <div class="ag-empty">
-            Nenhum produto encontrado para este filtro.<br>
-            Ajuste a busca, troque de categoria ou publique novos itens no painel de fornecedor.
-        </div>
-        {% endfor %}
-    </section>
+
+                <div class="store-active-filters" id="activeFilters"></div>
+            </section>
+
+            <section class="store-ai-card">
+                <div>
+                    <p class="store-ai-title">Diagnóstico com IA</p>
+                    <p class="store-ai-copy">Envie uma foto da planta e receba recomendações técnicas com produtos compatíveis.</p>
+                </div>
+                <a href="/ai-agent" class="store-ai-btn">Analisar planta</a>
+            </section>
+
+            <section>
+                <div id="productsState" class="store-state" style="display:none;"></div>
+                <div id="productsGrid" class="store-products"></div>
+            </section>
+        </main>
+    </div>
 </div>
 
+<a href="/store/cart" class="store-fab" title="Abrir carrinho">
+    <span class="material-symbols-outlined" style="font-size:1.1rem;">shopping_cart</span>
+    <span>Carrinho</span>
+</a>
+
+<nav class="store-mobile-nav">
+    <a href="/" class="store-mobile-link"><span class="material-symbols-outlined">home</span><span>Home</span></a>
+    <a href="/ai-agent" class="store-mobile-link"><span class="material-symbols-outlined">psychology</span><span>Diagnóstico</span></a>
+    <a href="/store" class="store-mobile-link active"><span class="material-symbols-outlined">storefront</span><span>Produtos</span></a>
+    <a href="/strategy" class="store-mobile-link"><span class="material-symbols-outlined">event</span><span>Agenda</span></a>
+    <a href="/profile" class="store-mobile-link"><span class="material-symbols-outlined">person</span><span>Perfil</span></a>
+</nav>
+
 <script>
-    (function setupStoreActions() {
-        const createBtn = document.getElementById('storeCreateProductBtn');
-        const manageBtn = document.getElementById('storeManageBtn');
-        const supplierTip = document.getElementById('storeSupplierTip');
+    (function setupStoreMarketplace() {
+        const state = {
+            q: '{{ search_query or "" }}',
+            category: '{{ active_category or "" }}',
+            crop: '',
+            pest: '',
+            priceRange: '',
+            favorites: new Set(),
+        };
 
-        let user = null;
-        try {
-            user = JSON.parse(localStorage.getItem('user') || 'null');
-        } catch (error) {
-            user = null;
+        const productsGrid = document.getElementById('productsGrid');
+        const productsState = document.getElementById('productsState');
+        const searchForm = document.getElementById('storeSearchForm');
+        const searchInput = document.getElementById('searchInput');
+        const categoryChips = document.getElementById('categoryChips');
+        const cropFilter = document.getElementById('cropFilter');
+        const pestFilter = document.getElementById('pestFilter');
+        const priceFilter = document.getElementById('priceFilter');
+        const activeFilters = document.getElementById('activeFilters');
+
+        function money(value) {
+            return `R$ ${Number(value || 0).toFixed(2)}`;
         }
 
-        const role = user?.role || '';
-        const canManageStore = ['admin', 'supplier', 'producer'].includes(role);
-
-        if (canManageStore) {
-            if (createBtn) createBtn.style.display = 'inline-flex';
-            if (manageBtn) manageBtn.style.display = 'inline-flex';
-            if (supplierTip) supplierTip.style.display = 'none';
+        function escapeHtml(value) {
+            const div = document.createElement('div');
+            div.textContent = String(value ?? '');
+            return div.innerHTML;
         }
+
+        function readFavorites() {
+            try {
+                const raw = JSON.parse(localStorage.getItem('wf_store_favorites') || '[]');
+                state.favorites = new Set(Array.isArray(raw) ? raw.map(String) : []);
+            } catch (_error) {
+                state.favorites = new Set();
+            }
+        }
+
+        function saveFavorites() {
+            localStorage.setItem('wf_store_favorites', JSON.stringify(Array.from(state.favorites)));
+        }
+
+        function showState(message, type) {
+            productsState.textContent = message;
+            productsState.style.display = 'block';
+            productsState.style.borderColor = type === 'error' ? '#f2c3c3' : '#d8e8da';
+            productsState.style.background = type === 'error' ? '#fff4f4' : '#fff';
+            productsState.style.color = type === 'error' ? '#944747' : '#47634c';
+        }
+
+        function hideState() {
+            productsState.style.display = 'none';
+            productsState.textContent = '';
+        }
+
+        function renderLoading() {
+            hideState();
+            productsGrid.innerHTML = Array.from({ length: 8 }).map(() => '<div class="store-skeleton"></div>').join('');
+        }
+
+        function renderActiveFilters() {
+            const chips = [];
+            if (state.q) chips.push(`<span class="store-active-filter">Busca: ${escapeHtml(state.q)}</span>`);
+            if (state.category) chips.push(`<span class="store-active-filter">Categoria: ${escapeHtml(state.category)}</span>`);
+            if (state.crop) chips.push(`<span class="store-active-filter">Cultura: ${escapeHtml(state.crop)}</span>`);
+            if (state.pest) chips.push(`<span class="store-active-filter">Praga: ${escapeHtml(state.pest)}</span>`);
+            if (state.priceRange) chips.push(`<span class="store-active-filter">Preço: ${escapeHtml(state.priceRange.replace('-', ' até '))}</span>`);
+            if (chips.length) {
+                chips.push('<button type="button" id="clearAllFilters" class="store-active-filter" style="cursor:pointer;background:#fff6f6;border-color:#f0cccc;color:#b24f4f;">Limpar filtros</button>');
+            }
+            activeFilters.innerHTML = chips.join('');
+
+            const clearBtn = document.getElementById('clearAllFilters');
+            if (clearBtn) {
+                clearBtn.addEventListener('click', () => {
+                    state.q = '';
+                    state.category = '';
+                    state.crop = '';
+                    state.pest = '';
+                    state.priceRange = '';
+                    searchInput.value = '';
+                    cropFilter.value = '';
+                    pestFilter.value = '';
+                    priceFilter.value = '';
+                    categoryChips.querySelectorAll('.store-chip').forEach((chip) => chip.classList.remove('active'));
+                    const firstChip = categoryChips.querySelector('.store-chip[data-category=""]');
+                    if (firstChip) firstChip.classList.add('active');
+                    loadProducts();
+                });
+            }
+        }
+
+        function renderProducts(products) {
+            if (!products.length) {
+                productsGrid.innerHTML = '';
+                showState('Nenhum produto encontrado. Ajuste os filtros para ampliar o resultado.', 'info');
+                return;
+            }
+
+            hideState();
+            productsGrid.innerHTML = products.map((product, index) => {
+                const id = String(product.id);
+                const isFav = state.favorites.has(id);
+                const hasPromo = Number(product.promotional_price || 0) > 0 && Number(product.promotional_price) < Number(product.price || 0);
+                const displayPrice = hasPromo ? product.promotional_price : product.price;
+                const tagClass = hasPromo ? 'offer' : 'recommended';
+                const tagText = hasPromo ? 'Oferta' : 'Recomendado';
+                const safeName = escapeHtml(String(product.name || 'Produto'));
+                const safeCategory = escapeHtml(product.category || 'Categoria');
+                const safeSlug = encodeURIComponent(String(product.slug || ''));
+                const safeImage = escapeHtml(product.image || '');
+                const image = product.image ? `<img src="${safeImage}" alt="${safeName}">` : '<span style="font-size:2rem;">📦</span>';
+
+                return `
+                    <article class="store-card" style="animation-delay:${index * 0.04}s;">
+                        <div class="store-card-media">
+                            ${image}
+                            <span class="store-tag ${tagClass}">${tagText}</span>
+                            <button type="button" class="store-fav-btn ${isFav ? 'active' : ''}" data-favorite-id="${id}" title="Favoritar">
+                                <span class="material-symbols-outlined">favorite</span>
+                            </button>
+                        </div>
+                        <div class="store-card-body">
+                            <p class="store-category">${safeCategory}</p>
+                            <h3 class="store-name">${safeName}</h3>
+                            <div class="store-price-row">
+                                <p class="store-price">${money(displayPrice)}</p>
+                                ${hasPromo ? `<p class="store-old-price">${money(product.price)}</p>` : ''}
+                            </div>
+                            <div class="store-action-row">
+                                <a class="store-btn" href="/store/product/${safeSlug}">Ver detalhes</a>
+                                <button type="button" class="store-btn ghost" data-cart-id="${product.id}" title="Adicionar ao carrinho">
+                                    <span class="material-symbols-outlined" style="font-size:1rem;vertical-align:middle;">add_shopping_cart</span>
+                                </button>
+                            </div>
+                        </div>
+                    </article>
+                `;
+            }).join('');
+
+            productsGrid.querySelectorAll('[data-favorite-id]').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const id = String(btn.getAttribute('data-favorite-id'));
+                    if (state.favorites.has(id)) {
+                        state.favorites.delete(id);
+                        btn.classList.remove('active');
+                    } else {
+                        state.favorites.add(id);
+                        btn.classList.add('active');
+                    }
+                    saveFavorites();
+                });
+            });
+
+            productsGrid.querySelectorAll('[data-cart-id]').forEach((btn) => {
+                btn.addEventListener('click', async () => {
+                    const token = localStorage.getItem('token');
+                    if (!token) {
+                        window.location.href = '/login';
+                        return;
+                    }
+
+                    const productId = Number(btn.getAttribute('data-cart-id'));
+                    try {
+                        const defaultHtml = btn.innerHTML;
+                        btn.disabled = true;
+                        btn.innerHTML = '<span class="btn-spinner" aria-hidden="true"></span>';
+                        await apiRequest('/store/cart/add', 'POST', { product_id: productId, quantity: 1 });
+                        showState('Produto adicionado ao carrinho com sucesso.', 'info');
+                        btn.innerHTML = defaultHtml;
+                        btn.disabled = false;
+                    } catch (error) {
+                        showState(error.message || 'Não foi possível adicionar ao carrinho.', 'error');
+                        btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:1rem;vertical-align:middle;">add_shopping_cart</span>';
+                        btn.disabled = false;
+                    }
+                });
+            });
+        }
+
+        function updateUrl() {
+            const params = new URLSearchParams();
+            if (state.q) params.set('q', state.q);
+            if (state.category) params.set('category', state.category);
+            if (state.crop) params.set('crop', state.crop);
+            if (state.pest) params.set('pest', state.pest);
+            if (state.priceRange) params.set('price_range', state.priceRange);
+            const next = `/store${params.toString() ? `?${params.toString()}` : ''}`;
+            window.history.replaceState({}, '', next);
+        }
+
+        function fillDropdown(selectEl, values, current) {
+            const first = selectEl.querySelector('option');
+            selectEl.innerHTML = '';
+            if (first) selectEl.appendChild(first);
+            values.forEach((value) => {
+                const option = document.createElement('option');
+                option.value = value;
+                option.textContent = value;
+                selectEl.appendChild(option);
+            });
+            selectEl.value = current || '';
+        }
+
+        async function loadProducts() {
+            renderLoading();
+            renderActiveFilters();
+            updateUrl();
+
+            const params = new URLSearchParams();
+            if (state.q) params.set('q', state.q);
+            if (state.category) params.set('category', state.category);
+            if (state.crop) params.set('crop', state.crop);
+            if (state.pest) params.set('pest', state.pest);
+            if (state.priceRange) params.set('price_range', state.priceRange);
+
+            try {
+                const response = await fetch(`/api/store/products?${params.toString()}`);
+                if (!response.ok) throw new Error('Falha ao carregar produtos da loja.');
+                const data = await response.json();
+                fillDropdown(cropFilter, data.filters?.crops || [], state.crop);
+                fillDropdown(pestFilter, data.filters?.pests || [], state.pest);
+                renderProducts(Array.isArray(data.products) ? data.products : []);
+            } catch (error) {
+                productsGrid.innerHTML = '';
+                showState(error.message || 'Erro inesperado ao carregar a vitrine.', 'error');
+            }
+        }
+
+        searchForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            state.q = String(searchInput.value || '').trim();
+            loadProducts();
+        });
+
+        categoryChips.querySelectorAll('.store-chip').forEach((chip) => {
+            chip.addEventListener('click', (event) => {
+                event.preventDefault();
+                categoryChips.querySelectorAll('.store-chip').forEach((item) => item.classList.remove('active'));
+                chip.classList.add('active');
+                state.category = chip.getAttribute('data-category') || '';
+                loadProducts();
+            });
+        });
+
+        cropFilter.addEventListener('change', () => {
+            state.crop = cropFilter.value;
+            loadProducts();
+        });
+
+        pestFilter.addEventListener('change', () => {
+            state.pest = pestFilter.value;
+            loadProducts();
+        });
+
+        priceFilter.addEventListener('change', () => {
+            state.priceRange = priceFilter.value;
+            loadProducts();
+        });
+
+        readFavorites();
+        loadProducts();
     })();
 </script>
-
 {% endblock %}
