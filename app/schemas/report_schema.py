@@ -8,12 +8,20 @@ from pydantic import BaseModel, Field, model_validator
 class ReportCreate(BaseModel):
     reported_profile_id: Optional[UUID] = None
     reported_offer_id: Optional[UUID] = None
+    reported_post_id: Optional[int] = None
     reason: str = Field(..., min_length=10, max_length=1000)
 
     @model_validator(mode="after")
     def validate_targets(self):
-        if not self.reported_profile_id and not self.reported_offer_id:
-            raise ValueError("Informe reported_profile_id ou reported_offer_id")
+        targets = [
+            self.reported_profile_id,
+            self.reported_offer_id,
+            self.reported_post_id,
+        ]
+        if not any(targets):
+            raise ValueError("Informe reported_profile_id, reported_offer_id ou reported_post_id")
+        if sum(1 for target in targets if target is not None) > 1:
+            raise ValueError("Informe apenas um tipo de alvo por denúncia")
         return self
 
 
@@ -27,6 +35,7 @@ class ReportResponse(BaseModel):
     reporter_profile_id: UUID
     reported_profile_id: Optional[UUID]
     reported_offer_id: Optional[UUID]
+    reported_post_id: Optional[int]
     reason: str
     status: str
     reviewed_by_user_id: Optional[int]

@@ -6,6 +6,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.core.domain_enums import ReportStatus, ValidationStatus
+from app.models.community_post import CommunityPost
 from app.models.offer import Offer
 from app.models.profile import Profile
 from app.models.report import Report
@@ -44,8 +45,10 @@ class ReportService:
         *,
         reported_profile_id: UUID | None,
         reported_offer_id: UUID | None,
-    ) -> tuple[UUID | None, UUID | None]:
+        reported_post_id: int | None,
+    ) -> tuple[UUID | None, UUID | None, int | None]:
         target_profile_id = reported_profile_id
+        target_post_id = reported_post_id
 
         if reported_offer_id:
             offer = self.db.query(Offer).filter(Offer.id == reported_offer_id).first()
@@ -60,10 +63,19 @@ class ReportService:
                     offer.owner_profile_id = owner_profile.id
                     target_profile_id = owner_profile.id
 
-        if not target_profile_id and not reported_offer_id:
-            raise ValueError("Informe perfil ou oferta para denúncia")
+        if reported_post_id:
+            post = self.db.query(CommunityPost).filter(CommunityPost.id == reported_post_id).first()
+            if not post:
+                raise ValueError("Post denunciado não encontrado")
 
-        return target_profile_id, reported_offer_id
+            target_post_id = post.id
+            if not target_profile_id:
+                target_profile_id = self.profile_service.get_or_create_profile(post.user).id
+
+        if not target_profile_id and not reported_offer_id and not reported_post_id:
+            raise ValueError("Informe perfil, oferta ou post para denúncia")
+
+        return target_profile_id, reported_offer_id, target_post_id
 
     def _auto_suspend_if_needed(self, *, reported_profile_id: UUID | None, reason: str) -> None:
         if not reported_profile_id:
@@ -103,21 +115,29 @@ class ReportService:
         current_user: User,
         reported_profile_id: UUID | None,
         reported_offer_id: UUID | None,
+        reported_post_id: int | None,
         reason: str,
     ) -> Report:
         reporter_profile = self.profile_service.get_or_create_profile(current_user)
-        target_profile_id, target_offer_id = self._resolve_report_target(
+        target_profile_id, target_offer_id, target_post_id = self._resolve_report_target(
             reported_profile_id=reported_profile_id,
             reported_offer_id=reported_offer_id,
+            reported_post_id=reported_post_id,
         )
 
         if target_profile_id and target_profile_id == reporter_profile.id:
             raise ValueError("Não é permitido denunciar o próprio perfil")
 
+        if target_post_id is not None:
+            post = self.db.query(CommunityPost).filter(CommunityPost.id == target_post_id).first()
+            if post and post.user_id == current_user.id:
+                raise ValueError("Não é permitido denunciar o próprio post")
+
         report = Report(
             reporter_profile_id=reporter_profile.id,
             reported_profile_id=target_profile_id,
             reported_offer_id=target_offer_id,
+            reported_post_id=target_post_id,
             reason=reason,
             status=ReportStatus.PENDING.value,
         )

@@ -266,10 +266,17 @@
     }
 
     .post-top {
-        display: grid;
-        grid-template-columns: auto 1fr;
+        display: flex;
+        justify-content: space-between;
         gap: 0.55rem;
         align-items: center;
+    }
+
+    .post-author {
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        min-width: 0;
     }
 
     .post-avatar {
@@ -291,7 +298,16 @@
 
     .post-head {
         display: grid;
-        gap: 0.1rem;
+        gap: 0.08rem;
+        min-width: 0;
+    }
+
+    .post-author-name-row {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        min-width: 0;
+        flex-wrap: wrap;
     }
 
     .post-meta-line {
@@ -383,11 +399,32 @@
         box-shadow: 0 0 0 3px rgba(176, 46, 65, 0.2), 0 8px 14px rgba(131, 33, 49, 0.14);
     }
 
+    .post-admin-separator {
+        height: 1px;
+        background: rgba(11, 46, 99, 0.08);
+        margin: 0.12rem 0;
+    }
+
+    .post-admin-item.is-report {
+        border-color: rgba(46, 125, 50, 0.2);
+        background: rgba(46, 125, 50, 0.08);
+        color: #236228;
+    }
+
+    .post-admin-item.is-report:hover {
+        border-color: rgba(46, 125, 50, 0.36);
+        background: rgba(46, 125, 50, 0.12);
+        box-shadow: 0 8px 14px rgba(34, 95, 41, 0.14);
+    }
+
     .post-user {
         margin: 0;
         font-size: 0.95rem;
         font-weight: 900;
         color: #111827;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .post-user-link {
@@ -408,17 +445,6 @@
         font-weight: 700;
     }
 
-    .post-badge {
-        font-size: 0.69rem;
-        font-weight: 800;
-        border-radius: 999px;
-        padding: 0.26rem 0.62rem;
-        border: 1px solid rgba(46, 125, 50, 0.24);
-        background: rgba(46, 125, 50, 0.12);
-        color: #1f6f29;
-        box-shadow: 0 6px 16px rgba(18, 93, 27, 0.16);
-    }
-
     .post-floating-tools {
         position: absolute;
         top: 0.9rem;
@@ -427,6 +453,16 @@
         align-items: center;
         gap: 0.36rem;
         z-index: 2;
+    }
+
+    .post-author-subtitle {
+        color: #8693a0;
+        font-size: 0.72rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        flex-wrap: wrap;
     }
 
     .post-text {
@@ -647,6 +683,104 @@
         border: 1px solid rgba(255, 255, 255, 0.3);
     }
 
+    .report-modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 2001;
+        background: rgba(8, 15, 26, 0.72);
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+    }
+
+    .report-modal.show {
+        display: flex;
+    }
+
+    .report-modal-card {
+        width: min(560px, 100%);
+        border-radius: 18px;
+        border: 1px solid rgba(11, 46, 99, 0.12);
+        background: #fff;
+        box-shadow: 0 28px 60px rgba(6, 20, 38, 0.26);
+        padding: 1rem;
+        display: grid;
+        gap: 0.7rem;
+    }
+
+    .report-modal-head {
+        display: grid;
+        gap: 0.18rem;
+    }
+
+    .report-modal-head h3 {
+        margin: 0;
+        color: #102847;
+        font-size: 1rem;
+        font-weight: 900;
+    }
+
+    .report-modal-head p {
+        margin: 0;
+        color: #54708f;
+        font-size: 0.78rem;
+        line-height: 1.45;
+    }
+
+    .report-modal-meta {
+        font-size: 0.72rem;
+        font-weight: 800;
+        color: #2f577f;
+        background: #f4f8fc;
+        border: 1px solid rgba(11, 46, 99, 0.1);
+        border-radius: 12px;
+        padding: 0.6rem 0.7rem;
+    }
+
+    .report-modal textarea {
+        width: 100%;
+        min-height: 120px;
+        resize: vertical;
+        border: 1px solid rgba(11, 46, 99, 0.18);
+        border-radius: 14px;
+        padding: 0.72rem 0.82rem;
+        font-size: 0.88rem;
+        color: #213651;
+    }
+
+    .report-modal textarea:focus {
+        outline: none;
+        border-color: #2e7d32;
+        box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.14);
+    }
+
+    .report-modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .report-modal-actions button {
+        border-radius: 999px;
+        padding: 0.5rem 0.9rem;
+        font-size: 0.78rem;
+        font-weight: 800;
+    }
+
+    .report-modal-cancel {
+        border: 1px solid rgba(11, 46, 99, 0.18);
+        background: #fff;
+        color: #425c7b;
+    }
+
+    .report-modal-submit {
+        border: 1px solid rgba(46, 125, 50, 0.18);
+        background: #2e7d32;
+        color: #fff;
+    }
+
     @keyframes wfToastIn {
         0% {
             opacity: 0;
@@ -731,7 +865,6 @@
         }
 
         .post-main {
-            grid-template-columns: 42px 1fr;
             padding: 0.65rem;
         }
 
@@ -829,6 +962,21 @@
     <img id="communityModalImg" alt="Imagem do post em tamanho ampliado">
 </div>
 
+<div id="communityReportModal" class="report-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Denunciar publicação">
+    <div class="report-modal-card">
+        <div class="report-modal-head">
+            <h3>Denunciar publicação</h3>
+            <p>Explique por que este post viola as regras da comunidade. A denúncia vai para moderação.</p>
+        </div>
+        <div id="communityReportModalMeta" class="report-modal-meta"></div>
+        <textarea id="communityReportReason" maxlength="1000" placeholder="Descreva o problema com clareza..."></textarea>
+        <div class="report-modal-actions">
+            <button id="communityReportCancel" class="report-modal-cancel" type="button">Cancelar</button>
+            <button id="communityReportSubmit" class="report-modal-submit" type="button">Enviar denúncia</button>
+        </div>
+    </div>
+</div>
+
 <button id="communityToast" class="community-toast" type="button" aria-label="Ver novos posts" aria-live="polite" aria-atomic="true" aria-hidden="true">
     <span class="material-icons">north</span>
     <span id="communityToastText">Novos posts disponíveis</span>
@@ -847,6 +995,11 @@
 
         const modal = document.getElementById('communityImgModal');
         const modalImg = document.getElementById('communityModalImg');
+        const reportModal = document.getElementById('communityReportModal');
+        const reportModalMeta = document.getElementById('communityReportModalMeta');
+        const reportReasonInput = document.getElementById('communityReportReason');
+        const reportCancelBtn = document.getElementById('communityReportCancel');
+        const reportSubmitBtn = document.getElementById('communityReportSubmit');
 
         let pendingImage = null;
         const commentsCache = new Map();
@@ -1256,6 +1409,78 @@
             element.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
 
+        function closeReportModal() {
+            if (!reportModal) return;
+            reportModal.classList.remove('show');
+            reportModal.setAttribute('aria-hidden', 'true');
+            reportModal.dataset.postId = '';
+            if (reportReasonInput) {
+                reportReasonInput.value = '';
+            }
+        }
+
+        function openReportModal(postId) {
+            if (!currentUser) {
+                alert('Faça login para denunciar publicações.');
+                return;
+            }
+
+            const post = postsCache.find((item) => Number(item.id) === Number(postId));
+            if (!post || !reportModal) {
+                alert('Não foi possível preparar a denúncia.');
+                return;
+            }
+
+            const authorName = String(post.author?.name || 'usuário');
+            const authorHandle = authorName.startsWith('@') ? authorName : `@${authorName.toLowerCase().replace(/\s+/g, '')}`;
+            if (reportModalMeta) {
+                reportModalMeta.textContent = `Denúncia para ${authorHandle} no post #${post.id}`;
+            }
+
+            reportModal.dataset.postId = String(postId);
+            reportModal.classList.add('show');
+            reportModal.setAttribute('aria-hidden', 'false');
+            if (reportReasonInput) {
+                reportReasonInput.value = '';
+                window.setTimeout(() => reportReasonInput.focus(), 0);
+            }
+        }
+
+        async function submitReportFromModal() {
+            if (!reportModal) return;
+            const postId = Number(reportModal.dataset.postId || 0);
+            const reason = (reportReasonInput?.value || '').trim();
+
+            if (!postId) {
+                alert('Não foi possível identificar o post denunciado.');
+                return;
+            }
+
+            if (reason.length < 10) {
+                alert('Descreva a denúncia com pelo menos 10 caracteres.');
+                return;
+            }
+
+            if (reportSubmitBtn) {
+                reportSubmitBtn.disabled = true;
+            }
+
+            try {
+                await apiRequest('/reports', 'POST', {
+                    reported_post_id: postId,
+                    reason,
+                });
+                closeReportModal();
+                alert('Denúncia enviada para moderação.');
+            } catch (error) {
+                alert(error.message || 'Falha ao enviar denúncia.');
+            } finally {
+                if (reportSubmitBtn) {
+                    reportSubmitBtn.disabled = false;
+                }
+            }
+        }
+
         async function moderateHidePost(postId) {
             if (!isAdmin) return;
             if (!confirm('Ocultar este post da comunidade?')) return;
@@ -1467,36 +1692,42 @@
                 const isLiked = Boolean(post.liked_by_me);
                 const isSaved = isSavedPost(post.id);
                 const hasImage = Boolean(post.image_url);
+                const authorName = String(post.author?.name || 'Usuário');
+                const authorHandle = authorName.startsWith('@') ? authorName : `@${authorName.toLowerCase().replace(/\s+/g, '')}`;
                 return `
                     <article class="post-card ${focusPostId && Number(post.id) === Number(focusPostId) ? 'post-focus' : ''} ${animate ? 'feed-enter' : ''}" data-post-id="${escapeHtml(post.id)}">
                         <div class="post-main">
                             <div class="post-top">
-                                <a class="post-avatar-link" href="${escapeHtml(profileUrlByUserId(post.author?.id || 0))}" onclick="event.stopPropagation()">
-                                    <img class="post-avatar" src="${escapeHtml(resolveAvatar(post.author?.profile_image))}" alt="Avatar de ${escapeHtml(post.author?.name || 'Usuário')}" onerror="wfAvatarOnError(this)">
-                                </a>
+                                <div class="post-author">
+                                    <a class="post-avatar-link" href="${escapeHtml(profileUrlByUserId(post.author?.id || 0))}" onclick="event.stopPropagation()">
+                                        <img class="post-avatar" src="${escapeHtml(resolveAvatar(post.author?.profile_image))}" alt="Avatar de ${escapeHtml(authorName)}" onerror="wfAvatarOnError(this)">
+                                    </a>
 
-                                <div class="post-head">
-                                    <a class="post-user-link" href="${escapeHtml(profileUrlByUserId(post.author?.id || 0))}" onclick="event.stopPropagation()"><span class="post-user">Mercado Rural</span></a>
-                                    <div class="post-meta-line">
-                                        <span class="post-subtitle">Estou direto • há 18 horas</span>
-                                        <span class="post-date">${escapeHtml(fmtDate(post.created_at))}</span>
+                                    <div class="post-head">
+                                        <div class="post-author-name-row">
+                                            <a class="post-user-link" href="${escapeHtml(profileUrlByUserId(post.author?.id || 0))}" onclick="event.stopPropagation()"><span class="post-user">${escapeHtml(authorName)}</span></a>
+                                        </div>
+                                        <div class="post-author-subtitle">
+                                            <span>${escapeHtml(authorHandle)}</span>
+                                            <span>•</span>
+                                            <span>${escapeHtml(fmtDate(post.created_at))}</span>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <div class="post-floating-tools">
-                                <span class="post-badge">🌱 Plantando</span>
                                 <div class="post-admin-menu" data-admin-menu="${escapeHtml(post.id)}">
                                     <button class="post-admin-trigger" type="button" data-admin-toggle="${escapeHtml(post.id)}" aria-label="Editar ou moderar" aria-haspopup="menu" aria-expanded="false">
                                         <span class="material-icons">edit</span>
                                     </button>
-                                    ${isAdmin ? `
-                                        <div class="post-admin-pop" data-admin-pop="${escapeHtml(post.id)}" role="menu" aria-label="Ações de moderação">
+                                    <div class="post-admin-pop" data-admin-pop="${escapeHtml(post.id)}" role="menu" aria-label="Ações do post">
+                                        <button class="post-admin-item is-report" type="button" role="menuitem" data-report-post="${escapeHtml(post.id)}">Denunciar post</button>
+                                        ${isAdmin ? `
+                                            <div class="post-admin-separator" aria-hidden="true"></div>
                                             <button class="post-admin-item" type="button" role="menuitem" data-mod-hide-post="${escapeHtml(post.id)}">Ocultar post</button>
                                             <button class="post-admin-item" type="button" role="menuitem" data-mod-remove-post="${escapeHtml(post.id)}">Excluir post</button>
                                             <button class="post-admin-item" type="button" role="menuitem" data-mod-block-post-user="${escapeHtml(post.author?.id || 0)}">Bloquear autor</button>
-                                        </div>
-                                    ` : ''}
+                                        ` : ''}
+                                    </div>
                                 </div>
                             </div>
 
@@ -1620,6 +1851,13 @@
                     return;
                 }
 
+                const reportPostButton = target.closest('[data-report-post]');
+                if (reportPostButton) {
+                    const postId = Number(reportPostButton.getAttribute('data-report-post'));
+                    openReportModal(postId);
+                    return;
+                }
+
                 const hidePostButton = target.closest('[data-mod-hide-post]');
                 if (hidePostButton) {
                     const postId = Number(hidePostButton.getAttribute('data-mod-hide-post'));
@@ -1678,6 +1916,28 @@
                 submitComment(postId, inputEl);
             });
         }
+
+        if (reportCancelBtn) {
+            reportCancelBtn.addEventListener('click', () => closeReportModal());
+        }
+
+        if (reportSubmitBtn) {
+            reportSubmitBtn.addEventListener('click', () => submitReportFromModal());
+        }
+
+        if (reportModal) {
+            reportModal.addEventListener('click', (event) => {
+                if (event.target === reportModal) {
+                    closeReportModal();
+                }
+            });
+        }
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && reportModal?.classList.contains('show')) {
+                closeReportModal();
+            }
+        });
 
         function updatePreview(file, imageDataUrl) {
             if (!file || !imageDataUrl) {

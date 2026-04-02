@@ -38,6 +38,7 @@ def create_report(
             current_user=current_user,
             reported_profile_id=payload.reported_profile_id,
             reported_offer_id=payload.reported_offer_id,
+            reported_post_id=payload.reported_post_id,
             reason=payload.reason,
         )
     except ValueError as exc:

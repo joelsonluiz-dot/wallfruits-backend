@@ -17,6 +17,7 @@ class Report(Base):
 
     reported_profile_id = Column(UUID(as_uuid=True), ForeignKey("profiles.id"), nullable=True, index=True)
     reported_offer_id = Column(UUID(as_uuid=True), ForeignKey("offers.id"), nullable=True, index=True)
+    reported_post_id = Column(Integer, ForeignKey("community_posts.id"), nullable=True, index=True)
 
     reason = Column(String(1000), nullable=False)
     status = Column(String(20), default=ReportStatus.PENDING.value, nullable=False, index=True)
@@ -27,4 +28,5 @@ class Report(Base):
 
     reporter_profile = relationship("Profile", foreign_keys=[reporter_profile_id])
     reported_profile = relationship("Profile", foreign_keys=[reported_profile_id])
+    reported_post = relationship("CommunityPost")
     reviewed_by_user = relationship("User")
