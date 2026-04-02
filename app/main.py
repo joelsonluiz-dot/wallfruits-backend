@@ -1,6 +1,7 @@
 """App principal da API WallFruits com startup e observabilidade robustos."""
 
 import asyncio
+import hashlib
 from contextlib import asynccontextmanager
 from collections import defaultdict, deque
 from datetime import datetime, timezone
@@ -18,7 +19,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -87,6 +88,28 @@ _sensitive_rate_limit_paths = (
     "/api/messages",
     "/api/community/posts",
     "/api/offers",
+)
+_non_cacheable_paths = (
+    "/api/auth/",
+    "/api/messages",
+    "/api/notifications",
+    "/api/transactions",
+    "/api/wallet",
+    "/api/checkout",
+    "/api/dashboard",
+    "/api/admin",
+    "/api/upload",
+    "/api/store/cart",
+    "/api/store/orders",
+    "/api/store/quote",
+    "/api/messages/conversations",
+    "/api/messages/thread/",
+    "/api/social/users/search",
+)
+_cacheable_content_types = (
+    "text/html",
+    "application/json",
+    "application/problem+json",
 )
 _metrics_lock = Lock()
 _request_metrics = {
@@ -160,6 +183,51 @@ def _error_payload(message: Any, code: str, request: Request) -> dict[str, Any]:
         },
         "request_id": _request_id_from(request),
     }
+
+
+def _is_cacheable_path(path: str) -> bool:
+    return not any(path.startswith(prefix) for prefix in _non_cacheable_paths)
+
+
+def _merge_vary(existing: str | None, values: list[str]) -> str:
+    merged: list[str] = []
+    for raw in [existing or "", ",".join(values)]:
+        for item in str(raw).split(","):
+            key = item.strip()
+            if key and key.lower() not in {entry.lower() for entry in merged}:
+                merged.append(key)
+    return ", ".join(merged) if merged else "Accept-Encoding, Authorization, Cookie"
+
+
+def _build_cache_control_header(request: Request) -> str:
+    has_auth = bool(request.headers.get("Authorization"))
+    has_cookie = bool(request.headers.get("Cookie"))
+    if has_auth or has_cookie:
+        return "private, max-age=0, must-revalidate"
+
+    return (
+        f"public, max-age={settings.HTTP_PUBLIC_CACHE_MAX_AGE_SECONDS}, "
+        f"stale-while-revalidate={settings.HTTP_PUBLIC_CACHE_STALE_WHILE_REVALIDATE_SECONDS}"
+    )
+
+
+def _is_cacheable_response(request: Request, response: JSONResponse | Response) -> bool:
+    if request.method != "GET":
+        return False
+    if response.status_code != 200:
+        return False
+    if not _is_cacheable_path(request.url.path):
+        return False
+
+    content_type = str(response.headers.get("content-type", "")).lower()
+    return any(content_type.startswith(prefix) for prefix in _cacheable_content_types)
+
+
+async def _read_response_body(response: Response) -> bytes:
+    body = bytearray()
+    async for chunk in response.body_iterator:
+        body.extend(chunk)
+    return bytes(body)
 
 
 @asynccontextmanager
@@ -260,6 +328,33 @@ async def request_context_middleware(request: Request, call_next):
         return response
 
     response = await call_next(request)
+
+    if settings.HTTP_ETAG_ENABLED and _is_cacheable_response(request, response) and not response.headers.get("set-cookie"):
+        body = await _read_response_body(response)
+        etag = hashlib.sha256(body).hexdigest()
+        if request.headers.get("if-none-match") == f'"{etag}"':
+            not_modified_headers = dict(response.headers)
+            not_modified_headers["ETag"] = f'"{etag}"'
+            not_modified_headers["Cache-Control"] = _build_cache_control_header(request)
+            not_modified_headers["Vary"] = _merge_vary(response.headers.get("vary"), ["Accept-Encoding", "Authorization", "Cookie"])
+            not_modified_headers["X-Request-ID"] = request_id
+            not_modified_headers["X-Process-Time"] = f"{time.perf_counter() - request.state.request_started_at:.4f}"
+            return Response(status_code=304, headers=not_modified_headers)
+
+        response_headers = dict(response.headers)
+        response_headers["ETag"] = f'"{etag}"'
+        response_headers["Cache-Control"] = _build_cache_control_header(request)
+        response_headers["Vary"] = _merge_vary(response.headers.get("vary"), ["Accept-Encoding", "Authorization", "Cookie"])
+        response_headers["X-Request-ID"] = request_id
+        response_headers["X-Process-Time"] = f"{time.perf_counter() - request.state.request_started_at:.4f}"
+
+        response = Response(
+            content=body,
+            status_code=response.status_code,
+            headers=response_headers,
+            media_type=response.media_type,
+        )
+
     elapsed = time.perf_counter() - request.state.request_started_at
     elapsed_ms = elapsed * 1000
 

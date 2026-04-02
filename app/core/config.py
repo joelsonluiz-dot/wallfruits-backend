@@ -48,6 +48,9 @@ class Settings(BaseSettings):
     API_VERSION: str = "2.0.0"
     HTTP_GZIP_ENABLED: bool = True
     HTTP_GZIP_MINIMUM_SIZE: int = 1024
+    HTTP_ETAG_ENABLED: bool = True
+    HTTP_PUBLIC_CACHE_MAX_AGE_SECONDS: int = 120
+    HTTP_PUBLIC_CACHE_STALE_WHILE_REVALIDATE_SECONDS: int = 300
     
     # CORS
     CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
@@ -169,6 +172,12 @@ def get_settings() -> Settings:
 
     if settings.HTTP_GZIP_MINIMUM_SIZE < 256:
         raise RuntimeError("HTTP_GZIP_MINIMUM_SIZE deve ser >= 256")
+
+    if settings.HTTP_PUBLIC_CACHE_MAX_AGE_SECONDS < 0:
+        raise RuntimeError("HTTP_PUBLIC_CACHE_MAX_AGE_SECONDS deve ser >= 0")
+
+    if settings.HTTP_PUBLIC_CACHE_STALE_WHILE_REVALIDATE_SECONDS < 0:
+        raise RuntimeError("HTTP_PUBLIC_CACHE_STALE_WHILE_REVALIDATE_SECONDS deve ser >= 0")
 
     if settings.RATE_LIMIT_WINDOW_SECONDS <= 0:
         raise RuntimeError("RATE_LIMIT_WINDOW_SECONDS deve ser > 0")
