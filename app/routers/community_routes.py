@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from sqlalchemy import case, func
 from sqlalchemy.orm import Session
 import logging
 
 from app.core.auth_middleware import get_current_user, get_current_user_optional
 from app.database.connection import get_db
+from app.core.http_cache import set_detail_cache_headers
 from app.models import CommunityComment, CommunityLike, CommunityPost, CommunityShare, CommunityUserBlock, User
 from app.schemas.community_schema import (
     CommunityBlockUserRequest,
@@ -149,10 +150,13 @@ def get_post(
     post_id: int,
     current_user: User | None = Depends(get_current_user_optional),
     db: Session = Depends(get_db),
+    response: Response = None,
 ):
     data = list_posts(current_user=current_user, db=db, skip=0, limit=1, post_id=post_id)
     if not data.posts:
         raise HTTPException(status_code=404, detail="Post não encontrado")
+    if response is not None:
+        set_detail_cache_headers(response, private=bool(current_user))
     return data.posts[0]
 
 

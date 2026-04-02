@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, Query, WebSocket, WebSocketDisconnect, status
+from fastapi import APIRouter, HTTPException, Depends, Query, WebSocket, WebSocketDisconnect, Response, status
 from sqlalchemy.orm import Session
 from sqlalchemy import func, or_, and_, desc
 from typing import List, Optional
@@ -16,6 +16,7 @@ from app.schemas import (
 )
 from app.cache.redis_client import get_cache, set_cache
 from app.core.auth_middleware import get_current_user, optional_auth
+from app.core.http_cache import set_detail_cache_headers
 from app.core.domain_permissions import require_approved_offer_publisher
 from app.services.profile_service import ProfileService
 
@@ -366,7 +367,8 @@ def get_offers(
 def get_offer(
     offer_id: UUID,
     current_user: Optional[User] = Depends(optional_auth),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    response: Response = None,
 ):
 
     offer = db.query(Offer).filter(Offer.id == offer_id).first()
@@ -400,6 +402,9 @@ def get_offer(
     _apply_offer_visibility_policy(db=db, offer=offer, current_user=current_user)
 
     offer.is_favorited = is_favorited
+
+    if response is not None:
+        set_detail_cache_headers(response, private=bool(current_user))
 
     return offer
 

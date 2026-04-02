@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.core.auth_middleware import get_current_user
+from app.core.http_cache import set_detail_cache_headers
 from app.database.connection import get_db
 from app.models.service import Service
 from app.models.user import User
@@ -220,10 +221,12 @@ async def list_services_manage(
 
 
 @router.get("/{service_id}")
-async def get_service(service_id: int, db: Session = Depends(get_db)):
+async def get_service(service_id: int, db: Session = Depends(get_db), response: Response = None):
     service = db.query(Service).filter(Service.id == service_id).first()
     if not service:
         raise HTTPException(status_code=404, detail="Servico nao encontrado")
+    if response is not None:
+        set_detail_cache_headers(response, private=False)
     return _service_payload(service)
 
 

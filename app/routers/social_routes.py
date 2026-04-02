@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
 from app.core.auth_middleware import get_current_user, get_current_user_optional
+from app.core.http_cache import set_detail_cache_headers
 from app.database.connection import get_db
 from app.models import CommunityComment, CommunityLike, CommunityPost, CommunityShare, Follow, Offer, User
 from app.schemas.social_schema import ActiveAccountItem, FollowActionResponse, PublicUserProfileResponse
@@ -38,6 +39,7 @@ def get_public_user_profile(
     current_user: User | None = Depends(get_current_user_optional),
     db: Session = Depends(get_db),
     limit: int = Query(24, ge=1, le=100),
+    response: Response = None,
 ):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
@@ -110,6 +112,9 @@ def get_public_user_profile(
         if contact_locked
         else None
     )
+
+    if response is not None:
+        set_detail_cache_headers(response, private=bool(current_user))
 
     return PublicUserProfileResponse(
         id=user.id,
