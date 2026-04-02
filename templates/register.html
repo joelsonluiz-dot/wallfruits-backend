@@ -62,6 +62,7 @@
         font-weight: 600;
         transition: all 0.25s ease;
         text-align: center;
+        touch-action: manipulation;
     }
     .role-option-label .role-icon {
         font-size: 1.5rem;
@@ -127,27 +128,27 @@
                 <form id="registerForm">
                     <div class="mb-3">
                         <label for="name" class="wf-label">Nome completo</label>
-                        <input type="text" class="wf-input form-control" id="name" placeholder="Seu nome" required>
+                        <input type="text" class="wf-input form-control" id="name" placeholder="Seu nome" autocomplete="name" required>
                     </div>
                     <div class="mb-3">
                         <label for="email" class="wf-label">Email</label>
-                        <input type="email" class="wf-input form-control" id="email" placeholder="seu@email.com" required>
+                        <input type="email" class="wf-input form-control" id="email" placeholder="seu@email.com" autocomplete="email" inputmode="email" autocapitalize="off" autocorrect="off" spellcheck="false" required>
                     </div>
                     <div class="mb-3">
                         <label for="password" class="wf-label">Senha</label>
                         <div class="wf-password-wrap">
-                            <input type="password" class="wf-input form-control" id="password" placeholder="Mínimo 6 caracteres" required>
+                            <input type="password" class="wf-input form-control" id="password" placeholder="Mínimo 6 caracteres" autocomplete="new-password" required>
                             <button type="button" class="wf-password-toggle" id="toggleRegisterPassword">Mostrar</button>
                         </div>
                     </div>
                     <div class="row g-3 mb-3">
                         <div class="col-6">
                             <label for="phone" class="wf-label">Telefone</label>
-                            <input type="tel" class="wf-input form-control" id="phone" placeholder="(11) 99999-0000">
+                            <input type="tel" class="wf-input form-control" id="phone" placeholder="(11) 99999-0000" autocomplete="tel" inputmode="tel">
                         </div>
                         <div class="col-6">
                             <label for="location" class="wf-label">Localização</label>
-                            <input type="text" class="wf-input form-control" id="location" placeholder="Cidade/UF">
+                            <input type="text" class="wf-input form-control" id="location" placeholder="Cidade/UF" autocomplete="address-level2">
                         </div>
                     </div>
                     <div class="mb-3">
@@ -185,7 +186,7 @@
                         </div>
                     </div>
                     <div id="registerMsg" style="display:none; padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem; font-size: 0.9rem;"></div>
-                    <button type="submit" id="registerBtn" class="btn btn-wf-primary w-100" style="padding: 0.75rem;">
+                    <button type="submit" id="registerBtn" class="btn btn-wf-primary w-100" style="padding: 0.75rem; touch-action: manipulation;">
                         Criar conta &rarr;
                     </button>
                 </form>

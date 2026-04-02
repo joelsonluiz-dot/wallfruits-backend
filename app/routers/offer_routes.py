@@ -145,13 +145,15 @@ async def create_offer(
 
     profile = ProfileService(db).get_or_create_profile(current_user)
 
+    offer_payload = offer.model_dump(exclude={"images"})
+    offer_payload["public_price"] = offer.public_price or offer.price
+    offer_payload["private_price"] = offer.private_price
+    offer_payload["visibility"] = offer.visibility or "public"
+
     new_offer = Offer(
-        **offer.dict(),
+        **offer_payload,
         user_id=current_user.id,
         owner_profile_id=profile.id,
-        public_price=offer.public_price or offer.price,
-        private_price=offer.private_price,
-        visibility=offer.visibility or "public",
     )
 
     if isinstance(offer.images, list):

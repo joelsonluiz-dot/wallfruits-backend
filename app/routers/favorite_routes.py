@@ -38,7 +38,7 @@ def add_to_favorites(
     ).first()
 
     if existing:
-        raise HTTPException(400, "Esta oferta já está nos seus favoritos")
+        return existing
 
     # Criar favorito
     new_favorite = Favorite(
@@ -52,20 +52,25 @@ def add_to_favorites(
     # Incrementar contador de favoritos da oferta com proteção para valores legados nulos.
     offer.favorites_count = int(offer.favorites_count or 0) + 1
 
-    if offer.user_id != current_user.id:
-        create_notification(
-            db,
-            user_id=offer.user_id,
-            actor_user_id=current_user.id,
-            notification_type="favorite",
-            title="Nova curtida na oferta",
-            message=f"{current_user.name} curtiu sua oferta {offer.product_name}.",
-            resource_type="offer",
-            resource_id=str(offer.id),
-        )
-
     db.commit()
     db.refresh(new_favorite)
+
+    if offer.user_id != current_user.id:
+        try:
+            create_notification(
+                db,
+                user_id=offer.user_id,
+                actor_user_id=current_user.id,
+                notification_type="favorite",
+                title="Nova curtida na oferta",
+                message=f"{current_user.name} curtiu sua oferta {offer.product_name}.",
+                resource_type="offer",
+                resource_id=str(offer.id),
+            )
+            db.commit()
+        except Exception:
+            # Falha de notificação não pode bloquear a curtida da oferta.
+            db.rollback()
 
     return new_favorite
 
@@ -104,7 +109,7 @@ def remove_from_favorites(
     ).first()
 
     if not favorite:
-        raise HTTPException(404, "Favorito não encontrado")
+        return
 
     # Decrementar contador de favoritos da oferta com proteção para valores legados nulos.
     offer = db.query(Offer).filter(Offer.id == offer_id).first()

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional, Dict
 from uuid import UUID
 from datetime import datetime
@@ -25,3 +25,15 @@ class FavoriteResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+    @field_validator("offer", mode="before")
+    @classmethod
+    def parse_offer(cls, value):
+        if value is None or isinstance(value, dict):
+            return value
+        return {
+            "id": str(getattr(value, "id", "")) or None,
+            "product_name": getattr(value, "product_name", None),
+            "price": float(getattr(value, "price", 0) or 0),
+            "status": getattr(value, "status", None),
+        }

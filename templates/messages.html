@@ -565,6 +565,7 @@
     let returnOrigin = '';
     let initialMessageFromQuery = '';
     let shouldPrefillFromQuery = false;
+    let shouldAutoSendFromQuery = false;
     let offerNameFromQuery = '';
 
     const CHAT_THEME_KEY = 'wf_chat_theme';
@@ -619,6 +620,26 @@
     function buildOfferInterestMessage(offerName, offerId) {
         const label = String(offerName || '').trim() || `oferta ${offerId}`;
         return `Olá! Tenho interesse na oferta "${label}". Podemos conversar sobre quantidade, entrega e pagamento?`;
+    }
+
+    function simpleHash(text) {
+        let hash = 0;
+        const value = String(text || '');
+        for (let i = 0; i < value.length; i += 1) {
+            hash = ((hash << 5) - hash) + value.charCodeAt(i);
+            hash |= 0;
+        }
+        return Math.abs(hash);
+    }
+
+    function buildOfferAutoSendKey(message) {
+        return [
+            'wf_offer_chat_auto_sent',
+            Number(me?.id || 0),
+            Number(selectedUserId || 0),
+            String(selectedOfferId || 'none'),
+            String(simpleHash(message || '')),
+        ].join(':');
     }
 
     function prefillChatInputIfEmpty(message) {
@@ -922,6 +943,65 @@
         renderConversations();
     }
 
+    async function sendChatMessage(content) {
+        const payload = String(content || '').trim();
+        if (!payload) return;
+
+        if (!selectedUserId) {
+            throw new Error('Selecione uma conversa ou uma oferta para enviar mensagem.');
+        }
+
+        await apiRequest('/messages', 'POST', {
+            receiver_id: Number(selectedUserId),
+            offer_id: selectedOfferId,
+            message_type: selectedOfferId ? 'offer_inquiry' : (selectedServiceId ? 'service_inquiry' : 'direct'),
+            subject: selectedOfferId
+                ? `Interesse em oferta ${selectedOfferId}`
+                : (selectedServiceId ? `Solicitação de orçamento - serviço ${selectedServiceTitle || selectedServiceId}` : 'Conversa direta'),
+            content: payload,
+        });
+
+        await loadConversations();
+
+        const conv = conversations.find((item) => Number(item.other_user?.id) === Number(selectedUserId));
+        if (conv) {
+            await loadThread(conv.thread_id);
+            return;
+        }
+
+        document.getElementById('chatMessages').insertAdjacentHTML('beforeend', '<li class="chat-thread-empty">Mensagem enviada. Aguarde resposta para criar thread.</li>');
+    }
+
+    async function autoSendInitialOfferMessage(message) {
+        const payload = String(message || '').trim();
+        if (!payload || !selectedUserId || !selectedOfferId || !shouldAutoSendFromQuery) return;
+
+        const dedupeKey = buildOfferAutoSendKey(payload);
+        try {
+            if (sessionStorage.getItem(dedupeKey) === '1') {
+                return;
+            }
+        } catch {
+            // ignora indisponibilidade de storage
+        }
+
+        try {
+            await sendChatMessage(payload);
+            try {
+                sessionStorage.setItem(dedupeKey, '1');
+            } catch {
+                // ignora indisponibilidade de storage
+            }
+        } catch (error) {
+            const msg = String(error?.message || '').toLowerCase();
+            if (msg.includes('créditos') || msg.includes('creditos') || msg.includes('upgrade')) {
+                showServiceUpgradeModal();
+                return;
+            }
+            prefillChatInputIfEmpty(payload);
+        }
+    }
+
     async function handleInitialParams() {
         const threadId = qParam('thread_id');
         const userId = qParam('user_id');
@@ -933,6 +1013,7 @@
         returnOrigin = qParam('origin') || '';
         initialMessageFromQuery = String(qParam('initial_message') || '').trim();
         shouldPrefillFromQuery = qParam('prefill') === '1';
+        shouldAutoSendFromQuery = qParam('auto_send') === '1';
         offerNameFromQuery = String(qParam('offer_name') || '').trim();
 
         renderReturnButton();
@@ -994,6 +1075,7 @@
                 if (shouldPrefillFromQuery || !existingConversation?.thread_id) {
                     prefillChatInputIfEmpty(finalOfferMessage);
                 }
+                await autoSendInitialOfferMessage(finalOfferMessage);
             } else {
                 await startConversationWithAccount(Number(userId), 'Nova conversa', '');
                 if (shouldPrefillFromQuery && initialMessageFromQuery) {
@@ -1010,31 +1092,9 @@
         const content = input.value.trim();
         if (!content) return;
 
-        if (!selectedUserId) {
-            alert('Selecione uma conversa ou uma oferta para enviar mensagem.');
-            return;
-        }
-
         try {
-            await apiRequest('/messages', 'POST', {
-                receiver_id: Number(selectedUserId),
-                offer_id: selectedOfferId,
-                message_type: selectedOfferId ? 'offer_inquiry' : (selectedServiceId ? 'service_inquiry' : 'direct'),
-                subject: selectedOfferId
-                    ? `Interesse em oferta ${selectedOfferId}`
-                    : (selectedServiceId ? `Solicitação de orçamento - serviço ${selectedServiceTitle || selectedServiceId}` : 'Conversa direta'),
-                content,
-            });
-
+            await sendChatMessage(content);
             input.value = '';
-            await loadConversations();
-
-            const conv = conversations.find((c) => Number(c.other_user?.id) === Number(selectedUserId));
-            if (conv) {
-                await loadThread(conv.thread_id);
-            } else {
-                document.getElementById('chatMessages').insertAdjacentHTML('beforeend', '<li class="chat-thread-empty">Mensagem enviada. Aguarde resposta para criar thread.</li>');
-            }
         } catch (error) {
             const msg = String(error?.message || '').toLowerCase();
             if (msg.includes('créditos') || msg.includes('creditos') || msg.includes('upgrade')) {

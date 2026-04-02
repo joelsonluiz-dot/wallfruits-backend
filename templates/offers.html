@@ -441,9 +441,23 @@
     }
 
     .produtor-box {
+        display: block;
+    }
+
+    .produtor-box-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 0.55rem;
+    }
+
+    .produtor-owner-link {
         display: flex;
         align-items: center;
-        gap: 0.55rem;
+        gap: 0.65rem;
+        text-decoration: none;
+        color: inherit;
+        min-width: 0;
     }
 
     .produtor-avatar {
@@ -699,7 +713,7 @@
 
     .offers-create-float-btn {
         position: fixed;
-        right: 20px;
+        left: 20px;
         top: calc(84px + env(safe-area-inset-top));
         z-index: 1298;
         border-radius: 999px;
@@ -727,23 +741,19 @@
         box-shadow: 0 14px 30px rgba(25, 104, 63, 0.38);
     }
 
-    .offer-card-top {
-        display: flex;
-        align-items: center;
-        justify-content: flex-end;
-        margin-bottom: 0.36rem;
-    }
-
     .offer-published {
+        align-self: center;
         border-radius: 999px;
-        border: 1px solid rgba(27, 82, 132, 0.26);
-        background: rgba(236, 246, 255, 0.9);
+        border: 1px solid rgba(27, 82, 132, 0.2);
+        background: rgba(236, 246, 255, 0.82);
         color: #24527b;
-        font-size: 0.62rem;
+        font-size: 0.61rem;
         font-weight: 800;
-        padding: 0.16rem 0.48rem;
+        padding: 0.14rem 0.44rem;
         white-space: nowrap;
-        max-width: 100%;
+        max-width: 48%;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .action-side.active-like .material-symbols-outlined,
@@ -771,7 +781,7 @@
         }
 
         .offers-create-float-btn {
-            right: 14px;
+            left: 14px;
             top: calc(74px + env(safe-area-inset-top));
             font-size: 0.71rem;
             padding: 0.46rem 0.75rem;
@@ -863,6 +873,14 @@
             grid-template-columns: 1fr;
         }
 
+        .produtor-box-head {
+            align-items: center;
+        }
+
+        .offer-published {
+            max-width: 55%;
+        }
+
         .card-side {
             flex-direction: row;
             justify-content: flex-start;
@@ -887,6 +905,16 @@
 
         .mini-meta-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .produtor-box-head {
+            flex-wrap: wrap;
+            gap: 0.35rem;
+        }
+
+        .offer-published {
+            max-width: 100%;
+            margin-left: 30px;
         }
 
         .offers-search-row {
@@ -1101,12 +1129,12 @@
 
 <a href="/offers/new" class="offers-create-float-btn" title="Criar nova oferta">
     <span class="material-icons">add_circle</span>
-    <span>Criar oferta</span>
+    <span>Criar ofertas</span>
 </a>
 
 <div class="offers-header">
     <div>
-        <h1>Ofertas <span class="wf-gradient-text">Disponíveis</span></h1>
+        <h1>Ofertas</h1>
         <div class="offers-count" id="offersCount"></div>
         <div class="offers-live-controls" aria-label="Controles de atualização automática">
             <button id="offersRefreshToggle" class="offers-live-btn" type="button">
@@ -2082,18 +2110,18 @@
 
                 <div class="produto-content">
                     <div>
-                        <div class="offer-card-top">
-                            <span class="offer-published" title="${escapeHtml(published.title)}">${escapeHtml(published.label)}</span>
-                        </div>
                         <div class="produtor-box">
-                            <a href="${ownerProfileUrl(offer)}" onclick="event.stopPropagation()" style="display:flex;align-items:center;gap:0.65rem;text-decoration:none;color:inherit;">
-                                ${getOwnerAvatar(offer)}
-                                <div class="produtor-info">
-                                    <div class="produtor-nome">${escapeHtml(offer.owner_data?.name || 'Produtor')}</div>
-                                    <div class="produtor-username">${escapeHtml(getOwnerUsername(offer))}</div>
-                                    ${ownerContactLockBadge(offer)}
-                                </div>
-                            </a>
+                            <div class="produtor-box-head">
+                                <a href="${ownerProfileUrl(offer)}" onclick="event.stopPropagation()" class="produtor-owner-link">
+                                    ${getOwnerAvatar(offer)}
+                                    <div class="produtor-info">
+                                        <div class="produtor-nome">${escapeHtml(offer.owner_data?.name || 'Produtor')}</div>
+                                        <div class="produtor-username">${escapeHtml(getOwnerUsername(offer))}</div>
+                                        ${ownerContactLockBadge(offer)}
+                                    </div>
+                                </a>
+                                <span class="offer-published" title="${escapeHtml(published.title)}">${escapeHtml(published.label)}</span>
+                            </div>
                         </div>
 
                         <h3 class="fruta-nome">${escapeHtml(offer.product_name)}</h3>
@@ -2249,6 +2277,7 @@
         params.set('offer_name', String(offer.product_name || 'Oferta'));
         params.set('initial_message', defaultMessage);
         params.set('prefill', '1');
+        params.set('auto_send', '1');
         window.location.href = `/messages?${params.toString()}`;
     }
 
@@ -2649,6 +2678,15 @@
         status.textContent = message;
     }
 
+    function setOffersCount(total) {
+        const count = Math.max(0, Number(total || 0));
+        const label = count === 1 ? '1 resultado' : `${count} resultados`;
+        const target = document.getElementById('offersCount');
+        if (target) {
+            target.textContent = label;
+        }
+    }
+
     async function fetchOffersPage(skip, limit = OFFERS_PAGE_SIZE) {
         const signature = getFilterSignature();
         if (
@@ -2734,12 +2772,13 @@
                         <a href="/offers/new" class="btn btn-wf-primary">Criar primeira oferta</a>
                     </div>
                 `;
+                setOffersCount(0);
                 updateLoadMoreStatus('');
                 return;
             }
 
             renderOffersList(offersFeedState.items, false);
-            document.getElementById('offersCount').textContent = `${offersFeedState.items.length} oferta${offersFeedState.items.length === 1 ? '' : 's'} carregada${offersFeedState.items.length === 1 ? '' : 's'}`;
+            setOffersCount(offersFeedState.items.length);
 
             if (offersFeedState.hasMore) {
                 updateLoadMoreStatus('Role para carregar mais.');
@@ -2778,7 +2817,7 @@
             pendingFreshOffers += fresh.length;
 
             renderOffersList(offersFeedState.items, false);
-            document.getElementById('offersCount').textContent = `${offersFeedState.items.length} oferta${offersFeedState.items.length === 1 ? '' : 's'} carregada${offersFeedState.items.length === 1 ? '' : 's'}`;
+            setOffersCount(offersFeedState.items.length);
             updateLoadMoreStatus(`${fresh.length} nova(s) oferta(s) recebida(s).`);
 
             const delta = document.documentElement.scrollHeight - previousHeight;
@@ -2820,6 +2859,7 @@
                     </div>
                 `;
                 offersFeedState.hasMore = false;
+                setOffersCount(0);
                 updateLoadMoreStatus('');
                 return;
             }
@@ -2828,7 +2868,7 @@
 
             offersFeedState.skip += incoming.length;
             offersFeedState.hasMore = incoming.length === OFFERS_PAGE_SIZE;
-            document.getElementById('offersCount').textContent = `${offersFeedState.items.length} oferta${offersFeedState.items.length === 1 ? '' : 's'} carregada${offersFeedState.items.length === 1 ? '' : 's'}`;
+            setOffersCount(offersFeedState.items.length);
 
             if (!offersFeedState.hasMore) {
                 updateLoadMoreStatus('Você chegou ao fim das ofertas.');
@@ -2907,7 +2947,7 @@
             offersFeedState.hasMore = Boolean(cached.hasMore);
 
             renderOffersList(offersFeedState.items, false);
-            document.getElementById('offersCount').textContent = `${offersFeedState.items.length} oferta${offersFeedState.items.length === 1 ? '' : 's'} carregada${offersFeedState.items.length === 1 ? '' : 's'}`;
+            setOffersCount(offersFeedState.items.length);
 
             if (offersFeedState.hasMore) {
                 updateLoadMoreStatus('Dados em cache carregados. Atualizando ofertas...');

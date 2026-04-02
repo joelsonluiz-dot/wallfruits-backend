@@ -204,6 +204,42 @@
         min-height: 2.7em;
     }
 
+    .service-meta-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.45rem;
+        flex-wrap: wrap;
+    }
+
+    .service-status {
+        border-radius: 999px;
+        border: 1px solid rgba(31, 109, 65, 0.28);
+        background: rgba(31, 109, 65, 0.12);
+        color: #1f6d41;
+        font-size: 0.62rem;
+        font-weight: 800;
+        padding: 0.14rem 0.42rem;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+
+    .service-status.offline {
+        border-color: rgba(153, 53, 53, 0.28);
+        background: rgba(153, 53, 53, 0.12);
+        color: #9d3030;
+    }
+
+    .service-published {
+        font-size: 0.64rem;
+        color: #4f6f90;
+        font-weight: 700;
+        white-space: nowrap;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
     .service-meta {
         display: flex;
         justify-content: space-between;
@@ -312,6 +348,14 @@
             gap: 0.34rem;
         }
 
+        .service-meta-top {
+            gap: 0.3rem;
+        }
+
+        .service-published {
+            width: 100%;
+        }
+
         .service-card-actions {
             flex-direction: column;
         }
@@ -385,8 +429,8 @@
         const servicesLoadMoreStatus = document.getElementById('servicesLoadMoreStatus');
         const SERVICES_ROUTE_CACHE_KEY = 'wf_route_cache_services_v1';
         const SERVICES_ROUTE_CACHE_TTL_MS = 180000;
-        const SERVICES_PAGE_SIZE = 8;
-        const SERVICES_FETCH_BATCH_SIZE = 24;
+        const SERVICES_PAGE_SIZE = 12;
+        const SERVICES_FETCH_BATCH_SIZE = 60;
 
         let allServices = [];
         let officialCategories = [];
@@ -421,6 +465,77 @@
             const div = document.createElement('div');
             div.textContent = text ?? '';
             return div.innerHTML;
+        }
+
+        function formatDateTimeShort(value) {
+            if (!value) return '';
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) return '';
+            return date.toLocaleString('pt-BR', {
+                day: '2-digit',
+                month: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+            });
+        }
+
+        function formatRelativeCompact(value) {
+            if (!value) return '';
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) return '';
+
+            const diffMs = Date.now() - date.getTime();
+            if (Math.abs(diffMs) < 60000) return 'agora';
+
+            const diffMinutes = Math.round(diffMs / 60000);
+            if (Math.abs(diffMinutes) < 60) return `${Math.abs(diffMinutes)}m`;
+
+            const diffHours = Math.round(diffMinutes / 60);
+            if (Math.abs(diffHours) < 24) return `${Math.abs(diffHours)}h`;
+
+            const diffDays = Math.round(diffHours / 24);
+            return `${Math.abs(diffDays)}d`;
+        }
+
+        function buildPublishedLabel(value) {
+            const relative = formatRelativeCompact(value);
+            const formatted = formatDateTimeShort(value);
+
+            if (relative && formatted) {
+                return {
+                    label: `${relative} • ${formatted}`,
+                    title: `Publicado em ${formatted}`,
+                };
+            }
+
+            if (formatted) {
+                return {
+                    label: formatted,
+                    title: `Publicado em ${formatted}`,
+                };
+            }
+
+            return {
+                label: 'Agora',
+                title: 'Publicado recentemente',
+            };
+        }
+
+        function normalizeServiceStatus(statusValue) {
+            const raw = String(statusValue || '').trim().toLowerCase();
+            const isOnline = raw.includes('dispon') || raw.includes('ativo') || raw.includes('online') || raw.includes('available');
+
+            if (!raw || isOnline) {
+                return {
+                    label: 'Disponível',
+                    offline: false,
+                };
+            }
+
+            return {
+                label: 'Indisponível',
+                offline: true,
+            };
         }
 
         function servicesSnapshotSignature(services, categories) {
@@ -619,25 +734,34 @@
         }
 
         function renderList(services, activeId) {
-            listEl.innerHTML = services.map((service) => `
-                <article class="service-card ${service.id === activeId ? 'active' : ''}" data-service-id="${escapeHtml(String(service.id))}" tabindex="0" role="link" aria-label="Abrir detalhes do serviço ${escapeHtml(service.titulo || 'Serviço')}">
-                    <div class="service-thumb">
-                        <img src="${escapeHtml(service.imagem || '/static/icon.svg')}" alt="${escapeHtml(service.titulo || 'Serviço')}" onerror="this.onerror=null; this.src='/static/icon.svg';">
-                    </div>
-                    <div class="service-card-body">
-                        <h3 class="service-title">${escapeHtml(service.titulo || 'Serviço')}</h3>
-                        <p class="service-desc">${escapeHtml(service.descricao || '')}</p>
-                        <div class="service-meta">
-                            <span class="service-location">${escapeHtml(service.local || 'Local não informado')}</span>
-                            <span class="service-price">${escapeHtml(service.preco || 'Sob consulta')}</span>
+            listEl.innerHTML = services.map((service) => {
+                const statusInfo = normalizeServiceStatus(service.status || (service.is_active ? 'disponível' : 'indisponível'));
+                const published = buildPublishedLabel(service.created_at || service.updated_at);
+
+                return `
+                    <article class="service-card ${service.id === activeId ? 'active' : ''}" data-service-id="${escapeHtml(String(service.id))}" tabindex="0" role="link" aria-label="Abrir detalhes do serviço ${escapeHtml(service.titulo || 'Serviço')}">
+                        <div class="service-thumb">
+                            <img src="${escapeHtml(service.imagem || '/static/icon.svg')}" alt="${escapeHtml(service.titulo || 'Serviço')}" onerror="this.onerror=null; this.src='/static/icon.svg';">
                         </div>
-                        <div class="service-card-actions">
-                            <a href="${buildServiceDetailUrl(service)}" class="service-open-detail-btn" onclick="event.stopPropagation()">Ver detalhes</a>
-                            <a href="${buildServiceDetailUrl(service)}" target="_blank" rel="noopener" class="service-open-tab-btn" onclick="event.stopPropagation()">Abrir em nova aba</a>
+                        <div class="service-card-body">
+                            <h3 class="service-title">${escapeHtml(service.titulo || 'Serviço')}</h3>
+                            <div class="service-meta-top">
+                                <span class="service-status ${statusInfo.offline ? 'offline' : ''}">${escapeHtml(statusInfo.label)}</span>
+                                <span class="service-published" title="${escapeHtml(published.title)}">${escapeHtml(published.label)}</span>
+                            </div>
+                            <p class="service-desc">${escapeHtml(service.descricao || '')}</p>
+                            <div class="service-meta">
+                                <span class="service-location">${escapeHtml(service.local || 'Local não informado')}</span>
+                                <span class="service-price">${escapeHtml(service.preco || 'Sob consulta')}</span>
+                            </div>
+                            <div class="service-card-actions">
+                                <a href="${buildServiceDetailUrl(service)}" class="service-open-detail-btn" onclick="event.stopPropagation()">Ver detalhes</a>
+                                <a href="${buildServiceDetailUrl(service)}" target="_blank" rel="noopener" class="service-open-tab-btn" onclick="event.stopPropagation()">Abrir em nova aba</a>
+                            </div>
                         </div>
-                    </div>
-                </article>
-            `).join('');
+                    </article>
+                `;
+            }).join('');
 
             listEl.querySelectorAll('.service-card').forEach((card) => {
                 card.addEventListener('click', () => {

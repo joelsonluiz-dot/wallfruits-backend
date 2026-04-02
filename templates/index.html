@@ -295,8 +295,26 @@
 
     .home-community-head {
         display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 0.44rem;
+    }
+
+    .home-community-author {
+        display: flex;
         align-items: center;
         gap: 0.44rem;
+        min-width: 0;
+    }
+
+    .home-community-published {
+        font-size: 0.62rem;
+        color: var(--wf-text-secondary);
+        font-weight: 800;
+        white-space: nowrap;
+        max-width: 44%;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .home-community-avatar {
@@ -690,6 +708,20 @@
             min-width: 220px;
             max-width: 220px;
         }
+
+        .home-community-head {
+            flex-wrap: wrap;
+            gap: 0.28rem;
+        }
+
+        .home-community-published {
+            max-width: 100%;
+            margin-left: 32px;
+        }
+
+        .home-community-actions {
+            gap: 0.2rem;
+        }
     }
     @media (max-width: 480px) {
         .hero-title { font-size: 1.75rem; letter-spacing: -0.8px; }
@@ -700,6 +732,16 @@
         .home-community-card {
             min-width: 206px;
             max-width: 206px;
+        }
+
+        .home-community-action {
+            min-height: 28px;
+            font-size: 0.63rem;
+            padding: 0.26rem 0.2rem;
+        }
+
+        .home-community-action .material-icons {
+            font-size: 0.8rem;
         }
     }
 </style>
@@ -1007,6 +1049,40 @@
     }
 
     const HOME_SAVED_POSTS_KEY = 'wf_home_saved_posts';
+    const HOME_OFFERS_HTML_CACHE_KEY = 'wf_home_offers_html_v1';
+    const HOME_SERVICES_HTML_CACHE_KEY = 'wf_home_services_html_v1';
+    const HOME_COMMUNITY_HTML_CACHE_KEY = 'wf_home_community_html_v1';
+
+    function readHomeSectionHtml(cacheKey) {
+        try {
+            return sessionStorage.getItem(cacheKey) || '';
+        } catch {
+            return '';
+        }
+    }
+
+    function writeHomeSectionHtml(cacheKey, html) {
+        try {
+            sessionStorage.setItem(cacheKey, String(html || ''));
+        } catch {
+            // ignora indisponibilidade de storage
+        }
+    }
+
+    async function homeRequestWithRetry(url, attempts = 2) {
+        let lastError = null;
+        for (let attempt = 1; attempt <= attempts; attempt += 1) {
+            try {
+                return await apiRequest(url);
+            } catch (error) {
+                lastError = error;
+                if (attempt < attempts) {
+                    await new Promise((resolve) => setTimeout(resolve, 220));
+                }
+            }
+        }
+        throw lastError || new Error('Falha ao carregar dados da home.');
+    }
 
     function savedHomePostsSet() {
         try {
@@ -1126,8 +1202,20 @@
     async function loadHomeOffers(options = {}) {
         const silent = Boolean(options.silent);
         const container = document.getElementById('homeOffersList');
+
+        if (!container) return;
+
+        if (!silent && !container.innerHTML.trim()) {
+            const cachedHtml = readHomeSectionHtml(HOME_OFFERS_HTML_CACHE_KEY);
+            if (cachedHtml) {
+                container.innerHTML = cachedHtml;
+            }
+        }
+
+        const previousHtml = container.innerHTML;
+
         try {
-            const data = await apiRequest('/offers?limit=3');
+            const data = await homeRequestWithRetry('/offers?limit=3');
             const offers = data.offers || [];
             const signature = offers.map((item) => String(item.id)).join('|');
 
@@ -1181,9 +1269,26 @@
                 });
             });
 
+            if (!silent) {
+                writeHomeSectionHtml(HOME_OFFERS_HTML_CACHE_KEY, container.innerHTML);
+            }
+
             markHomeUpdated('offers', signature, silent);
-        } catch (error) {
-            container.innerHTML = '<div class="wf-alert wf-alert-error">Falha ao carregar ofertas da home.</div>';
+        } catch {
+            if (previousHtml && previousHtml.trim()) {
+                container.innerHTML = previousHtml;
+                return;
+            }
+
+            const cachedHtml = readHomeSectionHtml(HOME_OFFERS_HTML_CACHE_KEY);
+            if (cachedHtml) {
+                container.innerHTML = cachedHtml;
+                return;
+            }
+
+            if (!silent) {
+                container.innerHTML = '<div class="wf-alert wf-alert-error">Falha ao carregar ofertas da home.</div>';
+            }
         }
     }
 
@@ -1224,10 +1329,20 @@
     async function loadHomeServiceHighlights(options = {}) {
         const silent = Boolean(options.silent);
         const container = document.getElementById('homeServiceHighlights');
+
         if (!container) return;
 
+        if (!silent && !container.innerHTML.trim()) {
+            const cachedHtml = readHomeSectionHtml(HOME_SERVICES_HTML_CACHE_KEY);
+            if (cachedHtml) {
+                container.innerHTML = cachedHtml;
+            }
+        }
+
+        const previousHtml = container.innerHTML;
+
         try {
-            const data = await apiRequest('/services');
+            const data = await homeRequestWithRetry('/services');
             const services = Array.isArray(data?.services) ? data.services.slice(0, 8) : [];
             const signature = services.map((item) => String(item.id)).join('|');
 
@@ -1261,9 +1376,26 @@
                 `;
             }).join('');
 
+            if (!silent) {
+                writeHomeSectionHtml(HOME_SERVICES_HTML_CACHE_KEY, container.innerHTML);
+            }
+
             markHomeUpdated('services', signature, silent);
         } catch {
-            container.innerHTML = '<div class="wf-alert wf-alert-error" style="min-width:100%;">Falha ao carregar serviços em destaque.</div>';
+            if (previousHtml && previousHtml.trim()) {
+                container.innerHTML = previousHtml;
+                return;
+            }
+
+            const cachedHtml = readHomeSectionHtml(HOME_SERVICES_HTML_CACHE_KEY);
+            if (cachedHtml) {
+                container.innerHTML = cachedHtml;
+                return;
+            }
+
+            if (!silent) {
+                container.innerHTML = '<div class="wf-alert wf-alert-error" style="min-width:100%;">Falha ao carregar serviços em destaque.</div>';
+            }
         }
     }
 
@@ -1286,10 +1418,20 @@
     async function loadHomeCommunityHighlights(options = {}) {
         const silent = Boolean(options.silent);
         const container = document.getElementById('homeCommunityHighlights');
+
         if (!container) return;
 
+        if (!silent && !container.innerHTML.trim()) {
+            const cachedHtml = readHomeSectionHtml(HOME_COMMUNITY_HTML_CACHE_KEY);
+            if (cachedHtml) {
+                container.innerHTML = cachedHtml;
+            }
+        }
+
+        const previousHtml = container.innerHTML;
+
         try {
-            const data = await apiRequest('/community/posts?limit=6');
+            const data = await homeRequestWithRetry('/community/posts?limit=6');
             const posts = Array.isArray(data?.posts) ? data.posts : [];
             const signature = posts.map((item) => String(item.id)).join('|');
 
@@ -1324,20 +1466,22 @@
                         ` : ''}
                         <div class="home-community-body">
                             <div class="home-community-head">
-                                <a href="${escapeHtml(profileUrl)}" style="display:inline-flex;" onclick="event.stopPropagation()">
-                                    <img class="home-community-avatar" src="${escapeHtml(resolveAvatar(post.author?.profile_image))}" alt="Avatar de ${escapeHtml(userName)}" loading="lazy" onerror="wfAvatarOnError(this)">
-                                </a>
-                                <div style="display:grid;gap:0.04rem;min-width:0;">
-                                    <a href="${escapeHtml(profileUrl)}" class="home-community-user" onclick="event.stopPropagation()">${escapeHtml(userName)}</a>
-                                    <span class="home-community-role">${escapeHtml(userRole)}</span>
+                                <div class="home-community-author">
+                                    <a href="${escapeHtml(profileUrl)}" style="display:inline-flex;" onclick="event.stopPropagation()">
+                                        <img class="home-community-avatar" src="${escapeHtml(resolveAvatar(post.author?.profile_image))}" alt="Avatar de ${escapeHtml(userName)}" loading="lazy" onerror="wfAvatarOnError(this)">
+                                    </a>
+                                    <div style="display:grid;gap:0.04rem;min-width:0;">
+                                        <a href="${escapeHtml(profileUrl)}" class="home-community-user" onclick="event.stopPropagation()">${escapeHtml(userName)}</a>
+                                        <span class="home-community-role">${escapeHtml(userRole)}</span>
+                                    </div>
                                 </div>
+                                <span class="home-community-published" title="${escapeHtml(published.title)}">${escapeHtml(published.label)}</span>
                             </div>
                             <a href="${postUrl}" class="home-community-open"><p class="home-community-text">${escapeHtml(postText || 'Atualização da comunidade')}</p></a>
                             <div class="home-community-meta">
                                 <span class="home-community-stat" data-home-like-stat="${post.id}" title="Curtidas"><span class="home-community-stat-value">${likes}</span><span class="material-icons">favorite</span></span>
                                 <span class="home-community-stat" data-home-comment-stat="${post.id}" title="Comentários"><span class="home-community-stat-value">${comments}</span><span class="material-icons">chat_bubble_outline</span></span>
                                 <span class="home-community-stat" data-home-share-stat="${post.id}" title="Compartilhamentos"><span class="home-community-stat-value">${shares}</span><span class="material-icons">share</span></span>
-                                <span class="home-community-stat" title="Publicado"><span class="home-community-stat-value">${escapeHtml(published.label)}</span><span class="material-icons">schedule</span></span>
                             </div>
                             <div class="home-community-actions">
                                 <button type="button" class="home-community-action ${likedByMe ? 'liked' : ''}" data-community-action="like" data-post-id="${post.id}" aria-label="Curtir post">
@@ -1370,9 +1514,26 @@
                 });
             });
 
+            if (!silent) {
+                writeHomeSectionHtml(HOME_COMMUNITY_HTML_CACHE_KEY, container.innerHTML);
+            }
+
             markHomeUpdated('community', signature, silent);
         } catch {
-            container.innerHTML = '<div class="wf-alert wf-alert-error" style="min-width:100%;">Falha ao carregar posts da comunidade.</div>';
+            if (previousHtml && previousHtml.trim()) {
+                container.innerHTML = previousHtml;
+                return;
+            }
+
+            const cachedHtml = readHomeSectionHtml(HOME_COMMUNITY_HTML_CACHE_KEY);
+            if (cachedHtml) {
+                container.innerHTML = cachedHtml;
+                return;
+            }
+
+            if (!silent) {
+                container.innerHTML = '<div class="wf-alert wf-alert-error" style="min-width:100%;">Falha ao carregar posts da comunidade.</div>';
+            }
         }
     }
 
