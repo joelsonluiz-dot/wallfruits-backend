@@ -672,45 +672,6 @@
         color: var(--wf-text-secondary);
     }
 
-        .messages-float-btn {
-            position: fixed;
-            right: 22px;
-            bottom: 22px;
-            width: 58px;
-            height: 58px;
-            border-radius: 50%;
-            background: var(--wf-accent);
-            color: #0a0a0f;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-decoration: none;
-            box-shadow: 0 10px 30px rgba(0, 212, 170, 0.45);
-            z-index: 1300;
-        }
-
-        .messages-float-btn .material-symbols-outlined {
-            font-size: 27px;
-        }
-
-        .messages-float-count {
-            position: absolute;
-            top: -4px;
-            right: -2px;
-            min-width: 22px;
-            height: 22px;
-            border-radius: 11px;
-            background: #ff4d6a;
-            color: #fff;
-            font-size: 0.75rem;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0 6px;
-            border: 2px solid #0a0a0f;
-        }
-
     .offers-create-float-btn {
         position: fixed;
         left: 20px;
@@ -1122,11 +1083,6 @@
     }
 </style>
 
-<a href="/messages" class="messages-float-btn" title="Minhas mensagens">
-    <span class="material-symbols-outlined">chat</span>
-    <span id="messagesFloatCount" class="messages-float-count" style="display:none;">0</span>
-</a>
-
 <a href="/offers/new" class="offers-create-float-btn" title="Criar nova oferta">
     <span class="material-icons">add_circle</span>
     <span>Criar ofertas</span>
@@ -1322,6 +1278,7 @@
 <script>
     const offersStore = new Map();
     const BOOKMARK_STORAGE_KEY = 'wf_offer_bookmarks';
+    const CHAT_OFFER_INTENT_STORAGE_KEY = 'wf_chat_offer_intents_v1';
     const FILTER_PREFS_STORAGE_KEY = 'wf_offers_filter_prefs_v1';
     const OFFERS_FILTER_BREAKPOINT = 1024;
     const SEARCH_DEBOUNCE_MS = 260;
@@ -1396,6 +1353,65 @@
         }
         redirectGuestToAuth();
         return false;
+    }
+
+    function registerChatOfferIntent(offer, source = 'chat-card') {
+        if (!offer?.id) return;
+
+        const offerId = String(offer.id);
+        const sourceTag = String(source || 'chat-card').trim().toLowerCase();
+        const ownerId = Number(offer.owner_data?.id || offer.user_id || 0) || null;
+        const nowIso = new Date().toISOString();
+
+        let items = [];
+        try {
+            items = JSON.parse(localStorage.getItem(CHAT_OFFER_INTENT_STORAGE_KEY) || '[]');
+            if (!Array.isArray(items)) items = [];
+        } catch {
+            items = [];
+        }
+
+        const index = items.findIndex((entry) => String(entry?.offer_id) === offerId);
+        const previous = index >= 0 ? items[index] : {};
+        const sourceSet = new Set(Array.isArray(previous?.sources) ? previous.sources : []);
+        sourceSet.add(sourceTag);
+
+        const nextEntry = {
+            offer_id: offerId,
+            owner_id: ownerId,
+            product_name: String(offer.product_name || 'Oferta'),
+            owner_name: String(offer.owner_data?.name || 'Produtor'),
+            owner_profile_image: offer.owner_data?.profile_image || null,
+            price: Number(offer.price || 0),
+            unit: String(offer.unit || 'kg'),
+            status: String(offer.status || 'active'),
+            location: offer.location || null,
+            sources: Array.from(sourceSet),
+            interacted_at: nowIso,
+            updated_at: nowIso,
+        };
+
+        if (index >= 0) {
+            items[index] = { ...previous, ...nextEntry };
+        } else {
+            items.unshift(nextEntry);
+        }
+
+        items.sort((a, b) => {
+            const ta = Date.parse(a?.updated_at || a?.interacted_at || 0) || 0;
+            const tb = Date.parse(b?.updated_at || b?.interacted_at || 0) || 0;
+            return tb - ta;
+        });
+
+        if (items.length > 140) {
+            items = items.slice(0, 140);
+        }
+
+        try {
+            localStorage.setItem(CHAT_OFFER_INTENT_STORAGE_KEY, JSON.stringify(items));
+        } catch {
+            // ignora indisponibilidade de storage
+        }
     }
 
     function normalizeText(value) {
@@ -1912,6 +1928,8 @@
                 notes: 'Reserva criada pelo modal de ofertas.',
             });
 
+            registerChatOfferIntent(offer, 'reserve-confirmed');
+
             closeReserveModal();
             alert('Reserva registrada com sucesso. Você será redirecionado para Meus pedidos.');
             window.location.href = '/orders';
@@ -2179,6 +2197,8 @@
 
         if (!ensureAuthenticatedAction()) return;
 
+        registerChatOfferIntent(offer, 'alert-card');
+
         const content = `Aviso de interesse: tenho interesse na oferta "${offer.product_name}" e gostaria de alinhar detalhes de quantidade, entrega e pagamento.`;
 
         try {
@@ -2218,6 +2238,8 @@
         if (!offer) return;
 
         if (!ensureAuthenticatedAction()) return;
+
+        registerChatOfferIntent(offer, 'reserve-click');
 
         openReserveModal(offer);
     }
@@ -2268,6 +2290,8 @@
 
         if (!ensureAuthenticatedAction()) return;
 
+        registerChatOfferIntent(offer, 'chat-card');
+
         const defaultMessage = `Olá! Tenho interesse na oferta "${offer.product_name}". Podemos conversar sobre quantidade, entrega e pagamento?`;
         const params = new URLSearchParams();
         params.set('user_id', String(offer.owner_data.id));
@@ -2279,20 +2303,6 @@
         params.set('prefill', '1');
         params.set('auto_send', '1');
         window.location.href = `/messages?${params.toString()}`;
-    }
-
-    async function loadMessagesBadge() {
-        const token = localStorage.getItem('token');
-        if (!token) return;
-        try {
-            const me = await apiRequest('/auth/me');
-            const count = Number(me?.unread_messages || 0);
-            const badge = document.getElementById('messagesFloatCount');
-            badge.textContent = String(count);
-            badge.style.display = count > 0 ? 'inline-block' : 'none';
-        } catch {
-            // ignora falhas do badge de mensagens
-        }
     }
 
     function bindCardOpenBehavior() {
@@ -3154,7 +3164,6 @@
     renderFruitChips();
     loadOffers();
     loadFeaturedStoreProducts();
-    loadMessagesBadge();
     setupOffersFilterPopup();
     setupReserveOfferModal();
     renderActiveFilterChips();

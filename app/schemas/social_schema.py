@@ -86,3 +86,16 @@ class ActiveAccountItem(BaseModel):
     role: str
     location: Optional[str]
     profile_image: Optional[str]
+
+
+class FollowedOfferChatItem(BaseModel):
+    id: UUID
+    user_id: int
+    owner_name: str
+    owner_profile_image: Optional[str]
+    product_name: str
+    price: Decimal
+    unit: str
+    location: Optional[str]
+    status: str
+    created_at: datetime

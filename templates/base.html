@@ -724,11 +724,55 @@
             box-shadow: 0 8px 18px rgba(58, 46, 24, 0.18);
         }
 
+        .wf-messages-toggle {
+            position: fixed;
+            top: 0.9rem;
+            right: 7.1rem;
+            width: 44px;
+            height: 44px;
+            border: 1px solid rgba(92, 76, 45, 0.22);
+            border-radius: 12px;
+            background: rgba(252, 247, 236, 0.84);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: var(--wf-text);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 152;
+            cursor: pointer;
+            text-decoration: none;
+            box-shadow: 0 8px 18px rgba(58, 46, 24, 0.18);
+        }
+
+        .wf-messages-toggle-badge {
+            position: absolute;
+            top: -5px;
+            right: -3px;
+            min-width: 18px;
+            height: 18px;
+            border-radius: 999px;
+            background: #ff4d6a;
+            color: #fff;
+            font-size: 0.62rem;
+            font-weight: 800;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 0 4px;
+            border: 2px solid #f8f4e8;
+            line-height: 1;
+        }
+
         .wf-menu-toggle .material-icons {
             font-size: 1.35rem;
         }
 
         .wf-community-toggle .material-icons {
+            font-size: 1.35rem;
+        }
+
+        .wf-messages-toggle .material-icons {
             font-size: 1.35rem;
         }
 
@@ -1190,6 +1234,8 @@
             .wf-mobile-nav-item,
             .wf-mobile-floating-add,
             .wf-menu-toggle,
+            .wf-community-toggle,
+            .wf-messages-toggle,
             .wf-popup-item,
             .wf-popup-close,
             .wf-profile-trigger,
@@ -1219,6 +1265,8 @@
             .wf-mobile-nav-item,
             .wf-mobile-floating-add,
             .wf-menu-toggle,
+            .wf-community-toggle,
+            .wf-messages-toggle,
             .wf-popup-item,
             .wf-popup-close,
             .wf-profile-trigger,
@@ -1308,6 +1356,10 @@
             }
 
             .wf-community-toggle {
+                display: inline-flex;
+            }
+
+            .wf-messages-toggle {
                 display: inline-flex;
             }
 
@@ -1503,6 +1555,13 @@
                 height: 40px;
                 top: 0.7rem;
                 right: 3.75rem;
+            }
+
+            .wf-messages-toggle {
+                width: 40px;
+                height: 40px;
+                top: 0.7rem;
+                right: 6.8rem;
             }
 
             .wf-sidebar-right {
@@ -1950,7 +2009,7 @@
         <div class="wf-popup-content">
             <div class="wf-popup-drag-handle"></div>
             <div class="wf-popup-items">
-                <a class="wf-popup-item" href="/ai-agent">
+                <a class="wf-popup-item" href="/ai-agent?entry=nav" data-agenda-link="1">
                     <span class="material-icons">event</span>
                     <span>Agenda Comercial</span>
                 </a>
@@ -1993,7 +2052,7 @@
 
             <div class="wf-nav-group">
                 <div class="wf-group-title">Módulos</div>
-                <a class="wf-nav-link" href="/ai-agent" id="navAgendaIA">Agenda Comercial</a>
+                <a class="wf-nav-link" href="/ai-agent?entry=nav" id="navAgendaIA" data-agenda-link="1">Agenda Comercial</a>
                 <a class="wf-nav-link" href="/gamification" id="navGamification" style="display:none;">Gamificação</a>
                 <a class="wf-nav-link" href="/reputation" id="navReputation" style="display:none;">Reputação</a>
                 <a class="wf-nav-link" href="/intermediation" id="navIntermediation" style="display:none;">Mediação</a>
@@ -2372,9 +2431,20 @@
             return requestPromise;
         }
 
+        function syncAuthSessionCookie(token) {
+            if (!token) {
+                document.cookie = 'wf_auth_token=; path=/; max-age=0; samesite=lax';
+                return;
+            }
+
+            const maxAge = 60 * 60 * 24 * 30;
+            document.cookie = `wf_auth_token=${encodeURIComponent(token)}; path=/; max-age=${maxAge}; samesite=lax`;
+        }
+
         function clearSessionToken() {
             localStorage.removeItem('token');
             localStorage.removeItem('user');
+            syncAuthSessionCookie(null);
             clearPersistentGetCache();
         }
 
@@ -2483,6 +2553,7 @@
 
         function setNavAuthState(force = false) {
             const token = localStorage.getItem('token');
+            syncAuthSessionCookie(token);
             let user = null;
             try {
                 user = JSON.parse(localStorage.getItem('user') || 'null');
@@ -2495,6 +2566,7 @@
             const isStoreManager = isLogged && ['admin', 'supplier', 'producer'].includes(user?.role);
             const mobileVisible = isMobileOrTabletViewport();
             const isHomePath = isHomePagePath();
+            const agendaHref = isLogged ? '/ai-agent' : '/ai-agent?entry=nav';
             const navStateKey = [
                 isLogged ? 1 : 0,
                 isAdmin ? 1 : 0,
@@ -2534,6 +2606,7 @@
 
             setElementDisplay('actionExplore', true);
             setElementDisplay('actionAgenda', true);
+            setElementDisplay('actionAgendaPopup', true);
             setElementDisplay('actionNewOffer', isLogged);
             setElementDisplay('actionMessages', isLogged);
             setElementDisplay('actionHelp', isLogged);
@@ -2561,6 +2634,13 @@
             setElementDisplay('adminSection', isAdmin);
             setElementDisplay('rightNavAdmin', isAdmin);
             setElementDisplay('globalPublishProductBtn', isStoreManager);
+            setElementDisplay('btnMessagesQuickNav', isLogged && mobileVisible);
+
+            document.querySelectorAll('[data-agenda-link]').forEach((link) => {
+                if (link instanceof HTMLAnchorElement) {
+                    link.setAttribute('href', agendaHref);
+                }
+            });
 
             const actionProfileLink = document.getElementById('actionProfileLink');
             const actionProfileLabel = document.getElementById('actionProfileLabel');
@@ -2590,6 +2670,15 @@
             const quickActionsFab = document.getElementById('actionFloatingButton');
             if (quickActionsFab) {
                 quickActionsFab.style.display = isHomePath ? '' : 'none';
+            }
+
+            const quickMessagesBadge = document.getElementById('wfMessagesQuickBadge');
+            if (!isLogged && quickMessagesBadge) {
+                quickMessagesBadge.style.display = 'none';
+            }
+
+            if (isLogged) {
+                refreshUnreadMessagesBadge();
             }
 
             if (!isLogged) {
@@ -2625,6 +2714,26 @@
                 }
             } catch {
                 // ignora falhas de notificação no layout
+            }
+        }
+
+        async function refreshUnreadMessagesBadge() {
+            const badge = document.getElementById('wfMessagesQuickBadge');
+            const token = localStorage.getItem('token');
+
+            if (!badge) return;
+            if (!token) {
+                badge.style.display = 'none';
+                return;
+            }
+
+            try {
+                const me = await apiRequest('/auth/me');
+                const unread = Number(me?.unread_messages || 0);
+                badge.textContent = String(unread);
+                badge.style.display = unread > 0 ? 'flex' : 'none';
+            } catch {
+                badge.style.display = 'none';
             }
         }
 
@@ -2889,7 +2998,7 @@
 
             // Garante que NENHUM link para /ai-agent abre modal
             setTimeout(() => {
-                document.querySelectorAll('a[href="/ai-agent"]').forEach(link => {
+                document.querySelectorAll('a[href^="/ai-agent"]').forEach(link => {
                     link.onclick = null;
                     link.removeEventListener && link.removeEventListener('click', openAiAgentModal);
                 });
@@ -3102,6 +3211,7 @@
 
             setNavAuthState();
             refreshUnreadNotifications();
+            refreshUnreadMessagesBadge();
         });
 
         let wfResizeTimer = null;
@@ -3146,6 +3256,12 @@
                 <span class="material-icons">groups</span>
             </a>
 
+            <!-- Botão mensagens (mobile/tablet) -->
+            <a class="wf-messages-toggle" id="btnMessagesQuickNav" href="/messages" title="Mensagens" aria-label="Ir para mensagens" style="display:none;">
+                <span class="material-icons">chat</span>
+                <span class="wf-messages-toggle-badge" id="wfMessagesQuickBadge">0</span>
+            </a>
+
             <!-- Menu inferior (mobile/tablet) -->
             <div class="wf-mobile-wrap" id="actionBar">
                 <nav class="wf-bottom-menu" aria-label="Menu inferior">
@@ -3164,7 +3280,7 @@
                             </a>
                         </li>
                         <li class="wf-mobile-nav-slot" id="actionAgenda">
-                            <a href="/ai-agent" class="wf-mobile-nav-item" title="Agenda IA">
+                            <a href="/ai-agent?entry=nav" class="wf-mobile-nav-item" title="Agenda IA" data-agenda-link="1">
                                 <span class="material-icons wf-mobile-nav-icon">event</span>
                                 <span class="wf-mobile-nav-label">Agenda IA</span>
                             </a>
@@ -3214,6 +3330,10 @@
                             <span class="material-icons">menu_book</span>
                             <span>Biblioteca</span>
                         </a>
+                        <a href="/messages" class="wf-popup-item" id="actionMessages" style="display:none;">
+                            <span class="material-icons">chat</span>
+                            <span>Mensagens</span>
+                        </a>
                         <a href="/store/manage/dashboard" class="wf-popup-item" id="actionPopupCreateProduct" style="display:none;">
                             <span class="material-icons">inventory_2</span>
                             <span>Criar produto</span>
@@ -3230,11 +3350,7 @@
                             <span class="material-icons">notifications</span>
                             <span>Notificações</span>
                         </a>
-                        <a href="/messages" class="wf-popup-item" id="actionMessages" style="display:none;">
-                            <span class="material-icons">chat</span>
-                            <span>Mensagens</span>
-                        </a>
-                        <a href="/ai-agent" class="wf-popup-item" id="actionAgenda">
+                        <a href="/ai-agent?entry=nav" class="wf-popup-item" id="actionAgendaPopup" data-agenda-link="1">
                             <span class="material-icons">event</span>
                             <span>Agenda</span>
                         </a>
@@ -3284,6 +3400,10 @@
                             <span>📚</span>
                             <span>Biblioteca</span>
                         </a>
+                        <a href="/messages" class="wf-sidebar-right-item" id="rightNavMessages" style="display:none;">
+                            <span>💬</span>
+                            <span>Mensagens</span>
+                        </a>
                         <a href="/store/manage/dashboard" class="wf-sidebar-right-item" id="rightNavStoreManage" style="display:none;">
                             <span>🛒</span>
                             <span>Painel da loja</span>
@@ -3303,10 +3423,6 @@
                         <a href="/offers/new" class="wf-sidebar-right-item" id="rightNavNewOffer" style="display:none;">
                             <span>📝</span>
                             <span>Publicar oferta</span>
-                        </a>
-                        <a href="/messages" class="wf-sidebar-right-item" id="rightNavMessages" style="display:none;">
-                            <span>💬</span>
-                            <span>Mensagens</span>
                         </a>
                         <a href="#" class="wf-sidebar-right-item wf-mobile-hide-help" id="rightNavHelp" data-open-help-popup="1" style="display:none;">
                             <span>❓</span>

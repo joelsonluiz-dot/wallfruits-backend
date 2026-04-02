@@ -4,17 +4,35 @@
 
 {% block content %}
 <section style="max-width:720px;margin:1rem auto;padding:1rem;border:1px solid #f2c7c7;background:#fff7f7;border-radius:14px;box-shadow:0 10px 24px rgba(146, 34, 34, 0.12);">
+    {% if access_denied_reason == "monthly_window_expired" %}
+    <h1 style="margin:0;color:#8b1f1f;font-size:1.3rem;font-weight:900;">Janela mensal da Agenda encerrada</h1>
+    <p style="margin:0.7rem 0 0;color:#623232;font-size:0.92rem;line-height:1.6;">
+        Seu perfil utilizou a janela de 2 dias liberada para este mês. Para continuar agora,
+        é necessário ter assinatura ativa Pro/Premium ou perfil admin.
+    </p>
+    {% if agenda_trial_first_access_label %}
+    <p style="margin:0.7rem 0 0;color:#623232;font-size:0.92rem;line-height:1.6;">
+        Primeiro acesso deste ciclo: <strong>{{ agenda_trial_first_access_label }}</strong>
+    </p>
+    {% endif %}
+    {% if agenda_trial_next_cycle_label %}
+    <p style="margin:0.7rem 0 0;color:#623232;font-size:0.92rem;line-height:1.6;">
+        Nova janela gratuita disponível em: <strong>{{ agenda_trial_next_cycle_label }}</strong>
+    </p>
+    {% endif %}
+    <div style="display:flex;gap:0.6rem;flex-wrap:wrap;margin-top:1rem;">
+        <a href="/" class="btn btn-wf-secondary">Voltar para início</a>
+        <a href="/me/profile#mySettingsCard" class="btn btn-wf-primary">Ver assinatura</a>
+    </div>
+    {% else %}
     <h1 style="margin:0;color:#8b1f1f;font-size:1.3rem;font-weight:900;">Acesso da Agenda Inteligente encerrado</h1>
     <p style="margin:0.7rem 0 0;color:#623232;font-size:0.92rem;line-height:1.6;">
-        Para seu perfil atual, a Agenda Inteligente possui acesso temporário. Este acesso foi encerrado
-        porque o tempo limite foi atingido ou a aba foi fechada/trocada.
-    </p>
-    <p style="margin:0.7rem 0 0;color:#623232;font-size:0.92rem;line-height:1.6;">
-        Assinantes ativos dos planos Pro/Premium e administradores têm acesso contínuo.
+        O acesso temporário da Agenda Inteligente foi encerrado. Faça login para continuar usando os recursos.
     </p>
     <div style="display:flex;gap:0.6rem;flex-wrap:wrap;margin-top:1rem;">
         <a href="/" class="btn btn-wf-secondary">Voltar para início</a>
-        <a href="/profile" class="btn btn-wf-primary">Ver meu plano</a>
+        <a href="/login?next=/ai-agent%3Fentry%3Dnav" class="btn btn-wf-primary">Entrar para continuar</a>
     </div>
+    {% endif %}
 </section>
 {% endblock %}

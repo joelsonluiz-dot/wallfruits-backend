@@ -431,8 +431,8 @@
             <h3>Acesso encerrado</h3>
             <p id="agendaLockMessage">Seu acesso temporário da Agenda Inteligente foi encerrado.</p>
             <div style="margin-top:0.75rem;display:flex;justify-content:center;gap:0.5rem;flex-wrap:wrap;">
-                <a href="/" class="btn btn-wf-secondary">Voltar</a>
-                <a href="/profile" class="btn btn-wf-primary">Ver assinatura</a>
+                <a href="/" class="btn btn-wf-secondary" id="agendaLockSecondaryCta">Voltar</a>
+                <a href="/login?next=/ai-agent%3Fentry%3Dnav" class="btn btn-wf-primary" id="agendaLockPrimaryCta">Entrar para continuar</a>
             </div>
         </div>
     </div>
@@ -614,7 +614,10 @@
     (function setupAgendaAgent() {
         const IS_ADMIN = "{{ 'true' if current_user and current_user.role == 'admin' else 'false' }}" === 'true';
         const AGENDA_TEMPORARY_ACCESS = "{{ 'true' if agenda_temporary_access else 'false' }}" === 'true';
+        const AGENDA_GUEST_ACCESS = "{{ 'true' if agenda_guest_access else 'false' }}" === 'true';
+        const AGENDA_LOGGED_TRIAL_ACCESS = "{{ 'true' if agenda_logged_trial_access else 'false' }}" === 'true';
         const AGENDA_ACCESS_EXPIRES_AT = Number("{{ agenda_access_expires_at or 0 }}");
+        const AGENDA_TRIAL_FIRST_ACCESS_AT = Number("{{ agenda_trial_first_access_at or 0 }}");
         const state = {
             profile: null,
             calendarView: 'month',
@@ -646,6 +649,8 @@
         const calendarContainer = document.getElementById('calendarContainer');
         const lockOverlay = document.getElementById('agendaLockOverlay');
         const lockMessage = document.getElementById('agendaLockMessage');
+        const lockPrimaryCta = document.getElementById('agendaLockPrimaryCta');
+        const lockSecondaryCta = document.getElementById('agendaLockSecondaryCta');
 
         const agendaEventForm = document.getElementById('agendaEventForm');
         const eventTitle = document.getElementById('eventTitle');
@@ -657,15 +662,20 @@
 
         function requireAuth() {
             if (!localStorage.getItem('token')) {
-                window.location.href = '/login';
+                window.location.href = '/login?next=/ai-agent%3Fentry%3Dnav';
                 return false;
             }
             return true;
         }
 
-        function lockAgendaAccess(message) {
+        function lockAgendaAccess(message, options = {}) {
             if (accessLocked) return;
             accessLocked = true;
+
+            if (tempAccessTimer) {
+                window.clearTimeout(tempAccessTimer);
+                tempAccessTimer = null;
+            }
 
             if (statusBox) {
                 statusBox.className = 'wf-alert wf-alert-error';
@@ -680,23 +690,56 @@
                 lockOverlay.classList.add('show');
                 lockOverlay.setAttribute('aria-hidden', 'false');
             }
+
+            if (lockPrimaryCta) {
+                lockPrimaryCta.href = options.primaryHref || '/login?next=/ai-agent%3Fentry%3Dnav';
+                lockPrimaryCta.textContent = options.primaryLabel || 'Entrar para continuar';
+            }
+
+            if (lockSecondaryCta) {
+                lockSecondaryCta.href = options.secondaryHref || '/';
+                lockSecondaryCta.textContent = options.secondaryLabel || 'Voltar';
+            }
+
+            if (questionInput) {
+                questionInput.disabled = true;
+            }
+
+            if (saveBtn) {
+                saveBtn.disabled = true;
+            }
+
+            if (openOnboardingBtn) {
+                openOnboardingBtn.disabled = true;
+            }
+
+            if (agendaEventForm) {
+                const submitButton = agendaEventForm.querySelector('button[type="submit"]');
+                if (submitButton) submitButton.disabled = true;
+            }
         }
 
-        function revokeTemporaryAccess(reason) {
+        function handleTemporaryAccessExpiry(reason) {
             if (!AGENDA_TEMPORARY_ACCESS || accessLocked) return;
 
-            lockAgendaAccess(reason);
+            const isGuestMode = AGENDA_GUEST_ACCESS;
+            const primaryHref = isGuestMode
+                ? '/login?next=/ai-agent%3Fentry%3Dnav'
+                : '/me/profile#mySettingsCard';
+            const primaryLabel = isGuestMode ? 'Entrar para continuar' : 'Ver assinatura';
+            const redirectTarget = isGuestMode
+                ? '/login?next=/ai-agent%3Fentry%3Dnav'
+                : '/ai-agent';
 
-            fetch('/api/agenda/access/revoke', {
-                method: 'POST',
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
-                },
-                keepalive: true,
-            }).catch(() => {});
+            lockAgendaAccess(reason, {
+                primaryHref,
+                primaryLabel,
+                secondaryHref: '/',
+                secondaryLabel: 'Voltar',
+            });
 
             window.setTimeout(() => {
-                window.location.href = '/ai-agent';
+                window.location.href = redirectTarget;
             }, 1200);
         }
 
@@ -704,27 +747,88 @@
             if (!AGENDA_TEMPORARY_ACCESS) return;
 
             const msRemaining = Math.max(0, (AGENDA_ACCESS_EXPIRES_AT * 1000) - Date.now());
+            const expiryMessage = AGENDA_GUEST_ACCESS
+                ? 'Seu acesso de visitante da Agenda Inteligente foi encerrado. Faça login para continuar.'
+                : 'Sua janela mensal de 2 dias da Agenda Inteligente foi encerrada.';
+
             if (msRemaining <= 0) {
-                revokeTemporaryAccess('Seu acesso temporário de 5 minutos foi encerrado.');
+                handleTemporaryAccessExpiry(expiryMessage);
                 return;
             }
 
             tempAccessTimer = window.setTimeout(() => {
-                revokeTemporaryAccess('Seu acesso temporário de 5 minutos foi encerrado.');
+                handleTemporaryAccessExpiry(expiryMessage);
             }, msRemaining);
+        }
 
-            document.addEventListener('visibilitychange', () => {
-                if (document.hidden) {
-                    revokeTemporaryAccess('Seu acesso temporário foi encerrado ao sair da aba da Agenda.');
-                }
-            });
+        function setupGuestPreviewMode() {
+            if (statusBox) {
+                statusBox.className = 'wf-alert wf-alert-info';
+                statusBox.textContent = 'Modo visitante ativo por 5 minutos. Faça login para liberar calendário, reservas e personalização completa.';
+            }
 
-            window.addEventListener('pagehide', () => {
-                revokeTemporaryAccess('Seu acesso temporário foi encerrado ao sair da aba da Agenda.');
-            });
+            if (decisionModeBadge) {
+                decisionModeBadge.textContent = 'modo: visitante';
+            }
 
-            window.addEventListener('beforeunload', () => {
-                revokeTemporaryAccess('Seu acesso temporário foi encerrado ao sair da aba da Agenda.');
+            if (historyGrid) {
+                historyGrid.innerHTML = `
+                    <article class="agenda-kpi"><div class="k">Prévia</div><div class="v">5 min</div></article>
+                    <article class="agenda-kpi"><div class="k">Calendário</div><div class="v">Login</div></article>
+                    <article class="agenda-kpi"><div class="k">Reservas</div><div class="v">Login</div></article>
+                    <article class="agenda-kpi"><div class="k">Decisões IA</div><div class="v">Login</div></article>
+                `;
+            }
+
+            if (bestSlots) {
+                bestSlots.innerHTML = '<div class="wf-alert wf-alert-info">Entre na sua conta para ver horários recomendados em tempo real.</div>';
+            }
+
+            if (actionsList) {
+                actionsList.innerHTML = `
+                    <article class="agenda-action">
+                        <h3>Complete seu acesso agora</h3>
+                        <p>Com login você desbloqueia planejamento, eventos, drag and drop e recomendações personalizadas.</p>
+                        <div class="agenda-action-row">
+                            <span class="agenda-priority media">prévia limitada</span>
+                            <a class="agenda-link-btn" href="/login?next=/ai-agent%3Fentry%3Dnav">Entrar</a>
+                        </div>
+                    </article>
+                `;
+            }
+
+            if (calendarContainer) {
+                calendarContainer.innerHTML = '<div class="wf-alert wf-alert-info">Calendário completo disponível após login.</div>';
+            }
+
+            if (openOnboardingBtn) {
+                openOnboardingBtn.style.display = 'none';
+            }
+
+            if (agendaEventForm) {
+                agendaEventForm.style.display = 'none';
+            }
+
+            if (calendarView) {
+                calendarView.disabled = true;
+            }
+
+            if (calendarAnchor) {
+                calendarAnchor.disabled = true;
+            }
+
+            if (calendarReloadBtn) {
+                calendarReloadBtn.disabled = true;
+            }
+
+            if (calendarTodayBtn) {
+                calendarTodayBtn.disabled = true;
+            }
+
+            appendMessage('ai', 'Você está em modo visitante. Posso responder dúvidas rápidas por 5 minutos. Para liberar operações da agenda, faça login.');
+
+            document.querySelectorAll('[data-cancel-event]').forEach((btn) => {
+                btn.disabled = true;
             });
         }
 
@@ -813,6 +917,17 @@
             } else {
                 statusBox.textContent = `Plano atualizado em ${new Date(plan.generated_at).toLocaleString('pt-BR')}`;
             }
+
+            if (AGENDA_LOGGED_TRIAL_ACCESS && AGENDA_ACCESS_EXPIRES_AT > 0) {
+                const firstAccessLabel = AGENDA_TRIAL_FIRST_ACCESS_AT > 0
+                    ? new Date(AGENDA_TRIAL_FIRST_ACCESS_AT * 1000).toLocaleString('pt-BR')
+                    : null;
+                const untilLabel = new Date(AGENDA_ACCESS_EXPIRES_AT * 1000).toLocaleString('pt-BR');
+                statusBox.textContent += firstAccessLabel
+                    ? ` • janela mensal iniciada em ${firstAccessLabel}, válida até ${untilLabel}`
+                    : ` • janela mensal válida até ${untilLabel}`;
+            }
+
             decisionModeBadge.textContent = `modo: ${autonomyLabel(plan.decision_mode)}`;
 
             const history = plan.history || {};
@@ -1015,6 +1130,7 @@
 
         chatForm.addEventListener('submit', async (event) => {
             event.preventDefault();
+            if (accessLocked) return;
             const question = String(questionInput.value || '').trim();
             if (!question) return;
 
@@ -1067,6 +1183,7 @@
 
         agendaEventForm.addEventListener('submit', async (event) => {
             event.preventDefault();
+            if (accessLocked) return;
             if (!eventTitle.value || !eventStart.value || !eventEnd.value) {
                 alert('Preencha título, início e fim do evento.');
                 return;
@@ -1083,10 +1200,15 @@
         });
 
         async function init() {
-            if (!requireAuth()) return;
-
             setupCaptureHardening();
             setupTemporaryAccessGuards();
+
+            if (AGENDA_GUEST_ACCESS) {
+                setupGuestPreviewMode();
+                return;
+            }
+
+            if (!requireAuth()) return;
 
             try {
                 calendarAnchor.value = state.anchorDate;

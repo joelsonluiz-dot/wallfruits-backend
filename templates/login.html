@@ -122,6 +122,27 @@
 
 <script>
     let loginInFlight = false;
+    const AUTH_COOKIE_NAME = 'wf_auth_token';
+
+    function syncAuthCookie(token) {
+        if (!token) {
+            document.cookie = `${AUTH_COOKIE_NAME}=; path=/; max-age=0; samesite=lax`;
+            return;
+        }
+
+        const maxAge = 60 * 60 * 24 * 30;
+        document.cookie = `${AUTH_COOKIE_NAME}=${encodeURIComponent(token)}; path=/; max-age=${maxAge}; samesite=lax`;
+    }
+
+    function getPostLoginRedirect() {
+        const nextPath = new URLSearchParams(window.location.search).get('next');
+        if (nextPath && nextPath.startsWith('/')) {
+            return nextPath;
+        }
+        return '/';
+    }
+
+    const postLoginRedirect = getPostLoginRedirect();
 
     function setLoginMsg(type, text) {
         const msgDiv = document.getElementById('loginMsg');
@@ -161,11 +182,12 @@
 
             localStorage.setItem('token', response.access_token);
             localStorage.setItem('user', JSON.stringify(response.user || {}));
+            syncAuthCookie(response.access_token);
 
             // Remove token/hash da URL para não vazar em histórico.
             window.history.replaceState({}, document.title, window.location.pathname);
             setLoginMsg('success', 'Login Google realizado com sucesso. Redirecionando...');
-            window.location.href = '/';
+            window.location.href = postLoginRedirect;
         } catch (error) {
             setLoginMsg('error', 'Erro ao concluir login Google: ' + error.message);
         }
@@ -201,8 +223,9 @@
             if (response.access_token) {
                 localStorage.setItem('token', response.access_token);
                 localStorage.setItem('user', JSON.stringify(response.user || {}));
+                syncAuthCookie(response.access_token);
                 setLoginMsg('success', 'Login realizado com sucesso. Redirecionando...');
-                window.location.href = '/';
+                window.location.href = postLoginRedirect;
             } else {
                 setLoginMsg('error', 'Erro no login: ' + (response.detail || 'Credenciais inválidas'));
             }

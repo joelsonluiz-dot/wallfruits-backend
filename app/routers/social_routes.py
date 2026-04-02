@@ -6,7 +6,12 @@ from app.core.auth_middleware import get_current_user, get_current_user_optional
 from app.core.http_cache import set_detail_cache_headers
 from app.database.connection import get_db
 from app.models import CommunityComment, CommunityLike, CommunityPost, CommunityShare, Follow, Offer, User
-from app.schemas.social_schema import ActiveAccountItem, FollowActionResponse, PublicUserProfileResponse
+from app.schemas.social_schema import (
+    ActiveAccountItem,
+    FollowActionResponse,
+    FollowedOfferChatItem,
+    PublicUserProfileResponse,
+)
 from app.services.notification_service import create_notification
 from app.services.profile_service import ProfileService
 
@@ -253,3 +258,39 @@ def unfollow_user(
 
     followers_count = db.query(func.count(Follow.id)).filter(Follow.followed_id == user_id).scalar() or 0
     return FollowActionResponse(success=True, following=False, followers_count=followers_count)
+
+
+@router.get("/following/offers", response_model=list[FollowedOfferChatItem])
+def get_following_offers_for_chat(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    limit: int = Query(40, ge=1, le=120),
+):
+    rows = (
+        db.query(Offer, User)
+        .join(Follow, Follow.followed_id == Offer.user_id)
+        .join(User, User.id == Offer.user_id)
+        .filter(
+            Follow.follower_id == current_user.id,
+            Offer.status == "active",
+        )
+        .order_by(Offer.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+
+    return [
+        FollowedOfferChatItem(
+            id=offer.id,
+            user_id=owner.id,
+            owner_name=owner.name,
+            owner_profile_image=_normalize_profile_image(owner.profile_image),
+            product_name=offer.product_name,
+            price=offer.price,
+            unit=offer.unit,
+            location=offer.location,
+            status=offer.status,
+            created_at=offer.created_at,
+        )
+        for offer, owner in rows
+    ]

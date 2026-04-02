@@ -4,7 +4,7 @@ import asyncio
 import hashlib
 from contextlib import asynccontextmanager
 from collections import defaultdict, deque
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import logging
 import os
 import re
@@ -25,7 +25,7 @@ from fastapi.templating import Jinja2Templates
 
 from app.auth import auth_routes
 from app.cache.redis_client import check_redis_connection, delete_cache, get_cache, set_cache
-from app.core.auth_middleware import get_current_user_optional, get_current_user
+from app.core.auth_middleware import get_current_user_optional
 from app.core.config import settings
 from app.core.domain_enums import SubscriptionPlanType, SubscriptionStatus
 from app.database.connection import (
@@ -435,17 +435,28 @@ def _render_template(template_name: str, request: Request, **context: Any):
     )
 
 
-AGENDA_TEMP_ACCESS_TTL_SECONDS = 300
-AGENDA_TEMP_ACCESS_KEY_PREFIX = "agenda:temp:access"
-AGENDA_TEMP_REVOKED_KEY_PREFIX = "agenda:temp:revoked"
+AGENDA_GUEST_ACCESS_TTL_SECONDS = 300
+AGENDA_GUEST_ACCESS_WINDOW_EXPIRY_SECONDS = 60 * 60 * 24 * 30
+AGENDA_GUEST_CONSUMED_EXPIRY_SECONDS = 60 * 60 * 24 * 30
+AGENDA_LOGGED_TRIAL_ACCESS_SECONDS = 60 * 60 * 24 * 2
+AGENDA_LOGGED_TRIAL_KEY_EXPIRY_SECONDS = 60 * 60 * 24 * 93
+AGENDA_GUEST_COOKIE_NAME = "wf_agenda_guest_id"
+AGENDA_GUEST_ACCESS_KEY_PREFIX = "agenda:guest:access"
+AGENDA_GUEST_CONSUMED_KEY_PREFIX = "agenda:guest:consumed"
+AGENDA_LOGGED_TRIAL_KEY_PREFIX = "agenda:logged:trial"
+AGENDA_GUEST_ENTRY_MARKERS = {"nav", "navigation", "quick", "icon", "menu", "mobile"}
 
 
-def _agenda_temp_access_key(user_id: int) -> str:
-    return f"{AGENDA_TEMP_ACCESS_KEY_PREFIX}:{user_id}"
+def _agenda_guest_access_key(guest_id: str) -> str:
+    return f"{AGENDA_GUEST_ACCESS_KEY_PREFIX}:{guest_id}"
 
 
-def _agenda_temp_revoked_key(user_id: int) -> str:
-    return f"{AGENDA_TEMP_REVOKED_KEY_PREFIX}:{user_id}"
+def _agenda_guest_consumed_key(guest_id: str) -> str:
+    return f"{AGENDA_GUEST_CONSUMED_KEY_PREFIX}:{guest_id}"
+
+
+def _agenda_logged_trial_key(user_id: int, year_month: str) -> str:
+    return f"{AGENDA_LOGGED_TRIAL_KEY_PREFIX}:{user_id}:{year_month}"
 
 
 def _is_admin_user(user: User) -> bool:
@@ -497,57 +508,77 @@ def _parse_cache_datetime(value: str | None) -> datetime | None:
     return parsed
 
 
-def _user_last_login_dt(user: User) -> datetime | None:
-    last_login = getattr(user, "last_login", None)
-    if not last_login:
-        return None
-    if last_login.tzinfo is None:
-        return last_login.replace(tzinfo=timezone.utc)
-    return last_login
+def _first_day_next_month(reference: datetime) -> datetime:
+    if reference.month == 12:
+        return datetime(reference.year + 1, 1, 1, tzinfo=timezone.utc)
+    return datetime(reference.year, reference.month + 1, 1, tzinfo=timezone.utc)
 
 
-def _revoke_temporary_agenda_access(user: User):
-    delete_cache(_agenda_temp_access_key(user.id))
-    set_cache(
-        _agenda_temp_revoked_key(user.id),
-        datetime.now(timezone.utc).isoformat(),
-        expire=60 * 60 * 24 * 14,
-    )
-
-
-def _is_temporary_access_revoked_for_login(user: User) -> bool:
-    revoked_dt = _parse_cache_datetime(get_cache(_agenda_temp_revoked_key(user.id)))
-    if revoked_dt is None:
-        return False
-
-    last_login = _user_last_login_dt(user)
-    if last_login and revoked_dt < last_login:
-        delete_cache(_agenda_temp_revoked_key(user.id))
-        return False
-
-    return True
-
-
-def _resolve_or_create_temp_agenda_expires_at(user: User) -> int | None:
+def _resolve_or_create_guest_agenda_expires_at(
+    request: Request,
+    *,
+    allow_create: bool,
+) -> tuple[str | None, int | None, bool]:
     now = datetime.now(timezone.utc)
-    last_login = _user_last_login_dt(user)
-    temp_key = _agenda_temp_access_key(user.id)
-    start_dt = _parse_cache_datetime(get_cache(temp_key))
+    guest_id = str(request.cookies.get(AGENDA_GUEST_COOKIE_NAME) or "").strip() or None
+    created_cookie = False
 
-    if start_dt and last_login and start_dt < last_login:
-        start_dt = None
-        delete_cache(temp_key)
+    if guest_id:
+        if get_cache(_agenda_guest_consumed_key(guest_id)):
+            return guest_id, None, False
 
-    if start_dt is None:
-        start_dt = now
-        set_cache(temp_key, start_dt.isoformat(), expire=60 * 60 * 24)
+        access_key = _agenda_guest_access_key(guest_id)
+        access_started_at = _parse_cache_datetime(get_cache(access_key))
+        if access_started_at is not None:
+            expires_at_dt = access_started_at + timedelta(seconds=AGENDA_GUEST_ACCESS_TTL_SECONDS)
+            if now >= expires_at_dt:
+                delete_cache(access_key)
+                set_cache(
+                    _agenda_guest_consumed_key(guest_id),
+                    now.isoformat(),
+                    expire=AGENDA_GUEST_CONSUMED_EXPIRY_SECONDS,
+                )
+                return guest_id, None, False
+            return guest_id, int(expires_at_dt.timestamp()), False
 
-    expires_at = int(start_dt.timestamp()) + AGENDA_TEMP_ACCESS_TTL_SECONDS
-    if now.timestamp() >= expires_at:
-        _revoke_temporary_agenda_access(user)
-        return None
+    if not allow_create:
+        return guest_id, None, created_cookie
 
-    return expires_at
+    if not guest_id:
+        guest_id = uuid4().hex
+        created_cookie = True
+
+    if get_cache(_agenda_guest_consumed_key(guest_id)):
+        return guest_id, None, created_cookie
+
+    set_cache(
+        _agenda_guest_access_key(guest_id),
+        now.isoformat(),
+        expire=AGENDA_GUEST_ACCESS_WINDOW_EXPIRY_SECONDS,
+    )
+    expires_at_dt = now + timedelta(seconds=AGENDA_GUEST_ACCESS_TTL_SECONDS)
+    return guest_id, int(expires_at_dt.timestamp()), created_cookie
+
+
+def _resolve_or_create_logged_trial_agenda_expires_at(user: User) -> tuple[int, int | None]:
+    now = datetime.now(timezone.utc)
+    period_key = now.strftime("%Y%m")
+    cache_key = _agenda_logged_trial_key(user.id, period_key)
+
+    first_access_dt = _parse_cache_datetime(get_cache(cache_key))
+    if first_access_dt is None:
+        first_access_dt = now
+        set_cache(
+            cache_key,
+            first_access_dt.isoformat(),
+            expire=AGENDA_LOGGED_TRIAL_KEY_EXPIRY_SECONDS,
+        )
+
+    expires_at_dt = first_access_dt + timedelta(seconds=AGENDA_LOGGED_TRIAL_ACCESS_SECONDS)
+    if now >= expires_at_dt:
+        return int(first_access_dt.timestamp()), None
+
+    return int(first_access_dt.timestamp()), int(expires_at_dt.timestamp())
 
 
 API_PREFIX = "/api"
@@ -1003,8 +1034,37 @@ async def ai_agent_page(
 ):
     """Interface web do assistente IA embutida no botão flutuante."""
     if current_user is None:
-        next_path = request.url.path
-        return RedirectResponse(url=f"/login?next={next_path}", status_code=307)
+        entry_marker = str(request.query_params.get("entry") or "").strip().lower()
+        allow_guest_create = entry_marker in AGENDA_GUEST_ENTRY_MARKERS
+        guest_id, guest_expires_at, created_guest_cookie = _resolve_or_create_guest_agenda_expires_at(
+            request,
+            allow_create=allow_guest_create,
+        )
+
+        if guest_expires_at is None:
+            return RedirectResponse(url="/login?next=/ai-agent%3Fentry%3Dnav", status_code=307)
+
+        response = _render_template(
+            "ai_agent.html",
+            request,
+            current_user=None,
+            agenda_is_entitled=False,
+            agenda_temporary_access=True,
+            agenda_access_expires_at=guest_expires_at,
+            agenda_guest_access=True,
+            agenda_logged_trial_access=False,
+            agenda_trial_first_access_at=None,
+        )
+        if created_guest_cookie and guest_id:
+            response.set_cookie(
+                key=AGENDA_GUEST_COOKIE_NAME,
+                value=guest_id,
+                max_age=AGENDA_GUEST_ACCESS_WINDOW_EXPIRY_SECONDS,
+                httponly=True,
+                samesite="lax",
+                secure=not settings.DEBUG,
+            )
+        return response
 
     if _is_agenda_entitled(db, current_user):
         return _render_template(
@@ -1014,21 +1074,23 @@ async def ai_agent_page(
             agenda_is_entitled=True,
             agenda_temporary_access=False,
             agenda_access_expires_at=None,
+            agenda_guest_access=False,
+            agenda_logged_trial_access=False,
+            agenda_trial_first_access_at=None,
         )
 
-    if _is_temporary_access_revoked_for_login(current_user):
-        return _render_template(
-            "ai_agent_access_denied.html",
-            request,
-            current_user=current_user,
-        )
-
-    expires_at = _resolve_or_create_temp_agenda_expires_at(current_user)
+    first_access_at, expires_at = _resolve_or_create_logged_trial_agenda_expires_at(current_user)
     if expires_at is None:
+        now = datetime.now(timezone.utc)
+        first_access_label = datetime.fromtimestamp(first_access_at, tz=timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
+        next_cycle_label = _first_day_next_month(now).strftime("%d/%m/%Y")
         return _render_template(
             "ai_agent_access_denied.html",
             request,
             current_user=current_user,
+            access_denied_reason="monthly_window_expired",
+            agenda_trial_first_access_label=first_access_label,
+            agenda_trial_next_cycle_label=next_cycle_label,
         )
 
     return _render_template(
@@ -1038,6 +1100,9 @@ async def ai_agent_page(
         agenda_is_entitled=False,
         agenda_temporary_access=True,
         agenda_access_expires_at=expires_at,
+        agenda_guest_access=False,
+        agenda_logged_trial_access=True,
+        agenda_trial_first_access_at=first_access_at,
     )
 
 
@@ -1172,15 +1237,12 @@ async def ai_agent_ask(
 
 @app.post("/api/agenda/access/revoke")
 async def revoke_agenda_temporary_access(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User | None = Depends(get_current_user_optional),
 ):
-    """Revoga acesso temporário da agenda para não assinantes/admin."""
-    if _is_agenda_entitled(db, current_user):
-        return {"revoked": False, "reason": "entitled"}
-
-    _revoke_temporary_agenda_access(current_user)
-    return {"revoked": True}
+    """Endpoint legado mantido por compatibilidade de clientes antigos."""
+    if current_user is None:
+        return {"revoked": False, "reason": "guest_or_no_session"}
+    return {"revoked": False, "reason": "policy_managed"}
 
 
 @app.get("/mobile-preview")

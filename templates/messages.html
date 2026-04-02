@@ -3,25 +3,109 @@
 {% block title %}Mensagens - WallFruits{% endblock %}
 
 {% block content %}
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;700;800&family=Sora:wght@600;700;800&display=swap">
 <style>
     .chat-layout {
+        --msg-accent: #f5cb83;
+        --msg-accent-2: #2eb8a5;
+        --msg-surface: rgba(8, 21, 33, 0.72);
         display: grid;
-        grid-template-columns: minmax(300px, 360px) 1fr;
+        grid-template-columns: minmax(320px, 390px) 1fr;
         gap: 1rem;
         min-height: 74vh;
         font-family: 'Noto Sans', sans-serif;
+        position: relative;
+        padding: 0.24rem;
+        border-radius: 20px;
+        overflow: hidden;
+        isolation: isolate;
+        background: radial-gradient(circle at 8% 3%, rgba(245, 203, 131, 0.13), transparent 34%),
+                    radial-gradient(circle at 95% 96%, rgba(46, 184, 165, 0.14), transparent 30%),
+                    linear-gradient(150deg, rgba(12, 26, 38, 0.92), rgba(17, 34, 52, 0.84));
+    }
+
+    .chat-layout::before,
+    .chat-layout::after {
+        content: '';
+        position: absolute;
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    .chat-layout::before {
+        width: 340px;
+        height: 340px;
+        border-radius: 50%;
+        top: -140px;
+        right: -120px;
+        background: radial-gradient(circle, rgba(245, 203, 131, 0.24), transparent 70%);
+    }
+
+    .chat-layout::after {
+        left: -140px;
+        bottom: -160px;
+        width: 360px;
+        height: 360px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(46, 184, 165, 0.2), transparent 72%);
+    }
+
+    .chat-layout > * {
+        position: relative;
+        z-index: 1;
+    }
+
+    .chat-layout .wf-card {
+        background: linear-gradient(160deg, rgba(8, 22, 35, 0.86), rgba(14, 31, 46, 0.74));
+        border: 1px solid rgba(255,255,255,0.12);
+        box-shadow: 0 16px 30px rgba(3, 8, 15, 0.34);
+    }
+
+    .search-panel,
+    .inbox-panel,
+    .chat-main-card {
+        animation: panel-rise 0.42s cubic-bezier(.22,.61,.36,1) both;
+    }
+
+    .search-panel {
+        animation-delay: 45ms;
+    }
+
+    .inbox-panel {
+        animation-delay: 95ms;
+    }
+
+    .chat-main-card {
+        animation-delay: 130ms;
     }
 
     .chat-left {
         display: grid;
-        gap: 1rem;
+        gap: 0.78rem;
         align-content: start;
+        min-height: 0;
     }
 
     .panel-card .card-body {
         display: grid;
-        gap: 0.7rem;
+        gap: 0.6rem;
+    }
+
+    .panel-card .card-header,
+    .chat-main-card .card-header,
+    .chat-target-name,
+    .inbox-tab-btn,
+    .mobile-nav-btn {
+        font-family: 'Sora', 'Noto Sans', sans-serif;
+    }
+
+    .search-caption {
+        font-size: 0.74rem;
+        color: var(--wf-text-secondary);
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        margin-top: 0.12rem;
     }
 
     .accounts-search {
@@ -30,14 +114,91 @@
         gap: 0.55rem;
     }
 
-    .accounts-list,
+    .accounts-list {
+        display: grid;
+        gap: 0.55rem;
+        max-height: 180px;
+        overflow: auto;
+        padding-right: 0.1rem;
+    }
+
     .chat-list,
     .offer-list {
         display: grid;
         gap: 0.55rem;
-        max-height: 210px;
+        min-height: 300px;
+        max-height: min(58vh, 520px);
         overflow: auto;
         padding-right: 0.1rem;
+    }
+
+    .inbox-panel {
+        display: grid;
+        grid-template-rows: auto 1fr;
+        min-height: 0;
+    }
+
+    .inbox-switcher {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.42rem;
+    }
+
+    .inbox-tab-btn {
+        border: 1px solid var(--wf-border);
+        background: rgba(255,255,255,0.03);
+        color: var(--wf-text-secondary);
+        border-radius: 999px;
+        font-size: 0.76rem;
+        font-weight: 800;
+        letter-spacing: 0.01em;
+        padding: 0.42rem 0.6rem;
+        transition: all 0.2s ease;
+    }
+
+    .inbox-tab-btn.active {
+        color: #10252b;
+        border-color: rgba(249, 210, 140, 0.9);
+        background: linear-gradient(145deg, #f5c777, #f9dda8);
+        box-shadow: 0 8px 18px rgba(16, 37, 43, 0.2);
+    }
+
+    .inbox-panel-body {
+        min-height: 0;
+    }
+
+    .inbox-pane {
+        display: none;
+    }
+
+    .inbox-pane.active {
+        display: block;
+        animation: pane-reveal 0.24s ease;
+    }
+
+    .mobile-inbox-nav {
+        display: none;
+    }
+
+    .mobile-nav-btn {
+        border: none;
+        background: transparent;
+        color: rgba(236, 244, 248, 0.75);
+        font-size: 0.82rem;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+        padding: 0.84rem 0.72rem;
+    }
+
+    .mobile-nav-btn.active {
+        color: #153039;
+        background: linear-gradient(140deg, #f3cc87, #f6dfa6);
+        border-radius: 999px;
+        box-shadow: 0 8px 18px rgba(21, 48, 57, 0.22);
+    }
+
+    .mobile-only {
+        display: none;
     }
 
     .account-item,
@@ -49,6 +210,8 @@
         padding: 0.62rem;
         cursor: pointer;
         transition: border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
+        animation: list-item-rise 0.3s ease both;
+        animation-delay: var(--item-delay, 0ms);
     }
 
     .account-item:hover,
@@ -96,6 +259,87 @@
         color: var(--wf-text-secondary);
         font-size: 0.74rem;
         margin-top: 0.2rem;
+    }
+
+    .offer-item {
+        display: grid;
+        gap: 0.38rem;
+    }
+
+    .offer-item-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 0.5rem;
+    }
+
+    .offer-item-price {
+        color: #f2d18c;
+        font-size: 0.73rem;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+
+    .offer-owner-row {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.42rem;
+        font-size: 0.8rem;
+        color: var(--wf-text);
+    }
+
+    .offer-owner-row .chat-avatar {
+        width: 26px;
+        height: 26px;
+    }
+
+    .offer-item-meta {
+        color: var(--wf-text-secondary);
+        font-size: 0.74rem;
+    }
+
+    .offer-source-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+    }
+
+    .source-tag {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        font-size: 0.66rem;
+        font-weight: 800;
+        letter-spacing: 0.01em;
+        padding: 0.16rem 0.42rem;
+        background: rgba(255,255,255,0.14);
+        color: #dce7ec;
+        border: 1px solid rgba(255,255,255,0.18);
+    }
+
+    .source-tag.following {
+        background: rgba(97, 205, 190, 0.22);
+        color: #c8f7f0;
+        border-color: rgba(97, 205, 190, 0.48);
+    }
+
+    .source-tag.alert-card {
+        background: rgba(245, 146, 93, 0.2);
+        color: #ffe4d4;
+        border-color: rgba(245, 146, 93, 0.45);
+    }
+
+    .source-tag.reserve-click,
+    .source-tag.reserve-confirmed {
+        background: rgba(247, 203, 126, 0.22);
+        color: #fff2d9;
+        border-color: rgba(247, 203, 126, 0.46);
+    }
+
+    .source-tag.chat-card {
+        background: rgba(156, 188, 255, 0.22);
+        color: #e1ecff;
+        border-color: rgba(156, 188, 255, 0.46);
     }
 
     .wf-badge {
@@ -155,6 +399,7 @@
         grid-template-rows: auto 1fr auto;
         min-height: 74vh;
         overflow: hidden;
+        background: linear-gradient(155deg, rgba(7, 19, 30, 0.82), rgba(15, 32, 48, 0.76));
     }
 
     .chat-header {
@@ -163,6 +408,7 @@
         grid-template-columns: 1fr auto;
         gap: 0.8rem;
         align-items: center;
+        background: linear-gradient(160deg, rgba(255,255,255,0.04), rgba(255,255,255,0));
     }
 
     .chat-header-actions {
@@ -305,6 +551,8 @@
         display: grid;
         gap: 0.42rem;
         max-width: 86%;
+        animation: thread-rise-left 0.24s ease both;
+        animation-delay: var(--thread-delay, 0ms);
     }
 
     .thread-row.incoming {
@@ -316,6 +564,7 @@
     .thread-row.outgoing {
         justify-self: end;
         max-width: 78%;
+        animation-name: thread-rise-right;
     }
 
     .thread-avatar-link {
@@ -369,6 +618,8 @@
         grid-template-columns: 1fr auto;
         gap: 0.58rem;
         align-items: center;
+        border-top: 1px solid rgba(255,255,255,0.08);
+        padding-top: 0.3rem;
     }
 
     .chat-window-message {
@@ -383,6 +634,69 @@
     .chat-window-message:focus {
         border-color: rgba(25, 147, 147, 0.6);
         box-shadow: 0 0 0 2px rgba(25,147,147,0.22);
+    }
+
+    .chat-window .btn-wf-primary {
+        min-height: 43px;
+        border-radius: 11px;
+        font-family: 'Sora', 'Noto Sans', sans-serif;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+    }
+
+    @keyframes panel-rise {
+        from {
+            opacity: 0;
+            transform: translateY(8px) scale(0.992);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    @keyframes pane-reveal {
+        from {
+            opacity: 0;
+            transform: translateY(4px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes list-item-rise {
+        from {
+            opacity: 0;
+            transform: translateY(8px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes thread-rise-left {
+        from {
+            opacity: 0;
+            transform: translateX(-8px) translateY(3px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0) translateY(0);
+        }
+    }
+
+    @keyframes thread-rise-right {
+        from {
+            opacity: 0;
+            transform: translateX(8px) translateY(3px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0) translateY(0);
+        }
     }
 
     .service-upgrade-modal {
@@ -435,20 +749,91 @@
 
     @media (max-width: 980px) {
         .chat-layout {
-            grid-template-columns: 1fr;
-            min-height: auto;
+            display: block;
+            min-height: calc(100vh - 112px);
+            padding-bottom: 4.8rem;
+            border-radius: 14px;
+        }
+
+        .chat-layout:not(.mobile-chat-open) .chat-main-card {
+            display: none;
+        }
+
+        .chat-layout.mobile-chat-open .chat-left {
+            display: none;
+        }
+
+        .chat-layout.mobile-chat-open .chat-main-card {
+            animation: mobile-chat-slide 0.24s ease both;
+        }
+
+        .mobile-only {
+            display: inline-flex;
+        }
+
+        .chat-left {
+            gap: 0.64rem;
+        }
+
+        .inbox-switcher {
+            display: none;
+        }
+
+        .inbox-panel .card-header {
+            display: none;
+        }
+
+        .chat-list,
+        .offer-list {
+            min-height: 220px;
+            max-height: calc(100vh - 370px);
+        }
+
+        .accounts-list {
+            max-height: 22vh;
         }
 
         .chat-main-card {
-            min-height: 64vh;
+            min-height: calc(100vh - 112px);
         }
 
         .chat-thread {
-            max-height: 45vh;
+            max-height: calc(100vh - 302px);
         }
 
         .chat-surface {
-            min-height: 45vh;
+            min-height: calc(100vh - 302px);
+        }
+
+        .mobile-inbox-nav {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 2200;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+            padding: 0.55rem 0.82rem calc(0.55rem + env(safe-area-inset-bottom, 0px));
+            background: rgba(9, 20, 31, 0.92);
+            border-top: 1px solid rgba(255,255,255,0.12);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .chat-layout.mobile-chat-open .mobile-inbox-nav {
+            display: none;
+        }
+
+        @keyframes mobile-chat-slide {
+            from {
+                opacity: 0;
+                transform: translateX(16px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
         }
     }
 
@@ -458,8 +843,17 @@
             grid-template-columns: 1fr;
         }
 
+        .chat-layout {
+            padding-bottom: 5.1rem;
+        }
+
+        .chat-main-card {
+            border-radius: 12px;
+        }
+
         .chat-header {
             grid-template-columns: 1fr;
+            gap: 0.5rem;
         }
 
         .chat-header-actions {
@@ -474,42 +868,149 @@
         .thread-row.outgoing {
             max-width: 96%;
         }
+
+        .chat-list,
+        .offer-list {
+            max-height: calc(100vh - 390px);
+        }
+    }
+
+    @media (max-width: 390px) {
+        .chat-layout {
+            border-radius: 10px;
+            padding: 0.12rem;
+            padding-bottom: 5.4rem;
+        }
+
+        .chat-layout .wf-card {
+            border-radius: 10px;
+        }
+
+        .panel-card .card-header,
+        .chat-target-name {
+            font-size: 0.9rem;
+        }
+
+        .search-caption,
+        .chat-target-meta {
+            font-size: 0.71rem;
+        }
+
+        .accounts-search .wf-input,
+        .accounts-search .btn {
+            min-height: 40px;
+        }
+
+        .accounts-search .btn {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .chat-main-card {
+            min-height: calc(100vh - 98px);
+        }
+
+        .chat-surface,
+        .chat-thread {
+            min-height: calc(100vh - 350px);
+            max-height: calc(100vh - 350px);
+        }
+
+        .chat-header-actions {
+            gap: 0.3rem;
+        }
+
+        .theme-picker {
+            padding: 0.2rem 0.34rem;
+            gap: 0.26rem;
+        }
+
+        .theme-btn {
+            width: 20px;
+            height: 20px;
+        }
+
+        .offer-item-head {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.2rem;
+        }
+
+        .offer-item-price {
+            font-size: 0.68rem;
+        }
+
+        .chat-window-message {
+            font-size: 0.9rem;
+            padding: 0.62rem 0.68rem;
+        }
+
+        .mobile-inbox-nav {
+            gap: 0.34rem;
+            padding: 0.42rem 0.5rem calc(0.5rem + env(safe-area-inset-bottom, 0px));
+        }
+
+        .mobile-nav-btn {
+            font-size: 0.74rem;
+            padding: 0.72rem 0.42rem;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .search-panel,
+        .inbox-panel,
+        .chat-main-card,
+        .account-item,
+        .chat-item,
+        .offer-item,
+        .thread-row,
+        .chat-layout.mobile-chat-open .chat-main-card,
+        .inbox-pane.active {
+            animation: none !important;
+        }
     }
 </style>
 
-<div class="chat-layout">
-    <aside class="chat-left">
-        <div class="wf-card panel-card">
+<div class="chat-layout" id="chatLayoutRoot">
+    <aside class="chat-left" id="chatInboxPane">
+        <div class="wf-card panel-card search-panel">
             <div class="card-header">Nova conversa</div>
             <div class="card-body">
                 <div class="accounts-search">
                     <input id="accountsSearchInput" class="wf-input form-control" type="text" placeholder="Buscar contas ativas...">
                     <button class="btn btn-wf-secondary" type="button" onclick="searchAccounts()">Buscar</button>
                 </div>
+                <div class="search-caption">Resultados de contas ativas</div>
                 <div id="accountsList" class="accounts-list"></div>
             </div>
         </div>
 
-        <div class="wf-card panel-card">
-            <div class="card-header">Conversas recentes</div>
-            <div class="card-body">
-                <div id="conversationsList" class="chat-list"></div>
+        <div class="wf-card panel-card inbox-panel">
+            <div class="card-header inbox-switcher" role="tablist" aria-label="Painéis de mensagens">
+                <button id="tabRecentBtn" class="inbox-tab-btn active" type="button" data-inbox-tab="recent" aria-selected="true">Conversas recentes</button>
+                <button id="tabOffersBtn" class="inbox-tab-btn" type="button" data-inbox-tab="offers" aria-selected="false">Ofertas para conversar</button>
+            </div>
+            <div class="card-body inbox-panel-body">
+                <div id="recentInboxPane" class="inbox-pane active" data-inbox-pane="recent">
+                    <div id="conversationsList" class="chat-list"></div>
+                </div>
+                <div id="offersInboxPane" class="inbox-pane" data-inbox-pane="offers">
+                    <div id="offersQuickList" class="offer-list"></div>
+                </div>
             </div>
         </div>
 
-        <div class="wf-card panel-card">
-            <div class="card-header">Ofertas para conversar</div>
-            <div class="card-body">
-                <div id="offersQuickList" class="offer-list"></div>
-            </div>
+        <div class="mobile-inbox-nav" id="mobileInboxNav">
+            <button class="mobile-nav-btn active" type="button" data-inbox-tab="recent">Conversas</button>
+            <button class="mobile-nav-btn" type="button" data-inbox-tab="offers">Ofertas</button>
         </div>
-
     </aside>
 
-    <section class="wf-card chat-main-card">
+    <section class="wf-card chat-main-card" id="chatMainPane">
         <div class="card-body chat-header">
             <div id="chatTargetIdentity" class="chat-target-empty">Selecione uma conversa ou escolha uma oferta para iniciar.</div>
             <div class="chat-header-actions">
+                <button id="mobileInboxBackBtn" type="button" class="btn btn-wf-secondary chat-back-btn mobile-only">Conversas</button>
                 <a id="chatReturnBtn" href="/offers" class="btn btn-wf-secondary chat-back-btn" style="display:none;">Voltar</a>
                 <div class="theme-picker" aria-label="Escolher cor de fundo do chat">
                     <button type="button" class="theme-btn theme-forest" data-theme="theme-forest" title="Verde floresta"></button>
@@ -557,18 +1058,29 @@
     let selectedUserName = '';
     let selectedUserImage = null;
     let selectedOfferId = null;
+    let selectedOfferName = '';
+    let selectedOfferSources = [];
     let selectedServiceId = null;
     let selectedServiceTitle = '';
     let accountsStore = [];
     const quickOffersStore = new Map();
+    let activeInboxTab = 'recent';
     let returnToUrl = '';
     let returnOrigin = '';
     let initialMessageFromQuery = '';
     let shouldPrefillFromQuery = false;
-    let shouldAutoSendFromQuery = false;
     let offerNameFromQuery = '';
 
     const CHAT_THEME_KEY = 'wf_chat_theme';
+    const CHAT_OFFER_INTENT_STORAGE_KEY = 'wf_chat_offer_intents_v1';
+    const MOBILE_LAYOUT_MAX_WIDTH = 980;
+    const chatOfferSourceLabels = {
+        following: 'seguindo',
+        'alert-card': 'alerta',
+        'reserve-click': 'clique em reservar',
+        'reserve-confirmed': 'reserva concluída',
+        'chat-card': 'abriu chat',
+    };
     const chatThemes = ['theme-forest', 'theme-ocean', 'theme-sunset', 'theme-slate', 'theme-aurora'];
 
     function showServiceUpgradeModal() {
@@ -617,29 +1129,139 @@
         returnBtn.style.display = 'inline-flex';
     }
 
+    function normalizeOfferSources(value) {
+        if (!Array.isArray(value)) return [];
+
+        const normalized = value
+            .map((item) => String(item || '').trim().toLowerCase())
+            .filter(Boolean);
+
+        return Array.from(new Set(normalized));
+    }
+
+    function getOfferSourceLabel(source) {
+        const key = String(source || '').trim().toLowerCase();
+        return chatOfferSourceLabels[key] || key || 'origem';
+    }
+
+    function getOfferSourceWeight(source) {
+        const key = String(source || '').trim().toLowerCase();
+        if (key === 'reserve-confirmed') return 55;
+        if (key === 'reserve-click') return 45;
+        if (key === 'alert-card') return 35;
+        if (key === 'chat-card') return 28;
+        if (key === 'following') return 18;
+        return 10;
+    }
+
+    function parseOfferTime(value) {
+        const parsed = Date.parse(String(value || ''));
+        return Number.isFinite(parsed) ? parsed : 0;
+    }
+
+    function getLocalOfferIntents() {
+        try {
+            const items = JSON.parse(localStorage.getItem(CHAT_OFFER_INTENT_STORAGE_KEY) || '[]');
+            if (!Array.isArray(items)) return [];
+
+            return items
+                .filter((item) => item && item.offer_id)
+                .map((item) => ({
+                    offer_id: String(item.offer_id),
+                    owner_id: Number(item.owner_id || 0) || null,
+                    product_name: String(item.product_name || 'Oferta'),
+                    owner_name: String(item.owner_name || 'Produtor'),
+                    owner_profile_image: item.owner_profile_image || null,
+                    price: Number(item.price || 0),
+                    unit: String(item.unit || 'kg'),
+                    status: String(item.status || 'active'),
+                    location: item.location || null,
+                    sources: normalizeOfferSources(item.sources),
+                    interacted_at: item.interacted_at || null,
+                    updated_at: item.updated_at || item.interacted_at || null,
+                }))
+                .slice(0, 120);
+        } catch {
+            return [];
+        }
+    }
+
+    function isMobileLayout() {
+        return window.matchMedia(`(max-width: ${MOBILE_LAYOUT_MAX_WIDTH}px)`).matches;
+    }
+
+    function setInboxTab(tabName) {
+        const nextTab = tabName === 'offers' ? 'offers' : 'recent';
+        activeInboxTab = nextTab;
+
+        document.querySelectorAll('.inbox-pane').forEach((pane) => {
+            const isActive = pane.dataset.inboxPane === nextTab;
+            pane.classList.toggle('active', isActive);
+        });
+
+        document.querySelectorAll('[data-inbox-tab]').forEach((button) => {
+            const isActive = button.dataset.inboxTab === nextTab;
+            button.classList.toggle('active', isActive);
+            button.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        });
+    }
+
+    function setTabLabel(button, baseLabel, count) {
+        if (!button) return;
+        const safeCount = Number(count || 0);
+        button.textContent = safeCount > 0 ? `${baseLabel} (${safeCount})` : baseLabel;
+    }
+
+    function updateInboxTabLabels() {
+        setTabLabel(document.getElementById('tabRecentBtn'), 'Conversas recentes', conversations.length);
+        setTabLabel(document.getElementById('tabOffersBtn'), 'Ofertas para conversar', quickOffersStore.size);
+
+        const mobileRecent = document.querySelector('.mobile-nav-btn[data-inbox-tab="recent"]');
+        const mobileOffers = document.querySelector('.mobile-nav-btn[data-inbox-tab="offers"]');
+        setTabLabel(mobileRecent, 'Conversas', conversations.length);
+        setTabLabel(mobileOffers, 'Ofertas', quickOffersStore.size);
+    }
+
+    function openMobileChatView() {
+        if (!isMobileLayout()) return;
+        const root = document.getElementById('chatLayoutRoot');
+        if (!root) return;
+        root.classList.add('mobile-chat-open');
+    }
+
+    function openInboxView() {
+        const root = document.getElementById('chatLayoutRoot');
+        if (!root) return;
+        root.classList.remove('mobile-chat-open');
+    }
+
+    function syncResponsiveChatLayout() {
+        const root = document.getElementById('chatLayoutRoot');
+        if (!root) return;
+        if (!isMobileLayout()) {
+            root.classList.remove('mobile-chat-open');
+        }
+    }
+
+    function bindInboxInteractionControls() {
+        document.querySelectorAll('[data-inbox-tab]').forEach((button) => {
+            button.addEventListener('click', () => setInboxTab(button.dataset.inboxTab));
+        });
+
+        const backBtn = document.getElementById('mobileInboxBackBtn');
+        if (backBtn) {
+            backBtn.addEventListener('click', () => {
+                openInboxView();
+                setInboxTab('recent');
+            });
+        }
+
+        window.addEventListener('resize', syncResponsiveChatLayout);
+    }
+
     function buildOfferInterestMessage(offerName, offerId) {
         const label = String(offerName || '').trim() || `oferta ${offerId}`;
         return `Olá! Tenho interesse na oferta "${label}". Podemos conversar sobre quantidade, entrega e pagamento?`;
-    }
-
-    function simpleHash(text) {
-        let hash = 0;
-        const value = String(text || '');
-        for (let i = 0; i < value.length; i += 1) {
-            hash = ((hash << 5) - hash) + value.charCodeAt(i);
-            hash |= 0;
-        }
-        return Math.abs(hash);
-    }
-
-    function buildOfferAutoSendKey(message) {
-        return [
-            'wf_offer_chat_auto_sent',
-            Number(me?.id || 0),
-            Number(selectedUserId || 0),
-            String(selectedOfferId || 'none'),
-            String(simpleHash(message || '')),
-        ].join(':');
     }
 
     function prefillChatInputIfEmpty(message) {
@@ -705,6 +1327,13 @@
             return;
         }
 
+        const offerLabel = selectedOfferName
+            ? `oferta \"${selectedOfferName}\"`
+            : `oferta ${String(selectedOfferId || '')}`;
+        const sourceLabel = selectedOfferSources.length
+            ? ` \u00b7 origem: ${selectedOfferSources.map(getOfferSourceLabel).join(', ')}`
+            : '';
+
         box.className = '';
         box.innerHTML = `
             <a class="chat-target-link" href="${profileUrl(selectedUserId)}">
@@ -713,7 +1342,9 @@
                     <div class="chat-target-name">${esc(selectedUserName || 'Usuário')}</div>
                         <div class="chat-target-meta">${selectedServiceId
                             ? `Solicitação de orçamento: ${esc(selectedServiceTitle || `serviço ${String(selectedServiceId)}`)}`
-                            : (selectedOfferId ? `Conversa sobre oferta ${esc(String(selectedOfferId))}` : 'Conversa direta')}
+                            : (selectedOfferId
+                                ? `Conversa sobre ${esc(offerLabel)}${esc(sourceLabel)}`
+                                : 'Conversa direta')}
                         </div>
                 </div>
             </a>
@@ -734,15 +1365,17 @@
         const list = document.getElementById('conversationsList');
         if (!conversations.length) {
             list.innerHTML = '<div class="wf-alert wf-alert-info">Sem conversas ainda.</div>';
+            updateInboxTabLabels();
             return;
         }
 
-        list.innerHTML = conversations.map((c) => {
+        list.innerHTML = conversations.map((c, index) => {
             const active = selectedThreadId && String(c.thread_id) === String(selectedThreadId);
             const other = c.other_user || {};
             const unread = Number(c.unread_count || 0);
+            const itemDelay = Math.min(index * 38, 240);
             return `
-                <article class="chat-item ${active ? 'active' : ''}" onclick="selectConversation('${c.thread_id}')">
+                <article class="chat-item ${active ? 'active' : ''}" style="--item-delay:${itemDelay}ms" onclick="selectConversation('${c.thread_id}')">
                     <div class="chat-item-top">
                         <a class="chat-contact-link" href="${profileUrl(other.id)}" onclick="event.stopPropagation()">
                             ${avatarMarkup(other.profile_image, other.name, 'chat-avatar', 'avatar-fallback')}
@@ -755,6 +1388,8 @@
                 </article>
             `;
         }).join('');
+
+        updateInboxTabLabels();
     }
 
     function renderMessages(items) {
@@ -765,11 +1400,12 @@
         }
 
         const otherHref = selectedUserId ? profileUrl(selectedUserId) : '#';
-        box.innerHTML = items.map((m) => {
+        box.innerHTML = items.map((m, index) => {
             const mine = Number(m.sender_id) === Number(me.id);
+            const delay = Math.min(index * 26, 230);
             if (mine) {
                 return `
-                    <li class="thread-row outgoing">
+                    <li class="thread-row outgoing" style="--thread-delay:${delay}ms">
                         <div class="thread-bubble">
                             <div class="thread-bubble-head">
                                 <span>Você</span>
@@ -782,7 +1418,7 @@
             }
 
             return `
-                <li class="thread-row incoming">
+                <li class="thread-row incoming" style="--thread-delay:${delay}ms">
                     <a class="thread-avatar-link" href="${otherHref}">
                         ${avatarMarkup(selectedUserImage, selectedUserName, 'thread-avatar', 'avatar-fallback thread')}
                     </a>
@@ -821,6 +1457,9 @@
             selectedUserName = conv.other_user?.name || 'Usuário';
             selectedUserImage = conv.other_user?.profile_image || null;
             selectedOfferId = conv.last_message?.offer_id || null;
+            const selectedOffer = selectedOfferId ? quickOffersStore.get(String(selectedOfferId)) : null;
+            selectedOfferName = selectedOffer?.product_name || '';
+            selectedOfferSources = normalizeOfferSources(selectedOffer?.sources || []);
             selectedServiceId = null;
             selectedServiceTitle = '';
         }
@@ -828,6 +1467,7 @@
         renderChatTargetIdentity();
         renderMessages(items || []);
         renderConversations();
+        openMobileChatView();
     }
 
     async function selectConversation(threadId) {
@@ -846,15 +1486,18 @@
             return;
         }
 
-        list.innerHTML = accountsStore.map((acc) => `
-            <article class="account-item" onclick="startConversationWithAccountById(${acc.id})">
+        list.innerHTML = accountsStore.map((acc, index) => {
+            const delay = Math.min(index * 34, 220);
+            return `
+            <article class="account-item" style="--item-delay:${delay}ms" onclick="startConversationWithAccountById(${acc.id})">
                 <div>${avatarMarkup(acc.profile_image, acc.name, 'account-avatar', 'avatar-fallback')}</div>
                 <div>
                     <div style="font-weight:700;">${esc(acc.name)}</div>
                     <div style="color:var(--wf-text-secondary);font-size:0.78rem;">${esc(acc.username)} · ${esc(acc.role)}</div>
                 </div>
             </article>
-        `).join('');
+        `;
+        }).join('');
     }
 
     function startConversationWithAccountById(userId) {
@@ -873,40 +1516,151 @@
         renderAccounts();
     }
 
+    function strongestOfferSourceWeight(sources) {
+        const normalized = normalizeOfferSources(sources);
+        if (!normalized.length) return 0;
+        return normalized.reduce((acc, source) => Math.max(acc, getOfferSourceWeight(source)), 0);
+    }
+
+    function mergeOfferFeedForChat(followedOffers, localIntents) {
+        const merged = new Map();
+
+        (Array.isArray(followedOffers) ? followedOffers : []).forEach((offer) => {
+            const offerId = String(offer?.id || '').trim();
+            if (!offerId) return;
+
+            merged.set(offerId, {
+                id: offerId,
+                user_id: Number(offer?.user_id || 0) || null,
+                owner_name: String(offer?.owner_name || 'Produtor'),
+                owner_profile_image: offer?.owner_profile_image || null,
+                product_name: String(offer?.product_name || 'Oferta'),
+                price: Number(offer?.price || 0),
+                unit: String(offer?.unit || 'kg'),
+                location: offer?.location || null,
+                status: String(offer?.status || 'active'),
+                created_at: offer?.created_at || null,
+                updated_at: offer?.created_at || null,
+                sources: ['following'],
+            });
+        });
+
+        (Array.isArray(localIntents) ? localIntents : []).forEach((intent) => {
+            const offerId = String(intent?.offer_id || intent?.id || '').trim();
+            if (!offerId) return;
+
+            const previous = merged.get(offerId) || null;
+            const previousSources = normalizeOfferSources(previous?.sources || []);
+            const intentSources = normalizeOfferSources(intent?.sources || []);
+            const combinedSources = normalizeOfferSources([...previousSources, ...intentSources]);
+
+            merged.set(offerId, {
+                id: offerId,
+                user_id: Number(previous?.user_id || intent?.owner_id || 0) || null,
+                owner_name: String(previous?.owner_name || intent?.owner_name || 'Produtor'),
+                owner_profile_image: previous?.owner_profile_image || intent?.owner_profile_image || null,
+                product_name: String(previous?.product_name || intent?.product_name || 'Oferta'),
+                price: Number(previous?.price || intent?.price || 0),
+                unit: String(previous?.unit || intent?.unit || 'kg'),
+                location: previous?.location || intent?.location || null,
+                status: String(previous?.status || intent?.status || 'active'),
+                created_at: previous?.created_at || intent?.interacted_at || null,
+                updated_at: previous?.updated_at || intent?.updated_at || intent?.interacted_at || null,
+                sources: combinedSources.length ? combinedSources : ['chat-card'],
+            });
+        });
+
+        return Array.from(merged.values())
+            .filter((offer) => String(offer.status || 'active').toLowerCase() === 'active')
+            .filter((offer) => Number(offer.user_id) !== Number(me?.id || 0))
+            .sort((a, b) => {
+                const bySource = strongestOfferSourceWeight(b.sources) - strongestOfferSourceWeight(a.sources);
+                if (bySource !== 0) return bySource;
+                return parseOfferTime(b.updated_at || b.created_at) - parseOfferTime(a.updated_at || a.created_at);
+            });
+    }
+
+    function formatOfferPrice(priceValue, unitValue) {
+        const amount = Number(priceValue || 0);
+        const unit = String(unitValue || 'kg').trim() || 'kg';
+        return `R$ ${amount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/${unit}`;
+    }
+
+    function sourceBadgeClass(source) {
+        const raw = String(source || '').trim().toLowerCase();
+        const safe = raw.replace(/[^a-z0-9-]/g, '');
+        return safe || 'generic';
+    }
+
     async function loadOffersQuickList() {
-        const data = await apiRequest('/offers?limit=12');
-        const offers = data?.offers || [];
         const list = document.getElementById('offersQuickList');
         quickOffersStore.clear();
 
-        if (!offers.length) {
-            list.innerHTML = '<div class="wf-alert wf-alert-info">Sem ofertas ativas.</div>';
+        let followedOffers = [];
+        try {
+            const response = await apiRequest('/social/following/offers?limit=60');
+            followedOffers = Array.isArray(response) ? response : [];
+        } catch {
+            followedOffers = [];
+        }
+
+        const mergedOffers = mergeOfferFeedForChat(followedOffers, getLocalOfferIntents()).slice(0, 80);
+
+        if (!mergedOffers.length) {
+            list.innerHTML = '<div class="wf-alert wf-alert-info">Siga produtores e interaja com ofertas para ver sugestões de conversa aqui.</div>';
+            updateInboxTabLabels();
             return;
         }
 
-        offers.forEach((offer) => quickOffersStore.set(String(offer.id), offer));
+        mergedOffers.forEach((offer) => quickOffersStore.set(String(offer.id), offer));
 
-        list.innerHTML = offers.map((offer) => `
-            <article class="offer-item" onclick="prepareChatFromOfferById('${offer.id}')">
-                <div style="font-weight:700;">${esc(offer.product_name)}</div>
-                <div style="color:var(--wf-text-secondary);font-size:0.8rem;">${esc(offer.owner_data?.name || 'Produtor')} · R$ ${Number(offer.price || 0).toFixed(2)}</div>
+        list.innerHTML = mergedOffers.map((offer, index) => {
+            const sources = normalizeOfferSources(offer.sources);
+            const sourceBadges = sources.slice(0, 3).map((source) => `
+                <span class="source-tag ${sourceBadgeClass(source)}">${esc(getOfferSourceLabel(source))}</span>
+            `).join('');
+            const delay = Math.min(index * 34, 260);
+
+            return `
+            <article class="offer-item" style="--item-delay:${delay}ms" onclick="prepareChatFromOfferById('${offer.id}')">
+                <div class="offer-item-head">
+                    <div style="font-weight:800;line-height:1.25;">${esc(offer.product_name)}</div>
+                    <span class="offer-item-price">${esc(formatOfferPrice(offer.price, offer.unit))}</span>
+                </div>
+                <div class="offer-owner-row">
+                    ${avatarMarkup(offer.owner_profile_image, offer.owner_name, 'chat-avatar', 'avatar-fallback')}
+                    <span>${esc(offer.owner_name || 'Produtor')}</span>
+                </div>
+                <div class="offer-item-meta">${esc(offer.location || 'Localização não informada')}</div>
+                <div class="offer-source-tags">${sourceBadges}</div>
             </article>
-        `).join('');
+        `;
+        }).join('');
+
+        updateInboxTabLabels();
     }
 
     function prepareChatFromOfferById(offerId) {
         const offer = quickOffersStore.get(String(offerId));
         if (!offer) return;
 
+        const ownerId = offer.owner_data?.id || offer.owner_id || offer.user_id;
+        const ownerName = offer.owner_data?.name || offer.owner_name || 'Produtor';
+        const ownerImage = offer.owner_data?.profile_image || offer.owner_profile_image || null;
+
         prepareChatFromOffer(
-            offer.owner_data?.id || offer.user_id,
+            ownerId,
             offer.id,
-            offer.owner_data?.name || 'Produtor',
-            offer.owner_data?.profile_image || null,
+            ownerName,
+            ownerImage,
+            {
+                product_name: offer.product_name || '',
+                sources: offer.sources || [],
+            },
         );
     }
 
-    async function prepareChatFromOffer(userId, offerId, userName, userImage) {
+    async function prepareChatFromOffer(userId, offerId, userName, userImage, offerMeta = {}) {
         if (Number(userId) === Number(me.id)) {
             alert('Você não pode iniciar chat consigo mesmo.');
             return;
@@ -916,6 +1670,13 @@
         selectedUserName = userName || 'Usuário';
         selectedUserImage = userImage || null;
         selectedOfferId = offerId;
+        selectedOfferName = String(offerMeta.product_name || '').trim();
+        selectedOfferSources = normalizeOfferSources(offerMeta.sources || []);
+        if (!selectedOfferName && selectedOfferId) {
+            const trackedOffer = quickOffersStore.get(String(selectedOfferId));
+            selectedOfferName = String(trackedOffer?.product_name || '').trim();
+            selectedOfferSources = normalizeOfferSources(trackedOffer?.sources || selectedOfferSources);
+        }
         selectedServiceId = null;
         selectedServiceTitle = '';
         selectedThreadId = null;
@@ -925,6 +1686,7 @@
         renderChatTargetIdentity();
         document.getElementById('chatMessages').innerHTML = '<li class="chat-thread-empty">Nova conversa. Digite sua primeira mensagem.</li>';
         renderConversations();
+        openMobileChatView();
     }
 
     async function startConversationWithAccount(userId, userName, userImage) {
@@ -932,6 +1694,8 @@
         selectedUserName = userName || 'Usuário';
         selectedUserImage = userImage || null;
         selectedOfferId = null;
+        selectedOfferName = '';
+        selectedOfferSources = [];
         selectedServiceId = null;
         selectedServiceTitle = '';
         selectedThreadId = null;
@@ -941,65 +1705,7 @@
         renderChatTargetIdentity();
         document.getElementById('chatMessages').innerHTML = '<li class="chat-thread-empty">Nova conversa direta. Digite sua mensagem.</li>';
         renderConversations();
-    }
-
-    async function sendChatMessage(content) {
-        const payload = String(content || '').trim();
-        if (!payload) return;
-
-        if (!selectedUserId) {
-            throw new Error('Selecione uma conversa ou uma oferta para enviar mensagem.');
-        }
-
-        await apiRequest('/messages', 'POST', {
-            receiver_id: Number(selectedUserId),
-            offer_id: selectedOfferId,
-            message_type: selectedOfferId ? 'offer_inquiry' : (selectedServiceId ? 'service_inquiry' : 'direct'),
-            subject: selectedOfferId
-                ? `Interesse em oferta ${selectedOfferId}`
-                : (selectedServiceId ? `Solicitação de orçamento - serviço ${selectedServiceTitle || selectedServiceId}` : 'Conversa direta'),
-            content: payload,
-        });
-
-        await loadConversations();
-
-        const conv = conversations.find((item) => Number(item.other_user?.id) === Number(selectedUserId));
-        if (conv) {
-            await loadThread(conv.thread_id);
-            return;
-        }
-
-        document.getElementById('chatMessages').insertAdjacentHTML('beforeend', '<li class="chat-thread-empty">Mensagem enviada. Aguarde resposta para criar thread.</li>');
-    }
-
-    async function autoSendInitialOfferMessage(message) {
-        const payload = String(message || '').trim();
-        if (!payload || !selectedUserId || !selectedOfferId || !shouldAutoSendFromQuery) return;
-
-        const dedupeKey = buildOfferAutoSendKey(payload);
-        try {
-            if (sessionStorage.getItem(dedupeKey) === '1') {
-                return;
-            }
-        } catch {
-            // ignora indisponibilidade de storage
-        }
-
-        try {
-            await sendChatMessage(payload);
-            try {
-                sessionStorage.setItem(dedupeKey, '1');
-            } catch {
-                // ignora indisponibilidade de storage
-            }
-        } catch (error) {
-            const msg = String(error?.message || '').toLowerCase();
-            if (msg.includes('créditos') || msg.includes('creditos') || msg.includes('upgrade')) {
-                showServiceUpgradeModal();
-                return;
-            }
-            prefillChatInputIfEmpty(payload);
-        }
+        openMobileChatView();
     }
 
     async function handleInitialParams() {
@@ -1013,7 +1719,6 @@
         returnOrigin = qParam('origin') || '';
         initialMessageFromQuery = String(qParam('initial_message') || '').trim();
         shouldPrefillFromQuery = qParam('prefill') === '1';
-        shouldAutoSendFromQuery = qParam('auto_send') === '1';
         offerNameFromQuery = String(qParam('offer_name') || '').trim();
 
         renderReturnButton();
@@ -1061,13 +1766,26 @@
                     input.setSelectionRange(input.value.length, input.value.length);
                 }
             } else if (offerId) {
+                const trackedOffer = quickOffersStore.get(String(offerId));
+                const trackedSources = normalizeOfferSources(trackedOffer?.sources || []);
                 const existingConversation = conversations.find((c) => Number(c.other_user?.id) === Number(userId));
                 if (existingConversation?.thread_id) {
                     await loadThread(existingConversation.thread_id);
                     selectedOfferId = offerId;
+                    selectedOfferName = offerNameFromQuery || trackedOffer?.product_name || selectedOfferName;
+                    selectedOfferSources = trackedSources;
                     renderChatTargetIdentity();
                 } else {
-                    await prepareChatFromOffer(Number(userId), offerId || null, 'Nova conversa', '');
+                    await prepareChatFromOffer(
+                        Number(userId),
+                        offerId || null,
+                        trackedOffer?.owner_name || 'Nova conversa',
+                        trackedOffer?.owner_profile_image || '',
+                        {
+                            product_name: offerNameFromQuery || trackedOffer?.product_name || '',
+                            sources: trackedSources,
+                        },
+                    );
                 }
 
                 const fallbackOfferMessage = buildOfferInterestMessage(offerNameFromQuery, offerId);
@@ -1075,7 +1793,6 @@
                 if (shouldPrefillFromQuery || !existingConversation?.thread_id) {
                     prefillChatInputIfEmpty(finalOfferMessage);
                 }
-                await autoSendInitialOfferMessage(finalOfferMessage);
             } else {
                 await startConversationWithAccount(Number(userId), 'Nova conversa', '');
                 if (shouldPrefillFromQuery && initialMessageFromQuery) {
@@ -1092,9 +1809,31 @@
         const content = input.value.trim();
         if (!content) return;
 
+        if (!selectedUserId) {
+            alert('Selecione uma conversa ou uma oferta para enviar mensagem.');
+            return;
+        }
+
         try {
-            await sendChatMessage(content);
+            await apiRequest('/messages', 'POST', {
+                receiver_id: Number(selectedUserId),
+                offer_id: selectedOfferId,
+                message_type: selectedOfferId ? 'offer_inquiry' : (selectedServiceId ? 'service_inquiry' : 'direct'),
+                subject: selectedOfferId
+                    ? `Interesse em oferta ${selectedOfferId}`
+                    : (selectedServiceId ? `Solicitação de orçamento - serviço ${selectedServiceTitle || selectedServiceId}` : 'Conversa direta'),
+                content,
+            });
+
             input.value = '';
+            await loadConversations();
+
+            const conv = conversations.find((c) => Number(c.other_user?.id) === Number(selectedUserId));
+            if (conv) {
+                await loadThread(conv.thread_id);
+            } else {
+                document.getElementById('chatMessages').insertAdjacentHTML('beforeend', '<li class="chat-thread-empty">Mensagem enviada. Aguarde resposta para criar thread.</li>');
+            }
         } catch (error) {
             const msg = String(error?.message || '').toLowerCase();
             if (msg.includes('créditos') || msg.includes('creditos') || msg.includes('upgrade')) {
@@ -1109,6 +1848,9 @@
         const ok = await ensureAuth();
         if (!ok) return;
 
+        bindInboxInteractionControls();
+        setInboxTab(activeInboxTab);
+        syncResponsiveChatLayout();
         initThemePicker();
         renderChatTargetIdentity();
 
