@@ -697,6 +697,60 @@
             border: 2px solid #0a0a0f;
         }
 
+    .offers-create-float-btn {
+        position: fixed;
+        right: 20px;
+        top: calc(84px + env(safe-area-inset-top));
+        z-index: 1298;
+        border-radius: 999px;
+        background: linear-gradient(135deg, #1e7a4b, #2e9d63);
+        color: #f4fff8;
+        padding: 0.52rem 0.88rem;
+        box-shadow: 0 10px 26px rgba(25, 104, 63, 0.34);
+        border: 1px solid rgba(29, 107, 66, 0.48);
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.34rem;
+        font-size: 0.74rem;
+        font-weight: 800;
+    }
+
+    .offers-create-float-btn .material-icons {
+        font-size: 1rem;
+        line-height: 1;
+    }
+
+    .offers-create-float-btn:hover {
+        color: #ffffff;
+        transform: translateY(-1px);
+        box-shadow: 0 14px 30px rgba(25, 104, 63, 0.38);
+    }
+
+    .offer-card-top {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        margin-bottom: 0.36rem;
+    }
+
+    .offer-published {
+        border-radius: 999px;
+        border: 1px solid rgba(27, 82, 132, 0.26);
+        background: rgba(236, 246, 255, 0.9);
+        color: #24527b;
+        font-size: 0.62rem;
+        font-weight: 800;
+        padding: 0.16rem 0.48rem;
+        white-space: nowrap;
+        max-width: 100%;
+    }
+
+    .action-side.active-like .material-symbols-outlined,
+    .action-side.active-bookmark .material-symbols-outlined {
+        font-variation-settings: "FILL" 1, "wght" 500, "GRAD" 0, "opsz" 20;
+    }
+
     .skeleton-card {
         min-height: 186px;
         border-radius: 8px;
@@ -714,6 +768,13 @@
     @media (max-width: 1024px) {
         .offers-list {
             grid-template-columns: 1fr;
+        }
+
+        .offers-create-float-btn {
+            right: 14px;
+            top: calc(74px + env(safe-area-inset-top));
+            font-size: 0.71rem;
+            padding: 0.46rem 0.75rem;
         }
 
         .offers-filter-trigger {
@@ -1038,6 +1099,11 @@
     <span id="messagesFloatCount" class="messages-float-count" style="display:none;">0</span>
 </a>
 
+<a href="/offers/new" class="offers-create-float-btn" title="Criar nova oferta">
+    <span class="material-icons">add_circle</span>
+    <span>Criar oferta</span>
+</a>
+
 <div class="offers-header">
     <div>
         <h1>Ofertas <span class="wf-gradient-text">Disponíveis</span></h1>
@@ -1053,7 +1119,6 @@
             </button>
         </div>
     </div>
-    <a href="/offers/new" class="btn btn-wf-secondary">+ Criar oferta</a>
 </div>
 
 <div class="offers-search-row">
@@ -1418,6 +1483,47 @@
             return 'R$ -';
         }
         return `R$ ${Number(value).toFixed(2)}`;
+    }
+
+    function formatOfferPublishedLabel(value) {
+        if (!value) {
+            return {
+                label: 'agora',
+                title: 'Publicado recentemente',
+            };
+        }
+
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) {
+            return {
+                label: 'agora',
+                title: 'Publicado recentemente',
+            };
+        }
+
+        const exact = date.toLocaleString('pt-BR', {
+            day: '2-digit',
+            month: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+        });
+
+        const diffMs = Date.now() - date.getTime();
+        const diffMinutes = Math.max(1, Math.round(Math.abs(diffMs) / 60000));
+
+        let relative = 'agora';
+        if (diffMinutes >= 1440) {
+            relative = `${Math.round(diffMinutes / 1440)}d`;
+        } else if (diffMinutes >= 60) {
+            relative = `${Math.round(diffMinutes / 60)}h`;
+        } else if (diffMinutes > 1) {
+            relative = `${diffMinutes}m`;
+        }
+
+        return {
+            label: `${relative} • ${exact}`,
+            title: `Publicado em ${exact}`,
+        };
     }
 
     function normalizeDecimal(value, fallback = 0) {
@@ -1954,6 +2060,7 @@
         const min = offer.price_min_kg ?? offer.price_per_kg ?? offer.price;
         const perKg = offer.price_per_kg ?? offer.price_avg_kg ?? offer.price;
         const max = offer.price_max_kg ?? offer.price_per_kg ?? offer.price;
+        const published = formatOfferPublishedLabel(offer.created_at || offer.updated_at);
 
         const metaCards = cardMetaItems(offer).map((item) => `
             <div class="mini-meta-card">
@@ -1975,6 +2082,9 @@
 
                 <div class="produto-content">
                     <div>
+                        <div class="offer-card-top">
+                            <span class="offer-published" title="${escapeHtml(published.title)}">${escapeHtml(published.label)}</span>
+                        </div>
                         <div class="produtor-box">
                             <a href="${ownerProfileUrl(offer)}" onclick="event.stopPropagation()" style="display:flex;align-items:center;gap:0.65rem;text-decoration:none;color:inherit;">
                                 ${getOwnerAvatar(offer)}
@@ -2054,11 +2164,20 @@
 
             const threadId = sent?.thread_id;
             if (threadId) {
-                window.location.href = `/messages?thread_id=${threadId}`;
+                const params = new URLSearchParams();
+                params.set('thread_id', String(threadId));
+                params.set('return_to', `${window.location.pathname}${window.location.search}`);
+                params.set('origin', 'offers');
+                window.location.href = `/messages?${params.toString()}`;
                 return;
             }
 
-            window.location.href = `/messages?user_id=${receiverId}&offer_id=${offer.id}`;
+            const fallbackParams = new URLSearchParams();
+            fallbackParams.set('user_id', String(receiverId));
+            fallbackParams.set('offer_id', String(offer.id));
+            fallbackParams.set('return_to', `${window.location.pathname}${window.location.search}`);
+            fallbackParams.set('origin', 'offers');
+            window.location.href = `/messages?${fallbackParams.toString()}`;
         } catch (error) {
             alert(error.message || 'Nao foi possivel enviar o aviso agora.');
         }
@@ -2121,7 +2240,16 @@
 
         if (!ensureAuthenticatedAction()) return;
 
-        window.location.href = `/messages?user_id=${offer.owner_data.id}&offer_id=${offer.id}`;
+        const defaultMessage = `Olá! Tenho interesse na oferta "${offer.product_name}". Podemos conversar sobre quantidade, entrega e pagamento?`;
+        const params = new URLSearchParams();
+        params.set('user_id', String(offer.owner_data.id));
+        params.set('offer_id', String(offer.id));
+        params.set('return_to', `${window.location.pathname}${window.location.search}`);
+        params.set('origin', 'offers');
+        params.set('offer_name', String(offer.product_name || 'Oferta'));
+        params.set('initial_message', defaultMessage);
+        params.set('prefill', '1');
+        window.location.href = `/messages?${params.toString()}`;
     }
 
     async function loadMessagesBadge() {

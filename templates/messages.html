@@ -165,6 +165,26 @@
         align-items: center;
     }
 
+    .chat-header-actions {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.42rem;
+        justify-self: end;
+        flex-wrap: wrap;
+    }
+
+    .chat-back-btn {
+        border-radius: 999px;
+        padding: 0.32rem 0.66rem;
+        font-size: 0.74rem;
+        font-weight: 800;
+        text-decoration: none;
+        line-height: 1;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.24rem;
+    }
+
     .chat-target-empty {
         font-weight: 700;
         color: var(--wf-text-secondary);
@@ -442,6 +462,10 @@
             grid-template-columns: 1fr;
         }
 
+        .chat-header-actions {
+            justify-self: start;
+        }
+
         .theme-picker {
             justify-self: start;
         }
@@ -485,12 +509,15 @@
     <section class="wf-card chat-main-card">
         <div class="card-body chat-header">
             <div id="chatTargetIdentity" class="chat-target-empty">Selecione uma conversa ou escolha uma oferta para iniciar.</div>
-            <div class="theme-picker" aria-label="Escolher cor de fundo do chat">
-                <button type="button" class="theme-btn theme-forest" data-theme="theme-forest" title="Verde floresta"></button>
-                <button type="button" class="theme-btn theme-ocean" data-theme="theme-ocean" title="Azul oceano"></button>
-                <button type="button" class="theme-btn theme-sunset" data-theme="theme-sunset" title="Pôr do sol"></button>
-                <button type="button" class="theme-btn theme-slate" data-theme="theme-slate" title="Cinza ardósia"></button>
-                <button type="button" class="theme-btn theme-aurora" data-theme="theme-aurora" title="Aurora"></button>
+            <div class="chat-header-actions">
+                <a id="chatReturnBtn" href="/offers" class="btn btn-wf-secondary chat-back-btn" style="display:none;">Voltar</a>
+                <div class="theme-picker" aria-label="Escolher cor de fundo do chat">
+                    <button type="button" class="theme-btn theme-forest" data-theme="theme-forest" title="Verde floresta"></button>
+                    <button type="button" class="theme-btn theme-ocean" data-theme="theme-ocean" title="Azul oceano"></button>
+                    <button type="button" class="theme-btn theme-sunset" data-theme="theme-sunset" title="Pôr do sol"></button>
+                    <button type="button" class="theme-btn theme-slate" data-theme="theme-slate" title="Cinza ardósia"></button>
+                    <button type="button" class="theme-btn theme-aurora" data-theme="theme-aurora" title="Aurora"></button>
+                </div>
             </div>
         </div>
 
@@ -534,6 +561,11 @@
     let selectedServiceTitle = '';
     let accountsStore = [];
     const quickOffersStore = new Map();
+    let returnToUrl = '';
+    let returnOrigin = '';
+    let initialMessageFromQuery = '';
+    let shouldPrefillFromQuery = false;
+    let offerNameFromQuery = '';
 
     const CHAT_THEME_KEY = 'wf_chat_theme';
     const chatThemes = ['theme-forest', 'theme-ocean', 'theme-sunset', 'theme-slate', 'theme-aurora'];
@@ -553,6 +585,49 @@
     function qParam(name) {
         const params = new URLSearchParams(window.location.search);
         return params.get(name);
+    }
+
+    function sanitizeReturnUrl(raw) {
+        const value = String(raw || '').trim();
+        if (!value.startsWith('/')) return '';
+        if (value.startsWith('//')) return '';
+        return value;
+    }
+
+    function returnLabelByOrigin(origin) {
+        const normalized = String(origin || '').trim().toLowerCase();
+        if (normalized === 'offers') return 'Voltar para ofertas';
+        if (normalized === 'services') return 'Voltar para serviços';
+        if (normalized === 'community') return 'Voltar para comunidade';
+        return 'Voltar';
+    }
+
+    function renderReturnButton() {
+        const returnBtn = document.getElementById('chatReturnBtn');
+        if (!returnBtn) return;
+
+        if (!returnToUrl) {
+            returnBtn.style.display = 'none';
+            return;
+        }
+
+        returnBtn.href = returnToUrl;
+        returnBtn.textContent = returnLabelByOrigin(returnOrigin);
+        returnBtn.style.display = 'inline-flex';
+    }
+
+    function buildOfferInterestMessage(offerName, offerId) {
+        const label = String(offerName || '').trim() || `oferta ${offerId}`;
+        return `Olá! Tenho interesse na oferta "${label}". Podemos conversar sobre quantidade, entrega e pagamento?`;
+    }
+
+    function prefillChatInputIfEmpty(message) {
+        if (!message) return;
+        const input = document.getElementById('chatInput');
+        if (!input || input.value.trim()) return;
+        input.value = message;
+        input.focus();
+        input.setSelectionRange(input.value.length, input.value.length);
     }
 
     function formatTime(iso) {
@@ -854,6 +929,13 @@
         const serviceId = qParam('service_id');
         const serviceTitle = qParam('service_title');
         const serviceCategory = qParam('service_category');
+        returnToUrl = sanitizeReturnUrl(qParam('return_to'));
+        returnOrigin = qParam('origin') || '';
+        initialMessageFromQuery = String(qParam('initial_message') || '').trim();
+        shouldPrefillFromQuery = qParam('prefill') === '1';
+        offerNameFromQuery = String(qParam('offer_name') || '').trim();
+
+        renderReturnButton();
 
         function buildServiceBudgetMessage(title, category) {
             const normalizedCategory = String(category || '').trim().toLowerCase();
@@ -876,6 +958,9 @@
 
         if (threadId) {
             await loadThread(threadId);
+            if (shouldPrefillFromQuery && initialMessageFromQuery) {
+                prefillChatInputIfEmpty(initialMessageFromQuery);
+            }
             return;
         }
 
@@ -895,9 +980,25 @@
                     input.setSelectionRange(input.value.length, input.value.length);
                 }
             } else if (offerId) {
-                await prepareChatFromOffer(Number(userId), offerId || null, 'Nova conversa', '');
+                const existingConversation = conversations.find((c) => Number(c.other_user?.id) === Number(userId));
+                if (existingConversation?.thread_id) {
+                    await loadThread(existingConversation.thread_id);
+                    selectedOfferId = offerId;
+                    renderChatTargetIdentity();
+                } else {
+                    await prepareChatFromOffer(Number(userId), offerId || null, 'Nova conversa', '');
+                }
+
+                const fallbackOfferMessage = buildOfferInterestMessage(offerNameFromQuery, offerId);
+                const finalOfferMessage = initialMessageFromQuery || fallbackOfferMessage;
+                if (shouldPrefillFromQuery || !existingConversation?.thread_id) {
+                    prefillChatInputIfEmpty(finalOfferMessage);
+                }
             } else {
                 await startConversationWithAccount(Number(userId), 'Nova conversa', '');
+                if (shouldPrefillFromQuery && initialMessageFromQuery) {
+                    prefillChatInputIfEmpty(initialMessageFromQuery);
+                }
             }
         }
     }

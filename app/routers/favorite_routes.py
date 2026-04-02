@@ -49,8 +49,8 @@ def add_to_favorites(
 
     db.add(new_favorite)
 
-    # Incrementar contador de favoritos da oferta
-    offer.favorites_count += 1
+    # Incrementar contador de favoritos da oferta com proteção para valores legados nulos.
+    offer.favorites_count = int(offer.favorites_count or 0) + 1
 
     if offer.user_id != current_user.id:
         create_notification(
@@ -106,10 +106,11 @@ def remove_from_favorites(
     if not favorite:
         raise HTTPException(404, "Favorito não encontrado")
 
-    # Decrementar contador de favoritos da oferta
+    # Decrementar contador de favoritos da oferta com proteção para valores legados nulos.
     offer = db.query(Offer).filter(Offer.id == offer_id).first()
-    if offer and offer.favorites_count > 0:
-        offer.favorites_count -= 1
+    if offer:
+        current_count = int(offer.favorites_count or 0)
+        offer.favorites_count = max(0, current_count - 1)
 
     db.delete(favorite)
     db.commit()

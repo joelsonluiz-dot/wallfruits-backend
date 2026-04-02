@@ -2391,7 +2391,17 @@
             }).catch(() => {});
         }
 
+        function isAuthFormPath() {
+            const path = String(window.location.pathname || '').toLowerCase();
+            return path === '/login' || path === '/register' || path === '/forgot-password' || path === '/reset-password';
+        }
+
         function setupFastNavigationPrefetch() {
+            if (isAuthFormPath()) {
+                // Evita competição de rede e render em telas de autenticação/formulário.
+                return;
+            }
+
             const importantRoutes = ['/', '/offers', '/ai-agent', '/services', '/community', '/store'];
             const importantApis = [
                 '/api/offers?skip=0&limit=12',
@@ -2449,7 +2459,7 @@
         }
 
         function fixInputStability() {
-            document.querySelectorAll('input, textarea').forEach((field) => {
+            document.querySelectorAll('input, textarea, select').forEach((field) => {
                 stabilizeEditableField(field);
             });
         }
@@ -3079,13 +3089,13 @@
             document.addEventListener('focusin', (event) => {
                 const target = event.target;
                 if (!(target instanceof HTMLElement)) return;
-                if (target.matches('input, textarea')) {
+                if (target.matches('input, textarea, select')) {
                     stabilizeEditableField(target);
                 }
             }, true);
 
             document.addEventListener('pointerdown', (event) => {
-                const target = event.target instanceof Element ? event.target.closest('input, textarea') : null;
+                const target = event.target instanceof Element ? event.target.closest('input, textarea, select') : null;
                 if (!target) return;
                 stabilizeEditableField(target);
             }, true);
@@ -3504,11 +3514,13 @@
             }
 
             // Warm cache for frequently used feeds so page switches feel instant.
-            setTimeout(() => {
-                apiRequest('/offers?limit=12').catch(() => {});
-                apiRequest('/store/featured?limit=8').catch(() => {});
-                apiRequest('/community/posts?limit=6').catch(() => {});
-            }, 60);
+            if (!isAuthFormPath()) {
+                setTimeout(() => {
+                    apiRequest('/offers?limit=12').catch(() => {});
+                    apiRequest('/store/featured?limit=8').catch(() => {});
+                    apiRequest('/community/posts?limit=6').catch(() => {});
+                }, 60);
+            }
         });
     </script>
 

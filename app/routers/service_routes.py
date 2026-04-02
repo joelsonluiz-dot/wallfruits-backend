@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -153,6 +153,9 @@ def _service_payload(item: Service) -> dict:
         "imagem": item.imagem,
         "ficha_tecnica": ficha,
         "is_active": bool(item.is_active),
+        "status": "disponível" if item.is_active else "indisponível",
+        "created_at": item.created_at.isoformat() if item.created_at else None,
+        "updated_at": item.updated_at.isoformat() if item.updated_at else None,
         "created_by_user": {
             "id": created_by.id,
             "name": created_by.name,
@@ -186,17 +189,25 @@ def _build_ficha_from_payload(payload: ServiceIn | ServiceUpdateIn, *, current: 
 
 
 @router.get("")
-async def list_services(db: Session = Depends(get_db)):
+async def list_services(
+    db: Session = Depends(get_db),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(120, ge=1, le=500),
+):
     _ensure_seed_services(db)
 
+    base_query = db.query(Service).filter(Service.is_active == True)
+    total = base_query.count()
+
     services = (
-        db.query(Service)
-        .filter(Service.is_active == True)
+        base_query
         .order_by(Service.id.desc())
+        .offset(skip)
+        .limit(limit)
         .all()
     )
     payload = [_service_payload(item) for item in services]
-    return {"services": payload, "total": len(payload)}
+    return {"services": payload, "total": total, "skip": skip, "limit": limit}
 
 
 @router.get("/categories")

@@ -201,14 +201,27 @@
 <script>
     let registerInFlight = false;
 
+    async function fetchWithTimeout(url, config = {}, timeoutMs = 15000) {
+        const controller = new AbortController();
+        const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+        try {
+            return await fetch(url, {
+                ...config,
+                signal: controller.signal,
+            });
+        } finally {
+            window.clearTimeout(timeoutId);
+        }
+    }
+
     async function uploadPublicProfileImage(file) {
         const formData = new FormData();
         formData.append('file', file);
 
-        const response = await fetch('/api/uploads/public-profile-image', {
+        const response = await fetchWithTimeout('/api/uploads/public-profile-image', {
             method: 'POST',
             body: formData,
-        });
+        }, 15000);
 
         const payload = await response.json();
         if (!response.ok) {

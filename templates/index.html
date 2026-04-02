@@ -197,6 +197,40 @@
         white-space: nowrap;
     }
 
+    .home-service-meta-row {
+        margin-top: 0.08rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.35rem;
+        flex-wrap: wrap;
+    }
+
+    .home-service-status {
+        border-radius: 999px;
+        border: 1px solid rgba(31, 109, 65, 0.28);
+        background: rgba(31, 109, 65, 0.12);
+        color: #1f6d41;
+        font-size: 0.62rem;
+        font-weight: 800;
+        padding: 0.14rem 0.42rem;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+
+    .home-service-status.offline {
+        border-color: rgba(153, 53, 53, 0.28);
+        background: rgba(153, 53, 53, 0.12);
+        color: #9d3030;
+    }
+
+    .home-service-published {
+        font-size: 0.62rem;
+        font-weight: 700;
+        color: var(--wf-text-secondary);
+        white-space: nowrap;
+    }
+
     .home-community-section {
         margin-top: 2.1rem;
     }
@@ -328,6 +362,45 @@
         font-size: 0.82rem;
         line-height: 1;
         opacity: 0.92;
+    }
+
+    .home-community-actions {
+        margin-top: 0.08rem;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.24rem;
+    }
+
+    .home-community-action {
+        border: 1px solid rgba(17, 73, 125, 0.16);
+        border-radius: 9px;
+        background: rgba(247, 253, 255, 0.92);
+        color: #194a82;
+        font-size: 0.66rem;
+        font-weight: 800;
+        padding: 0.3rem 0.25rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.16rem;
+        cursor: pointer;
+        min-height: 30px;
+    }
+
+    .home-community-action .material-icons {
+        font-size: 0.84rem;
+    }
+
+    .home-community-action.liked {
+        color: #b23a58;
+        border-color: rgba(178, 58, 88, 0.32);
+        background: rgba(255, 231, 237, 0.92);
+    }
+
+    .home-community-action.saved {
+        color: #0e6f89;
+        border-color: rgba(14, 111, 137, 0.32);
+        background: rgba(228, 247, 252, 0.92);
     }
 
     .home-community-open {
@@ -476,6 +549,20 @@
         gap: 0.45rem;
         font-size: 0.72rem;
         color: var(--wf-text-secondary);
+    }
+
+    .home-offer-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.4rem;
+    }
+
+    .home-offer-published {
+        font-size: 0.64rem;
+        font-weight: 800;
+        color: var(--wf-text-secondary);
+        white-space: nowrap;
     }
     .home-producer-avatar {
         width: 22px;
@@ -848,6 +935,181 @@
         return `R$ ${Number(value).toFixed(2)}`;
     }
 
+    function formatDateTimeShort(value) {
+        if (!value) return '';
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return '';
+        return date.toLocaleString('pt-BR', {
+            day: '2-digit',
+            month: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+        });
+    }
+
+    function formatRelativeCompact(value) {
+        if (!value) return '';
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return '';
+
+        const diffMs = Date.now() - date.getTime();
+        if (Math.abs(diffMs) < 60000) return 'agora';
+
+        const diffMinutes = Math.round(diffMs / 60000);
+        if (Math.abs(diffMinutes) < 60) return `${Math.abs(diffMinutes)}m`;
+
+        const diffHours = Math.round(diffMinutes / 60);
+        if (Math.abs(diffHours) < 24) return `${Math.abs(diffHours)}h`;
+
+        const diffDays = Math.round(diffHours / 24);
+        return `${Math.abs(diffDays)}d`;
+    }
+
+    function buildPublishedLabel(value) {
+        const relative = formatRelativeCompact(value);
+        const formatted = formatDateTimeShort(value);
+
+        if (relative && formatted) {
+            return {
+                label: `${relative} • ${formatted}`,
+                title: `Publicado em ${formatted}`,
+            };
+        }
+
+        if (formatted) {
+            return {
+                label: formatted,
+                title: `Publicado em ${formatted}`,
+            };
+        }
+
+        return {
+            label: 'Agora',
+            title: 'Publicado recentemente',
+        };
+    }
+
+    function normalizeServiceStatus(statusValue) {
+        const raw = String(statusValue || '').trim().toLowerCase();
+        const isOnline = raw.includes('dispon') || raw.includes('ativo') || raw.includes('online') || raw.includes('available');
+
+        if (!raw || isOnline) {
+            return {
+                label: 'Disponível',
+                offline: false,
+            };
+        }
+
+        return {
+            label: 'Indisponível',
+            offline: true,
+        };
+    }
+
+    const HOME_SAVED_POSTS_KEY = 'wf_home_saved_posts';
+
+    function savedHomePostsSet() {
+        try {
+            const raw = JSON.parse(localStorage.getItem(HOME_SAVED_POSTS_KEY) || '[]');
+            return new Set(Array.isArray(raw) ? raw.map((item) => Number(item)).filter((item) => Number.isFinite(item)) : []);
+        } catch {
+            return new Set();
+        }
+    }
+
+    function isHomeSavedPost(postId) {
+        return savedHomePostsSet().has(Number(postId));
+    }
+
+    function toggleHomeSavedPost(postId) {
+        const set = savedHomePostsSet();
+        const safePostId = Number(postId);
+        if (set.has(safePostId)) {
+            set.delete(safePostId);
+        } else {
+            set.add(safePostId);
+        }
+        localStorage.setItem(HOME_SAVED_POSTS_KEY, JSON.stringify(Array.from(set)));
+        return set.has(safePostId);
+    }
+
+    function ensureHomeActionAuth() {
+        if (localStorage.getItem('token')) return true;
+        const next = encodeURIComponent(`${window.location.pathname}${window.location.search}`);
+        window.location.href = `/login?next=${next}`;
+        return false;
+    }
+
+    function updateHomeCommunityStat(postId, statType, value) {
+        const target = document.querySelector(`[data-home-${statType}-stat="${Number(postId)}"]`);
+        if (!target) return;
+        const valueEl = target.querySelector('.home-community-stat-value');
+        if (valueEl) {
+            valueEl.textContent = String(Math.max(0, Number(value || 0)));
+        }
+    }
+
+    async function handleHomeCommunityAction(button) {
+        const action = button.getAttribute('data-community-action');
+        const postId = Number(button.getAttribute('data-post-id'));
+        if (!action || !postId) return;
+
+        const icon = button.querySelector('.material-icons');
+        const countEl = button.querySelector('.home-community-action-count');
+
+        if (action === 'comment') {
+            window.location.href = `/community?post=${postId}&open_comments=1&from=home`;
+            return;
+        }
+
+        if (action === 'save') {
+            const saved = toggleHomeSavedPost(postId);
+            button.classList.toggle('saved', saved);
+            if (icon) icon.textContent = saved ? 'bookmark' : 'bookmark_border';
+            if (countEl) countEl.textContent = saved ? '1' : '0';
+            return;
+        }
+
+        if (!ensureHomeActionAuth()) return;
+
+        if (action === 'like') {
+            try {
+                const result = await apiRequest(`/community/posts/${postId}/like`, 'POST');
+                const liked = Boolean(result?.liked);
+                const likesCount = Number(result?.likes_count || 0);
+                button.classList.toggle('liked', liked);
+                if (icon) icon.textContent = liked ? 'favorite' : 'favorite_border';
+                if (countEl) countEl.textContent = String(likesCount);
+                updateHomeCommunityStat(postId, 'like', likesCount);
+            } catch (error) {
+                alert(error.message || 'Falha ao curtir o post.');
+            }
+            return;
+        }
+
+        if (action === 'share') {
+            try {
+                const result = await apiRequest(`/community/posts/${postId}/share`, 'POST');
+                const sharesCount = Number(result?.shares_count || 0);
+                if (countEl) countEl.textContent = String(sharesCount);
+                updateHomeCommunityStat(postId, 'share', sharesCount);
+
+                const shareUrl = result?.share_url || `${window.location.origin}/community?post=${postId}`;
+                const shareText = 'Veja este post na Comunidade Agro da WallFruits';
+                if (navigator.share) {
+                    await navigator.share({ title: 'Comunidade Agro', text: shareText, url: shareUrl });
+                } else if (navigator.clipboard?.writeText) {
+                    await navigator.clipboard.writeText(shareUrl);
+                    alert('Link copiado para compartilhar.');
+                } else {
+                    alert(`Compartilhe este link: ${shareUrl}`);
+                }
+            } catch (error) {
+                alert(error.message || 'Falha ao compartilhar o post.');
+            }
+        }
+    }
+
     function fallbackImageSvg(label) {
         const safeLabel = encodeURIComponent((label || 'Fruta').slice(0, 16));
         const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%' stop-color='%23161a24'/><stop offset='100%' stop-color='%23272d3a'/></linearGradient></defs><rect width='100%' height='100%' fill='url(%23g)'/><circle cx='150' cy='120' r='65' fill='%23EDA44C' opacity='0.22'/><text x='50%' y='84%' dominant-baseline='middle' text-anchor='middle' fill='%23e8e8ed' font-size='22' font-family='Arial'>${safeLabel}</text></svg>`;
@@ -883,15 +1145,19 @@
                 const ownerProfile = profileUrlByUserId(ownerId);
                 const ownerName = offer.owner_data?.name || 'Produtor';
                 const ownerAvatar = resolveAvatar(offer.owner_data?.profile_image || null);
+                const published = buildPublishedLabel(offer.created_at || offer.updated_at);
                 return `
                     <article class="home-offer-card" data-offer-id="${offer.id}">
                         <img class="home-offer-image" src="${escapeHtml(getOfferImage(offer))}" alt="${escapeHtml(offer.product_name)}">
                         <div class="home-offer-body">
-                            <div class="home-producer">
-                                <a href="${escapeHtml(ownerProfile)}" onclick="event.stopPropagation()" style="display:inline-flex;">
-                                    <img class="home-producer-avatar" src="${escapeHtml(ownerAvatar)}" alt="Avatar de ${escapeHtml(ownerName)}" onerror="wfAvatarOnError(this)">
-                                </a>
-                                <a class="home-producer-link" href="${escapeHtml(ownerProfile)}" onclick="event.stopPropagation()">${escapeHtml(ownerName)}</a>
+                            <div class="home-offer-top">
+                                <div class="home-producer">
+                                    <a href="${escapeHtml(ownerProfile)}" onclick="event.stopPropagation()" style="display:inline-flex;">
+                                        <img class="home-producer-avatar" src="${escapeHtml(ownerAvatar)}" alt="Avatar de ${escapeHtml(ownerName)}" onerror="wfAvatarOnError(this)">
+                                    </a>
+                                    <a class="home-producer-link" href="${escapeHtml(ownerProfile)}" onclick="event.stopPropagation()">${escapeHtml(ownerName)}</a>
+                                </div>
+                                <span class="home-offer-published" title="${escapeHtml(published.title)}">${escapeHtml(published.label)}</span>
                             </div>
                             <h3 class="home-fruit">${escapeHtml(offer.product_name)}</h3>
                             <div class="home-price-row">
@@ -974,6 +1240,8 @@
             container.innerHTML = services.map((service) => {
                 const category = String(service?.ficha_tecnica?.categoria || 'Serviço agrícola').trim();
                 const image = service.imagem || fallbackImageSvg(service.titulo || 'Serviço');
+                const statusInfo = normalizeServiceStatus(service.status);
+                const published = buildPublishedLabel(service.created_at || service.updated_at);
                 return `
                     <a href="/services/detail/${encodeURIComponent(service.id)}" class="home-service-card">
                         <div class="home-service-media">
@@ -984,6 +1252,10 @@
                             <h3 class="home-service-name">${escapeHtml(service.titulo || 'Serviço')}</h3>
                             <span class="home-service-price">${escapeHtml(service.preco || 'Sob consulta')}</span>
                             <span class="home-service-local">${escapeHtml(service.local || 'Local não informado')}</span>
+                            <div class="home-service-meta-row">
+                                <span class="home-service-status ${statusInfo.offline ? 'offline' : ''}">${escapeHtml(statusInfo.label)}</span>
+                                <span class="home-service-published" title="${escapeHtml(published.title)}">${escapeHtml(published.label)}</span>
+                            </div>
                         </div>
                     </a>
                 `;
@@ -1035,6 +1307,9 @@
                 const likes = Number(post.likes_count || 0);
                 const comments = Number(post.comments_count || 0);
                 const shares = Number(post.shares_count || 0);
+                const likedByMe = Boolean(post.liked_by_me);
+                const savedByMe = isHomeSavedPost(post.id);
+                const published = buildPublishedLabel(post.created_at);
                 const profileUrl = profileUrlByUserId(post.author?.id || 0);
                 const postUrl = `/community?post=${encodeURIComponent(post.id)}`;
 
@@ -1059,14 +1334,41 @@
                             </div>
                             <a href="${postUrl}" class="home-community-open"><p class="home-community-text">${escapeHtml(postText || 'Atualização da comunidade')}</p></a>
                             <div class="home-community-meta">
-                                <span class="home-community-stat" title="Curtidas"><span>${likes}</span><span class="material-icons">favorite</span></span>
-                                <span class="home-community-stat" title="Comentários"><span>${comments}</span><span class="material-icons">chat_bubble_outline</span></span>
-                                <span class="home-community-stat" title="Compartilhamentos"><span>${shares}</span><span class="material-icons">share</span></span>
+                                <span class="home-community-stat" data-home-like-stat="${post.id}" title="Curtidas"><span class="home-community-stat-value">${likes}</span><span class="material-icons">favorite</span></span>
+                                <span class="home-community-stat" data-home-comment-stat="${post.id}" title="Comentários"><span class="home-community-stat-value">${comments}</span><span class="material-icons">chat_bubble_outline</span></span>
+                                <span class="home-community-stat" data-home-share-stat="${post.id}" title="Compartilhamentos"><span class="home-community-stat-value">${shares}</span><span class="material-icons">share</span></span>
+                                <span class="home-community-stat" title="Publicado"><span class="home-community-stat-value">${escapeHtml(published.label)}</span><span class="material-icons">schedule</span></span>
+                            </div>
+                            <div class="home-community-actions">
+                                <button type="button" class="home-community-action ${likedByMe ? 'liked' : ''}" data-community-action="like" data-post-id="${post.id}" aria-label="Curtir post">
+                                    <span class="material-icons">${likedByMe ? 'favorite' : 'favorite_border'}</span>
+                                    <span class="home-community-action-count">${likes}</span>
+                                </button>
+                                <button type="button" class="home-community-action" data-community-action="comment" data-post-id="${post.id}" aria-label="Comentar no post">
+                                    <span class="material-icons">chat_bubble_outline</span>
+                                    <span class="home-community-action-count">${comments}</span>
+                                </button>
+                                <button type="button" class="home-community-action" data-community-action="share" data-post-id="${post.id}" aria-label="Compartilhar post">
+                                    <span class="material-icons">share</span>
+                                    <span class="home-community-action-count">${shares}</span>
+                                </button>
+                                <button type="button" class="home-community-action ${savedByMe ? 'saved' : ''}" data-community-action="save" data-post-id="${post.id}" aria-label="Salvar post">
+                                    <span class="material-icons">${savedByMe ? 'bookmark' : 'bookmark_border'}</span>
+                                    <span class="home-community-action-count">${savedByMe ? 1 : 0}</span>
+                                </button>
                             </div>
                         </div>
                     </article>
                 `;
             }).join('');
+
+            container.querySelectorAll('.home-community-action').forEach((button) => {
+                button.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    handleHomeCommunityAction(button);
+                });
+            });
 
             markHomeUpdated('community', signature, silent);
         } catch {

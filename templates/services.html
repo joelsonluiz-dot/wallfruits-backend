@@ -386,6 +386,7 @@
         const SERVICES_ROUTE_CACHE_KEY = 'wf_route_cache_services_v1';
         const SERVICES_ROUTE_CACHE_TTL_MS = 180000;
         const SERVICES_PAGE_SIZE = 8;
+        const SERVICES_FETCH_BATCH_SIZE = 24;
 
         let allServices = [];
         let officialCategories = [];
@@ -397,6 +398,11 @@
             filtered: [],
             visibleCount: 0,
             activeId: null,
+        };
+        const servicesServerState = {
+            total: 0,
+            hasMore: false,
+            loadingMore: false,
         };
 
         if (!listEl || !chipsEl) return;
@@ -460,6 +466,39 @@
             } catch {
                 // ignora indisponibilidade de storage
             }
+        }
+
+        function buildServicesListUrl(skip = 0, limit = SERVICES_FETCH_BATCH_SIZE) {
+            const params = new URLSearchParams();
+            params.set('skip', String(Math.max(0, Number(skip || 0))));
+            params.set('limit', String(Math.max(1, Number(limit || SERVICES_FETCH_BATCH_SIZE))));
+            return `/services?${params.toString()}`;
+        }
+
+        function mergeServices(incoming) {
+            if (!Array.isArray(incoming) || !incoming.length) return;
+            const merged = new Map();
+            allServices.forEach((item) => {
+                if (item && item.id != null) {
+                    merged.set(String(item.id), item);
+                }
+            });
+            incoming.forEach((item) => {
+                if (item && item.id != null) {
+                    merged.set(String(item.id), item);
+                }
+            });
+            allServices = Array.from(merged.values());
+        }
+
+        async function fetchServicesChunk(skip = 0, limit = SERVICES_FETCH_BATCH_SIZE) {
+            const data = await apiRequest(buildServicesListUrl(skip, limit));
+            const services = Array.isArray(data?.services) ? data.services : [];
+            const total = Number(data?.total || 0);
+            return {
+                services,
+                total: Number.isFinite(total) ? total : 0,
+            };
         }
 
         function redirectGuestToAuth() {
@@ -643,14 +682,72 @@
 
             if (servicesViewState.visibleCount < servicesViewState.filtered.length) {
                 setServicesLoadStatus(`Mostrando ${servicesViewState.visibleCount} de ${servicesViewState.filtered.length} serviços. Role para carregar mais.`);
+            } else if (servicesServerState.hasMore) {
+                setServicesLoadStatus(`Mostrando ${servicesViewState.filtered.length} serviço(s). Role para carregar mais.`);
             } else {
                 setServicesLoadStatus(servicesViewState.filtered.length > 0 ? `Mostrando ${servicesViewState.filtered.length} serviço(s).` : '');
             }
         }
 
+        async function loadMoreServicesFromServer() {
+            if (servicesServerState.loadingMore || !servicesServerState.hasMore) return;
+
+            servicesServerState.loadingMore = true;
+            setServicesLoadStatus('Carregando mais serviços...');
+
+            try {
+                const payload = await fetchServicesChunk(allServices.length, SERVICES_FETCH_BATCH_SIZE);
+                const incoming = payload.services;
+                if (!incoming.length) {
+                    servicesServerState.hasMore = false;
+                    servicesServerState.total = Math.max(servicesServerState.total, allServices.length);
+                    setServicesLoadStatus(`Você chegou ao fim dos ${servicesViewState.filtered.length} serviços.`);
+                    return;
+                }
+
+                mergeServices(incoming);
+                servicesServerState.total = payload.total > 0 ? payload.total : Math.max(servicesServerState.total, allServices.length);
+                servicesServerState.hasMore = allServices.length < servicesServerState.total;
+
+                const refreshed = filteredServices();
+                servicesViewState.filtered = refreshed;
+                servicesViewState.visibleCount = Math.min(
+                    Math.max(servicesViewState.visibleCount + SERVICES_PAGE_SIZE, SERVICES_PAGE_SIZE),
+                    refreshed.length,
+                );
+
+                const visibleItems = refreshed.slice(0, servicesViewState.visibleCount);
+                renderList(visibleItems, servicesViewState.activeId || refreshed[0]?.id);
+
+                if (servicesViewState.visibleCount < refreshed.length) {
+                    setServicesLoadStatus(`Mostrando ${servicesViewState.visibleCount} de ${refreshed.length} serviços. Role para carregar mais.`);
+                } else if (servicesServerState.hasMore) {
+                    setServicesLoadStatus(`Mostrando ${refreshed.length} serviço(s). Role para carregar mais.`);
+                } else {
+                    setServicesLoadStatus(`Você chegou ao fim dos ${refreshed.length} serviços.`);
+                }
+
+                writeServicesRouteCache(allServices, officialCategories);
+            } catch {
+                setServicesLoadStatus('Falha ao carregar mais serviços. Tente novamente.');
+            } finally {
+                servicesServerState.loadingMore = false;
+            }
+        }
+
         function appendNextServicesChunk() {
-            if (!servicesViewState.filtered.length) return;
+            if (!servicesViewState.filtered.length) {
+                if (servicesServerState.hasMore) {
+                    loadMoreServicesFromServer();
+                }
+                return;
+            }
+
             if (servicesViewState.visibleCount >= servicesViewState.filtered.length) {
+                if (servicesServerState.hasMore) {
+                    loadMoreServicesFromServer();
+                    return;
+                }
                 setServicesLoadStatus(`Você chegou ao fim dos ${servicesViewState.filtered.length} serviços.`);
                 return;
             }
@@ -665,6 +762,8 @@
 
             if (servicesViewState.visibleCount < servicesViewState.filtered.length) {
                 setServicesLoadStatus(`Mostrando ${servicesViewState.visibleCount} de ${servicesViewState.filtered.length} serviços. Role para carregar mais.`);
+            } else if (servicesServerState.hasMore) {
+                setServicesLoadStatus(`Mostrando ${servicesViewState.filtered.length} serviço(s). Role para carregar mais.`);
             } else {
                 setServicesLoadStatus(`Você chegou ao fim dos ${servicesViewState.filtered.length} serviços.`);
             }
@@ -760,7 +859,7 @@
 
             try {
                 const [servicesData, categoriesData] = await Promise.all([
-                    apiRequest('/services'),
+                    fetchServicesChunk(0, SERVICES_FETCH_BATCH_SIZE),
                     apiRequest('/services/categories').catch(() => ({ categories: [] })),
                 ]);
                 const services = Array.isArray(servicesData?.services) ? servicesData.services : [];
@@ -774,11 +873,18 @@
                 }
 
                 allServices = services;
+                servicesServerState.total = servicesData.total > 0 ? servicesData.total : services.length;
+                servicesServerState.hasMore = allServices.length < servicesServerState.total;
                 selectedCategory = 'Todas';
                 renderCategoryChips();
                 renderActiveFilterChips();
                 renderFilteredServices('Nenhum serviço encontrado para os filtros selecionados.');
                 writeServicesRouteCache(allServices, officialCategories);
+
+                if (servicesServerState.hasMore) {
+                    // Pré-carrega em segundo plano para acelerar pesquisas e rolagem futuras.
+                    loadMoreServicesFromServer();
+                }
             } catch {
                 if (hydratedFromCache) {
                     return;
