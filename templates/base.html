@@ -1994,33 +1994,6 @@
             <div class="wf-nav-group">
                 <div class="wf-group-title">Módulos</div>
                 <a class="wf-nav-link" href="/ai-agent" id="navAgendaIA">Agenda Comercial</a>
-                    <!-- Popup de ações rápidas (mobile/tablet) -->
-                    <div class="wf-popup-overlay" id="wfQuickActionsPopup">
-                        <div class="wf-popup-content">
-                            <div class="wf-popup-drag-handle"></div>
-                            <div class="wf-popup-items">
-                                <a class="wf-popup-item" href="/ai-agent">
-                                    <span class="material-icons">event</span>
-                                    <span>Agenda Comercial</span>
-                                </a>
-                                <!-- ...outros itens do popup, se houver... -->
-                            </div>
-                            <button class="wf-popup-close" onclick="document.getElementById('wfQuickActionsPopup').classList.remove('show')">Fechar</button>
-                        </div>
-                    </div>
-    <script>
-    // Exibe o popup de ações rápidas ao clicar no botão + (mobile/tablet)
-    document.addEventListener('DOMContentLoaded', function() {
-        var quickBtn = document.getElementById('wfQuickActionsBtn');
-        if (quickBtn) {
-            quickBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                var popup = document.getElementById('wfQuickActionsPopup');
-                if (popup) popup.classList.add('show');
-            });
-        }
-    });
-    </script>
                 <a class="wf-nav-link" href="/gamification" id="navGamification" style="display:none;">Gamificação</a>
                 <a class="wf-nav-link" href="/reputation" id="navReputation" style="display:none;">Reputação</a>
                 <a class="wf-nav-link" href="/intermediation" id="navIntermediation" style="display:none;">Mediação</a>
@@ -2101,8 +2074,8 @@
     <script>
         const WF_DEFAULT_AVATAR = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320"><rect width="320" height="320" fill="%23edf2f7"/><circle cx="160" cy="112" r="58" fill="%2373899f"/><path d="M48 284c0-62 50-112 112-112s112 50 112 112" fill="%2373899f"/></svg>';
         const WF_FAST_NAV_BREAKPOINT = 992;
-        const WF_GET_CACHE_TTL_MS = 12000;
-        const WF_GET_CACHE_PERSIST_TTL_MS = 45000;
+        const WF_GET_CACHE_TTL_MS = 45000;
+        const WF_GET_CACHE_PERSIST_TTL_MS = 240000;
         const WF_GET_CACHE_SESSION_KEY = 'wf_get_cache_v1';
         const WF_GET_CACHE = new Map();
         const WF_INFLIGHT_GET = new Map();
@@ -2185,10 +2158,26 @@
             const raw = String(url || '').toLowerCase();
             return (
                 raw.includes('/offers') ||
+                raw.includes('/services') ||
+                raw.includes('/store/products') ||
+                raw.includes('/store/categories') ||
                 raw.includes('/store/featured') ||
                 raw.includes('/community/posts') ||
+                raw.includes('/social/users/') ||
                 raw.includes('/categories') ||
                 raw.includes('/dashboard/insights')
+            );
+        }
+
+        function isRestrictedResourceMessage(message) {
+            if (!message) return false;
+            const textLower = String(message).toLowerCase();
+            return (
+                textLower.includes('premium') ||
+                textLower.includes('assinante') ||
+                textLower.includes('recurso restrito') ||
+                textLower.includes('exclusiva') ||
+                textLower.includes('apenas para')
             );
         }
 
@@ -2309,7 +2298,7 @@
                 }
             }
 
-            const timeoutMs = Number(options.timeoutMs || getAdvancedSetting('request_timeout_ms', 15000));
+            const timeoutMs = Number(options.timeoutMs || getAdvancedSetting('request_timeout_ms', 12000));
             const methodText = String(resolvedMethod || 'GET').toUpperCase();
             const maxAttempts = Number(options.maxAttempts || ((methodText === 'GET' && getAdvancedSetting('auto_retry', true)) ? 2 : 1));
 
@@ -2334,18 +2323,6 @@
                                 payload = { detail: text };
                             }
                         }
-
-                function isRestrictedResourceMessage(message) {
-                    if (!message) return false;
-                    const textLower = String(message).toLowerCase();
-                    return (
-                        textLower.includes('premium') ||
-                        textLower.includes('assinante') ||
-                        textLower.includes('recurso restrito') ||
-                        textLower.includes('exclusiva') ||
-                        textLower.includes('apenas para')
-                    );
-                }
 
                         if (!response.ok) {
                             const errorMessage =
@@ -2372,7 +2349,7 @@
                         const isAbort = error && error.name === 'AbortError';
                         const canRetry = attempt < maxAttempts;
                         if (canRetry && (isAbort || methodText === 'GET')) {
-                            await new Promise((resolve) => setTimeout(resolve, 450));
+                            await new Promise((resolve) => setTimeout(resolve, 280));
                             continue;
                         }
                         if (isAbort) {
@@ -2416,13 +2393,28 @@
 
         function setupFastNavigationPrefetch() {
             const importantRoutes = ['/', '/offers', '/ai-agent', '/services', '/community', '/store'];
+            const importantApis = [
+                '/api/offers?skip=0&limit=12',
+                '/api/services',
+                '/api/services/categories',
+                '/api/store/products?limit=12',
+                '/api/store/featured',
+                '/api/store/categories',
+                '/api/community/posts?skip=0&limit=12',
+            ];
             if ('requestIdleCallback' in window) {
                 window.requestIdleCallback(() => {
                     importantRoutes.forEach(prefetchRoute);
+                    importantApis.forEach((apiUrl) => {
+                        apiRequest(apiUrl, 'GET').catch(() => {});
+                    });
                 }, { timeout: 1500 });
             } else {
                 setTimeout(() => {
                     importantRoutes.forEach(prefetchRoute);
+                    importantApis.forEach((apiUrl) => {
+                        apiRequest(apiUrl, 'GET').catch(() => {});
+                    });
                 }, 350);
             }
 
@@ -2449,6 +2441,25 @@
             element.style.display = visible ? '' : 'none';
         }
 
+        function stabilizeEditableField(field) {
+            if (!field || field.disabled) return;
+            field.style.pointerEvents = 'auto';
+            field.style.userSelect = 'text';
+            field.style.webkitUserSelect = 'text';
+        }
+
+        function fixInputStability() {
+            document.querySelectorAll('input, textarea').forEach((field) => {
+                stabilizeEditableField(field);
+            });
+        }
+
+        function isTypingElementFocused() {
+            const active = document.activeElement;
+            if (!(active instanceof Element)) return false;
+            return active.matches('input, textarea, select, [contenteditable="true"]');
+        }
+
         function isMobileOrTabletViewport() {
             return window.matchMedia('(max-width: 992px)').matches;
         }
@@ -2458,7 +2469,9 @@
             return path === '/' || path === '/index' || path === '/home';
         }
 
-        function setNavAuthState() {
+        let wfLastNavStateKey = '';
+
+        function setNavAuthState(force = false) {
             const token = localStorage.getItem('token');
             let user = null;
             try {
@@ -2470,6 +2483,20 @@
             const isLogged = Boolean(token);
             const isAdmin = isLogged && user?.role === 'admin';
             const isStoreManager = isLogged && ['admin', 'supplier', 'producer'].includes(user?.role);
+            const mobileVisible = isMobileOrTabletViewport();
+            const isHomePath = isHomePagePath();
+            const navStateKey = [
+                isLogged ? 1 : 0,
+                isAdmin ? 1 : 0,
+                isStoreManager ? 1 : 0,
+                mobileVisible ? 1 : 0,
+                isHomePath ? 1 : 0,
+            ].join('|');
+
+            if (!force && wfLastNavStateKey === navStateKey) {
+                return;
+            }
+            wfLastNavStateKey = navStateKey;
 
             setElementDisplay('navLogin', !isLogged);
             setElementDisplay('navRegister', !isLogged);
@@ -2542,17 +2569,17 @@
 
             const actionBar = document.getElementById('actionBar');
             if (actionBar) {
-                actionBar.classList.toggle('mobile-visible', isMobileOrTabletViewport());
+                actionBar.classList.toggle('mobile-visible', mobileVisible);
             }
 
             const quickActionsFabLegacy = document.getElementById('wfQuickActionsBtn');
             if (quickActionsFabLegacy) {
-                quickActionsFabLegacy.style.display = isHomePagePath() ? '' : 'none';
+                quickActionsFabLegacy.style.display = isHomePath ? '' : 'none';
             }
 
             const quickActionsFab = document.getElementById('actionFloatingButton');
             if (quickActionsFab) {
-                quickActionsFab.style.display = isHomePagePath() ? '' : 'none';
+                quickActionsFab.style.display = isHomePath ? '' : 'none';
             }
 
             if (!isLogged) {
@@ -3047,12 +3074,37 @@
             initHiddenSettingsPanel();
             initKeyboardMenuGuard();
             setupFastNavigationPrefetch();
+            fixInputStability();
+
+            document.addEventListener('focusin', (event) => {
+                const target = event.target;
+                if (!(target instanceof HTMLElement)) return;
+                if (target.matches('input, textarea')) {
+                    stabilizeEditableField(target);
+                }
+            }, true);
+
+            document.addEventListener('pointerdown', (event) => {
+                const target = event.target instanceof Element ? event.target.closest('input, textarea') : null;
+                if (!target) return;
+                stabilizeEditableField(target);
+            }, true);
+
             setNavAuthState();
             refreshUnreadNotifications();
         });
 
+        let wfResizeTimer = null;
         window.addEventListener('resize', () => {
-            setNavAuthState();
+            if (wfResizeTimer) {
+                clearTimeout(wfResizeTimer);
+            }
+            wfResizeTimer = setTimeout(() => {
+                if (isTypingElementFocused()) {
+                    return;
+                }
+                setNavAuthState();
+            }, 120);
         });
 
         if ('serviceWorker' in navigator) {

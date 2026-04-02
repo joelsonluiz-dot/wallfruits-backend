@@ -92,6 +92,14 @@ class CommunityModerationActionResponse(BaseModel):
     target_id: int
 
 
+class CommunityPurgeResponse(BaseModel):
+    success: bool
+    deleted_posts: int
+    deleted_comments: int
+    deleted_likes: int
+    deleted_shares: int
+
+
 class CommunityBlockUserRequest(BaseModel):
     reason: Optional[str] = None
 

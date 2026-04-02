@@ -1237,6 +1237,8 @@
     const OFFERS_AUTO_REFRESH_OPTIONS = [20000, 45000, 90000];
     const OFFERS_REFRESH_PAUSED_KEY = 'wf_offers_refresh_paused';
     const OFFERS_REFRESH_INTERVAL_KEY = 'wf_offers_refresh_interval_ms';
+    const OFFERS_ROUTE_CACHE_PREFIX = 'wf_route_cache_offers_v2';
+    const OFFERS_ROUTE_CACHE_TTL_MS = 180000;
     const OFFERS_FRUIT_CHIPS = [
         'Banana',
         'Manga',
@@ -2215,6 +2217,45 @@
         });
     }
 
+    function buildOffersRouteCacheKey(signature) {
+        return `${OFFERS_ROUTE_CACHE_PREFIX}:${signature || 'default'}`;
+    }
+
+    function readOffersRouteCache(signature) {
+        try {
+            const key = buildOffersRouteCacheKey(signature);
+            const raw = sessionStorage.getItem(key);
+            if (!raw) return null;
+            const parsed = JSON.parse(raw);
+            const ts = Number(parsed?.ts || 0);
+            if (!ts || Date.now() - ts > OFFERS_ROUTE_CACHE_TTL_MS) {
+                sessionStorage.removeItem(key);
+                return null;
+            }
+            const items = Array.isArray(parsed?.items) ? parsed.items : [];
+            if (!items.length) return null;
+            return {
+                items,
+                hasMore: Boolean(parsed?.hasMore),
+            };
+        } catch {
+            return null;
+        }
+    }
+
+    function writeOffersRouteCache(signature, items, hasMore) {
+        if (!signature || !Array.isArray(items) || !items.length) return;
+        try {
+            sessionStorage.setItem(buildOffersRouteCacheKey(signature), JSON.stringify({
+                ts: Date.now(),
+                hasMore: Boolean(hasMore),
+                items,
+            }));
+        } catch {
+            // ignora indisponibilidade de storage
+        }
+    }
+
     function saveFilterPrefs() {
         try {
             localStorage.setItem(FILTER_PREFS_STORAGE_KEY, JSON.stringify(getFilterState()));
@@ -2542,6 +2583,51 @@
         bindCardOpenBehavior();
     }
 
+    async function refreshFirstOffersPage(expectedSignature) {
+        if (offersFeedState.isLoading) return;
+        offersFeedState.isLoading = true;
+
+        try {
+            const data = await apiRequest(buildOffersQuery(0, OFFERS_PAGE_SIZE));
+            if (getFilterSignature() !== expectedSignature) return;
+
+            const incoming = Array.isArray(data?.offers) ? data.offers : [];
+            incoming.forEach((offer) => offersStore.set(offer.id, offer));
+
+            offersFeedState.items = applyDistanceSortIfNeeded(incoming);
+            offersFeedState.skip = incoming.length;
+            offersFeedState.hasMore = incoming.length === OFFERS_PAGE_SIZE;
+
+            if (!offersFeedState.items.length) {
+                const container = document.getElementById('offersContainer');
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <p>Nenhuma oferta cadastrada ainda.</p>
+                        <a href="/offers/new" class="btn btn-wf-primary">Criar primeira oferta</a>
+                    </div>
+                `;
+                updateLoadMoreStatus('');
+                return;
+            }
+
+            renderOffersList(offersFeedState.items, false);
+            document.getElementById('offersCount').textContent = `${offersFeedState.items.length} oferta${offersFeedState.items.length === 1 ? '' : 's'} carregada${offersFeedState.items.length === 1 ? '' : 's'}`;
+
+            if (offersFeedState.hasMore) {
+                updateLoadMoreStatus('Role para carregar mais.');
+                prefetchNextPage();
+            } else {
+                updateLoadMoreStatus('Você chegou ao fim das ofertas.');
+            }
+
+            writeOffersRouteCache(expectedSignature, offersFeedState.items.slice(0, OFFERS_PAGE_SIZE), offersFeedState.hasMore);
+        } catch {
+            // mantém snapshot de cache caso atualização falhe
+        } finally {
+            offersFeedState.isLoading = false;
+        }
+    }
+
     async function silentRefreshOffers() {
         if (offersRefreshPaused || offersFeedState.isLoading || !offersFeedState.items.length) return;
 
@@ -2573,6 +2659,7 @@
             }
 
             showOffersToast(`${pendingFreshOffers} nova(s) oferta(s). Toque para ver.`);
+            writeOffersRouteCache(getFilterSignature(), offersFeedState.items.slice(0, OFFERS_PAGE_SIZE), offersFeedState.hasMore);
         } catch {
             // falha silenciosa para manter a experiência
         }
@@ -2621,6 +2708,8 @@
                 updateLoadMoreStatus('Role para carregar mais.');
                 prefetchNextPage();
             }
+
+            writeOffersRouteCache(getFilterSignature(), offersFeedState.items.slice(0, OFFERS_PAGE_SIZE), offersFeedState.hasMore);
         } catch (error) {
             const container = document.getElementById('offersContainer');
             container.innerHTML = `<div class="wf-alert wf-alert-error">${escapeHtml(error.message || 'Falha ao carregar ofertas')}</div>`;
@@ -2679,7 +2768,30 @@
     async function loadOffers() {
         pendingFreshOffers = 0;
         hideOffersToast();
+        const signature = getFilterSignature();
+        const cached = readOffersRouteCache(signature);
         resetOffersFeed();
+
+        if (cached?.items?.length) {
+            cached.items.forEach((offer) => offersStore.set(offer.id, offer));
+            offersFeedState.items = applyDistanceSortIfNeeded(cached.items.slice());
+            offersFeedState.skip = offersFeedState.items.length;
+            offersFeedState.hasMore = Boolean(cached.hasMore);
+
+            renderOffersList(offersFeedState.items, false);
+            document.getElementById('offersCount').textContent = `${offersFeedState.items.length} oferta${offersFeedState.items.length === 1 ? '' : 's'} carregada${offersFeedState.items.length === 1 ? '' : 's'}`;
+
+            if (offersFeedState.hasMore) {
+                updateLoadMoreStatus('Dados em cache carregados. Atualizando ofertas...');
+                prefetchNextPage();
+            } else {
+                updateLoadMoreStatus('Você chegou ao fim das ofertas.');
+            }
+
+            void refreshFirstOffersPage(signature);
+            return;
+        }
+
         await loadNextOffersPage();
     }
 

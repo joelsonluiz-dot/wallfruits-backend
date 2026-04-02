@@ -48,6 +48,9 @@ else:
         pool_size=5 if IS_SUPABASE else 20,
         max_overflow=10 if IS_SUPABASE else 40,
         pool_pre_ping=True,
+        pool_recycle=settings.DB_POOL_RECYCLE_SECONDS,
+        pool_timeout=settings.DB_POOL_TIMEOUT_SECONDS,
+        pool_use_lifo=True,
         connect_args=postgres_connect_args,
     )
 

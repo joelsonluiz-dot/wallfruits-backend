@@ -627,7 +627,11 @@
             allProducts: [],
             visibleCount: 0,
             pageSize: 12,
+            lastQueryKey: '',
         };
+
+        const STORE_ROUTE_CACHE_PREFIX = 'wf_route_cache_store_v1';
+        const STORE_ROUTE_CACHE_TTL_MS = 180000;
 
         const productsGrid = document.getElementById('productsGrid');
         const productsState = document.getElementById('productsState');
@@ -650,6 +654,43 @@
             const div = document.createElement('div');
             div.textContent = String(value ?? '');
             return div.innerHTML;
+        }
+
+        function buildStoreRouteCacheKey(queryString) {
+            return `${STORE_ROUTE_CACHE_PREFIX}:${queryString || 'base'}`;
+        }
+
+        function storeSnapshotSignature(data) {
+            const items = Array.isArray(data?.products) ? data.products : [];
+            return items.slice(0, 24).map((item) => `${item?.id || ''}:${item?.updated_at || item?.created_at || ''}`).join('|');
+        }
+
+        function readStoreRouteCache(cacheKey) {
+            try {
+                const raw = sessionStorage.getItem(cacheKey);
+                if (!raw) return null;
+                const parsed = JSON.parse(raw);
+                const ts = Number(parsed?.ts || 0);
+                if (!ts || Date.now() - ts > STORE_ROUTE_CACHE_TTL_MS) {
+                    sessionStorage.removeItem(cacheKey);
+                    return null;
+                }
+                return parsed?.payload || null;
+            } catch {
+                return null;
+            }
+        }
+
+        function writeStoreRouteCache(cacheKey, payload) {
+            try {
+                sessionStorage.setItem(cacheKey, JSON.stringify({
+                    ts: Date.now(),
+                    signature: storeSnapshotSignature(payload),
+                    payload,
+                }));
+            } catch {
+                // ignora indisponibilidade de storage
+            }
         }
 
         function readFavorites() {
@@ -880,8 +921,16 @@
             selectEl.value = current || '';
         }
 
+        function applyStorePayload(data) {
+            fillDropdown(cropFilter, data?.filters?.crops || [], state.crop);
+            fillDropdown(pestFilter, data?.filters?.pests || [], state.pest);
+            state.allProducts = Array.isArray(data?.products) ? data.products : [];
+            state.visibleCount = 0;
+            productsGrid.innerHTML = '';
+            appendNextProducts();
+        }
+
         async function loadProducts() {
-            renderLoading();
             renderActiveFilters();
             updateUrl();
 
@@ -892,17 +941,31 @@
             if (state.pest) params.set('pest', state.pest);
             if (state.priceRange) params.set('price_range', state.priceRange);
 
+            const queryString = params.toString();
+            const cacheKey = buildStoreRouteCacheKey(queryString);
+            state.lastQueryKey = cacheKey;
+
+            const cachedPayload = readStoreRouteCache(cacheKey);
+            if (cachedPayload) {
+                applyStorePayload(cachedPayload);
+                if (loadMoreStatus && state.allProducts.length > state.visibleCount) {
+                    loadMoreStatus.style.display = 'block';
+                    loadMoreStatus.textContent = 'Dados em cache carregados. Atualizando itens...';
+                }
+            } else {
+                renderLoading();
+            }
+
             try {
-                const response = await fetch(`/api/store/products?${params.toString()}`);
-                if (!response.ok) throw new Error('Falha ao carregar produtos da loja.');
-                const data = await response.json();
-                fillDropdown(cropFilter, data.filters?.crops || [], state.crop);
-                fillDropdown(pestFilter, data.filters?.pests || [], state.pest);
-                state.allProducts = Array.isArray(data.products) ? data.products : [];
-                state.visibleCount = 0;
-                productsGrid.innerHTML = '';
-                appendNextProducts();
+                const data = await apiRequest(`/store/products${queryString ? `?${queryString}` : ''}`);
+                if (state.lastQueryKey !== cacheKey) return;
+                applyStorePayload(data || {});
+                writeStoreRouteCache(cacheKey, data || {});
             } catch (error) {
+                if (cachedPayload) {
+                    showState('Sem conexão com o servidor. Exibindo dados salvos da rota atual.', 'info');
+                    return;
+                }
                 productsGrid.innerHTML = '';
                 showState(error.message || 'Erro inesperado ao carregar a vitrine.', 'error');
                 if (loadMoreStatus) {

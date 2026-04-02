@@ -16,6 +16,7 @@ from uuid import uuid4
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -306,6 +307,12 @@ app.add_middleware(
     TrustedHostMiddleware,
     allowed_hosts=settings.ALLOWED_HOSTS,
 )
+
+if settings.HTTP_GZIP_ENABLED:
+    app.add_middleware(
+        GZipMiddleware,
+        minimum_size=settings.HTTP_GZIP_MINIMUM_SIZE,
+    )
 
 
 templates: Jinja2Templates | None = None

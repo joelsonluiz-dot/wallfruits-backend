@@ -278,6 +278,12 @@
         font-size: 0.82rem;
     }
 
+    .services-load-status {
+        margin-top: 0.62rem;
+        display: none;
+        font-size: 0.76rem;
+    }
+
     @media (max-width: 920px) {
         .services-list {
             grid-template-columns: 1fr;
@@ -336,6 +342,8 @@
 
     <section>
         <div id="servicesList" class="services-list"></div>
+        <div id="servicesLoadMoreSentinel" style="height:2px;"></div>
+        <div id="servicesLoadMoreStatus" class="service-empty services-load-status" role="status" aria-live="polite"></div>
     </section>
 </div>
 
@@ -373,12 +381,23 @@
 
         const listEl = document.getElementById('servicesList');
         const chipsEl = document.getElementById('servicesCategoryChips');
+        const servicesLoadMoreSentinel = document.getElementById('servicesLoadMoreSentinel');
+        const servicesLoadMoreStatus = document.getElementById('servicesLoadMoreStatus');
+        const SERVICES_ROUTE_CACHE_KEY = 'wf_route_cache_services_v1';
+        const SERVICES_ROUTE_CACHE_TTL_MS = 180000;
+        const SERVICES_PAGE_SIZE = 8;
 
         let allServices = [];
         let officialCategories = [];
         let selectedCategory = 'Todas';
         let servicesSearchTerm = '';
         let servicesSearchDebounce = null;
+        let servicesObserver = null;
+        const servicesViewState = {
+            filtered: [],
+            visibleCount: 0,
+            activeId: null,
+        };
 
         if (!listEl || !chipsEl) return;
 
@@ -396,6 +415,51 @@
             const div = document.createElement('div');
             div.textContent = text ?? '';
             return div.innerHTML;
+        }
+
+        function servicesSnapshotSignature(services, categories) {
+            const serviceParts = (services || [])
+                .slice(0, 24)
+                .map((item) => `${item?.id || ''}:${item?.updated_at || item?.created_at || ''}`)
+                .join('|');
+            const categoryParts = (categories || []).join('|');
+            return `${(services || []).length}::${serviceParts}::${categoryParts}`;
+        }
+
+        function readServicesRouteCache() {
+            try {
+                const raw = sessionStorage.getItem(SERVICES_ROUTE_CACHE_KEY);
+                if (!raw) return null;
+                const parsed = JSON.parse(raw);
+                const ts = Number(parsed?.ts || 0);
+                if (!ts || Date.now() - ts > SERVICES_ROUTE_CACHE_TTL_MS) {
+                    sessionStorage.removeItem(SERVICES_ROUTE_CACHE_KEY);
+                    return null;
+                }
+                const services = Array.isArray(parsed?.services) ? parsed.services : [];
+                const categories = Array.isArray(parsed?.categories) ? parsed.categories : [];
+                if (!services.length) return null;
+                return {
+                    services,
+                    categories,
+                    signature: String(parsed?.signature || ''),
+                };
+            } catch {
+                return null;
+            }
+        }
+
+        function writeServicesRouteCache(services, categories) {
+            try {
+                sessionStorage.setItem(SERVICES_ROUTE_CACHE_KEY, JSON.stringify({
+                    ts: Date.now(),
+                    services,
+                    categories,
+                    signature: servicesSnapshotSignature(services, categories),
+                }));
+            } catch {
+                // ignora indisponibilidade de storage
+            }
         }
 
         function redirectGuestToAuth() {
@@ -461,14 +525,7 @@
                     selectedCategory = chip.getAttribute('data-category') || 'Todas';
                     renderCategoryChips();
                     renderActiveFilterChips();
-
-                    const filtered = filteredServices();
-                    if (!filtered.length) {
-                        renderError('Nenhum serviço encontrado para essa categoria.');
-                        return;
-                    }
-
-                    renderList(filtered, filtered[0].id);
+                    renderFilteredServices('Nenhum serviço encontrado para essa categoria.');
                 });
             });
         }
@@ -517,14 +574,7 @@
 
                     renderCategoryChips();
                     renderActiveFilterChips();
-
-                    const filtered = filteredServices();
-                    if (!filtered.length) {
-                        renderError('Nenhum serviço encontrado para os filtros selecionados.');
-                        return;
-                    }
-
-                    renderList(filtered, filtered[0].id);
+                    renderFilteredServices('Nenhum serviço encontrado para os filtros selecionados.');
                 });
             });
         }
@@ -577,14 +627,91 @@
             });
         }
 
+        function setServicesLoadStatus(message = '') {
+            if (!servicesLoadMoreStatus) return;
+            servicesLoadMoreStatus.textContent = message;
+            servicesLoadMoreStatus.style.display = message ? 'block' : 'none';
+        }
+
+        function startIncrementalRender(services, activeId) {
+            servicesViewState.filtered = Array.isArray(services) ? services.slice() : [];
+            servicesViewState.activeId = activeId || servicesViewState.filtered[0]?.id || null;
+            servicesViewState.visibleCount = Math.min(SERVICES_PAGE_SIZE, servicesViewState.filtered.length);
+
+            const visibleItems = servicesViewState.filtered.slice(0, servicesViewState.visibleCount);
+            renderList(visibleItems, servicesViewState.activeId);
+
+            if (servicesViewState.visibleCount < servicesViewState.filtered.length) {
+                setServicesLoadStatus(`Mostrando ${servicesViewState.visibleCount} de ${servicesViewState.filtered.length} serviços. Role para carregar mais.`);
+            } else {
+                setServicesLoadStatus(servicesViewState.filtered.length > 0 ? `Mostrando ${servicesViewState.filtered.length} serviço(s).` : '');
+            }
+        }
+
+        function appendNextServicesChunk() {
+            if (!servicesViewState.filtered.length) return;
+            if (servicesViewState.visibleCount >= servicesViewState.filtered.length) {
+                setServicesLoadStatus(`Você chegou ao fim dos ${servicesViewState.filtered.length} serviços.`);
+                return;
+            }
+
+            servicesViewState.visibleCount = Math.min(
+                servicesViewState.visibleCount + SERVICES_PAGE_SIZE,
+                servicesViewState.filtered.length,
+            );
+
+            const visibleItems = servicesViewState.filtered.slice(0, servicesViewState.visibleCount);
+            renderList(visibleItems, servicesViewState.activeId);
+
+            if (servicesViewState.visibleCount < servicesViewState.filtered.length) {
+                setServicesLoadStatus(`Mostrando ${servicesViewState.visibleCount} de ${servicesViewState.filtered.length} serviços. Role para carregar mais.`);
+            } else {
+                setServicesLoadStatus(`Você chegou ao fim dos ${servicesViewState.filtered.length} serviços.`);
+            }
+        }
+
+        function setupServicesInfiniteScroll() {
+            if (!servicesLoadMoreSentinel) return;
+
+            if (servicesObserver) {
+                servicesObserver.disconnect();
+            }
+
+            servicesObserver = new IntersectionObserver((entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        appendNextServicesChunk();
+                    }
+                });
+            }, {
+                root: null,
+                rootMargin: '220px 0px',
+                threshold: 0,
+            });
+
+            servicesObserver.observe(servicesLoadMoreSentinel);
+        }
+
+        function renderFilteredServices(emptyMessage) {
+            const filtered = filteredServices();
+            if (!filtered.length) {
+                renderError(emptyMessage || 'Nenhum serviço encontrado para os filtros selecionados.');
+                return;
+            }
+
+            startIncrementalRender(filtered, filtered[0].id);
+        }
+
         function renderLoading() {
             chipsEl.innerHTML = '';
             listEl.innerHTML = '<div class="service-empty">Carregando serviços...</div>';
+            setServicesLoadStatus('');
         }
 
         function renderError(message) {
             chipsEl.innerHTML = '';
             listEl.innerHTML = `<div class="service-empty">${message}</div>`;
+            setServicesLoadStatus('');
         }
 
         async function loadServices() {
@@ -597,12 +724,7 @@
                 const applyServicesSearch = () => {
                     servicesSearchTerm = (searchInput.value || '').trim();
                     renderActiveFilterChips();
-                    const filtered = filteredServices();
-                    if (!filtered.length) {
-                        renderError('Nenhum serviço encontrado para os filtros selecionados.');
-                        return;
-                    }
-                    renderList(filtered, filtered[0].id);
+                    renderFilteredServices('Nenhum serviço encontrado para os filtros selecionados.');
                 };
 
                 searchInput.addEventListener('input', () => {
@@ -624,6 +746,18 @@
                 });
             }
 
+            let hydratedFromCache = false;
+            const cached = readServicesRouteCache();
+            if (cached?.services?.length) {
+                allServices = cached.services;
+                officialCategories = Array.isArray(cached.categories) ? cached.categories : [];
+                selectedCategory = 'Todas';
+                renderCategoryChips();
+                renderActiveFilterChips();
+                renderFilteredServices('Nenhum serviço encontrado para os filtros selecionados.');
+                hydratedFromCache = true;
+            }
+
             try {
                 const [servicesData, categoriesData] = await Promise.all([
                     apiRequest('/services'),
@@ -643,8 +777,13 @@
                 selectedCategory = 'Todas';
                 renderCategoryChips();
                 renderActiveFilterChips();
-                renderList(allServices, allServices[0].id);
+                renderFilteredServices('Nenhum serviço encontrado para os filtros selecionados.');
+                writeServicesRouteCache(allServices, officialCategories);
             } catch {
+                if (hydratedFromCache) {
+                    return;
+                }
+
                 if (!fallbackServices.length) {
                     renderError('Falha ao carregar serviços. Tente novamente em instantes.');
                     return;
@@ -655,10 +794,11 @@
                 selectedCategory = 'Todas';
                 renderCategoryChips();
                 renderActiveFilterChips();
-                renderList(allServices, allServices[0].id);
+                renderFilteredServices('Nenhum serviço encontrado para os filtros selecionados.');
             }
         }
 
+        setupServicesInfiniteScroll();
         loadServices();
     })();
 </script>

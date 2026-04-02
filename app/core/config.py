@@ -28,6 +28,8 @@ class Settings(BaseSettings):
     STARTUP_DB_RETRY_DELAY_SECONDS: float = 2.0
     STRICT_STARTUP: bool = False
     HEALTHCHECK_TIMEOUT_SECONDS: float = 3.0
+    DB_POOL_RECYCLE_SECONDS: int = 1800
+    DB_POOL_TIMEOUT_SECONDS: int = 20
 
     # Supabase
     SUPABASE_AUTH_ENABLED: bool = False
@@ -44,6 +46,8 @@ class Settings(BaseSettings):
     API_TITLE: str = "WallFruits API"
     API_DESCRIPTION: str = "Marketplace inteligente de frutas com WebSocket, Redis e IA"
     API_VERSION: str = "2.0.0"
+    HTTP_GZIP_ENABLED: bool = True
+    HTTP_GZIP_MINIMUM_SIZE: int = 1024
     
     # CORS
     CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
@@ -156,6 +160,15 @@ def get_settings() -> Settings:
 
     if settings.HEALTHCHECK_TIMEOUT_SECONDS <= 0:
         raise RuntimeError("HEALTHCHECK_TIMEOUT_SECONDS deve ser > 0")
+
+    if settings.DB_POOL_RECYCLE_SECONDS < 60:
+        raise RuntimeError("DB_POOL_RECYCLE_SECONDS deve ser >= 60")
+
+    if settings.DB_POOL_TIMEOUT_SECONDS < 1:
+        raise RuntimeError("DB_POOL_TIMEOUT_SECONDS deve ser >= 1")
+
+    if settings.HTTP_GZIP_MINIMUM_SIZE < 256:
+        raise RuntimeError("HTTP_GZIP_MINIMUM_SIZE deve ser >= 256")
 
     if settings.RATE_LIMIT_WINDOW_SECONDS <= 0:
         raise RuntimeError("RATE_LIMIT_WINDOW_SECONDS deve ser > 0")

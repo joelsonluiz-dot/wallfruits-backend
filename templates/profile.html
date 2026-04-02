@@ -745,6 +745,9 @@
                             <p class="section-sub" id="offersSectionHint">Portfólio público de produtos e preços.</p>
                         </div>
                         <div class="offer-grid" id="offersGrid"></div>
+                        <div id="offersLoadMoreWrap" class="settings-actions" style="justify-content:flex-start;margin-top:0.5rem;display:none;">
+                            <button class="btn-profile" type="button" id="offersLoadMoreBtn">Carregar mais ofertas</button>
+                        </div>
                         <div id="emptyOffers" class="helper-text" style="margin-top:0.5rem;display:none;">Nenhuma oferta publicada ainda.</div>
 
                         <div class="section-head" style="margin-top:0.9rem;">
@@ -752,6 +755,9 @@
                             <p class="section-sub" id="communitySectionHint">Atividade social recente deste perfil.</p>
                         </div>
                         <div class="community-grid" id="communityPostsGrid"></div>
+                        <div id="communityLoadMoreWrap" class="settings-actions" style="justify-content:flex-start;margin-top:0.5rem;display:none;">
+                            <button class="btn-profile" type="button" id="communityLoadMoreBtn">Carregar mais posts</button>
+                        </div>
                         <div id="emptyCommunityPosts" class="helper-text" style="margin-top:0.5rem;display:none;">Nenhuma publicação da comunidade ainda.</div>
                     </section>
 
@@ -834,6 +840,18 @@
     let currentUser = null;
     let profileData = null;
     let isOwnerProfile = false;
+    const PROFILE_ROUTE_CACHE_PREFIX = 'wf_route_cache_profile_v1';
+    const PROFILE_ROUTE_CACHE_TTL_MS = 180000;
+    const PROFILE_CROSS_PREFETCH_PREFIX = 'wf_profile_cross_prefetch_v1';
+    const PROFILE_RENDER_CHUNK = 6;
+    const offersListState = {
+        all: [],
+        visibleCount: 0,
+    };
+    const communityListState = {
+        all: [],
+        visibleCount: 0,
+    };
 
     function resolveAvatar(url) {
         if (window.wfResolveAvatar) return window.wfResolveAvatar(url);
@@ -873,6 +891,128 @@
         return value;
     }
 
+    function buildProfileRouteCacheKey(userId) {
+        return `${PROFILE_ROUTE_CACHE_PREFIX}:${userId}`;
+    }
+
+    function readProfileRouteCache(userId) {
+        if (!userId) return null;
+        try {
+            const raw = sessionStorage.getItem(buildProfileRouteCacheKey(userId));
+            if (!raw) return null;
+            const parsed = JSON.parse(raw);
+            const ts = Number(parsed?.ts || 0);
+            if (!ts || Date.now() - ts > PROFILE_ROUTE_CACHE_TTL_MS) {
+                sessionStorage.removeItem(buildProfileRouteCacheKey(userId));
+                return null;
+            }
+            return parsed?.data || null;
+        } catch {
+            return null;
+        }
+    }
+
+    function writeProfileRouteCache(userId, data) {
+        if (!userId || !data) return;
+        try {
+            sessionStorage.setItem(buildProfileRouteCacheKey(userId), JSON.stringify({
+                ts: Date.now(),
+                data,
+            }));
+        } catch {
+            // ignora indisponibilidade de storage
+        }
+    }
+
+    function normalizePrefetchKeyword(value) {
+        const normalized = String(value || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .replace(/[^a-z0-9\s-]/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+        return normalized.slice(0, 42);
+    }
+
+    function profileRelatedKeywords(data) {
+        const unique = new Set();
+        const push = (value) => {
+            const keyword = normalizePrefetchKeyword(value);
+            if (!keyword || keyword.length < 2) return;
+            unique.add(keyword);
+        };
+
+        push(data?.location);
+        (Array.isArray(data?.offers) ? data.offers : []).slice(0, 5).forEach((offer) => {
+            push(offer?.product_name);
+            push(offer?.category);
+        });
+
+        return Array.from(unique).slice(0, 3);
+    }
+
+    function prefetchProfileRoute(url) {
+        const target = String(url || '').trim();
+        if (!target) return;
+        fetch(target, {
+            method: 'GET',
+            credentials: 'same-origin',
+            headers: { 'X-WF-Prefetch': '1' },
+        }).catch(() => {});
+    }
+
+    function prefetchRelatedTabsFromProfile(data) {
+        const userId = Number(data?.id || 0);
+        if (!userId) return;
+
+        const keywords = profileRelatedKeywords(data);
+        const cacheKey = `${PROFILE_CROSS_PREFETCH_PREFIX}:${userId}:${keywords.join('|') || 'none'}`;
+
+        try {
+            if (sessionStorage.getItem(cacheKey) === '1') {
+                return;
+            }
+            sessionStorage.setItem(cacheKey, '1');
+        } catch {
+            // segue mesmo sem storage
+        }
+
+        const runPrefetch = () => {
+            ['/offers', '/services', '/store'].forEach(prefetchProfileRoute);
+
+            const apiTargets = [
+                '/offers?skip=0&limit=12',
+                '/services',
+                '/services/categories',
+                '/store/products?limit=12',
+                '/store/featured',
+            ];
+
+            keywords.forEach((keyword) => {
+                const encoded = encodeURIComponent(keyword);
+                apiTargets.push(`/offers?skip=0&limit=12&search=${encoded}`);
+                apiTargets.push(`/store/products?limit=12&q=${encoded}`);
+            });
+
+            apiTargets.forEach((url) => {
+                apiRequest(url, {
+                    method: 'GET',
+                    options: {
+                        timeoutMs: 8000,
+                        maxAttempts: 1,
+                    },
+                }).catch(() => {});
+            });
+        };
+
+        if ('requestIdleCallback' in window) {
+            window.requestIdleCallback(runPrefetch, { timeout: 1600 });
+        } else {
+            setTimeout(runPrefetch, 260);
+        }
+    }
+
     async function getCurrentUser() {
         const token = localStorage.getItem('token');
         if (!token) return null;
@@ -904,7 +1044,7 @@
     async function followUser(userId, shouldFollow) {
         const method = shouldFollow ? 'POST' : 'DELETE';
         await apiRequest(`/social/users/${userId}/follow`, method);
-        await loadProfile();
+        await loadProfile(true);
     }
 
     function setActiveSection(sectionId) {
@@ -961,21 +1101,36 @@
         `;
     }
 
-    function renderCommunityPosts(posts) {
+    function renderCommunityPosts(posts, preserveVisible = false) {
         const grid = document.getElementById('communityPostsGrid');
         const empty = document.getElementById('emptyCommunityPosts');
+        const loadWrap = document.getElementById('communityLoadMoreWrap');
 
         if (!Array.isArray(posts) || !posts.length) {
+            communityListState.all = [];
+            communityListState.visibleCount = 0;
             grid.innerHTML = '';
             empty.textContent = isOwnerProfile
                 ? 'Você ainda não publicou nada na comunidade. Compartilhe um update para ganhar visibilidade.'
                 : 'Este perfil ainda não publicou na comunidade.';
             empty.style.display = 'block';
+            if (loadWrap) loadWrap.style.display = 'none';
             return;
         }
 
+        communityListState.all = posts.slice();
+        if (!preserveVisible) {
+            communityListState.visibleCount = Math.min(PROFILE_RENDER_CHUNK, communityListState.all.length);
+        } else {
+            communityListState.visibleCount = Math.min(
+                Math.max(communityListState.visibleCount, PROFILE_RENDER_CHUNK),
+                communityListState.all.length,
+            );
+        }
+
         empty.style.display = 'none';
-        grid.innerHTML = posts.map((post) => `
+        const visibleItems = communityListState.all.slice(0, communityListState.visibleCount);
+        grid.innerHTML = visibleItems.map((post) => `
             <article class="community-card" onclick="window.location.href='/community?post=${post.id}'">
                 ${post.image_url ? `<img class="community-image" src="${esc(post.image_url)}" alt="Post da comunidade">` : ''}
                 <div class="community-body">
@@ -989,24 +1144,43 @@
             </article>
         `).join('');
 
+        if (loadWrap) {
+            loadWrap.style.display = communityListState.visibleCount < communityListState.all.length ? 'flex' : 'none';
+        }
+
         animateHomeStagger();
     }
 
-    function renderOffers(offers) {
+    function renderOffers(offers, preserveVisible = false) {
         const grid = document.getElementById('offersGrid');
         const empty = document.getElementById('emptyOffers');
+        const loadWrap = document.getElementById('offersLoadMoreWrap');
 
         if (!offers.length) {
+            offersListState.all = [];
+            offersListState.visibleCount = 0;
             grid.innerHTML = '';
             empty.textContent = isOwnerProfile
                 ? 'Você ainda não publicou ofertas. Crie sua primeira oferta para começar a vender.'
                 : 'Este usuário ainda não possui ofertas publicadas no momento.';
             empty.style.display = 'block';
+            if (loadWrap) loadWrap.style.display = 'none';
             return;
         }
 
+        offersListState.all = offers.slice();
+        if (!preserveVisible) {
+            offersListState.visibleCount = Math.min(PROFILE_RENDER_CHUNK, offersListState.all.length);
+        } else {
+            offersListState.visibleCount = Math.min(
+                Math.max(offersListState.visibleCount, PROFILE_RENDER_CHUNK),
+                offersListState.all.length,
+            );
+        }
+
         empty.style.display = 'none';
-        grid.innerHTML = offers.map((offer) => {
+        const visibleItems = offersListState.all.slice(0, offersListState.visibleCount);
+        grid.innerHTML = visibleItems.map((offer) => {
             const image = offer.images && offer.images.length
                 ? offer.images[0]
                 : 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="420" height="240"><rect width="100%" height="100%" fill="%23172530"/><text x="50%" y="50%" fill="%23e7f0ff" dominant-baseline="middle" text-anchor="middle" font-size="20">Oferta</text></svg>';
@@ -1026,7 +1200,29 @@
             `;
         }).join('');
 
+        if (loadWrap) {
+            loadWrap.style.display = offersListState.visibleCount < offersListState.all.length ? 'flex' : 'none';
+        }
+
         animateHomeStagger();
+    }
+
+    function loadMoreProfileOffers() {
+        if (!offersListState.all.length) return;
+        offersListState.visibleCount = Math.min(
+            offersListState.visibleCount + PROFILE_RENDER_CHUNK,
+            offersListState.all.length,
+        );
+        renderOffers(offersListState.all, true);
+    }
+
+    function loadMoreCommunityPosts() {
+        if (!communityListState.all.length) return;
+        communityListState.visibleCount = Math.min(
+            communityListState.visibleCount + PROFILE_RENDER_CHUNK,
+            communityListState.all.length,
+        );
+        renderCommunityPosts(communityListState.all, true);
     }
 
     function renderAudienceBanner(data) {
@@ -1194,17 +1390,9 @@
         }
     }
 
-    async function loadProfile() {
-        currentUser = await getCurrentUser();
-        const targetUserId = viewedUserId || currentUser?.id;
-
-        if (!targetUserId) {
-            window.location.href = '/login';
-            return;
-        }
-
-        profileData = await apiRequest(`/social/users/${targetUserId}`);
-        isOwnerProfile = currentUser && Number(currentUser.id) === Number(profileData.id);
+    function renderProfileSnapshot(data) {
+        profileData = data;
+        isOwnerProfile = Boolean(currentUser && Number(currentUser.id) === Number(profileData.id));
 
         setupProfileHeader(profileData);
         renderStats(profileData);
@@ -1224,6 +1412,34 @@
         }
 
         setThemeMode();
+        prefetchRelatedTabsFromProfile(profileData);
+    }
+
+    async function loadProfile(forceRefresh = false) {
+        currentUser = await getCurrentUser();
+        const targetUserId = viewedUserId || currentUser?.id;
+
+        if (!targetUserId) {
+            window.location.href = '/login';
+            return;
+        }
+
+        if (!forceRefresh) {
+            const cached = readProfileRouteCache(targetUserId);
+            if (cached) {
+                renderProfileSnapshot(cached);
+            }
+        }
+
+        try {
+            const fresh = await apiRequest(`/social/users/${targetUserId}`);
+            renderProfileSnapshot(fresh);
+            writeProfileRouteCache(targetUserId, fresh);
+        } catch (error) {
+            if (!profileData) {
+                throw error;
+            }
+        }
     }
 
     document.querySelectorAll('.nav-link').forEach((link) => {
@@ -1237,6 +1453,16 @@
             setActiveSection(section);
         });
     });
+
+    const offersLoadMoreBtn = document.getElementById('offersLoadMoreBtn');
+    if (offersLoadMoreBtn) {
+        offersLoadMoreBtn.addEventListener('click', loadMoreProfileOffers);
+    }
+
+    const communityLoadMoreBtn = document.getElementById('communityLoadMoreBtn');
+    if (communityLoadMoreBtn) {
+        communityLoadMoreBtn.addEventListener('click', loadMoreCommunityPosts);
+    }
 
     document.getElementById('profileSettingsForm').addEventListener('submit', async (event) => {
         event.preventDefault();
@@ -1255,11 +1481,11 @@
         }
 
         alert('Perfil atualizado com sucesso.');
-        await loadProfile();
+        await loadProfile(true);
     });
 
     document.getElementById('refreshProfileBtn').addEventListener('click', () => {
-        loadProfile().catch((error) => {
+        loadProfile(true).catch((error) => {
             alert(error.message || 'Erro ao atualizar perfil.');
         });
     });

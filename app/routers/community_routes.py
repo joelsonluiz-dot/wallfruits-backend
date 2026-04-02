@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import case, func
 from sqlalchemy.orm import Session
+import logging
 
 from app.core.auth_middleware import get_current_user, get_current_user_optional
 from app.database.connection import get_db
@@ -11,6 +12,7 @@ from app.schemas.community_schema import (
     CommunityCommentResponse,
     CommunityLikeToggleResponse,
     CommunityModerationActionResponse,
+    CommunityPurgeResponse,
     CommunityPostCreate,
     CommunityPostListResponse,
     CommunityPostResponse,
@@ -19,6 +21,7 @@ from app.schemas.community_schema import (
 from app.services.notification_service import create_notification
 
 router = APIRouter(prefix="/community", tags=["community"])
+logger = logging.getLogger("community_routes")
 
 
 def _normalize_profile_image(image: str | None) -> str | None:
@@ -382,6 +385,33 @@ def moderate_hide_post(
     row.is_active = False
     db.commit()
     return CommunityModerationActionResponse(success=True, action="hide", target_type="post", target_id=post_id)
+
+
+@router.delete("/moderation/posts/purge", response_model=CommunityPurgeResponse)
+def moderate_purge_posts(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    _require_admin(current_user)
+
+    try:
+        deleted_comments = db.query(CommunityComment).delete(synchronize_session=False)
+        deleted_likes = db.query(CommunityLike).delete(synchronize_session=False)
+        deleted_shares = db.query(CommunityShare).delete(synchronize_session=False)
+        deleted_posts = db.query(CommunityPost).delete(synchronize_session=False)
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        logger.error("Falha ao executar purge da comunidade: %s", exc)
+        raise HTTPException(status_code=500, detail="Falha ao limpar comunidade") from exc
+
+    return CommunityPurgeResponse(
+        success=True,
+        deleted_posts=int(deleted_posts or 0),
+        deleted_comments=int(deleted_comments or 0),
+        deleted_likes=int(deleted_likes or 0),
+        deleted_shares=int(deleted_shares or 0),
+    )
 
 
 @router.delete("/moderation/posts/{post_id}", response_model=CommunityModerationActionResponse)
