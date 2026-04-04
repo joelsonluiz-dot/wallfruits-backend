@@ -39,6 +39,12 @@
             --wf-focus-ring: 0 0 0 3px rgba(46, 125, 50, 0.22);
             --wf-motion-fast: 0.16s;
             --wf-motion-normal: 0.22s;
+            --wf-motion-slow: 0.38s;
+            --wf-space-xs: 0.34rem;
+            --wf-space-sm: 0.58rem;
+            --wf-space-md: 0.88rem;
+            --wf-space-lg: 1.22rem;
+            --wf-space-xl: 1.66rem;
         }
 
         * { box-sizing: border-box; }
@@ -46,16 +52,83 @@
         body {
             font-family: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
             background: var(--wf-bg);
+            background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.34), rgba(244, 239, 223, 0.95));
             color: var(--wf-text);
             min-height: 100vh;
             overflow-x: hidden;
             -webkit-font-smoothing: antialiased;
             text-rendering: optimizeLegibility;
+            line-height: 1.45;
+        }
+
+        a,
+        button,
+        [role="button"],
+        input,
+        textarea,
+        select {
+            transition: box-shadow var(--wf-motion-fast) ease, border-color var(--wf-motion-fast) ease, transform var(--wf-motion-fast) ease;
+        }
+
+        a:focus-visible,
+        button:focus-visible,
+        [role="button"]:focus-visible,
+        input:focus-visible,
+        textarea:focus-visible,
+        select:focus-visible {
+            outline: none;
+            box-shadow: var(--wf-focus-ring);
         }
 
         .wf-section-rhythm {
             display: grid;
             gap: clamp(0.8rem, 1.4vw, 1.15rem);
+        }
+
+        .wf-section-head {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: var(--wf-space-md);
+            flex-wrap: wrap;
+            margin-bottom: 0.92rem;
+        }
+
+        .wf-section-head-main {
+            min-width: 0;
+            display: grid;
+            gap: 0.24rem;
+        }
+
+        .wf-section-title-lg {
+            margin: 0;
+            font-size: clamp(1.14rem, 2vw, 1.38rem);
+            font-weight: 900;
+            letter-spacing: -0.03em;
+            color: #f8fbff;
+            line-height: 1.2;
+        }
+
+        .wf-section-subtitle {
+            margin: 0;
+            font-size: 0.82rem;
+            color: var(--wf-text-secondary);
+            line-height: 1.4;
+        }
+
+        .wf-pill-metric {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.28rem;
+            border-radius: 999px;
+            border: 1px solid rgba(237, 164, 76, 0.32);
+            background: rgba(237, 164, 76, 0.12);
+            color: #ffd89e;
+            padding: 0.18rem 0.52rem;
+            font-size: 0.66rem;
+            font-weight: 800;
+            letter-spacing: 0.02em;
+            width: fit-content;
         }
 
         .wf-heavy-list > * {
@@ -921,6 +994,12 @@
             transform: translateY(-2px);
         }
 
+        @media (hover: none) {
+            .wf-card:hover {
+                transform: none;
+            }
+        }
+
         .wf-card .card-header {
             background: rgba(94, 127, 44, 0.05);
             border-bottom: 1px solid var(--wf-border);
@@ -957,6 +1036,14 @@
             box-shadow: 0 8px 30px rgba(94, 127, 44, 0.28);
         }
 
+        .btn-wf-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-wf-primary:focus-visible {
+            box-shadow: var(--wf-focus-ring), 0 8px 30px rgba(94, 127, 44, 0.28);
+        }
+
         .btn-wf-secondary {
             background: transparent;
             color: var(--wf-text);
@@ -973,6 +1060,14 @@
             border-color: rgba(255,255,255,0.15);
             color: var(--wf-text);
             transform: translateY(-1px);
+        }
+
+        .btn-wf-secondary:active {
+            transform: translateY(0);
+        }
+
+        .btn-wf-secondary:focus-visible {
+            box-shadow: var(--wf-focus-ring);
         }
 
         .btn-wf-danger {
@@ -1980,6 +2075,185 @@
             box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.18);
         }
 
+        .wf-ad-stack {
+            width: min(1120px, 100%);
+            margin: 0 auto 0.84rem;
+            padding: 0 0.16rem;
+        }
+
+        .wf-ad-stack.wf-ad-stack-bottom {
+            margin-top: 0.95rem;
+            margin-bottom: 0.2rem;
+        }
+
+        .wf-ad-slot {
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 14px;
+            background: linear-gradient(160deg, rgba(12, 23, 35, 0.9), rgba(18, 33, 49, 0.88));
+            min-height: 98px;
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            display: grid;
+            align-items: center;
+        }
+
+        .wf-ad-slot.is-hidden {
+            display: none;
+        }
+
+        .wf-ad-label {
+            font-size: 0.62rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: rgba(208, 221, 236, 0.84);
+            font-weight: 800;
+            margin: 0.6rem 0.78rem 0.18rem;
+        }
+
+        .wf-ad-fallback-card {
+            margin: 0 0.72rem 0.62rem;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 12px;
+            background: linear-gradient(145deg, rgba(25, 43, 61, 0.94), rgba(31, 56, 77, 0.9));
+            padding: 0.6rem 0.72rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.6rem;
+        }
+
+        .wf-ad-fallback-copy {
+            min-width: 0;
+            display: grid;
+            gap: 0.1rem;
+        }
+
+        .wf-ad-fallback-title {
+            color: #f5f9ff;
+            font-size: 0.76rem;
+            font-weight: 800;
+            margin: 0;
+        }
+
+        .wf-ad-fallback-text {
+            color: rgba(210, 223, 239, 0.88);
+            font-size: 0.68rem;
+            margin: 0;
+        }
+
+        .wf-ad-fallback-link {
+            border: 1px solid rgba(237, 164, 76, 0.34);
+            border-radius: 999px;
+            background: rgba(237, 164, 76, 0.14);
+            color: #ffd89e;
+            text-decoration: none;
+            font-size: 0.66rem;
+            font-weight: 800;
+            padding: 0.3rem 0.56rem;
+            white-space: nowrap;
+        }
+
+        .wf-retention-nudge {
+            position: fixed;
+            right: 1rem;
+            bottom: 1rem;
+            z-index: 2880;
+            width: min(320px, calc(100vw - 1.5rem));
+            border-radius: 16px;
+            border: 1px solid rgba(17, 58, 43, 0.2);
+            background: linear-gradient(155deg, rgba(241, 252, 238, 0.97), rgba(230, 245, 238, 0.96));
+            box-shadow: 0 18px 36px rgba(10, 41, 30, 0.18);
+            padding: 0.82rem 0.84rem;
+            display: none;
+            gap: 0.58rem;
+        }
+
+        .wf-retention-nudge.is-visible {
+            display: grid;
+            animation: wfFadeSlideIn 260ms ease;
+        }
+
+        .wf-retention-nudge-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+
+        .wf-retention-nudge-title {
+            margin: 0;
+            color: #184c36;
+            font-size: 0.82rem;
+            font-weight: 800;
+            line-height: 1.3;
+        }
+
+        .wf-retention-nudge-text {
+            margin: 0;
+            color: #2f5f49;
+            font-size: 0.72rem;
+            line-height: 1.4;
+        }
+
+        .wf-retention-nudge-close {
+            border: none;
+            background: transparent;
+            color: #2f5f49;
+            cursor: pointer;
+            font-size: 1rem;
+            line-height: 1;
+            padding: 0.04rem;
+        }
+
+        .wf-retention-nudge-cta {
+            justify-self: start;
+            border-radius: 999px;
+            border: 1px solid rgba(26, 122, 75, 0.35);
+            background: rgba(26, 122, 75, 0.15);
+            color: #155e40;
+            text-decoration: none;
+            font-size: 0.72rem;
+            font-weight: 800;
+            padding: 0.34rem 0.64rem;
+        }
+
+        @keyframes wfFadeSlideIn {
+            from {
+                opacity: 0;
+                transform: translate3d(0, 10px, 0);
+            }
+            to {
+                opacity: 1;
+                transform: translate3d(0, 0, 0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .wf-ad-stack {
+                margin-bottom: 0.66rem;
+                padding: 0;
+            }
+
+            .wf-ad-slot {
+                border-radius: 12px;
+                min-height: 90px;
+            }
+
+            .wf-ad-fallback-card {
+                border-radius: 10px;
+                margin: 0 0.52rem 0.52rem;
+                padding: 0.5rem 0.56rem;
+                gap: 0.46rem;
+            }
+
+            .wf-retention-nudge {
+                right: 0.6rem;
+                left: 0.6rem;
+                bottom: 0.72rem;
+                width: auto;
+            }
+        }
+
         body.wf-offline-mode .wf-stagger > *,
         body.wf-offline-mode .wf-fade-in,
         body.wf-offline-mode .tilt-card,
@@ -2146,6 +2420,22 @@
             auto_retry: true,
             request_timeout_ms: 15000,
         };
+        const WF_SYNC_CHANNEL_NAME = 'wf_realtime_sync_v1';
+        const WF_SYNC_STORAGE_KEY = 'wf_realtime_sync_storage_v1';
+        const WF_SYNC_SOURCE_ID = `wf-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+        const WF_ADS_CONFIG_KEY = 'wf_ads_config_v1';
+        const WF_AD_METRICS_KEY = 'wf_ad_metrics_v1';
+        const WF_AD_STATE_KEY = 'wf_ad_state_v1';
+        const WF_AD_SESSION_STATE_KEY = 'wf_ad_session_state_v1';
+        const WF_AD_VIEWABILITY_KEY = 'wf_ad_viewability_v1';
+        const WF_AD_EXPERIMENT_USER_KEY = 'wf_ad_experiment_user_v1';
+        const WF_RETENTION_NUDGE_KEY = 'wf_retention_nudge_v1';
+        let wfSyncChannel = null;
+        let wfAdsProviderReadyPromise = null;
+        let wfAdsObserver = null;
+        let wfAdViewabilityObserver = null;
+        const wfAdViewabilityStates = new Map();
+        let wfAdsBootstrapped = false;
 
         function wfDefaultAvatar() {
             return WF_DEFAULT_AVATAR;
@@ -2212,6 +2502,1158 @@
         window.wfSetAdvancedSetting = setAdvancedSetting;
         window.wfIsAutoRefreshEnabled = () => Boolean(getAdvancedSetting('auto_refresh', true));
         window.wfGetRefreshIntervalMs = () => Number(getAdvancedSetting('refresh_interval_ms', 45000));
+        window.wfGetNetworkAwareInterval = getNetworkAwareInterval;
+
+        function getNetworkAwareInterval(baseMs = 30000) {
+            const baseValue = Math.max(12000, Number(baseMs || 30000));
+            const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+            if (!connection) return baseValue;
+
+            const saveData = Boolean(connection.saveData);
+            const effectiveType = String(connection.effectiveType || '').toLowerCase();
+
+            if (saveData) {
+                return Math.round(baseValue * 1.9);
+            }
+            if (effectiveType.includes('2g')) {
+                return Math.round(baseValue * 1.75);
+            }
+            if (effectiveType.includes('3g')) {
+                return Math.round(baseValue * 1.35);
+            }
+            return baseValue;
+        }
+
+        function publishCrossTabEvent(type, payload = {}) {
+            const message = {
+                type: String(type || ''),
+                payload: payload || {},
+                source: WF_SYNC_SOURCE_ID,
+                ts: Date.now(),
+            };
+
+            if (!message.type) return;
+
+            if (wfSyncChannel) {
+                try {
+                    wfSyncChannel.postMessage(message);
+                } catch {
+                    // canal pode falhar em navegadores antigos
+                }
+            }
+
+            try {
+                localStorage.setItem(WF_SYNC_STORAGE_KEY, JSON.stringify(message));
+            } catch {
+                // ignora indisponibilidade de storage
+            }
+        }
+
+        function handleCrossTabEvent(message) {
+            if (!message || typeof message !== 'object') return;
+            if (message.source && message.source === WF_SYNC_SOURCE_ID) return;
+
+            const type = String(message.type || '');
+            const payload = message.payload || {};
+
+            if (type === 'notifications_unread') {
+                const unread = Number(payload.unread);
+                if (Number.isFinite(unread)) {
+                    applyUnreadNotificationsBadge(unread);
+                }
+                return;
+            }
+
+            if (type === 'messages_unread') {
+                const unread = Number(payload.unread);
+                if (Number.isFinite(unread)) {
+                    applyUnreadMessagesBadge(unread);
+                }
+                return;
+            }
+
+            if (type === 'ads_config_updated') {
+                setupMonetizationAds({ force: true });
+            }
+        }
+
+        function setupCrossTabSync() {
+            if (wfSyncChannel) return;
+
+            if ('BroadcastChannel' in window) {
+                try {
+                    wfSyncChannel = new BroadcastChannel(WF_SYNC_CHANNEL_NAME);
+                    wfSyncChannel.addEventListener('message', (event) => {
+                        handleCrossTabEvent(event?.data || null);
+                    });
+                } catch {
+                    wfSyncChannel = null;
+                }
+            }
+
+            window.addEventListener('storage', (event) => {
+                if (event.key !== WF_SYNC_STORAGE_KEY || !event.newValue) return;
+                try {
+                    const parsed = JSON.parse(event.newValue);
+                    handleCrossTabEvent(parsed);
+                } catch {
+                    // ignora payload inválido
+                }
+            });
+        }
+
+        function sanitizeSponsoredList(rawList) {
+            if (!Array.isArray(rawList)) return [];
+
+            return rawList
+                .map((item) => ({
+                    title: String(item?.title || '').trim(),
+                    text: String(item?.text || '').trim(),
+                    href: String(item?.href || '').trim(),
+                    cta: String(item?.cta || '').trim(),
+                }))
+                .filter((item) => item.title && item.text && item.href);
+        }
+
+        function escapeHtmlText(value) {
+            return String(value || '')
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#39;');
+        }
+
+        function sanitizeSponsorHref(rawHref) {
+            const href = String(rawHref || '').trim();
+            if (!href) return '#';
+            if (href.startsWith('/')) return href;
+            if (/^https?:\/\//i.test(href)) return href;
+            return '#';
+        }
+
+        function readAdsConfig() {
+            const defaults = {
+                enabled: true,
+                provider: 'fallback',
+                adsense_client: '',
+                script_url: '',
+                slots: {
+                    top: '',
+                    bottom: '',
+                },
+                frequency: {
+                    session_cap_per_slot: 5,
+                    daily_cap_per_slot: 22,
+                    fatigue_no_click_threshold: 10,
+                    fatigue_hard_threshold: 18,
+                },
+                experiment: {
+                    enabled: true,
+                    rollout: 1,
+                    variants: ['a', 'b'],
+                },
+                sponsored: [
+                    {
+                        title: 'Patrocinador parceiro do agro',
+                        text: 'Divulgue sua marca para compradores e produtores da WallFruits.',
+                        href: '/services',
+                        cta: 'Conhecer',
+                    },
+                    {
+                        title: 'Espaço para anunciantes terceiros',
+                        text: 'Ative campanhas de insumos, logistica e servicos para monetizar a plataforma.',
+                        href: '/me/profile',
+                        cta: 'Ativar',
+                    },
+                ],
+            };
+
+            let parsed = {};
+            try {
+                parsed = JSON.parse(localStorage.getItem(WF_ADS_CONFIG_KEY) || '{}') || {};
+            } catch {
+                parsed = {};
+            }
+
+            const merged = {
+                ...defaults,
+                ...parsed,
+                slots: {
+                    ...defaults.slots,
+                    ...(parsed?.slots || {}),
+                },
+                frequency: {
+                    ...defaults.frequency,
+                    ...(parsed?.frequency || {}),
+                },
+                experiment: {
+                    ...defaults.experiment,
+                    ...(parsed?.experiment || {}),
+                },
+            };
+
+            const sponsored = sanitizeSponsoredList(parsed?.sponsored);
+            merged.sponsored = sponsored.length ? sponsored : defaults.sponsored;
+
+            const dataset = document.body?.dataset || {};
+            if (dataset.wfAdsProvider) merged.provider = dataset.wfAdsProvider;
+            if (dataset.wfAdsenseClient) merged.adsense_client = dataset.wfAdsenseClient;
+            if (dataset.wfAdsScriptUrl) merged.script_url = dataset.wfAdsScriptUrl;
+            if (dataset.wfAdsTopSlot) merged.slots.top = dataset.wfAdsTopSlot;
+            if (dataset.wfAdsBottomSlot) merged.slots.bottom = dataset.wfAdsBottomSlot;
+
+            merged.provider = String(merged.provider || 'fallback').toLowerCase();
+            merged.enabled = Boolean(merged.enabled);
+
+            return merged;
+        }
+
+        function writeAdsConfig(nextConfig) {
+            const safeConfig = {
+                ...readAdsConfig(),
+                ...(nextConfig || {}),
+                slots: {
+                    ...readAdsConfig().slots,
+                    ...(nextConfig?.slots || {}),
+                },
+            };
+
+            safeConfig.sponsored = sanitizeSponsoredList(nextConfig?.sponsored || safeConfig.sponsored);
+
+            try {
+                localStorage.setItem(WF_ADS_CONFIG_KEY, JSON.stringify(safeConfig));
+            } catch {
+                // ignora indisponibilidade de storage
+            }
+
+            publishCrossTabEvent('ads_config_updated', { enabled: safeConfig.enabled });
+            window.dispatchEvent(new CustomEvent('wf:ads-config-updated', { detail: safeConfig }));
+            return safeConfig;
+        }
+
+        window.wfGetAdsConfig = readAdsConfig;
+        window.wfSetAdsConfig = writeAdsConfig;
+
+        function getRecommendedAdsConfig(profile = 'hybrid') {
+            const normalized = String(profile || 'hybrid').trim().toLowerCase();
+            const base = {
+                enabled: true,
+                provider: 'fallback',
+                adsense_client: '',
+                script_url: '',
+                slots: {
+                    top: '',
+                    bottom: '',
+                },
+                sponsored: [
+                    {
+                        title: 'Patrocinado: anuncie para produtores e compradores',
+                        text: 'Sua marca pode aparecer nas abas com maior tráfego da WallFruits.',
+                        href: '/services',
+                        cta: 'Anunciar agora',
+                    },
+                    {
+                        title: 'Parceria comercial do agronegócio',
+                        text: 'Ative campanhas de insumos, logística e serviços com público qualificado.',
+                        href: '/community',
+                        cta: 'Ver oportunidades',
+                    },
+                ],
+            };
+
+            if (normalized === 'fallback') {
+                return base;
+            }
+
+            if (normalized === 'custom-script') {
+                return {
+                    ...base,
+                    provider: 'custom-script',
+                    script_url: 'https://seu-servidor-de-ads.exemplo/sdk.js',
+                };
+            }
+
+            // Perfil padrão: pronto para AdSense com fallback patrocinado.
+            return {
+                ...base,
+                provider: 'adsense',
+                adsense_client: 'ca-pub-XXXXXXXXXXXXXXX',
+                slots: {
+                    top: '1111111111',
+                    bottom: '2222222222',
+                },
+            };
+        }
+
+        function applyAdsStarterConfig(profile = 'hybrid') {
+            const config = getRecommendedAdsConfig(profile);
+            return writeAdsConfig(config);
+        }
+
+        function getAdMetrics() {
+            try {
+                const raw = localStorage.getItem(WF_AD_METRICS_KEY);
+                const parsed = raw ? JSON.parse(raw) : {};
+                return parsed && typeof parsed === 'object' ? parsed : {};
+            } catch {
+                return {};
+            }
+        }
+
+        function resetAdMetrics() {
+            try {
+                localStorage.removeItem(WF_AD_METRICS_KEY);
+            } catch {
+                // ignora indisponibilidade de storage
+            }
+            return true;
+        }
+
+        window.wfGetRecommendedAdsConfig = getRecommendedAdsConfig;
+        window.wfApplyAdsStarterConfig = applyAdsStarterConfig;
+        window.wfGetAdMetrics = getAdMetrics;
+        window.wfResetAdMetrics = resetAdMetrics;
+
+        function isAdsPathEligible() {
+            const path = String(window.location.pathname || '').toLowerCase();
+            const blocked = ['/login', '/register', '/forgot-password', '/reset-password', '/admin'];
+            return !blocked.some((prefix) => path === prefix || path.startsWith(`${prefix}/`));
+        }
+
+        function normalizeAdsPath(value) {
+            const safe = String(value || '').trim().toLowerCase();
+            if (!safe) return '/';
+            return safe.replace(/\/+$/, '') || '/';
+        }
+
+        function adTodayKey() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function normalizePositiveInt(value, fallback, minValue = 1, maxValue = 9999) {
+            const parsed = Number.parseInt(value, 10);
+            if (!Number.isFinite(parsed)) return fallback;
+            return Math.min(maxValue, Math.max(minValue, parsed));
+        }
+
+        function getAdsFrequencyRules(config) {
+            const source = config?.frequency || {};
+            return {
+                sessionCapPerSlot: normalizePositiveInt(source.session_cap_per_slot, 5, 1, 100),
+                dailyCapPerSlot: normalizePositiveInt(source.daily_cap_per_slot, 22, 1, 500),
+                fatigueNoClickThreshold: normalizePositiveInt(source.fatigue_no_click_threshold, 10, 1, 500),
+                fatigueHardThreshold: normalizePositiveInt(source.fatigue_hard_threshold, 18, 2, 1000),
+            };
+        }
+
+        function readAdDeliveryState() {
+            const fallback = {
+                day: adTodayKey(),
+                impressionsBySlot: {},
+                noClickImpressions: 0,
+                totalImpressions: 0,
+                totalClicks: 0,
+                updatedAt: Date.now(),
+            };
+
+            try {
+                const raw = localStorage.getItem(WF_AD_STATE_KEY);
+                const parsed = raw ? JSON.parse(raw) : fallback;
+                const normalized = {
+                    ...fallback,
+                    ...(parsed && typeof parsed === 'object' ? parsed : {}),
+                    impressionsBySlot: {
+                        ...(parsed?.impressionsBySlot || {}),
+                    },
+                };
+
+                if (normalized.day !== adTodayKey()) {
+                    return {
+                        ...fallback,
+                        updatedAt: Date.now(),
+                    };
+                }
+
+                return normalized;
+            } catch {
+                return fallback;
+            }
+        }
+
+        function writeAdDeliveryState(state) {
+            try {
+                localStorage.setItem(WF_AD_STATE_KEY, JSON.stringify({
+                    ...state,
+                    day: adTodayKey(),
+                    updatedAt: Date.now(),
+                }));
+            } catch {
+                // ignora indisponibilidade de storage
+            }
+        }
+
+        function readAdSessionState() {
+            const fallback = {
+                impressionsBySlot: {},
+                pageViews: 0,
+                updatedAt: Date.now(),
+            };
+
+            try {
+                const raw = sessionStorage.getItem(WF_AD_SESSION_STATE_KEY);
+                const parsed = raw ? JSON.parse(raw) : fallback;
+                return {
+                    ...fallback,
+                    ...(parsed && typeof parsed === 'object' ? parsed : {}),
+                    impressionsBySlot: {
+                        ...(parsed?.impressionsBySlot || {}),
+                    },
+                };
+            } catch {
+                return fallback;
+            }
+        }
+
+        function writeAdSessionState(state) {
+            try {
+                sessionStorage.setItem(WF_AD_SESSION_STATE_KEY, JSON.stringify({
+                    ...state,
+                    updatedAt: Date.now(),
+                }));
+            } catch {
+                // ignora indisponibilidade de storage
+            }
+        }
+
+        function adSlotScopeKey(context, slotName) {
+            return `${String(context || 'general')}:${String(slotName || 'top')}`;
+        }
+
+        function shouldRenderAdSlot(context, slotName, config, deliveryState, sessionState) {
+            const rules = getAdsFrequencyRules(config);
+            const scopeKey = adSlotScopeKey(context, slotName);
+            const dailyImpressions = Number(deliveryState?.impressionsBySlot?.[scopeKey] || 0);
+            const sessionImpressions = Number(sessionState?.impressionsBySlot?.[scopeKey] || 0);
+            const noClickImpressions = Number(deliveryState?.noClickImpressions || 0);
+
+            if (dailyImpressions >= rules.dailyCapPerSlot) return false;
+            if (sessionImpressions >= rules.sessionCapPerSlot) return false;
+            if (noClickImpressions >= rules.fatigueHardThreshold) return false;
+            if (noClickImpressions >= rules.fatigueNoClickThreshold && slotName === 'bottom') return false;
+
+            return true;
+        }
+
+        function adExperimentUserSeed() {
+            try {
+                const userRaw = localStorage.getItem('user');
+                if (userRaw) {
+                    const user = JSON.parse(userRaw);
+                    if (user?.id || user?.email || user?.username) {
+                        return String(user.id || user.email || user.username);
+                    }
+                }
+            } catch {
+                // segue para seed anonimo
+            }
+
+            try {
+                const existing = localStorage.getItem(WF_AD_EXPERIMENT_USER_KEY);
+                if (existing) return existing;
+                const generated = `anon-${Math.random().toString(36).slice(2, 11)}`;
+                localStorage.setItem(WF_AD_EXPERIMENT_USER_KEY, generated);
+                return generated;
+            } catch {
+                return 'anon-fallback';
+            }
+        }
+
+        function simpleHash32(input) {
+            const text = String(input || 'wf');
+            let hash = 2166136261;
+            for (let i = 0; i < text.length; i += 1) {
+                hash ^= text.charCodeAt(i);
+                hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
+            }
+            return Math.abs(hash >>> 0);
+        }
+
+        function getAdExperimentBucket(context, config) {
+            const experiment = config?.experiment || {};
+            if (!experiment.enabled) return 'a';
+
+            const rollout = Number(experiment.rollout);
+            const safeRollout = Number.isFinite(rollout) ? Math.max(0, Math.min(1, rollout)) : 1;
+            if (safeRollout <= 0) return 'a';
+
+            const seed = `${adExperimentUserSeed()}::${String(context || 'general')}`;
+            const hash = simpleHash32(seed);
+            const percentile = (hash % 10000) / 10000;
+            if (percentile > safeRollout) return 'a';
+
+            const variants = Array.isArray(experiment.variants) && experiment.variants.length
+                ? experiment.variants
+                : ['a', 'b'];
+            const index = hash % variants.length;
+            return String(variants[index] || 'a').toLowerCase();
+        }
+
+        function applyAdExperimentToRoutePlan(routePlan, config) {
+            const bucket = getAdExperimentBucket(routePlan?.context || 'general', config);
+            const plan = {
+                ...routePlan,
+                experimentBucket: bucket,
+            };
+
+            if (bucket !== 'b') return plan;
+
+            if (plan.context === 'home') {
+                plan.topAnchor = '.home-products-section';
+                plan.topAfter = false;
+                plan.bottomAnchor = '.stats-grid';
+                plan.bottomAfter = false;
+                return plan;
+            }
+
+            if (plan.context === 'community') {
+                plan.showTop = false;
+                plan.showBottom = true;
+                plan.bottomAnchor = '#communityFeed';
+                plan.bottomAfter = false;
+                return plan;
+            }
+
+            if (plan.context === 'offers' || plan.context === 'services' || plan.context === 'store') {
+                plan.showBottom = true;
+                plan.bottomAnchor = '';
+                return plan;
+            }
+
+            if (plan.context === 'notifications') {
+                plan.showTop = true;
+                plan.showBottom = false;
+            }
+
+            return plan;
+        }
+
+        function getAdsRoutePlan(pathname = window.location.pathname) {
+            const path = normalizeAdsPath(pathname);
+            const plan = {
+                context: 'general',
+                showTop: true,
+                showBottom: true,
+                topAnchor: '',
+                bottomAnchor: '',
+                topAfter: true,
+                bottomAfter: true,
+            };
+
+            if (path === '/' || path === '/index' || path === '/home') {
+                plan.context = 'home';
+                plan.showTop = true;
+                plan.showBottom = true;
+                plan.topAnchor = '.home-offers-section';
+                plan.topAfter = false;
+                plan.bottomAnchor = '.home-community-section';
+                plan.bottomAfter = true;
+                return plan;
+            }
+
+            if (path.startsWith('/community')) {
+                plan.context = 'community';
+                plan.showTop = true;
+                plan.showBottom = false;
+                plan.topAnchor = '.community-create';
+                plan.topAfter = true;
+                return plan;
+            }
+
+            if (path.startsWith('/messages')) {
+                return {
+                    context: 'messages',
+                    showTop: false,
+                    showBottom: false,
+                    topAnchor: '',
+                    bottomAnchor: '',
+                    topAfter: true,
+                    bottomAfter: true,
+                };
+            }
+
+            if (path.startsWith('/offers')) {
+                return {
+                    ...plan,
+                    context: 'offers',
+                    showTop: true,
+                    showBottom: false,
+                };
+            }
+
+            if (path.startsWith('/services')) {
+                return {
+                    ...plan,
+                    context: 'services',
+                    showTop: true,
+                    showBottom: false,
+                };
+            }
+
+            if (path.startsWith('/store')) {
+                return {
+                    ...plan,
+                    context: 'store',
+                    showTop: true,
+                    showBottom: false,
+                };
+            }
+
+            if (path.startsWith('/notifications')) {
+                return {
+                    ...plan,
+                    context: 'notifications',
+                    showTop: false,
+                    showBottom: true,
+                };
+            }
+
+            if (path.startsWith('/ai-agent')) {
+                return {
+                    ...plan,
+                    context: 'agent',
+                    showTop: false,
+                    showBottom: false,
+                };
+            }
+
+            return plan;
+        }
+
+        function moveAdStackToAnchor(stackElement, anchorSelector, placeAfter = true) {
+            if (!stackElement || !anchorSelector) return;
+            const anchor = document.querySelector(anchorSelector);
+            if (!anchor) return;
+
+            if (placeAfter) {
+                anchor.insertAdjacentElement('afterend', stackElement);
+            } else {
+                anchor.insertAdjacentElement('beforebegin', stackElement);
+            }
+        }
+
+        function applyAdsRoutePlan(routePlan) {
+            const topStack = document.getElementById('wfAdsTopStack');
+            const bottomStack = document.getElementById('wfAdsBottomStack');
+
+            if (topStack) {
+                topStack.style.display = routePlan.showTop ? '' : 'none';
+                if (routePlan.showTop && routePlan.topAnchor) {
+                    moveAdStackToAnchor(topStack, routePlan.topAnchor, routePlan.topAfter);
+                }
+            }
+
+            if (bottomStack) {
+                bottomStack.style.display = routePlan.showBottom ? '' : 'none';
+                if (routePlan.showBottom && routePlan.bottomAnchor) {
+                    moveAdStackToAnchor(bottomStack, routePlan.bottomAnchor, routePlan.bottomAfter);
+                }
+            }
+        }
+
+        function readAdViewabilityReport() {
+            try {
+                const raw = localStorage.getItem(WF_AD_VIEWABILITY_KEY);
+                const parsed = raw ? JSON.parse(raw) : {};
+                return parsed && typeof parsed === 'object' ? parsed : {};
+            } catch {
+                return {};
+            }
+        }
+
+        function writeAdViewabilityReport(report) {
+            try {
+                localStorage.setItem(WF_AD_VIEWABILITY_KEY, JSON.stringify({
+                    ...(report || {}),
+                    _updated_at: Date.now(),
+                }));
+            } catch {
+                // ignora indisponibilidade de storage
+            }
+        }
+
+        function recordAdViewabilityScore(meta, scoreValue) {
+            const context = String(meta?.context || 'general');
+            const slot = String(meta?.slot || 'unknown');
+            const provider = String(meta?.provider || 'fallback');
+            const clamped = Math.max(0, Math.min(100, Number(scoreValue || 0)));
+            const score = Number.isFinite(clamped) ? clamped : 0;
+            const key = `${context}:${slot}:${provider}`;
+
+            const report = readAdViewabilityReport();
+            const prev = report[key] && typeof report[key] === 'object'
+                ? report[key]
+                : { sum: 0, count: 0, max: 0, avg: 0 };
+
+            const next = {
+                sum: Number(prev.sum || 0) + score,
+                count: Number(prev.count || 0) + 1,
+                max: Math.max(Number(prev.max || 0), score),
+                avg: 0,
+            };
+            next.avg = Number((next.sum / Math.max(1, next.count)).toFixed(2));
+            report[key] = next;
+            writeAdViewabilityReport(report);
+        }
+
+        function getAdInsights() {
+            return {
+                metrics: getAdMetrics(),
+                delivery: readAdDeliveryState(),
+                session: readAdSessionState(),
+                viewability: readAdViewabilityReport(),
+            };
+        }
+
+        function trackAdMetric(eventName, payload = {}) {
+            try {
+                const now = Date.now();
+                const normalizedEvent = String(eventName || 'event').toLowerCase();
+                const safePayload = {
+                    context: String(payload.context || 'general'),
+                    slot: String(payload.slot || 'unknown'),
+                    provider: String(payload.provider || 'fallback'),
+                };
+                const key = `${safePayload.context}:${safePayload.slot}:${safePayload.provider}:${normalizedEvent}`;
+
+                const raw = localStorage.getItem(WF_AD_METRICS_KEY);
+                const parsed = raw ? JSON.parse(raw) : {};
+                parsed[key] = Number(parsed[key] || 0) + 1;
+                parsed._updated_at = now;
+                localStorage.setItem(WF_AD_METRICS_KEY, JSON.stringify(parsed));
+
+                if (normalizedEvent === 'impression' || normalizedEvent === 'click') {
+                    const scopeKey = adSlotScopeKey(safePayload.context, safePayload.slot);
+                    const deliveryState = readAdDeliveryState();
+
+                    if (normalizedEvent === 'impression') {
+                        deliveryState.impressionsBySlot[scopeKey] = Number(deliveryState.impressionsBySlot[scopeKey] || 0) + 1;
+                        deliveryState.noClickImpressions = Number(deliveryState.noClickImpressions || 0) + 1;
+                        deliveryState.totalImpressions = Number(deliveryState.totalImpressions || 0) + 1;
+
+                        const sessionState = readAdSessionState();
+                        sessionState.impressionsBySlot[scopeKey] = Number(sessionState.impressionsBySlot[scopeKey] || 0) + 1;
+                        writeAdSessionState(sessionState);
+                    }
+
+                    if (normalizedEvent === 'click') {
+                        deliveryState.totalClicks = Number(deliveryState.totalClicks || 0) + 1;
+                        deliveryState.noClickImpressions = 0;
+                    }
+
+                    writeAdDeliveryState(deliveryState);
+                }
+            } catch {
+                // ignora indisponibilidade de storage
+            }
+        }
+
+        window.wfGetAdViewabilityReport = readAdViewabilityReport;
+        window.wfGetAdDeliveryState = readAdDeliveryState;
+        window.wfGetAdSessionState = readAdSessionState;
+        window.wfGetAdInsights = getAdInsights;
+
+        function finalizeAdViewabilityTracking(slotElement) {
+            if (!slotElement) return;
+            const state = wfAdViewabilityStates.get(slotElement);
+            if (!state || state.finalized) return;
+
+            const now = performance.now();
+            if (state.visible) {
+                state.visibleMs += Math.max(0, now - state.lastTs);
+            }
+            state.lastTs = now;
+            state.finalized = true;
+
+            const visibilityWeight = Math.max(0, Math.min(1, state.maxRatio));
+            const timeWeight = Math.max(0, Math.min(1, state.visibleMs / 3000));
+            const score = Math.round((visibilityWeight * 70 + timeWeight * 30) * 100) / 100;
+
+            recordAdViewabilityScore(state.meta, score);
+            trackAdMetric('viewability_score_recorded', state.meta);
+
+            if (wfAdViewabilityObserver) {
+                try {
+                    wfAdViewabilityObserver.unobserve(slotElement);
+                } catch {
+                    // ignora falha de unobserve
+                }
+            }
+        }
+
+        function attachAdViewabilityTracking(slotElement, meta) {
+            if (!slotElement || !('IntersectionObserver' in window)) return;
+
+            if (!wfAdViewabilityObserver) {
+                wfAdViewabilityObserver = new IntersectionObserver((entries) => {
+                    entries.forEach((entry) => {
+                        const target = entry.target;
+                        const state = wfAdViewabilityStates.get(target);
+                        if (!state || state.finalized) return;
+
+                        const now = performance.now();
+                        if (state.visible) {
+                            state.visibleMs += Math.max(0, now - state.lastTs);
+                        }
+
+                        state.maxRatio = Math.max(state.maxRatio, Number(entry.intersectionRatio || 0));
+                        state.visible = entry.isIntersecting && Number(entry.intersectionRatio || 0) >= 0.5;
+                        state.lastTs = now;
+
+                        if (!state.reportedViewable && state.visibleMs >= 1200) {
+                            state.reportedViewable = true;
+                            trackAdMetric('viewable_impression', state.meta);
+                        }
+                    });
+                }, {
+                    root: null,
+                    rootMargin: '0px',
+                    threshold: [0, 0.25, 0.5, 0.75, 1],
+                });
+            }
+
+            const existing = wfAdViewabilityStates.get(slotElement);
+            if (existing) {
+                existing.meta = { ...meta };
+                existing.lastTs = performance.now();
+                existing.visible = false;
+                existing.maxRatio = 0;
+                existing.visibleMs = 0;
+                existing.finalized = false;
+                existing.reportedViewable = false;
+            } else {
+                wfAdViewabilityStates.set(slotElement, {
+                    meta: { ...meta },
+                    lastTs: performance.now(),
+                    visible: false,
+                    maxRatio: 0,
+                    visibleMs: 0,
+                    finalized: false,
+                    reportedViewable: false,
+                });
+            }
+
+            wfAdViewabilityObserver.observe(slotElement);
+            window.setTimeout(() => {
+                finalizeAdViewabilityTracking(slotElement);
+            }, 7000);
+        }
+
+        function ensurePreconnectLink(url) {
+            const href = String(url || '').trim();
+            if (!href) return;
+
+            const selector = `link[rel="preconnect"][href="${href}"]`;
+            if (document.head.querySelector(selector)) return;
+
+            const link = document.createElement('link');
+            link.rel = 'preconnect';
+            link.href = href;
+            link.crossOrigin = 'anonymous';
+            document.head.appendChild(link);
+        }
+
+        function loadExternalScriptOnce(scriptId, src, crossOrigin = 'anonymous') {
+            return new Promise((resolve, reject) => {
+                const safeSrc = String(src || '').trim();
+                if (!safeSrc) {
+                    reject(new Error('Script sem URL.'));
+                    return;
+                }
+
+                let script = document.getElementById(scriptId);
+                if (script) {
+                    if (script.dataset.wfLoaded === '1') {
+                        resolve(true);
+                        return;
+                    }
+
+                    script.addEventListener('load', () => resolve(true), { once: true });
+                    script.addEventListener('error', () => reject(new Error('Falha ao carregar script externo.')), { once: true });
+                    return;
+                }
+
+                script = document.createElement('script');
+                script.id = scriptId;
+                script.async = true;
+                script.src = safeSrc;
+                script.crossOrigin = crossOrigin;
+                script.addEventListener('load', () => {
+                    script.dataset.wfLoaded = '1';
+                    resolve(true);
+                }, { once: true });
+                script.addEventListener('error', () => reject(new Error('Falha ao carregar script externo.')), { once: true });
+                document.head.appendChild(script);
+            });
+        }
+
+        function loadAdsProviderScript(config) {
+            if (wfAdsProviderReadyPromise) {
+                return wfAdsProviderReadyPromise;
+            }
+
+            wfAdsProviderReadyPromise = (async () => {
+                const provider = String(config?.provider || 'fallback');
+                if (provider === 'adsense' && config?.adsense_client) {
+                    ensurePreconnectLink('https://pagead2.googlesyndication.com');
+                    ensurePreconnectLink('https://googleads.g.doubleclick.net');
+                    const src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(config.adsense_client)}`;
+                    await loadExternalScriptOnce('wfAdsenseScript', src, 'anonymous');
+                    return true;
+                }
+
+                if (provider === 'custom-script' && config?.script_url) {
+                    await loadExternalScriptOnce('wfCustomAdsScript', config.script_url, 'anonymous');
+                    return true;
+                }
+
+                return false;
+            })().catch(() => false);
+
+            return wfAdsProviderReadyPromise;
+        }
+
+        function sponsorForSlot(slotName, config, context = 'general') {
+            const list = Array.isArray(config?.sponsored) ? config.sponsored : [];
+            if (!list.length) return null;
+            const slotIndex = String(slotName || 'top') === 'bottom' ? 1 : 0;
+            const contextOffset = Array.from(String(context || 'general'))
+                .reduce((acc, char) => acc + char.charCodeAt(0), 0) % list.length;
+            return list[(slotIndex + contextOffset) % list.length];
+        }
+
+        function renderFallbackSponsor(slotElement, slotName, config, context = 'general') {
+            const sponsor = sponsorForSlot(slotName, config, context);
+            if (!sponsor) {
+                slotElement.classList.add('is-hidden');
+                slotElement.innerHTML = '';
+                slotElement.setAttribute('data-wf-ad-provider', 'none');
+                return;
+            }
+
+            const safeTitle = escapeHtmlText(sponsor.title);
+            const safeText = escapeHtmlText(sponsor.text);
+            const normalizedHref = sanitizeSponsorHref(sponsor.href);
+            const safeHref = escapeHtmlText(normalizedHref);
+            const safeCta = escapeHtmlText(sponsor.cta || 'Conhecer');
+            const externalAttrs = /^https?:\/\//i.test(normalizedHref)
+                ? ' target="_blank" rel="sponsored noopener noreferrer"'
+                : '';
+
+            slotElement.classList.remove('is-hidden');
+            slotElement.setAttribute('data-wf-ad-provider', 'fallback');
+            slotElement.innerHTML = `
+                <div class="wf-ad-label">Patrocinado</div>
+                <article class="wf-ad-fallback-card">
+                    <div class="wf-ad-fallback-copy">
+                        <p class="wf-ad-fallback-title">${safeTitle}</p>
+                        <p class="wf-ad-fallback-text">${safeText}</p>
+                    </div>
+                    <a class="wf-ad-fallback-link" href="${safeHref}"${externalAttrs}>${safeCta}</a>
+                </article>
+            `;
+
+            trackAdMetric('impression', {
+                context,
+                slot: slotName,
+                provider: 'fallback',
+            });
+
+            const link = slotElement.querySelector('.wf-ad-fallback-link');
+            if (link) {
+                link.addEventListener('click', () => {
+                    trackAdMetric('click', {
+                        context,
+                        slot: slotName,
+                        provider: 'fallback',
+                    });
+                }, { once: true });
+            }
+        }
+
+        function renderThirdPartyAd(slotElement, slotName, config, providerReady, context = 'general') {
+            const provider = String(config?.provider || 'fallback');
+
+            if (!providerReady) {
+                renderFallbackSponsor(slotElement, slotName, config, context);
+                return;
+            }
+
+            if (provider === 'adsense' && config?.adsense_client) {
+                const slotId = String(config?.slots?.[slotName] || '').trim();
+                if (!slotId) {
+                    renderFallbackSponsor(slotElement, slotName, config, context);
+                    return;
+                }
+
+                const safeClient = escapeHtmlText(config.adsense_client);
+                const safeSlotId = escapeHtmlText(slotId);
+
+                slotElement.classList.remove('is-hidden');
+                slotElement.setAttribute('data-wf-ad-provider', 'adsense');
+                slotElement.innerHTML = `
+                    <div class="wf-ad-label">Anuncio</div>
+                    <ins class="adsbygoogle" style="display:block;width:100%;min-height:90px;" data-ad-client="${safeClient}" data-ad-slot="${safeSlotId}" data-ad-format="auto" data-full-width-responsive="true"></ins>
+                `;
+
+                try {
+                    (window.adsbygoogle = window.adsbygoogle || []).push({});
+                    trackAdMetric('impression', {
+                        context,
+                        slot: slotName,
+                        provider: 'adsense',
+                    });
+                } catch {
+                    renderFallbackSponsor(slotElement, slotName, config, context);
+                }
+                return;
+            }
+
+            if (provider === 'custom-script') {
+                slotElement.classList.remove('is-hidden');
+                slotElement.setAttribute('data-wf-ad-provider', 'custom-script');
+                slotElement.innerHTML = `
+                    <div class="wf-ad-label">Anuncio</div>
+                    <div class="wf-third-party-ad" data-provider="custom" data-ad-slot="${slotName}"></div>
+                `;
+
+                if (typeof window.wfRenderThirdPartyAd === 'function') {
+                    try {
+                        window.wfRenderThirdPartyAd(slotElement, slotName, config);
+                        trackAdMetric('impression', {
+                            context,
+                            slot: slotName,
+                            provider: 'custom-script',
+                        });
+                    } catch {
+                        renderFallbackSponsor(slotElement, slotName, config, context);
+                    }
+                } else {
+                    renderFallbackSponsor(slotElement, slotName, config, context);
+                }
+                return;
+            }
+
+            renderFallbackSponsor(slotElement, slotName, config, context);
+        }
+
+        function setupMonetizationAds(options = {}) {
+            const force = Boolean(options.force);
+            const slots = Array.from(document.querySelectorAll('[data-wf-ad-slot]'));
+            if (!slots.length) return;
+
+            const config = readAdsConfig();
+            let routePlan = getAdsRoutePlan(window.location.pathname);
+            routePlan = applyAdExperimentToRoutePlan(routePlan, config);
+            applyAdsRoutePlan(routePlan);
+
+            if (force && wfAdsObserver) {
+                try {
+                    wfAdsObserver.disconnect();
+                } catch {
+                    // ignora falha de observer
+                }
+                wfAdsObserver = null;
+                slots.forEach((slot) => {
+                    slot.removeAttribute('data-wf-ad-hydrated');
+                });
+            }
+
+            if (force && wfAdViewabilityObserver) {
+                try {
+                    wfAdViewabilityObserver.disconnect();
+                } catch {
+                    // ignora falha de observer
+                }
+                wfAdViewabilityObserver = null;
+                wfAdViewabilityStates.clear();
+            }
+
+            if (wfAdsBootstrapped && !force) return;
+            wfAdsBootstrapped = true;
+
+            if (!config.enabled || !isAdsPathEligible()) {
+                slots.forEach((slot) => slot.classList.add('is-hidden'));
+                return;
+            }
+
+            const sessionState = readAdSessionState();
+            sessionState.pageViews = Number(sessionState.pageViews || 0) + 1;
+            writeAdSessionState(sessionState);
+
+            const deliveryState = readAdDeliveryState();
+
+            const activeSlots = slots.filter((slot) => {
+                const stack = slot.closest('.wf-ad-stack');
+                return !!stack && stack.style.display !== 'none';
+            });
+
+            const eligibleSlots = activeSlots.filter((slot) => {
+                const slotName = String(slot.getAttribute('data-wf-ad-slot') || 'top');
+                const allowed = shouldRenderAdSlot(routePlan.context, slotName, config, deliveryState, sessionState);
+                if (!allowed) {
+                    slot.classList.add('is-hidden');
+                }
+                return allowed;
+            });
+
+            if (!eligibleSlots.length) {
+                return;
+            }
+
+            ensurePreconnectLink('https://pagead2.googlesyndication.com');
+            ensurePreconnectLink('https://googleads.g.doubleclick.net');
+
+            const hydrateSlot = async (slotElement) => {
+                if (slotElement.dataset.wfAdHydrated === '1') return;
+                slotElement.dataset.wfAdHydrated = '1';
+
+                const slotName = String(slotElement.getAttribute('data-wf-ad-slot') || 'top');
+                slotElement.setAttribute('data-wf-ad-context', routePlan.context);
+                const providerReady = await loadAdsProviderScript(config);
+                renderThirdPartyAd(slotElement, slotName, config, providerReady, routePlan.context);
+
+                const provider = String(slotElement.getAttribute('data-wf-ad-provider') || config.provider || 'fallback');
+                attachAdViewabilityTracking(slotElement, {
+                    context: routePlan.context,
+                    slot: slotName,
+                    provider,
+                    experimentBucket: routePlan.experimentBucket || 'a',
+                });
+            };
+
+            if ('IntersectionObserver' in window) {
+                wfAdsObserver = new IntersectionObserver((entries) => {
+                    entries.forEach((entry) => {
+                        if (!entry.isIntersecting) return;
+                        wfAdsObserver.unobserve(entry.target);
+                        hydrateSlot(entry.target);
+                    });
+                }, {
+                    root: null,
+                    rootMargin: '280px 0px',
+                    threshold: 0,
+                });
+
+                eligibleSlots.forEach((slot) => wfAdsObserver.observe(slot));
+            } else {
+                eligibleSlots.forEach((slot) => hydrateSlot(slot));
+            }
+        }
 
         function isCacheableGetUrl(url) {
             const raw = String(url || '').toLowerCase();
@@ -2466,36 +3908,93 @@
             return path === '/login' || path === '/register' || path === '/forgot-password' || path === '/reset-password';
         }
 
+        function getNavigationPrefetchPlan() {
+            const path = normalizeAdsPath(window.location.pathname);
+            const isLogged = Boolean(localStorage.getItem('token'));
+            const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+            const saveData = Boolean(connection?.saveData);
+            const effectiveType = String(connection?.effectiveType || '').toLowerCase();
+            const lowBandwidth = saveData || effectiveType.includes('2g') || effectiveType.includes('3g');
+
+            const baseRoutes = ['/', '/offers', '/services', '/community', '/store', '/ai-agent'];
+            const contextRoutes = {
+                home: ['/offers', '/community', '/store'],
+                offers: ['/offers/new', '/messages', '/community'],
+                community: ['/messages', '/offers', '/services'],
+                services: ['/services/manage', '/offers', '/community'],
+                store: ['/store/cart', '/store/orders', '/offers'],
+                messages: ['/offers', '/community', '/services'],
+            };
+
+            const contextApis = {
+                home: ['/api/offers?skip=0&limit=12', '/api/community/posts?skip=0&limit=12'],
+                offers: ['/api/offers?skip=0&limit=12', '/api/services'],
+                community: ['/api/community/posts?skip=0&limit=12', '/api/offers?skip=0&limit=12'],
+                services: ['/api/services', '/api/services/categories'],
+                store: ['/api/store/featured', '/api/store/products?limit=12'],
+                messages: ['/api/notifications/unread'],
+            };
+
+            const contextKey =
+                path === '/' || path === '/home' || path === '/index' ? 'home'
+                    : path.startsWith('/offers') ? 'offers'
+                        : path.startsWith('/community') ? 'community'
+                            : path.startsWith('/services') ? 'services'
+                                : path.startsWith('/store') ? 'store'
+                                    : path.startsWith('/messages') ? 'messages'
+                                        : 'home';
+
+            const routes = new Set([
+                ...baseRoutes,
+                ...(contextRoutes[contextKey] || []),
+            ]);
+
+            if (!isLogged) {
+                routes.delete('/messages');
+                routes.delete('/offers/new');
+            }
+
+            const apis = new Set([
+                '/api/offers?skip=0&limit=12',
+                '/api/services',
+                '/api/store/featured',
+                ...(contextApis[contextKey] || []),
+            ]);
+
+            const routeList = Array.from(routes);
+            const apiList = Array.from(apis);
+
+            return {
+                lowBandwidth,
+                routes: lowBandwidth ? routeList.slice(0, 3) : routeList,
+                apis: lowBandwidth ? apiList.slice(0, 2) : apiList,
+                timeoutMs: lowBandwidth ? 2200 : 1200,
+                fallbackDelayMs: lowBandwidth ? 900 : 280,
+            };
+        }
+
         function setupFastNavigationPrefetch() {
             if (isAuthFormPath()) {
                 // Evita competição de rede e render em telas de autenticação/formulário.
                 return;
             }
 
-            const importantRoutes = ['/', '/offers', '/ai-agent', '/services', '/community', '/store'];
-            const importantApis = [
-                '/api/offers?skip=0&limit=12',
-                '/api/services',
-                '/api/services/categories',
-                '/api/store/products?limit=12',
-                '/api/store/featured',
-                '/api/store/categories',
-                '/api/community/posts?skip=0&limit=12',
-            ];
+            const plan = getNavigationPrefetchPlan();
+
             if ('requestIdleCallback' in window) {
                 window.requestIdleCallback(() => {
-                    importantRoutes.forEach(prefetchRoute);
-                    importantApis.forEach((apiUrl) => {
+                    plan.routes.forEach(prefetchRoute);
+                    plan.apis.forEach((apiUrl) => {
                         apiRequest(apiUrl, 'GET').catch(() => {});
                     });
-                }, { timeout: 1500 });
+                }, { timeout: plan.timeoutMs });
             } else {
                 setTimeout(() => {
-                    importantRoutes.forEach(prefetchRoute);
-                    importantApis.forEach((apiUrl) => {
+                    plan.routes.forEach(prefetchRoute);
+                    plan.apis.forEach((apiUrl) => {
                         apiRequest(apiUrl, 'GET').catch(() => {});
                     });
-                }, 350);
+                }, plan.fallbackDelayMs);
             }
 
             document.addEventListener('pointerenter', (event) => {
@@ -2503,6 +4002,7 @@
                 if (!target) return;
                 const href = target.getAttribute('href') || '';
                 if (!href.startsWith('/')) return;
+                if (plan.lowBandwidth && Math.random() > 0.35) return;
                 prefetchRoute(href);
             }, true);
 
@@ -2511,6 +4011,7 @@
                 if (!target) return;
                 const href = target.getAttribute('href') || '';
                 if (!href.startsWith('/')) return;
+                if (plan.lowBandwidth && Math.random() > 0.4) return;
                 prefetchRoute(href);
             }, { passive: true, capture: true });
         }
@@ -2568,6 +4069,15 @@
             }
         }
 
+        function applyUnreadMessagesBadge(unread) {
+            const safeUnread = Math.max(0, Number(unread || 0));
+            const badge = document.getElementById('wfMessagesQuickBadge');
+            if (!badge) return;
+
+            badge.textContent = String(safeUnread);
+            badge.style.display = safeUnread > 0 ? 'flex' : 'none';
+        }
+
         function restartUnreadNotificationsPolling() {
             if (wfUnreadNotificationsPollTimer) {
                 window.clearInterval(wfUnreadNotificationsPollTimer);
@@ -2580,9 +4090,11 @@
                 return;
             }
 
+            const pollIntervalMs = getNetworkAwareInterval(30000);
+
             wfUnreadNotificationsPollTimer = window.setInterval(() => {
                 refreshUnreadNotifications();
-            }, 30000);
+            }, pollIntervalMs);
         }
 
         function setNavAuthState(force = false) {
@@ -2727,6 +4239,7 @@
 
             if (!token) {
                 applyUnreadNotificationsBadge(0);
+                publishCrossTabEvent('notifications_unread', { unread: 0 });
                 return;
             }
 
@@ -2734,6 +4247,10 @@
                 const data = await apiRequest('/notifications/unread-count');
                 const unread = Number(data?.unread || 0);
                 applyUnreadNotificationsBadge(unread);
+                window.dispatchEvent(new CustomEvent('wf:notifications-unread-updated', {
+                    detail: { unread },
+                }));
+                publishCrossTabEvent('notifications_unread', { unread });
             } catch {
                 // ignora falhas de notificação no layout
             }
@@ -2745,17 +4262,18 @@
 
             if (!badge) return;
             if (!token) {
-                badge.style.display = 'none';
+                applyUnreadMessagesBadge(0);
+                publishCrossTabEvent('messages_unread', { unread: 0 });
                 return;
             }
 
             try {
                 const me = await apiRequest('/auth/me');
                 const unread = Number(me?.unread_messages || 0);
-                badge.textContent = String(unread);
-                badge.style.display = unread > 0 ? 'flex' : 'none';
+                applyUnreadMessagesBadge(unread);
+                publishCrossTabEvent('messages_unread', { unread });
             } catch {
-                badge.style.display = 'none';
+                applyUnreadMessagesBadge(0);
             }
         }
 
@@ -3128,6 +4646,198 @@
             update();
         }
 
+        function readRetentionNudgeState() {
+            const fallback = {
+                lastShownAt: 0,
+                dismissedAt: 0,
+                clickedAt: 0,
+            };
+            try {
+                const raw = localStorage.getItem(WF_RETENTION_NUDGE_KEY);
+                const parsed = raw ? JSON.parse(raw) : fallback;
+                return {
+                    ...fallback,
+                    ...(parsed && typeof parsed === 'object' ? parsed : {}),
+                };
+            } catch {
+                return fallback;
+            }
+        }
+
+        function writeRetentionNudgeState(state) {
+            try {
+                localStorage.setItem(WF_RETENTION_NUDGE_KEY, JSON.stringify({
+                    ...(state || {}),
+                    updatedAt: Date.now(),
+                }));
+            } catch {
+                // ignora indisponibilidade de storage
+            }
+        }
+
+        function shouldThrottleRetentionNudge() {
+            const state = readRetentionNudgeState();
+            const now = Date.now();
+            const minIntervalMs = 1000 * 60 * 60 * 3;
+            return now - Number(state.lastShownAt || 0) < minIntervalMs;
+        }
+
+        function parseBadgeCount(id) {
+            const node = document.getElementById(id);
+            if (!node) return 0;
+            const raw = Number.parseInt(node.textContent || '0', 10);
+            return Number.isFinite(raw) ? Math.max(0, raw) : 0;
+        }
+
+        function getRetentionNudgeSuggestion() {
+            const unreadMessages = parseBadgeCount('wfMessagesQuickBadge');
+            const unreadNotifications = parseBadgeCount('navNotifBadge');
+            const path = normalizeAdsPath(window.location.pathname);
+
+            if (unreadMessages > 0) {
+                return {
+                    href: '/messages',
+                    title: `${unreadMessages} mensagem(ns) esperando resposta`,
+                    text: 'Retorne para manter o ritmo das negociações em andamento.',
+                    cta: 'Abrir mensagens',
+                };
+            }
+
+            if (unreadNotifications > 0) {
+                return {
+                    href: '/notifications',
+                    title: `${unreadNotifications} notificacao(oes) novas`,
+                    text: 'Veja atualizacoes importantes para nao perder oportunidades.',
+                    cta: 'Ver notificacoes',
+                };
+            }
+
+            if (!path.startsWith('/offers')) {
+                return {
+                    href: '/offers',
+                    title: 'Novas oportunidades comerciais',
+                    text: 'Explore ofertas recentes e acelere conversoes nesta sessao.',
+                    cta: 'Explorar ofertas',
+                };
+            }
+
+            return {
+                href: '/community',
+                title: 'Comunidade com sinais quentes',
+                text: 'Confira tendencias e discussoes para gerar novas vendas.',
+                cta: 'Ir para comunidade',
+            };
+        }
+
+        function ensureRetentionNudgeElement() {
+            let nudge = document.getElementById('wfRetentionNudge');
+            if (nudge) return nudge;
+
+            nudge = document.createElement('aside');
+            nudge.id = 'wfRetentionNudge';
+            nudge.className = 'wf-retention-nudge';
+            nudge.setAttribute('aria-live', 'polite');
+            nudge.setAttribute('aria-atomic', 'true');
+            nudge.innerHTML = `
+                <div class="wf-retention-nudge-top">
+                    <div>
+                        <p class="wf-retention-nudge-title" id="wfRetentionNudgeTitle"></p>
+                        <p class="wf-retention-nudge-text" id="wfRetentionNudgeText"></p>
+                    </div>
+                    <button type="button" class="wf-retention-nudge-close" id="wfRetentionNudgeClose" aria-label="Fechar sugestao">×</button>
+                </div>
+                <a class="wf-retention-nudge-cta" id="wfRetentionNudgeCta" href="/offers">Continuar</a>
+            `;
+
+            document.body.appendChild(nudge);
+
+            const closeButton = nudge.querySelector('#wfRetentionNudgeClose');
+            if (closeButton) {
+                closeButton.addEventListener('click', () => {
+                    nudge.classList.remove('is-visible');
+                    const state = readRetentionNudgeState();
+                    state.dismissedAt = Date.now();
+                    writeRetentionNudgeState(state);
+                });
+            }
+
+            const cta = nudge.querySelector('#wfRetentionNudgeCta');
+            if (cta) {
+                cta.addEventListener('click', () => {
+                    const state = readRetentionNudgeState();
+                    state.clickedAt = Date.now();
+                    writeRetentionNudgeState(state);
+                });
+            }
+
+            return nudge;
+        }
+
+        function showRetentionNudgeIfNeeded() {
+            if (isAuthFormPath()) return;
+            if (!localStorage.getItem('token')) return;
+            if (shouldThrottleRetentionNudge()) return;
+
+            const nudge = ensureRetentionNudgeElement();
+            if (!nudge) return;
+
+            const suggestion = getRetentionNudgeSuggestion();
+            const titleNode = nudge.querySelector('#wfRetentionNudgeTitle');
+            const textNode = nudge.querySelector('#wfRetentionNudgeText');
+            const ctaNode = nudge.querySelector('#wfRetentionNudgeCta');
+
+            if (titleNode) titleNode.textContent = suggestion.title;
+            if (textNode) textNode.textContent = suggestion.text;
+            if (ctaNode) {
+                ctaNode.textContent = suggestion.cta;
+                ctaNode.setAttribute('href', suggestion.href);
+            }
+
+            nudge.classList.add('is-visible');
+
+            const state = readRetentionNudgeState();
+            state.lastShownAt = Date.now();
+            writeRetentionNudgeState(state);
+
+            window.setTimeout(() => {
+                nudge.classList.remove('is-visible');
+            }, 12000);
+        }
+
+        function setupRetentionNudges() {
+            if (isAuthFormPath()) return;
+            let idleTimer = null;
+            const idleMs = getNetworkAwareInterval(70000);
+
+            const armTimer = () => {
+                if (idleTimer) {
+                    window.clearTimeout(idleTimer);
+                }
+                idleTimer = window.setTimeout(() => {
+                    showRetentionNudgeIfNeeded();
+                }, idleMs);
+            };
+
+            ['pointerdown', 'keydown', 'scroll', 'touchstart'].forEach((eventName) => {
+                window.addEventListener(eventName, armTimer, { passive: true });
+            });
+
+            document.addEventListener('visibilitychange', () => {
+                const nudge = document.getElementById('wfRetentionNudge');
+                if (document.hidden) {
+                    if (nudge) nudge.classList.remove('is-visible');
+                    if (idleTimer) {
+                        window.clearTimeout(idleTimer);
+                        idleTimer = null;
+                    }
+                    return;
+                }
+                armTimer();
+            });
+
+            armTimer();
+        }
+
         function bindLogoutHandler(id) {
             const element = document.getElementById(id);
             if (!element) return;
@@ -3150,6 +4860,9 @@
             initHiddenSettingsPanel();
             initKeyboardMenuGuard();
             setupFastNavigationPrefetch();
+            setupCrossTabSync();
+            setupMonetizationAds();
+            setupRetentionNudges();
             fixInputStability();
 
             document.addEventListener('focusin', (event) => {
@@ -3185,6 +4898,10 @@
                     refreshUnreadMessagesBadge();
                 }
             });
+
+            window.addEventListener('wf:ads-config-updated', () => {
+                setupMonetizationAds({ force: true });
+            });
         });
 
         let wfResizeTimer = null;
@@ -3205,6 +4922,38 @@
                 window.clearInterval(wfUnreadNotificationsPollTimer);
                 wfUnreadNotificationsPollTimer = null;
             }
+
+            if (wfSyncChannel) {
+                try {
+                    wfSyncChannel.close();
+                } catch {
+                    // ignora falha no fechamento do canal
+                }
+                wfSyncChannel = null;
+            }
+
+            if (wfAdsObserver) {
+                try {
+                    wfAdsObserver.disconnect();
+                } catch {
+                    // ignora falha no observer
+                }
+                wfAdsObserver = null;
+            }
+
+            if (wfAdViewabilityObserver) {
+                try {
+                    wfAdViewabilityObserver.disconnect();
+                } catch {
+                    // ignora falha no observer
+                }
+                wfAdViewabilityObserver = null;
+            }
+
+            wfAdViewabilityStates.forEach((_, element) => {
+                finalizeAdViewabilityTracking(element);
+            });
+            wfAdViewabilityStates.clear();
         });
 
         if ('serviceWorker' in navigator) {
@@ -3216,8 +4965,16 @@
         }
     </script>
 
+    <div class="wf-ad-stack" id="wfAdsTopStack" aria-label="Espaço de anúncios patrocinados">
+        <section class="wf-ad-slot" data-wf-ad-slot="top"></section>
+    </div>
+
     <div class="wf-container wf-fade-in">
         {% block content %}{% endblock %}
+    </div>
+
+    <div class="wf-ad-stack wf-ad-stack-bottom" id="wfAdsBottomStack" aria-label="Espaço de anúncios patrocinados">
+        <section class="wf-ad-slot" data-wf-ad-slot="bottom"></section>
     </div>
 </main>
 </div>

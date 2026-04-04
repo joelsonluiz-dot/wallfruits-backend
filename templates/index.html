@@ -6,10 +6,24 @@
 <style>
     .home-auth-strip {
         display: none;
-        justify-content: flex-end;
-        gap: 0.52rem;
-        margin-bottom: 0.8rem;
+        justify-content: flex-start;
+        margin-bottom: 0.65rem;
         flex-wrap: wrap;
+    }
+
+    .home-brand-mark {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        border: 1px solid rgba(237, 164, 76, 0.38);
+        padding: 0.34rem 0.8rem;
+        font-size: 0.75rem;
+        letter-spacing: 0.14em;
+        font-weight: 900;
+        color: #ffd89e;
+        background: linear-gradient(140deg, rgba(16, 27, 39, 0.94), rgba(24, 40, 57, 0.9));
+        box-shadow: 0 10px 20px rgba(7, 16, 26, 0.3);
+        text-transform: uppercase;
     }
 
     .hero-section {
@@ -100,17 +114,40 @@
         margin-top: 3.5rem;
     }
 
+    .home-offers-section,
+    .home-products-section,
+    .home-services-section,
+    .home-community-section {
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 18px;
+        background: linear-gradient(165deg, rgba(14, 24, 35, 0.82), rgba(21, 34, 48, 0.78));
+        padding: 0.9rem 0.88rem;
+        box-shadow: 0 14px 28px rgba(0, 0, 0, 0.16);
+    }
+
+    .home-section-title {
+        margin: 0;
+        font-size: clamp(1.18rem, 2vw, 1.4rem);
+        letter-spacing: -0.03em;
+    }
+
+    .home-section-subtitle {
+        color: var(--wf-text-secondary);
+        margin: 0.22rem 0 0;
+        font-size: 0.84rem;
+    }
+
     .home-products-section {
-        margin-top: 2.1rem;
+        margin-top: 1.42rem;
     }
 
     .home-services-section {
-        margin-top: 2.1rem;
+        margin-top: 1.34rem;
     }
 
     .home-services-row {
         display: flex;
-        gap: 0.75rem;
+        gap: 0.58rem;
         overflow-x: auto;
         padding: 0.2rem 0.05rem 0.4rem;
         scroll-snap-type: x proximity;
@@ -232,14 +269,14 @@
     }
 
     .home-community-section {
-        margin-top: 2.1rem;
+        margin-top: 1.34rem;
     }
 
     .home-community-row {
         display: flex;
-        gap: 0.7rem;
+        gap: 0.55rem;
         overflow-x: auto;
-        padding: 0.12rem 0.04rem 0.4rem;
+        padding: 0.16rem 0.05rem 0.46rem;
         scroll-snap-type: x proximity;
     }
 
@@ -251,10 +288,10 @@
     .home-community-card {
         min-width: 248px;
         max-width: 248px;
-        border-radius: 12px;
-        border: 1px solid var(--wf-border);
-        background: var(--wf-card);
-        box-shadow: 0 6px 18px rgba(0,0,0,0.14);
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: linear-gradient(165deg, rgba(18, 27, 39, 0.95), rgba(21, 33, 46, 0.92));
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
         overflow: hidden;
         text-decoration: none;
         color: inherit;
@@ -266,8 +303,8 @@
 
     .home-community-card:hover {
         transform: translateY(-2px);
-        border-color: rgba(0, 212, 170, 0.24);
-        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
+        border-color: rgba(237, 164, 76, 0.32);
+        box-shadow: 0 18px 30px rgba(0, 0, 0, 0.24);
     }
 
     .home-community-card:focus-visible {
@@ -276,7 +313,7 @@
     }
 
     .home-community-media {
-        height: 94px;
+        height: 112px;
         background: rgba(255,255,255,0.05);
     }
 
@@ -287,17 +324,17 @@
     }
 
     .home-community-body {
-        padding: 0.62rem;
+        padding: 0.72rem;
         display: flex;
         flex-direction: column;
-        gap: 0.33rem;
+        gap: 0.4rem;
     }
 
     .home-community-head {
         display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 0.44rem;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 0.42rem;
     }
 
     .home-community-author {
@@ -307,31 +344,38 @@
         min-width: 0;
     }
 
-    .home-community-published {
-        font-size: 0.62rem;
-        color: var(--wf-text-secondary);
-        font-weight: 800;
-        white-space: nowrap;
-        max-width: 44%;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
     .home-community-avatar {
-        width: 28px;
-        height: 28px;
+        width: 30px;
+        height: 30px;
         border-radius: 50%;
         object-fit: cover;
         border: 1px solid rgba(255,255,255,0.2);
         background: rgba(255,255,255,0.3);
     }
 
+    .home-community-author-info {
+        display: grid;
+        gap: 0.05rem;
+        min-width: 0;
+    }
+
+    .home-community-topline {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.32rem;
+        min-width: 0;
+    }
+
     .home-community-user {
-        font-size: 0.74rem;
-        color: var(--wf-text-secondary);
+        font-size: 0.75rem;
+        color: #f8fbff;
         font-weight: 800;
         text-decoration: none;
         line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 116px;
     }
 
     .home-community-user:hover {
@@ -339,10 +383,18 @@
         text-underline-offset: 2px;
     }
 
+    .home-community-time {
+        font-size: 0.63rem;
+        color: rgba(211, 223, 236, 0.88);
+        font-weight: 800;
+        letter-spacing: 0.02em;
+        white-space: nowrap;
+    }
+
     .home-community-role {
-        font-size: 0.64rem;
-        color: var(--wf-text-secondary);
-        opacity: 0.9;
+        font-size: 0.63rem;
+        color: rgba(197, 213, 229, 0.82);
+        opacity: 0.95;
     }
 
     .home-community-text {
@@ -361,64 +413,35 @@
     .home-community-meta {
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        font-size: 0.66rem;
+        justify-content: flex-start;
+        font-size: 0.64rem;
         color: var(--wf-text-secondary);
-        gap: 0.35rem;
+        gap: 0.28rem;
+        flex-wrap: wrap;
     }
 
     .home-community-stat {
         display: inline-flex;
         align-items: center;
-        gap: 0.2rem;
+        gap: 0.16rem;
         font-weight: 800;
-        color: var(--wf-text-secondary);
+        color: #dce7f3;
         min-width: 0;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.06);
+        padding: 0.14rem 0.38rem;
     }
 
     .home-community-stat .material-icons {
-        font-size: 0.82rem;
-        line-height: 1;
-        opacity: 0.92;
+        display: none;
     }
 
-    .home-community-actions {
-        margin-top: 0.08rem;
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 0.24rem;
-    }
-
-    .home-community-action {
-        border: 1px solid rgba(17, 73, 125, 0.16);
-        border-radius: 9px;
-        background: rgba(247, 253, 255, 0.92);
-        color: #194a82;
-        font-size: 0.66rem;
-        font-weight: 800;
-        padding: 0.3rem 0.25rem;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.16rem;
-        cursor: pointer;
-        min-height: 30px;
-    }
-
-    .home-community-action .material-icons {
-        font-size: 0.84rem;
-    }
-
-    .home-community-action.liked {
-        color: #b23a58;
-        border-color: rgba(178, 58, 88, 0.32);
-        background: rgba(255, 231, 237, 0.92);
-    }
-
-    .home-community-action.saved {
-        color: #0e6f89;
-        border-color: rgba(14, 111, 137, 0.32);
-        background: rgba(228, 247, 252, 0.92);
+    .home-community-stat-label {
+        color: rgba(191, 206, 224, 0.9);
+        font-size: 0.61rem;
+        font-weight: 700;
+        letter-spacing: 0.01em;
     }
 
     .home-community-open {
@@ -429,7 +452,7 @@
 
     .home-products-row {
         display: flex;
-        gap: 0.75rem;
+        gap: 0.58rem;
         overflow-x: auto;
         padding: 0.2rem 0.05rem 0.4rem;
         scroll-snap-type: x proximity;
@@ -441,21 +464,30 @@
     }
 
     .home-product-card {
-        min-width: 220px;
-        max-width: 220px;
-        border-radius: 10px;
-        border: 1px solid var(--wf-border);
-        background: var(--wf-card);
+        min-width: 232px;
+        max-width: 232px;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: linear-gradient(165deg, rgba(15, 25, 36, 0.95), rgba(20, 33, 47, 0.92));
         text-decoration: none;
         color: inherit;
-        box-shadow: 0 6px 18px rgba(0,0,0,0.14);
+        box-shadow: 0 12px 24px rgba(0,0,0,0.2);
         overflow: hidden;
         scroll-snap-align: start;
+        transition: transform var(--wf-motion-normal) ease, box-shadow var(--wf-motion-normal) ease, border-color var(--wf-motion-normal) ease;
+    }
+
+    .home-product-card:hover {
+        transform: translateY(-2px);
+        border-color: rgba(237, 164, 76, 0.32);
+        box-shadow: 0 18px 32px rgba(0, 0, 0, 0.24);
     }
 
     .home-product-media {
-        height: 120px;
-        background: rgba(255,255,255,0.05);
+        height: 126px;
+        background: radial-gradient(circle at 15% 15%, rgba(237, 164, 76, 0.24), transparent 38%),
+                    radial-gradient(circle at 85% 0%, rgba(0, 212, 170, 0.18), transparent 40%),
+                    rgba(255,255,255,0.05);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -468,9 +500,9 @@
     }
 
     .home-product-body {
-        padding: 0.6rem 0.65rem;
+        padding: 0.74rem 0.72rem;
         display: grid;
-        gap: 0.22rem;
+        gap: 0.28rem;
     }
 
     .home-product-cat {
@@ -483,14 +515,21 @@
 
     .home-product-name {
         margin: 0;
-        font-size: 0.76rem;
+        font-size: 0.8rem;
         font-weight: 800;
-        color: #f2c98a;
+        color: #f8fbff;
         min-height: 1.85rem;
     }
 
     .home-product-price {
-        font-size: 0.78rem;
+        display: inline-flex;
+        width: fit-content;
+        border-radius: 999px;
+        border: 1px solid rgba(237, 164, 76, 0.3);
+        background: rgba(237, 164, 76, 0.14);
+        color: #ffd89e;
+        padding: 0.16rem 0.44rem;
+        font-size: 0.73rem;
         font-weight: 800;
     }
     .home-offers-head {
@@ -702,6 +741,13 @@
         .stat-value { font-size: 1.6rem; }
         .stat-label { font-size: 0.7rem; }
         .home-offers-section { margin-top: 2.5rem; }
+        .home-offers-section,
+        .home-products-section,
+        .home-services-section,
+        .home-community-section {
+            border-radius: 14px;
+            padding: 0.72rem 0.7rem;
+        }
         .hero-actions { flex-direction: column; align-items: center; }
         .hero-actions .btn { width: 100%; max-width: 300px; }
         .home-community-card {
@@ -710,17 +756,7 @@
         }
 
         .home-community-head {
-            flex-wrap: wrap;
-            gap: 0.28rem;
-        }
-
-        .home-community-published {
-            max-width: 100%;
-            margin-left: 32px;
-        }
-
-        .home-community-actions {
-            gap: 0.2rem;
+            gap: 0.3rem;
         }
     }
     @media (max-width: 480px) {
@@ -734,21 +770,14 @@
             max-width: 206px;
         }
 
-        .home-community-action {
-            min-height: 28px;
-            font-size: 0.63rem;
-            padding: 0.26rem 0.2rem;
-        }
-
-        .home-community-action .material-icons {
-            font-size: 0.8rem;
+        .home-community-time {
+            font-size: 0.61rem;
         }
     }
 </style>
 
 <div id="homeAuthStrip" class="home-auth-strip" aria-label="Ações de autenticação">
-    <a href="/login" class="btn btn-wf-secondary">Entrar</a>
-    <a href="/register" class="btn btn-wf-primary">Criar conta</a>
+    <div class="home-brand-mark" aria-label="Identidade do aplicativo">WALLFRUITS</div>
 </div>
 
 <section class="hero-section" id="homeHeroSection">
@@ -772,20 +801,14 @@
         <a href="/offers/new" class="btn btn-wf-secondary btn-lg px-4">
             Criar Oferta
         </a>
-        <a href="/login" class="btn btn-wf-secondary btn-lg px-4" id="heroLoginBtn">
-            Entrar
-        </a>
-        <a href="/register" class="btn btn-wf-primary btn-lg px-4" id="heroRegisterBtn">
-            Criar conta
-        </a>
     </div>
 </section>
 
 <section class="home-offers-section">
     <div class="home-offers-head">
         <div>
-            <h2 class="wf-section-title" style="font-size:1.45rem;margin:0;">Ofertas em <span class="wf-gradient-text">destaque</span></h2>
-            <p style="color:var(--wf-text-secondary);margin:0.2rem 0 0;font-size:0.86rem;">Clique no card para abrir os detalhes completos em outra aba.</p>
+            <h2 class="wf-section-title home-section-title">Ofertas em <span class="wf-gradient-text">destaque</span></h2>
+            <p class="home-section-subtitle">Clique no card para abrir os detalhes completos em outra aba.</p>
             <div class="home-live-controls" aria-label="Controles de atualização da home">
                 <button id="homeRefreshToggle" class="home-live-btn" type="button">
                     <span class="material-icons">pause_circle</span>
@@ -805,8 +828,8 @@
 <section class="home-products-section">
     <div class="home-offers-head">
         <div>
-            <h2 class="wf-section-title" style="font-size:1.35rem;margin:0;">Produtos em <span class="wf-gradient-text">destaque</span></h2>
-            <p style="color:var(--wf-text-secondary);margin:0.2rem 0 0;font-size:0.83rem;">Vitrine horizontal com itens da Loja Agro para compra imediata.</p>
+            <h2 class="wf-section-title home-section-title">Produtos em <span class="wf-gradient-text">destaque</span></h2>
+            <p class="home-section-subtitle">Vitrine horizontal com itens da Loja Agro para compra imediata.</p>
         </div>
         <a href="/store" class="btn btn-wf-secondary">Ir para loja</a>
     </div>
@@ -816,8 +839,8 @@
 <section class="home-services-section">
     <div class="home-offers-head">
         <div>
-            <h2 class="wf-section-title" style="font-size:1.35rem;margin:0;">Serviços em <span class="wf-gradient-text">destaque</span></h2>
-            <p style="color:var(--wf-text-secondary);margin:0.2rem 0 0;font-size:0.83rem;">Profissionais e operações agrícolas em evidência para solicitar orçamento rápido.</p>
+            <h2 class="wf-section-title home-section-title">Serviços em <span class="wf-gradient-text">destaque</span></h2>
+            <p class="home-section-subtitle">Profissionais e operações agrícolas em evidência para solicitar orçamento rápido.</p>
         </div>
         <a href="/services" class="btn btn-wf-secondary">Ver serviços</a>
     </div>
@@ -827,8 +850,8 @@
 <section class="home-community-section">
     <div class="home-offers-head">
         <div>
-            <h2 class="wf-section-title" style="font-size:1.35rem;margin:0;">Posts em <span class="wf-gradient-text">destaque</span></h2>
-            <p style="color:var(--wf-text-secondary);margin:0.2rem 0 0;font-size:0.83rem;">Atualizações recentes da Comunidade Agro com acesso rápido.</p>
+            <h2 class="wf-section-title home-section-title">Posts em <span class="wf-gradient-text">destaque</span></h2>
+            <p class="home-section-subtitle">Atualizações recentes da Comunidade Agro com acesso rápido.</p>
         </div>
         <a href="/community" class="btn btn-wf-secondary">Abrir comunidade</a>
     </div>
@@ -941,9 +964,13 @@
 
         if (homeRefreshPaused) return;
 
+        const adaptiveInterval = typeof window.wfGetNetworkAwareInterval === 'function'
+            ? window.wfGetNetworkAwareInterval(homeRefreshIntervalMs)
+            : homeRefreshIntervalMs;
+
         homeRefreshTimer = window.setInterval(() => {
             silentRefreshHome();
-        }, homeRefreshIntervalMs);
+        }, adaptiveInterval);
     }
 
     function setHomeRefreshPaused(paused) {
@@ -1005,6 +1032,34 @@
 
         const diffDays = Math.round(diffHours / 24);
         return `${Math.abs(diffDays)}d`;
+    }
+
+    function formatRelativeInstagram(value) {
+        if (!value) return 'agora';
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return 'agora';
+
+        const diffMs = Date.now() - date.getTime();
+        if (Math.abs(diffMs) < 60000) return 'agora';
+
+        const diffMinutes = Math.max(1, Math.round(Math.abs(diffMs) / 60000));
+        if (diffMinutes < 60) return `${diffMinutes} min`;
+
+        const diffHours = Math.max(1, Math.round(diffMinutes / 60));
+        if (diffHours < 24) return `${diffHours} h`;
+
+        const diffDays = Math.max(1, Math.round(diffHours / 24));
+        return `${diffDays} d`;
+    }
+
+    function buildPostPublishedLabel(value) {
+        const label = formatRelativeInstagram(value);
+        const formatted = formatDateTimeShort(value);
+
+        return {
+            label,
+            title: formatted ? `Publicado em ${formatted}` : 'Publicado recentemente',
+        };
     }
 
     function buildPublishedLabel(value) {
@@ -1449,9 +1504,7 @@
                 const likes = Number(post.likes_count || 0);
                 const comments = Number(post.comments_count || 0);
                 const shares = Number(post.shares_count || 0);
-                const likedByMe = Boolean(post.liked_by_me);
-                const savedByMe = isHomeSavedPost(post.id);
-                const published = buildPublishedLabel(post.created_at);
+                const published = buildPostPublishedLabel(post.created_at);
                 const profileUrl = profileUrlByUserId(post.author?.id || 0);
                 const postUrl = `/community?post=${encodeURIComponent(post.id)}`;
 
@@ -1470,49 +1523,34 @@
                                     <a href="${escapeHtml(profileUrl)}" style="display:inline-flex;" onclick="event.stopPropagation()">
                                         <img class="home-community-avatar" src="${escapeHtml(resolveAvatar(post.author?.profile_image))}" alt="Avatar de ${escapeHtml(userName)}" loading="lazy" onerror="wfAvatarOnError(this)">
                                     </a>
-                                    <div style="display:grid;gap:0.04rem;min-width:0;">
-                                        <a href="${escapeHtml(profileUrl)}" class="home-community-user" onclick="event.stopPropagation()">${escapeHtml(userName)}</a>
+                                    <div class="home-community-author-info">
+                                        <span class="home-community-topline">
+                                            <a href="${escapeHtml(profileUrl)}" class="home-community-user" onclick="event.stopPropagation()">${escapeHtml(userName)}</a>
+                                            <span class="home-community-time" title="${escapeHtml(published.title)}">${escapeHtml(published.label)}</span>
+                                        </span>
                                         <span class="home-community-role">${escapeHtml(userRole)}</span>
                                     </div>
                                 </div>
-                                <span class="home-community-published" title="${escapeHtml(published.title)}">${escapeHtml(published.label)}</span>
                             </div>
                             <a href="${postUrl}" class="home-community-open"><p class="home-community-text">${escapeHtml(postText || 'Atualização da comunidade')}</p></a>
                             <div class="home-community-meta">
-                                <span class="home-community-stat" data-home-like-stat="${post.id}" title="Curtidas"><span class="home-community-stat-value">${likes}</span><span class="material-icons">favorite</span></span>
-                                <span class="home-community-stat" data-home-comment-stat="${post.id}" title="Comentários"><span class="home-community-stat-value">${comments}</span><span class="material-icons">chat_bubble_outline</span></span>
-                                <span class="home-community-stat" data-home-share-stat="${post.id}" title="Compartilhamentos"><span class="home-community-stat-value">${shares}</span><span class="material-icons">share</span></span>
-                            </div>
-                            <div class="home-community-actions">
-                                <button type="button" class="home-community-action ${likedByMe ? 'liked' : ''}" data-community-action="like" data-post-id="${post.id}" aria-label="Curtir post">
-                                    <span class="material-icons">${likedByMe ? 'favorite' : 'favorite_border'}</span>
-                                    <span class="home-community-action-count">${likes}</span>
-                                </button>
-                                <button type="button" class="home-community-action" data-community-action="comment" data-post-id="${post.id}" aria-label="Comentar no post">
-                                    <span class="material-icons">chat_bubble_outline</span>
-                                    <span class="home-community-action-count">${comments}</span>
-                                </button>
-                                <button type="button" class="home-community-action" data-community-action="share" data-post-id="${post.id}" aria-label="Compartilhar post">
-                                    <span class="material-icons">share</span>
-                                    <span class="home-community-action-count">${shares}</span>
-                                </button>
-                                <button type="button" class="home-community-action ${savedByMe ? 'saved' : ''}" data-community-action="save" data-post-id="${post.id}" aria-label="Salvar post">
-                                    <span class="material-icons">${savedByMe ? 'bookmark' : 'bookmark_border'}</span>
-                                    <span class="home-community-action-count">${savedByMe ? 1 : 0}</span>
-                                </button>
+                                <span class="home-community-stat" data-home-like-stat="${post.id}" title="Curtidas">
+                                    <span class="home-community-stat-value">${likes}</span>
+                                    <span class="home-community-stat-label">curtidas</span>
+                                </span>
+                                <span class="home-community-stat" data-home-comment-stat="${post.id}" title="Comentários">
+                                    <span class="home-community-stat-value">${comments}</span>
+                                    <span class="home-community-stat-label">comentários</span>
+                                </span>
+                                <span class="home-community-stat" data-home-share-stat="${post.id}" title="Compartilhamentos">
+                                    <span class="home-community-stat-value">${shares}</span>
+                                    <span class="home-community-stat-label">compartilhamentos</span>
+                                </span>
                             </div>
                         </div>
                     </article>
                 `;
             }).join('');
-
-            container.querySelectorAll('.home-community-action').forEach((button) => {
-                button.addEventListener('click', (event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    handleHomeCommunityAction(button);
-                });
-            });
 
             if (!silent) {
                 writeHomeSectionHtml(HOME_COMMUNITY_HTML_CACHE_KEY, container.innerHTML);
@@ -1564,19 +1602,9 @@
     }
 
     function updateHeroAuthActions() {
-        const loginBtn = document.getElementById('heroLoginBtn');
-        const registerBtn = document.getElementById('heroRegisterBtn');
         const authStrip = document.getElementById('homeAuthStrip');
         const token = localStorage.getItem('token');
         const isLogged = Boolean(token);
-
-        if (loginBtn) {
-            loginBtn.style.display = isLogged ? 'none' : '';
-        }
-
-        if (registerBtn) {
-            registerBtn.style.display = isLogged ? 'none' : '';
-        }
 
         if (authStrip) {
             authStrip.style.display = isLogged ? 'none' : 'flex';
