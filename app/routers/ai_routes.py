@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.ai.conversational_ai import ConversationalAI
+from app.ai.autonomous_commerce import AutonomousCommerceAI
 from app.ai.market_intelligence import MarketIntelligenceAI
 from app.ai.ml_pipeline import train_models, predict_with_fallback
 from app.ai.negotiation_intelligence import NegotiationIntelligenceAI
@@ -59,6 +60,15 @@ class AgendaProfileIn(BaseModel):
     weight_offers: int = Field(default=25, ge=0, le=100)
     weight_notifications: int = Field(default=25, ge=0, le=100)
 
+    auto_negotiation_enabled: bool = True
+    auto_flash_auction_enabled: bool = True
+    guardrail_max_discount_pct: float = Field(default=8, ge=0, le=40)
+    guardrail_min_net_margin_pct: float = Field(default=7, ge=0, le=60)
+    guardrail_max_response_hours: int = Field(default=12, ge=1, le=72)
+    guardrail_risk_tolerance: str = Field(default="medio", pattern="^(baixo|medio|alto)$")
+    flash_auction_window_minutes: int = Field(default=90, ge=15, le=360)
+    auto_execute_limit_per_day: int = Field(default=2, ge=0, le=10)
+
 
 class AgendaEventIn(BaseModel):
     title: str = Field(..., min_length=3, max_length=180)
@@ -101,6 +111,14 @@ def _default_agenda_profile() -> dict:
         "weight_services": 20,
         "weight_offers": 25,
         "weight_notifications": 25,
+        "auto_negotiation_enabled": True,
+        "auto_flash_auction_enabled": True,
+        "guardrail_max_discount_pct": 8,
+        "guardrail_min_net_margin_pct": 7,
+        "guardrail_max_response_hours": 12,
+        "guardrail_risk_tolerance": "medio",
+        "flash_auction_window_minutes": 90,
+        "auto_execute_limit_per_day": 2,
     }
 
 
@@ -324,6 +342,23 @@ def get_agenda_market_intelligence(
     market_ai = MarketIntelligenceAI(db)
     snapshot = market_ai.build_market_snapshot(user_id=current_user.id, profile=profile)
     return snapshot
+
+
+@router.get("/agenda/autonomous-commerce")
+def get_agenda_autonomous_commerce(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    profile = _load_agenda_profile(db, current_user.id)
+    market_ai = MarketIntelligenceAI(db)
+    market_snapshot = market_ai.build_market_snapshot(user_id=current_user.id, profile=profile)
+    autonomous_ai = AutonomousCommerceAI(db)
+    plan = autonomous_ai.build_autonomous_plan(
+        user_id=current_user.id,
+        profile=profile,
+        market_snapshot=market_snapshot,
+    )
+    return plan
 
 
 @router.get("/agenda/profile")
@@ -572,6 +607,12 @@ async def agenda_agent_plan(
     profile = _load_agenda_profile(db, current_user.id)
     market_ai = MarketIntelligenceAI(db)
     market_snapshot = market_ai.build_market_snapshot(user_id=current_user.id, profile=profile)
+    autonomous_ai = AutonomousCommerceAI(db)
+    autonomous_plan = autonomous_ai.build_autonomous_plan(
+        user_id=current_user.id,
+        profile=profile,
+        market_snapshot=market_snapshot,
+    )
 
     scheduling = SmartSchedulingAI(db)
     slots = await scheduling.suggest_best_slots(
@@ -609,6 +650,11 @@ async def agenda_agent_plan(
 
     market_actions = market_snapshot.get("recommended_actions", []) if isinstance(market_snapshot, dict) else []
     for item in market_actions:
+        if isinstance(item, dict):
+            actions.append(item)
+
+    autonomous_actions = autonomous_plan.get("recommended_actions", []) if isinstance(autonomous_plan, dict) else []
+    for item in autonomous_actions:
         if isinstance(item, dict):
             actions.append(item)
 
@@ -734,6 +780,12 @@ async def agenda_agent_plan(
         market_snapshot=market_snapshot,
     )
 
+    autonomous_automation = autonomous_ai.materialize_guardrail_automations(
+        user_id=current_user.id,
+        profile=profile,
+        autonomous_plan=autonomous_plan,
+    )
+
     market_notifications_created = 0
     for item in market_automation.get("automations", []):
         offer_id = str(item.get("offer_id") or "")
@@ -751,6 +803,25 @@ async def agenda_agent_plan(
         ):
             market_notifications_created += 1
 
+    autonomous_notifications_created = 0
+    for item in autonomous_automation.get("automations", []):
+        offer_id = str(item.get("offer_id") or "")
+        automation_type = str(item.get("type") or "automation")
+        if not offer_id:
+            continue
+
+        if _create_notification_once(
+            db,
+            user_id=current_user.id,
+            title="Agenda IA: automação comercial criada",
+            message=(
+                f"Execução {automation_type} preparada para oferta {offer_id}. "
+                "Revise os detalhes e confirme no painel da agenda."
+            ),
+            resource_key=f"autonomous_auto:{automation_type}:{offer_id}",
+        ):
+            autonomous_notifications_created += 1
+
     proactive_created = 0
     for action in scored_actions[:3]:
         if not action.get("notify"):
@@ -767,7 +838,14 @@ async def agenda_agent_plan(
 
     predictive_created = emit_predictive_notifications_for_user(db, user_id=current_user.id)
 
-    if proactive_created or predictive_created or market_notifications_created or int(market_automation.get("events_created", 0)):
+    if (
+        proactive_created
+        or predictive_created
+        or market_notifications_created
+        or autonomous_notifications_created
+        or int(market_automation.get("events_created", 0))
+        or int(autonomous_automation.get("events_created", 0))
+    ):
         db.commit()
 
     summary = {
@@ -789,6 +867,7 @@ async def agenda_agent_plan(
         },
         "best_slots": slots,
         "market_intelligence": market_snapshot,
+        "autonomous_commerce": autonomous_plan,
         "decision_mode": profile.get("autonomy_mode", "assistida"),
         "decision_weights": weights,
         "actions": scored_actions,
@@ -797,6 +876,9 @@ async def agenda_agent_plan(
         "market_automation_events_created": int(market_automation.get("events_created", 0)),
         "market_automation_notifications_created": market_notifications_created,
         "market_automations": market_automation.get("automations", []),
+        "autonomous_automation_events_created": int(autonomous_automation.get("events_created", 0)),
+        "autonomous_automation_notifications_created": autonomous_notifications_created,
+        "autonomous_automations": autonomous_automation.get("automations", []),
         "generated_at": datetime.now(timezone.utc).isoformat(),
     }
 
@@ -808,6 +890,7 @@ async def agenda_agent_plan(
         metadata={
             "actions": len(actions),
             "autonomy_mode": profile.get("autonomy_mode", "assistida"),
+            "autonomous_actions": len(autonomous_actions),
         },
         commit=True,
     )

@@ -144,6 +144,42 @@
     .agenda-market-health.atencao { background: #fff4e0; color: #965f08; }
     .agenda-market-health.critico { background: #fde8e8; color: #a23a3a; }
 
+    .agenda-autonomous {
+        display: grid;
+        gap: 0.45rem;
+    }
+
+    .agenda-autonomous-summary,
+    .agenda-autonomous-item {
+        border: 1px solid #d9e9db;
+        border-radius: 12px;
+        background: #fff;
+        padding: 0.56rem;
+    }
+
+    .agenda-autonomous-summary {
+        background: linear-gradient(120deg, #eef7ff 0%, #f8fcff 100%);
+        border-color: #d3e1ef;
+    }
+
+    .agenda-guardrail-grid {
+        margin-top: 0.35rem;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.3rem;
+    }
+
+    .agenda-guardrail-chip {
+        border: 1px solid #d4e6f5;
+        border-radius: 999px;
+        background: #f4f9ff;
+        color: #2e5878;
+        font-size: 0.64rem;
+        font-weight: 800;
+        padding: 0.14rem 0.42rem;
+        text-align: center;
+    }
+
     .agenda-slot {
         border: 1px solid #d9e9db;
         border-radius: 12px;
@@ -478,6 +514,7 @@
     @media (max-width: 780px) {
         .agenda-calendar-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         .agenda-form-row, .agenda-weight-grid, .agenda-composer { grid-template-columns: 1fr; }
+        .agenda-guardrail-grid { grid-template-columns: 1fr; }
     }
 </style>
 
@@ -521,6 +558,9 @@
 
                 <h3 style="margin:0.7rem 0 0.32rem;font-size:0.8rem;color:#2c6133;font-weight:900;">Radar de mercado IA</h3>
                 <div class="agenda-market" id="marketRadar"></div>
+
+                <h3 style="margin:0.7rem 0 0.32rem;font-size:0.8rem;color:#2c6133;font-weight:900;">Execução autônoma guardrail</h3>
+                <div class="agenda-autonomous" id="autonomousCommerce"></div>
             </div>
         </section>
 
@@ -661,6 +701,33 @@
                     </div>
                 </div>
             </section>
+
+            <section class="agenda-question">
+                <p>7) Guardrails de execução autônoma</p>
+                <div class="agenda-options" style="margin-bottom:0.45rem;">
+                    <label><input type="checkbox" name="auto_negotiation_enabled" checked>Negociação autônoma</label>
+                    <label><input type="checkbox" name="auto_flash_auction_enabled" checked>Leilão relâmpago perecível</label>
+                </div>
+
+                <div class="agenda-form-row">
+                    <input type="number" min="0" max="40" step="0.5" name="guardrail_max_discount_pct" id="guardrailMaxDiscount" value="8" placeholder="Desconto máximo (%)">
+                    <input type="number" min="0" max="60" step="0.5" name="guardrail_min_net_margin_pct" id="guardrailMinMargin" value="7" placeholder="Margem líquida mínima (%)">
+                </div>
+
+                <div class="agenda-form-row" style="margin-top:0.45rem;">
+                    <input type="number" min="1" max="72" step="1" name="guardrail_max_response_hours" id="guardrailMaxResponse" value="12" placeholder="Prazo máximo de resposta (h)">
+                    <input type="number" min="15" max="360" step="5" name="flash_auction_window_minutes" id="flashAuctionWindow" value="90" placeholder="Janela do leilão (min)">
+                </div>
+
+                <div class="agenda-form-row" style="margin-top:0.45rem;">
+                    <input type="number" min="0" max="10" step="1" name="auto_execute_limit_per_day" id="autoExecuteLimit" value="2" placeholder="Execuções automáticas por dia">
+                    <div class="agenda-options" style="align-items:center;">
+                        <label><input type="radio" name="guardrail_risk_tolerance" value="baixo">Risco baixo</label>
+                        <label><input type="radio" name="guardrail_risk_tolerance" value="medio" checked>Risco médio</label>
+                        <label><input type="radio" name="guardrail_risk_tolerance" value="alto">Risco alto</label>
+                    </div>
+                </div>
+            </section>
         </form>
 
         <div class="agenda-modal-foot">
@@ -691,6 +758,7 @@
         const bestSlots = document.getElementById('bestSlots');
         const actionsList = document.getElementById('actionsList');
         const marketRadar = document.getElementById('marketRadar');
+        const autonomousCommerce = document.getElementById('autonomousCommerce');
         const decisionModeBadge = document.getElementById('decisionModeBadge');
 
         const chatBox = document.getElementById('chatBox');
@@ -858,6 +926,10 @@
                 `;
             }
 
+            if (autonomousCommerce) {
+                autonomousCommerce.innerHTML = '<div class="wf-alert wf-alert-info">Execução autônoma guardrail disponível após login.</div>';
+            }
+
             if (calendarContainer) {
                 calendarContainer.innerHTML = '<div class="wf-alert wf-alert-info">Calendário completo disponível após login.</div>';
             }
@@ -993,6 +1065,75 @@
             marketRadar.innerHTML = `${summary}${cards}`;
         }
 
+        function renderAutonomousCommerce(plan) {
+            if (!autonomousCommerce) return;
+
+            const auto = plan?.autonomous_commerce || {};
+            const guardrails = auto?.guardrails || {};
+            const deals = Array.isArray(auto?.recommended_deals) ? auto.recommended_deals.slice(0, 3) : [];
+            const auctions = Array.isArray(auto?.flash_auction_candidates) ? auto.flash_auction_candidates.slice(0, 2) : [];
+
+            if (!deals.length && !auctions.length) {
+                autonomousCommerce.innerHTML = '<div class="wf-alert wf-alert-info">Sem execuções autônomas sugeridas no momento.</div>';
+                return;
+            }
+
+            const summary = `
+                <article class="agenda-autonomous-summary">
+                    <h3 class="agenda-market-title">Guardrails ativos</h3>
+                    <div class="agenda-guardrail-grid">
+                        <span class="agenda-guardrail-chip">Desconto máximo: ${Number(guardrails.max_discount_pct || 0).toFixed(1)}%</span>
+                        <span class="agenda-guardrail-chip">Margem mínima: ${Number((guardrails.min_net_margin_pct || 0) * 100).toFixed(1)}%</span>
+                        <span class="agenda-guardrail-chip">Risco: ${String(guardrails.risk_tolerance || 'medio')}</span>
+                        <span class="agenda-guardrail-chip">Execuções/dia: ${Number(guardrails.auto_execute_limit_per_day || 0)}</span>
+                    </div>
+                </article>
+            `;
+
+            const dealCards = deals.map((item) => {
+                const href = item.offer_id ? `/offers/${item.offer_id}` : '/offers';
+                return `
+                    <article class="agenda-autonomous-item">
+                        <div class="agenda-market-row">
+                            <h3 class="agenda-market-title">Negociação IA: ${item.product_name || 'Oferta'}</h3>
+                            <span class="agenda-market-tag">${item.guardrails_ok ? 'executável' : 'revisar'}</span>
+                        </div>
+                        <p class="agenda-market-meta">
+                            Match: ${item.buyer_name || 'comprador'} • fit ${Number(item.fit_score || 0).toFixed(1)}/100 • risco ${toPercent(item.risk_index || 0, 1)}
+                        </p>
+                        <p class="agenda-market-meta">
+                            Preço alvo: ${Number(item.proposed_unit_price || 0).toFixed(2)} • margem final: ${toPercent(item.expected_margin_pct || 0, 2)}
+                        </p>
+                        <div class="agenda-action-row" style="margin-top:0.35rem;">
+                            <span class="agenda-priority ${item.guardrails_ok ? 'alta' : 'media'}">${item.guardrails_ok ? 'alta' : 'media'}</span>
+                            <a class="agenda-link-btn secondary" href="${href}">Abrir oferta</a>
+                        </div>
+                    </article>
+                `;
+            }).join('');
+
+            const auctionCards = auctions.map((item) => {
+                const href = item.offer_id ? `/offers/${item.offer_id}` : '/offers';
+                return `
+                    <article class="agenda-autonomous-item">
+                        <div class="agenda-market-row">
+                            <h3 class="agenda-market-title">Leilão relâmpago: ${item.product_name || 'Oferta'}</h3>
+                            <span class="agenda-market-tag">urgência ${Number(item.urgency_score || 0).toFixed(1)}/100</span>
+                        </div>
+                        <p class="agenda-market-meta">
+                            Janela sugerida: ${Number(item.auction_window_minutes || 90)} min • score de venda atual ${Number(item.sell_window_score || 0).toFixed(1)}/100
+                        </p>
+                        <div class="agenda-action-row" style="margin-top:0.35rem;">
+                            <span class="agenda-priority alta">alta</span>
+                            <a class="agenda-link-btn secondary" href="${href}">Abrir oferta</a>
+                        </div>
+                    </article>
+                `;
+            }).join('');
+
+            autonomousCommerce.innerHTML = `${summary}${dealCards}${auctionCards}`;
+        }
+
         function readProfilePayload() {
             const data = new FormData(onboardingForm);
             return {
@@ -1007,6 +1148,14 @@
                 weight_services: Number(data.get('weight_services') || 20),
                 weight_offers: Number(data.get('weight_offers') || 25),
                 weight_notifications: Number(data.get('weight_notifications') || 25),
+                auto_negotiation_enabled: Boolean(data.get('auto_negotiation_enabled')),
+                auto_flash_auction_enabled: Boolean(data.get('auto_flash_auction_enabled')),
+                guardrail_max_discount_pct: Number(data.get('guardrail_max_discount_pct') || 8),
+                guardrail_min_net_margin_pct: Number(data.get('guardrail_min_net_margin_pct') || 7),
+                guardrail_max_response_hours: Number(data.get('guardrail_max_response_hours') || 12),
+                guardrail_risk_tolerance: String(data.get('guardrail_risk_tolerance') || 'medio'),
+                flash_auction_window_minutes: Number(data.get('flash_auction_window_minutes') || 90),
+                auto_execute_limit_per_day: Number(data.get('auto_execute_limit_per_day') || 2),
             };
         }
 
@@ -1026,10 +1175,14 @@
             const cbPurchases = onboardingForm.querySelector('input[name="wants_purchase_based_actions"]');
             const cbOffers = onboardingForm.querySelector('input[name="wants_offer_alerts"]');
             const cbServices = onboardingForm.querySelector('input[name="wants_service_alerts"]');
+            const cbAutoNegotiation = onboardingForm.querySelector('input[name="auto_negotiation_enabled"]');
+            const cbAutoAuction = onboardingForm.querySelector('input[name="auto_flash_auction_enabled"]');
 
             if (cbPurchases) cbPurchases.checked = Boolean(profile.wants_purchase_based_actions ?? true);
             if (cbOffers) cbOffers.checked = Boolean(profile.wants_offer_alerts ?? true);
             if (cbServices) cbServices.checked = Boolean(profile.wants_service_alerts ?? true);
+            if (cbAutoNegotiation) cbAutoNegotiation.checked = Boolean(profile.auto_negotiation_enabled ?? true);
+            if (cbAutoAuction) cbAutoAuction.checked = Boolean(profile.auto_flash_auction_enabled ?? true);
 
             const wp = document.getElementById('weightPurchases');
             const ws = document.getElementById('weightServices');
@@ -1039,6 +1192,20 @@
             if (ws) ws.value = String(profile.weight_services ?? 20);
             if (wo) wo.value = String(profile.weight_offers ?? 25);
             if (wn) wn.value = String(profile.weight_notifications ?? 25);
+
+            const maxDiscount = document.getElementById('guardrailMaxDiscount');
+            const minMargin = document.getElementById('guardrailMinMargin');
+            const maxResponse = document.getElementById('guardrailMaxResponse');
+            const auctionWindow = document.getElementById('flashAuctionWindow');
+            const executeLimit = document.getElementById('autoExecuteLimit');
+            if (maxDiscount) maxDiscount.value = String(profile.guardrail_max_discount_pct ?? 8);
+            if (minMargin) minMargin.value = String(profile.guardrail_min_net_margin_pct ?? 7);
+            if (maxResponse) maxResponse.value = String(profile.guardrail_max_response_hours ?? 12);
+            if (auctionWindow) auctionWindow.value = String(profile.flash_auction_window_minutes ?? 90);
+            if (executeLimit) executeLimit.value = String(profile.auto_execute_limit_per_day ?? 2);
+
+            const riskNode = onboardingForm.querySelector(`input[name="guardrail_risk_tolerance"][value="${profile.guardrail_risk_tolerance || 'medio'}"]`);
+            if (riskNode) riskNode.checked = true;
         }
 
         function renderPlan(plan) {
@@ -1064,6 +1231,12 @@
             const marketNotifs = Number(plan.market_automation_notifications_created || 0);
             if (marketEvents || marketNotifs) {
                 statusBox.textContent += ` • automações de mercado: ${marketEvents} evento(s), ${marketNotifs} notificação(ões)`;
+            }
+
+            const autoEvents = Number(plan.autonomous_automation_events_created || 0);
+            const autoNotifs = Number(plan.autonomous_automation_notifications_created || 0);
+            if (autoEvents || autoNotifs) {
+                statusBox.textContent += ` • execução autônoma: ${autoEvents} evento(s), ${autoNotifs} notificação(ões)`;
             }
 
             decisionModeBadge.textContent = `modo: ${autonomyLabel(plan.decision_mode)}`;
@@ -1101,6 +1274,7 @@
             `).join('') : '<div class="wf-alert wf-alert-info">Sem ações no momento.</div>';
 
             renderMarketRadar(plan);
+            renderAutonomousCommerce(plan);
         }
 
         function renderCalendar(data) {
