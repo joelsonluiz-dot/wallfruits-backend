@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.ai.conversational_ai import ConversationalAI
+from app.ai.market_intelligence import MarketIntelligenceAI
 from app.ai.ml_pipeline import train_models, predict_with_fallback
 from app.ai.negotiation_intelligence import NegotiationIntelligenceAI
 from app.ai.risk_alert import RiskAlertAI
@@ -314,6 +315,17 @@ def _score_actions_with_weights(actions: list[dict], weights: dict) -> list[dict
     return scored
 
 
+@router.get("/agenda/market-intelligence")
+def get_agenda_market_intelligence(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    profile = _load_agenda_profile(db, current_user.id)
+    market_ai = MarketIntelligenceAI(db)
+    snapshot = market_ai.build_market_snapshot(user_id=current_user.id, profile=profile)
+    return snapshot
+
+
 @router.get("/agenda/profile")
 def get_agenda_profile(
     current_user: User = Depends(get_current_user),
@@ -558,6 +570,8 @@ async def agenda_agent_plan(
             pass
 
     profile = _load_agenda_profile(db, current_user.id)
+    market_ai = MarketIntelligenceAI(db)
+    market_snapshot = market_ai.build_market_snapshot(user_id=current_user.id, profile=profile)
 
     scheduling = SmartSchedulingAI(db)
     slots = await scheduling.suggest_best_slots(
@@ -592,6 +606,11 @@ async def agenda_agent_plan(
 
     weights = _normalize_weights(profile)
     actions: list[dict] = []
+
+    market_actions = market_snapshot.get("recommended_actions", []) if isinstance(market_snapshot, dict) else []
+    for item in market_actions:
+        if isinstance(item, dict):
+            actions.append(item)
 
     if unread_notifications > 0:
         actions.append(
@@ -709,6 +728,29 @@ async def agenda_agent_plan(
 
     scored_actions = _score_actions_with_weights(actions, weights)
 
+    market_automation = market_ai.materialize_guardrail_automations(
+        user_id=current_user.id,
+        profile=profile,
+        market_snapshot=market_snapshot,
+    )
+
+    market_notifications_created = 0
+    for item in market_automation.get("automations", []):
+        offer_id = str(item.get("offer_id") or "")
+        if not offer_id:
+            continue
+        if _create_notification_once(
+            db,
+            user_id=current_user.id,
+            title="Agenda IA: execução autônoma preparada",
+            message=(
+                f"{item.get('title', 'Ação de mercado criada')} "
+                f"com score {float(item.get('score', 0.0)):.1f}/100."
+            ),
+            resource_key=f"market_auto:{offer_id}",
+        ):
+            market_notifications_created += 1
+
     proactive_created = 0
     for action in scored_actions[:3]:
         if not action.get("notify"):
@@ -725,7 +767,7 @@ async def agenda_agent_plan(
 
     predictive_created = emit_predictive_notifications_for_user(db, user_id=current_user.id)
 
-    if proactive_created or predictive_created:
+    if proactive_created or predictive_created or market_notifications_created or int(market_automation.get("events_created", 0)):
         db.commit()
 
     summary = {
@@ -746,11 +788,15 @@ async def agenda_agent_plan(
             "upcoming_reservations": len(upcoming_reservations),
         },
         "best_slots": slots,
+        "market_intelligence": market_snapshot,
         "decision_mode": profile.get("autonomy_mode", "assistida"),
         "decision_weights": weights,
         "actions": scored_actions,
         "proactive_alerts_created": proactive_created,
         "predictive_alerts_created": predictive_created,
+        "market_automation_events_created": int(market_automation.get("events_created", 0)),
+        "market_automation_notifications_created": market_notifications_created,
+        "market_automations": market_automation.get("automations", []),
         "generated_at": datetime.now(timezone.utc).isoformat(),
     }
 

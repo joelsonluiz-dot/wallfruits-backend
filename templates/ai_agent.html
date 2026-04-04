@@ -87,6 +87,63 @@
 
     .agenda-slots, .agenda-actions { display: grid; gap: 0.42rem; }
 
+    .agenda-market { display: grid; gap: 0.45rem; }
+
+    .agenda-market-summary,
+    .agenda-market-item {
+        border: 1px solid #d9e9db;
+        border-radius: 12px;
+        background: #fff;
+        padding: 0.56rem;
+    }
+
+    .agenda-market-summary {
+        background: linear-gradient(120deg, #f2fbf3 0%, #f8fdf9 100%);
+    }
+
+    .agenda-market-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.5rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .agenda-market-title {
+        margin: 0;
+        color: #1f5d28;
+        font-size: 0.82rem;
+        font-weight: 900;
+    }
+
+    .agenda-market-meta {
+        margin: 0.2rem 0 0;
+        font-size: 0.7rem;
+        color: #56705c;
+    }
+
+    .agenda-market-tag {
+        border-radius: 999px;
+        border: 1px solid #cde3cf;
+        background: #eef8ef;
+        color: #2b6a33;
+        font-size: 0.64rem;
+        font-weight: 800;
+        padding: 0.16rem 0.48rem;
+    }
+
+    .agenda-market-health {
+        border-radius: 999px;
+        padding: 0.2rem 0.48rem;
+        font-size: 0.64rem;
+        font-weight: 900;
+        text-transform: uppercase;
+    }
+
+    .agenda-market-health.forte { background: #e8f7ea; color: #256534; }
+    .agenda-market-health.atencao { background: #fff4e0; color: #965f08; }
+    .agenda-market-health.critico { background: #fde8e8; color: #a23a3a; }
+
     .agenda-slot {
         border: 1px solid #d9e9db;
         border-radius: 12px;
@@ -461,6 +518,9 @@
 
                 <h3 style="margin:0.7rem 0 0.32rem;font-size:0.8rem;color:#2c6133;font-weight:900;">Ações priorizadas</h3>
                 <div class="agenda-actions" id="actionsList"></div>
+
+                <h3 style="margin:0.7rem 0 0.32rem;font-size:0.8rem;color:#2c6133;font-weight:900;">Radar de mercado IA</h3>
+                <div class="agenda-market" id="marketRadar"></div>
             </div>
         </section>
 
@@ -630,6 +690,7 @@
         const historyGrid = document.getElementById('historyGrid');
         const bestSlots = document.getElementById('bestSlots');
         const actionsList = document.getElementById('actionsList');
+        const marketRadar = document.getElementById('marketRadar');
         const decisionModeBadge = document.getElementById('decisionModeBadge');
 
         const chatBox = document.getElementById('chatBox');
@@ -861,6 +922,77 @@
             return map[mode] || 'assistida';
         }
 
+        function marketHealthLabel(health) {
+            const normalized = String(health || '').toLowerCase();
+            if (normalized === 'forte') return 'forte';
+            if (normalized === 'atencao') return 'atenção';
+            if (normalized === 'critico') return 'crítico';
+            return 'estável';
+        }
+
+        function toPercent(value, digits = 1) {
+            return `${(Number(value || 0) * 100).toFixed(digits)}%`;
+        }
+
+        function renderMarketRadar(plan) {
+            if (!marketRadar) return;
+
+            const market = plan?.market_intelligence || {};
+            const portfolio = market?.portfolio || {};
+            const windows = Array.isArray(market?.top_windows) ? market.top_windows.slice(0, 4) : [];
+
+            if (!windows.length) {
+                marketRadar.innerHTML = '<div class="wf-alert wf-alert-info">Ainda não há dados suficientes para o radar de mercado. Ative ofertas para gerar sinais.</div>';
+                return;
+            }
+
+            const healthClass = String(portfolio.portfolio_health || 'forte').toLowerCase();
+            const summary = `
+                <article class="agenda-market-summary">
+                    <div class="agenda-market-row">
+                        <h3 class="agenda-market-title">Portfólio comercial em tempo real</h3>
+                        <span class="agenda-market-health ${healthClass}">${marketHealthLabel(portfolio.portfolio_health)}</span>
+                    </div>
+                    <p class="agenda-market-meta">
+                        Ofertas ativas: ${Number(portfolio.active_offers || 0)} •
+                        Janela média: ${Number(portfolio.avg_sell_window_score || 0).toFixed(1)}/100 •
+                        Margem líquida média: ${toPercent(portfolio.avg_net_margin_pct || 0, 2)}
+                    </p>
+                </article>
+            `;
+
+            const cards = windows.map((item) => {
+                const score = Number(item.sell_window_score || 0).toFixed(1);
+                const margin = toPercent(item.net_margin_pct || 0, 2);
+                const confidence = toPercent(item.confidence || 0, 1);
+                const href = item.offer_id ? `/offers/${item.offer_id}` : '/offers';
+                const move = String(item.recommended_move || 'monitorar').replaceAll('_', ' ');
+
+                return `
+                    <article class="agenda-market-item">
+                        <div class="agenda-market-row">
+                            <h3 class="agenda-market-title">${item.product_name || 'Oferta'}</h3>
+                            <span class="agenda-market-tag">${item.sell_window_label || 'janela em análise'}</span>
+                        </div>
+                        <p class="agenda-market-meta">
+                            Score: ${score}/100 • Margem líquida: ${margin} • Confiança: ${confidence}
+                        </p>
+                        <p class="agenda-market-meta">
+                            Movimento sugerido: <strong>${move}</strong>
+                        </p>
+                        <div class="agenda-action-row" style="margin-top:0.35rem;">
+                            <span class="agenda-priority ${Number(item.sell_window_score || 0) >= 70 ? 'alta' : (Number(item.sell_window_score || 0) >= 50 ? 'media' : 'baixa')}">
+                                ${Number(item.sell_window_score || 0) >= 70 ? 'alta' : (Number(item.sell_window_score || 0) >= 50 ? 'media' : 'baixa')}
+                            </span>
+                            <a class="agenda-link-btn secondary" href="${href}">Abrir oferta</a>
+                        </div>
+                    </article>
+                `;
+            }).join('');
+
+            marketRadar.innerHTML = `${summary}${cards}`;
+        }
+
         function readProfilePayload() {
             const data = new FormData(onboardingForm);
             return {
@@ -928,6 +1060,12 @@
                     : ` • janela mensal válida até ${untilLabel}`;
             }
 
+            const marketEvents = Number(plan.market_automation_events_created || 0);
+            const marketNotifs = Number(plan.market_automation_notifications_created || 0);
+            if (marketEvents || marketNotifs) {
+                statusBox.textContent += ` • automações de mercado: ${marketEvents} evento(s), ${marketNotifs} notificação(ões)`;
+            }
+
             decisionModeBadge.textContent = `modo: ${autonomyLabel(plan.decision_mode)}`;
 
             const history = plan.history || {};
@@ -961,6 +1099,8 @@
                     </div>
                 </article>
             `).join('') : '<div class="wf-alert wf-alert-info">Sem ações no momento.</div>';
+
+            renderMarketRadar(plan);
         }
 
         function renderCalendar(data) {
