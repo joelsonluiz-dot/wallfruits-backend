@@ -2404,6 +2404,8 @@
                 </div>
             </div>
 
+        <script id="wfAdsRuntimeConfig" type="application/json">{{ wf_ads_runtime_config_json | safe }}</script>
+
     <script>
         const WF_DEFAULT_AVATAR = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320"><rect width="320" height="320" fill="%23edf2f7"/><circle cx="160" cy="112" r="58" fill="%2373899f"/><path d="M48 284c0-62 50-112 112-112s112 50 112 112" fill="%2373899f"/></svg>';
         const WF_FAST_NAV_BREAKPOINT = 992;
@@ -2430,12 +2432,73 @@
         const WF_AD_VIEWABILITY_KEY = 'wf_ad_viewability_v1';
         const WF_AD_EXPERIMENT_USER_KEY = 'wf_ad_experiment_user_v1';
         const WF_RETENTION_NUDGE_KEY = 'wf_retention_nudge_v1';
+        const WF_ADS_RUNTIME_CONFIG_ID = 'wfAdsRuntimeConfig';
+        const WF_ADS_PROVIDER_SET = new Set(['fallback', 'adsense', 'custom-script']);
         let wfSyncChannel = null;
         let wfAdsProviderReadyPromise = null;
         let wfAdsObserver = null;
         let wfAdViewabilityObserver = null;
         const wfAdViewabilityStates = new Map();
         let wfAdsBootstrapped = false;
+
+        function readServerAdsRuntimeConfigRaw() {
+            const holder = document.getElementById(WF_ADS_RUNTIME_CONFIG_ID);
+            if (!holder) return {};
+
+            try {
+                const raw = String(holder.textContent || '').trim();
+                if (!raw) return {};
+                const parsed = JSON.parse(raw);
+                return parsed && typeof parsed === 'object' ? parsed : {};
+            } catch {
+                return {};
+            }
+        }
+
+        function normalizeServerAdsRuntimeConfig(rawConfig) {
+            const input = rawConfig && typeof rawConfig === 'object' ? rawConfig : {};
+            const normalizedProvider = String(input.provider || 'fallback').trim().toLowerCase();
+            const provider = WF_ADS_PROVIDER_SET.has(normalizedProvider) ? normalizedProvider : 'fallback';
+
+            const frequencySource = input.frequency && typeof input.frequency === 'object'
+                ? input.frequency
+                : {};
+            const experimentSource = input.experiment && typeof input.experiment === 'object'
+                ? input.experiment
+                : {};
+
+            const variantsRaw = Array.isArray(experimentSource.variants)
+                ? experimentSource.variants
+                : ['a', 'b'];
+            const variants = variantsRaw
+                .map((item) => String(item || '').trim().toLowerCase())
+                .filter((item) => item.length > 0);
+
+            return {
+                enabled: input.enabled === undefined ? true : Boolean(input.enabled),
+                provider,
+                adsense_client: String(input.adsense_client || '').trim(),
+                script_url: String(input.script_url || '').trim(),
+                slots: {
+                    top: String(input?.slots?.top || '').trim(),
+                    bottom: String(input?.slots?.bottom || '').trim(),
+                },
+                frequency: {
+                    session_cap_per_slot: Number(frequencySource.session_cap_per_slot ?? 5),
+                    daily_cap_per_slot: Number(frequencySource.daily_cap_per_slot ?? 22),
+                    fatigue_no_click_threshold: Number(frequencySource.fatigue_no_click_threshold ?? 10),
+                    fatigue_hard_threshold: Number(frequencySource.fatigue_hard_threshold ?? 18),
+                },
+                experiment: {
+                    enabled: Boolean(experimentSource.enabled ?? true),
+                    rollout: Number(experimentSource.rollout ?? 1),
+                    variants: variants.length ? variants : ['a', 'b'],
+                },
+                sponsored: Array.isArray(input.sponsored) ? input.sponsored : [],
+            };
+        }
+
+        const WF_SERVER_ADS_RUNTIME = normalizeServerAdsRuntimeConfig(readServerAdsRuntimeConfigRaw());
 
         function wfDefaultAvatar() {
             return WF_DEFAULT_AVATAR;
@@ -2676,25 +2739,34 @@
                 parsed = {};
             }
 
+            const serverConfig = WF_SERVER_ADS_RUNTIME;
+
             const merged = {
                 ...defaults,
                 ...parsed,
+                ...serverConfig,
                 slots: {
                     ...defaults.slots,
                     ...(parsed?.slots || {}),
+                    ...(serverConfig?.slots || {}),
                 },
                 frequency: {
                     ...defaults.frequency,
                     ...(parsed?.frequency || {}),
+                    ...(serverConfig?.frequency || {}),
                 },
                 experiment: {
                     ...defaults.experiment,
                     ...(parsed?.experiment || {}),
+                    ...(serverConfig?.experiment || {}),
                 },
             };
 
-            const sponsored = sanitizeSponsoredList(parsed?.sponsored);
-            merged.sponsored = sponsored.length ? sponsored : defaults.sponsored;
+            const serverSponsored = sanitizeSponsoredList(serverConfig?.sponsored);
+            const localSponsored = sanitizeSponsoredList(parsed?.sponsored);
+            merged.sponsored = serverSponsored.length
+                ? serverSponsored
+                : (localSponsored.length ? localSponsored : defaults.sponsored);
 
             const dataset = document.body?.dataset || {};
             if (dataset.wfAdsProvider) merged.provider = dataset.wfAdsProvider;
@@ -2734,6 +2806,7 @@
 
         window.wfGetAdsConfig = readAdsConfig;
         window.wfSetAdsConfig = writeAdsConfig;
+        window.wfGetAdsServerConfig = () => ({ ...WF_SERVER_ADS_RUNTIME });
 
         function getRecommendedAdsConfig(profile = 'hybrid') {
             const normalized = String(profile || 'hybrid').trim().toLowerCase();

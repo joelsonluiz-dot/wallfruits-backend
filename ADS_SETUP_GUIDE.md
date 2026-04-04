@@ -15,6 +15,29 @@ Esse perfil faz:
 - fallback patrocinado ativo
 - slots top/bottom ja preenchidos com placeholders
 
+## Producao por variavel de ambiente (recomendado)
+
+Agora a plataforma aceita configuracao centralizada de anuncios via backend (sem depender do console do navegador).
+
+Defina no `.env`:
+
+```env
+WF_ADS_ENABLED=true
+WF_ADS_PROVIDER=adsense
+WF_ADSENSE_CLIENT=ca-pub-SEU_CLIENT_ID
+WF_ADS_SLOT_TOP=SEU_SLOT_TOP
+WF_ADS_SLOT_BOTTOM=SEU_SLOT_BOTTOM
+WF_ADS_EXPERIMENT_ENABLED=true
+WF_ADS_EXPERIMENT_ROLLOUT=1.0
+WF_ADS_EXPERIMENT_VARIANTS=["a","b"]
+WF_ADS_SESSION_CAP_PER_SLOT=5
+WF_ADS_DAILY_CAP_PER_SLOT=22
+WF_ADS_FATIGUE_NO_CLICK_THRESHOLD=10
+WF_ADS_FATIGUE_HARD_THRESHOLD=18
+```
+
+Depois reinicie a aplicacao. O `base.html` passa a receber essa configuracao automaticamente no carregamento.
+
 ## 2) Ajustar IDs reais do AdSense
 
 Troque pelos valores reais da sua conta:

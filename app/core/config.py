@@ -87,6 +87,21 @@ class Settings(BaseSettings):
     STRIPE_WEBHOOK_SECRET: str = ""
     STRIPE_PRICE_BASIC: str = ""   # price_xxxx do plano básico no Stripe
     STRIPE_PRICE_PREMIUM: str = "" # price_xxxx do plano premium no Stripe
+
+    # Monetizacao (Ads)
+    WF_ADS_ENABLED: bool = True
+    WF_ADS_PROVIDER: str = "fallback"  # fallback | adsense | custom-script
+    WF_ADSENSE_CLIENT: str = ""
+    WF_ADS_SLOT_TOP: str = ""
+    WF_ADS_SLOT_BOTTOM: str = ""
+    WF_ADS_SCRIPT_URL: str = ""
+    WF_ADS_EXPERIMENT_ENABLED: bool = True
+    WF_ADS_EXPERIMENT_ROLLOUT: float = 1.0
+    WF_ADS_EXPERIMENT_VARIANTS: list[str] = ["a", "b"]
+    WF_ADS_SESSION_CAP_PER_SLOT: int = 5
+    WF_ADS_DAILY_CAP_PER_SLOT: int = 22
+    WF_ADS_FATIGUE_NO_CLICK_THRESHOLD: int = 10
+    WF_ADS_FATIGUE_HARD_THRESHOLD: int = 18
     
     # Logging
     LOG_LEVEL: str = "INFO"
@@ -140,7 +155,13 @@ class Settings(BaseSettings):
 
         return []
 
-    @field_validator("CORS_ORIGINS", "ALLOWED_HOSTS", "ALLOWED_CONTRACT_EXTENSIONS", mode="before")
+    @field_validator(
+        "CORS_ORIGINS",
+        "ALLOWED_HOSTS",
+        "ALLOWED_CONTRACT_EXTENSIONS",
+        "WF_ADS_EXPERIMENT_VARIANTS",
+        mode="before",
+    )
     @classmethod
     def parse_string_list(cls, value: Any):
         return cls._parse_list(value)
@@ -225,6 +246,26 @@ def get_settings() -> Settings:
     if settings.SECRET_KEY == "wallfruits_super_secret_key_change_in_production":
         import sys
         print("AVISO: Usando SECRET_KEY padrao! Configure uma chave segura no .env", file=sys.stderr)
+
+    valid_ads_providers = {"fallback", "adsense", "custom-script"}
+    normalized_ads_provider = settings.WF_ADS_PROVIDER.strip().lower()
+    if normalized_ads_provider not in valid_ads_providers:
+        raise RuntimeError("WF_ADS_PROVIDER deve ser fallback, adsense ou custom-script")
+
+    if settings.WF_ADS_EXPERIMENT_ROLLOUT < 0 or settings.WF_ADS_EXPERIMENT_ROLLOUT > 1:
+        raise RuntimeError("WF_ADS_EXPERIMENT_ROLLOUT deve estar entre 0 e 1")
+
+    if settings.WF_ADS_SESSION_CAP_PER_SLOT < 1:
+        raise RuntimeError("WF_ADS_SESSION_CAP_PER_SLOT deve ser >= 1")
+
+    if settings.WF_ADS_DAILY_CAP_PER_SLOT < 1:
+        raise RuntimeError("WF_ADS_DAILY_CAP_PER_SLOT deve ser >= 1")
+
+    if settings.WF_ADS_FATIGUE_NO_CLICK_THRESHOLD < 1:
+        raise RuntimeError("WF_ADS_FATIGUE_NO_CLICK_THRESHOLD deve ser >= 1")
+
+    if settings.WF_ADS_FATIGUE_HARD_THRESHOLD < settings.WF_ADS_FATIGUE_NO_CLICK_THRESHOLD:
+        raise RuntimeError("WF_ADS_FATIGUE_HARD_THRESHOLD deve ser >= WF_ADS_FATIGUE_NO_CLICK_THRESHOLD")
     
     return settings
 

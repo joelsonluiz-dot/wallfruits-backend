@@ -2,6 +2,7 @@
 
 import asyncio
 import hashlib
+import json
 from contextlib import asynccontextmanager
 from collections import defaultdict, deque
 from datetime import datetime, timedelta, timezone
@@ -424,14 +425,64 @@ else:
     logger.warning("Diretório static não encontrado; /static não será montado")
 
 
+def _normalize_ads_provider(provider: str) -> str:
+    normalized = str(provider or "fallback").strip().lower()
+    if normalized not in {"fallback", "adsense", "custom-script"}:
+        return "fallback"
+    return normalized
+
+
+def _build_ads_runtime_config() -> dict[str, Any]:
+    rollout = max(0.0, min(1.0, float(settings.WF_ADS_EXPERIMENT_ROLLOUT)))
+    variants = [
+        str(item).strip().lower()
+        for item in settings.WF_ADS_EXPERIMENT_VARIANTS
+        if str(item).strip()
+    ] or ["a", "b"]
+
+    return {
+        "enabled": bool(settings.WF_ADS_ENABLED),
+        "provider": _normalize_ads_provider(settings.WF_ADS_PROVIDER),
+        "adsense_client": settings.WF_ADSENSE_CLIENT.strip(),
+        "script_url": settings.WF_ADS_SCRIPT_URL.strip(),
+        "slots": {
+            "top": settings.WF_ADS_SLOT_TOP.strip(),
+            "bottom": settings.WF_ADS_SLOT_BOTTOM.strip(),
+        },
+        "frequency": {
+            "session_cap_per_slot": max(1, int(settings.WF_ADS_SESSION_CAP_PER_SLOT)),
+            "daily_cap_per_slot": max(1, int(settings.WF_ADS_DAILY_CAP_PER_SLOT)),
+            "fatigue_no_click_threshold": max(1, int(settings.WF_ADS_FATIGUE_NO_CLICK_THRESHOLD)),
+            "fatigue_hard_threshold": max(1, int(settings.WF_ADS_FATIGUE_HARD_THRESHOLD)),
+        },
+        "experiment": {
+            "enabled": bool(settings.WF_ADS_EXPERIMENT_ENABLED),
+            "rollout": rollout,
+            "variants": variants,
+        },
+    }
+
+
+def _build_ads_runtime_config_json() -> str:
+    payload = _build_ads_runtime_config()
+    return json.dumps(payload, ensure_ascii=False).replace("</", "<\\/")
+
+
 def _render_template(template_name: str, request: Request, **context: Any):
     if templates is None:
         raise HTTPException(503, "Templates indisponíveis neste ambiente")
+    ads_runtime_config = _build_ads_runtime_config()
+    ads_runtime_config_json = _build_ads_runtime_config_json()
     # Usa assinatura nomeada para compatibilidade entre versões da Starlette.
     return templates.TemplateResponse(
         request=request,
         name=template_name,
-        context={"request": request, **context},
+        context={
+            "request": request,
+            "wf_ads_runtime_config": ads_runtime_config,
+            "wf_ads_runtime_config_json": ads_runtime_config_json,
+            **context,
+        },
     )
 
 
