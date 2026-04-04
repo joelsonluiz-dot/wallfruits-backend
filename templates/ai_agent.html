@@ -727,6 +727,13 @@
                         <label><input type="radio" name="guardrail_risk_tolerance" value="alto">Risco alto</label>
                     </div>
                 </div>
+
+                <div class="agenda-form-row" style="margin-top:0.45rem;">
+                    <input type="number" min="30" max="98" step="1" name="flash_spoilage_risk_threshold" id="flashSpoilageThreshold" value="62" placeholder="Gatilho risco de perda (0-100)">
+                    <div class="wf-alert wf-alert-info" style="margin:0;padding:0.45rem 0.55rem;font-size:0.7rem;">
+                        O leilão relâmpago dispara quando o risco de perda superar este gatilho.
+                    </div>
+                </div>
             </section>
         </form>
 
@@ -1084,7 +1091,9 @@
                     <div class="agenda-guardrail-grid">
                         <span class="agenda-guardrail-chip">Desconto máximo: ${Number(guardrails.max_discount_pct || 0).toFixed(1)}%</span>
                         <span class="agenda-guardrail-chip">Margem mínima: ${Number((guardrails.min_net_margin_pct || 0) * 100).toFixed(1)}%</span>
+                        <span class="agenda-guardrail-chip">Prazo máx.: ${Number(guardrails.max_response_hours || 0)}h</span>
                         <span class="agenda-guardrail-chip">Risco: ${String(guardrails.risk_tolerance || 'medio')}</span>
+                        <span class="agenda-guardrail-chip">Gatilho perda: ≥ ${Number(guardrails.flash_spoilage_risk_threshold || 0).toFixed(1)}</span>
                         <span class="agenda-guardrail-chip">Execuções/dia: ${Number(guardrails.auto_execute_limit_per_day || 0)}</span>
                     </div>
                 </article>
@@ -1092,6 +1101,9 @@
 
             const dealCards = deals.map((item) => {
                 const href = item.offer_id ? `/offers/${item.offer_id}` : '/offers';
+                const deadlineLabel = item.response_deadline_at
+                    ? new Date(item.response_deadline_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+                    : '-';
                 return `
                     <article class="agenda-autonomous-item">
                         <div class="agenda-market-row">
@@ -1102,7 +1114,10 @@
                             Match: ${item.buyer_name || 'comprador'} • fit ${Number(item.fit_score || 0).toFixed(1)}/100 • risco ${toPercent(item.risk_index || 0, 1)}
                         </p>
                         <p class="agenda-market-meta">
-                            Preço alvo: ${Number(item.proposed_unit_price || 0).toFixed(2)} • margem final: ${toPercent(item.expected_margin_pct || 0, 2)}
+                            Preço alvo: ${Number(item.proposed_unit_price || 0).toFixed(2)} • piso produtor: ${Number(item.producer_floor_price || 0).toFixed(2)} • margem final: ${toPercent(item.expected_margin_pct || 0, 2)}
+                        </p>
+                        <p class="agenda-market-meta">
+                            Frete/kg: ${Number(item.freight_per_kg || 0).toFixed(3)} • risco inadimplência/kg: ${Number(item.default_risk_cost_per_kg || 0).toFixed(3)} • prazo limite: ${deadlineLabel}
                         </p>
                         <div class="agenda-action-row" style="margin-top:0.35rem;">
                             <span class="agenda-priority ${item.guardrails_ok ? 'alta' : 'media'}">${item.guardrails_ok ? 'alta' : 'media'}</span>
@@ -1121,7 +1136,10 @@
                             <span class="agenda-market-tag">urgência ${Number(item.urgency_score || 0).toFixed(1)}/100</span>
                         </div>
                         <p class="agenda-market-meta">
-                            Janela sugerida: ${Number(item.auction_window_minutes || 90)} min • score de venda atual ${Number(item.sell_window_score || 0).toFixed(1)}/100
+                            Janela sugerida: ${Number(item.auction_window_minutes || 90)} min • score de venda ${Number(item.sell_window_score || 0).toFixed(1)}/100
+                        </p>
+                        <p class="agenda-market-meta">
+                            Risco de perda: ${Number(item.spoilage_risk_index || 0).toFixed(1)}/100 • gatilho ≥ ${Number(item.spoilage_trigger_threshold || 0).toFixed(1)}
                         </p>
                         <div class="agenda-action-row" style="margin-top:0.35rem;">
                             <span class="agenda-priority alta">alta</span>
@@ -1155,6 +1173,7 @@
                 guardrail_max_response_hours: Number(data.get('guardrail_max_response_hours') || 12),
                 guardrail_risk_tolerance: String(data.get('guardrail_risk_tolerance') || 'medio'),
                 flash_auction_window_minutes: Number(data.get('flash_auction_window_minutes') || 90),
+                flash_spoilage_risk_threshold: Number(data.get('flash_spoilage_risk_threshold') || 62),
                 auto_execute_limit_per_day: Number(data.get('auto_execute_limit_per_day') || 2),
             };
         }
@@ -1197,11 +1216,13 @@
             const minMargin = document.getElementById('guardrailMinMargin');
             const maxResponse = document.getElementById('guardrailMaxResponse');
             const auctionWindow = document.getElementById('flashAuctionWindow');
+            const spoilageThreshold = document.getElementById('flashSpoilageThreshold');
             const executeLimit = document.getElementById('autoExecuteLimit');
             if (maxDiscount) maxDiscount.value = String(profile.guardrail_max_discount_pct ?? 8);
             if (minMargin) minMargin.value = String(profile.guardrail_min_net_margin_pct ?? 7);
             if (maxResponse) maxResponse.value = String(profile.guardrail_max_response_hours ?? 12);
             if (auctionWindow) auctionWindow.value = String(profile.flash_auction_window_minutes ?? 90);
+            if (spoilageThreshold) spoilageThreshold.value = String(profile.flash_spoilage_risk_threshold ?? 62);
             if (executeLimit) executeLimit.value = String(profile.auto_execute_limit_per_day ?? 2);
 
             const riskNode = onboardingForm.querySelector(`input[name="guardrail_risk_tolerance"][value="${profile.guardrail_risk_tolerance || 'medio'}"]`);

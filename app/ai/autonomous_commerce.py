@@ -29,20 +29,18 @@ class AutonomousCommerceAI:
         profile = profile or {}
         snapshot = market_snapshot or {}
         guardrails = self._normalize_guardrails(profile)
+        now = datetime.now(timezone.utc)
 
         top_windows = list(snapshot.get("top_windows") or [])
         if not top_windows:
             return {
-                "generated_at": datetime.now(timezone.utc).isoformat(),
+                "generated_at": now.isoformat(),
                 "guardrails": guardrails,
                 "offer_matches": [],
                 "recommended_deals": [],
                 "flash_auction_candidates": [],
                 "recommended_actions": [],
             }
-
-        offer_ids = [str(item.get("offer_id") or "") for item in top_windows]
-        offer_ids = [item for item in offer_ids if item]
 
         offers = (
             self.db.query(Offer)
@@ -65,6 +63,12 @@ class AutonomousCommerceAI:
             if not offer:
                 continue
 
+            unit_price = self._to_float(item.get("unit_price"), 0.0)
+            if unit_price <= 0:
+                unit_price = self._unit_price(offer)
+            if unit_price <= 0:
+                continue
+
             ranked = self._rank_buyer_matches(
                 offer=offer,
                 candidates=candidates,
@@ -84,8 +88,24 @@ class AutonomousCommerceAI:
                 risk_index=float(best.get("risk_index", 0.35)),
                 max_discount_pct=guardrails["max_discount_pct"],
             )
-            proposed_unit_price = max(0.0, float(item.get("unit_price", 0.0)) * (1.0 - (target_discount_pct / 100.0)))
-            expected_margin_pct = max(-0.5, float(best.get("estimated_margin_pct", 0.0)) - (target_discount_pct / 100.0))
+
+            platform_fee_per_kg = self._to_float(best.get("platform_fee_per_kg"), 0.0)
+            freight_per_kg = self._to_float(best.get("freight_per_kg"), 0.0)
+            default_risk_cost_per_kg = self._to_float(best.get("default_risk_cost_per_kg"), 0.0)
+            total_cost_per_kg = platform_fee_per_kg + freight_per_kg + default_risk_cost_per_kg
+
+            floor_by_discount = unit_price * (1.0 - (float(guardrails["max_discount_pct"]) / 100.0))
+            margin_floor_denominator = max(0.01, 1.0 - float(guardrails["min_net_margin_pct"]))
+            floor_by_margin = total_cost_per_kg / margin_floor_denominator
+            producer_floor_price = max(0.0, floor_by_discount, floor_by_margin)
+
+            discounted_target = max(0.0, unit_price * (1.0 - (target_discount_pct / 100.0)))
+            proposed_unit_price = max(producer_floor_price, discounted_target)
+            actual_discount_pct = (1.0 - (proposed_unit_price / unit_price)) * 100.0 if unit_price > 0 else 0.0
+            expected_margin_pct = ((proposed_unit_price - total_cost_per_kg) / proposed_unit_price) if proposed_unit_price > 0 else -0.5
+
+            max_response_hours = int(guardrails["max_response_hours"])
+            response_deadline_at = now + timedelta(hours=max_response_hours)
 
             risk_allowed = self._risk_is_allowed(
                 risk_index=float(best.get("risk_index", 0.35)),
@@ -95,7 +115,8 @@ class AutonomousCommerceAI:
                 bool(guardrails["auto_negotiation_enabled"])
                 and risk_allowed
                 and expected_margin_pct >= float(guardrails["min_net_margin_pct"])
-                and target_discount_pct <= float(guardrails["max_discount_pct"])
+                and 0.0 <= actual_discount_pct <= float(guardrails["max_discount_pct"])
+                and proposed_unit_price >= producer_floor_price
             )
 
             deal = {
@@ -107,10 +128,18 @@ class AutonomousCommerceAI:
                 "buyer_location": str(best.get("buyer_location") or ""),
                 "fit_score": round(float(best.get("fit_score", 0.0)), 2),
                 "risk_index": round(float(best.get("risk_index", 0.0)), 4),
-                "freight_per_kg": round(float(best.get("freight_per_kg", 0.0)), 4),
+                "freight_per_kg": round(freight_per_kg, 4),
+                "platform_fee_per_kg": round(platform_fee_per_kg, 4),
+                "default_risk_cost_per_kg": round(default_risk_cost_per_kg, 4),
+                "total_cost_per_kg": round(total_cost_per_kg, 4),
+                "base_unit_price": round(unit_price, 4),
+                "producer_floor_price": round(producer_floor_price, 4),
                 "target_discount_pct": round(target_discount_pct, 2),
+                "actual_discount_pct": round(actual_discount_pct, 2),
                 "proposed_unit_price": round(proposed_unit_price, 4),
                 "expected_margin_pct": round(expected_margin_pct, 4),
+                "max_response_hours": max_response_hours,
+                "response_deadline_at": response_deadline_at.isoformat(),
                 "guardrails_ok": bool(executable),
             }
             recommended_deals.append(deal)
@@ -138,8 +167,9 @@ class AutonomousCommerceAI:
                         "urgency": 1.11,
                         "title": f"Negociacao autonoma pronta para {deal['product_name']}",
                         "description": (
-                            f"Comprador sugerido: {deal['buyer_name']} • desconto alvo {deal['target_discount_pct']:.1f}% • "
-                            f"margem final estimada {deal['expected_margin_pct'] * 100:.1f}%"
+                            f"Comprador sugerido: {deal['buyer_name']} • desconto real {deal['actual_discount_pct']:.1f}% • "
+                            f"margem final {deal['expected_margin_pct'] * 100:.1f}% • piso {deal['producer_floor_price']:.2f} • "
+                            f"prazo maximo {deal['max_response_hours']}h"
                         ),
                         "cta": cta,
                         "notify": True,
@@ -155,8 +185,8 @@ class AutonomousCommerceAI:
                         "urgency": 1.02,
                         "title": f"Revisar guardrails de {deal['product_name']}",
                         "description": (
-                            f"Melhor match: {deal['buyer_name']}, mas margem final {deal['expected_margin_pct'] * 100:.1f}% "
-                            "ou risco nao atende limites definidos."
+                            f"Melhor match: {deal['buyer_name']}, margem final {deal['expected_margin_pct'] * 100:.1f}% e "
+                            f"piso {deal['producer_floor_price']:.2f}. Risco/prazo pode nao atender limites definidos."
                         ),
                         "cta": cta,
                         "notify": False,
@@ -172,7 +202,8 @@ class AutonomousCommerceAI:
                     "urgency": 1.14,
                     "title": f"Leilao relampago para {candidate['product_name']}",
                     "description": (
-                        f"Perecibilidade elevada com urgencia {candidate['urgency_score']:.1f}/100. "
+                        f"Risco de perda {candidate['spoilage_risk_index']:.1f}/100 (gatilho >= {candidate['spoilage_trigger_threshold']:.1f}). "
+                        f"Urgencia {candidate['urgency_score']:.1f}/100. "
                         f"Janela sugerida: {candidate['auction_window_minutes']} min."
                     ),
                     "cta": f"/offers/{candidate['offer_id']}",
@@ -182,7 +213,7 @@ class AutonomousCommerceAI:
             )
 
         return {
-            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "generated_at": now.isoformat(),
             "guardrails": guardrails,
             "offer_matches": offer_matches,
             "recommended_deals": recommended_deals,
@@ -255,7 +286,8 @@ class AutonomousCommerceAI:
                     description=(
                         f"Match sugerido com {deal.get('buyer_name', 'comprador')} | "
                         f"preco alvo {float(deal.get('proposed_unit_price', 0.0)):.2f} | "
-                        f"margem estimada {float(deal.get('expected_margin_pct', 0.0)) * 100:.1f}%"
+                        f"margem estimada {float(deal.get('expected_margin_pct', 0.0)) * 100:.1f}% | "
+                        f"prazo ate {str(deal.get('response_deadline_at') or '-') }"
                     ),
                     event_type="task",
                     starts_at=starts_at,
@@ -308,6 +340,7 @@ class AutonomousCommerceAI:
                     title=f"Leilao relampago IA: {candidate.get('product_name', 'oferta')}",
                     description=(
                         f"Ative janela de leilao de {duration} min para reduzir perda de perecibilidade. "
+                        f"Risco de perda {float(candidate.get('spoilage_risk_index', 0.0)):.1f}/100. "
                         f"Urgencia {float(candidate.get('urgency_score', 0.0)):.1f}/100."
                     ),
                     event_type="task",
@@ -357,6 +390,7 @@ class AutonomousCommerceAI:
             "max_response_hours": int(_num("guardrail_max_response_hours", 12.0, 1.0, 72.0)),
             "risk_tolerance": risk,
             "flash_auction_window_minutes": int(_num("flash_auction_window_minutes", 90.0, 15.0, 360.0)),
+            "flash_spoilage_risk_threshold": _num("flash_spoilage_risk_threshold", 62.0, 30.0, 98.0),
             "auto_execute_limit_per_day": int(_num("auto_execute_limit_per_day", 2.0, 0.0, 10.0)),
         }
 
@@ -477,6 +511,9 @@ class AutonomousCommerceAI:
                     "buyer_location": str(user.location or ""),
                     "risk_index": round(risk_index, 4),
                     "freight_per_kg": round(freight, 4),
+                    "platform_fee_per_kg": round(platform_fee, 4),
+                    "default_risk_cost_per_kg": round(risk_cost_per_kg, 4),
+                    "total_cost_per_kg": round(platform_fee + freight + risk_cost_per_kg, 4),
                     "estimated_margin_pct": round(margin_pct, 4),
                     "fit_score": round(fit_score, 2),
                 }
@@ -492,6 +529,7 @@ class AutonomousCommerceAI:
         guardrails: dict[str, Any],
     ) -> list[dict[str, Any]]:
         out: list[dict[str, Any]] = []
+        threshold = float(guardrails.get("flash_spoilage_risk_threshold", 62.0))
 
         for item in top_windows:
             freshness = float(item.get("freshness_score", 0.0))
@@ -499,21 +537,30 @@ class AutonomousCommerceAI:
             quantity = float(item.get("quantity", 0.0))
             sell_window = float(item.get("sell_window_score", 0.0))
 
-            if freshness > 0.58:
-                continue
-            if engagement > 0.5 and sell_window > 58:
-                continue
             if quantity < 35:
+                continue
+
+            spoilage_risk_index = max(
+                0.0,
+                min(
+                    100.0,
+                    (1.0 - freshness) * 60.0
+                    + (1.0 - engagement) * 18.0
+                    + max(0.0, 55.0 - sell_window) * 0.45
+                    + min(16.0, quantity * 0.03),
+                ),
+            )
+
+            if spoilage_risk_index < threshold:
                 continue
 
             urgency_score = max(
                 0.0,
                 min(
                     100.0,
-                    (1.0 - freshness) * 48.0
-                    + (1.0 - engagement) * 24.0
-                    + max(0.0, 55.0 - sell_window) * 0.5
-                    + min(28.0, quantity * 0.04),
+                    (spoilage_risk_index * 0.78)
+                    + (max(0.0, 62.0 - sell_window) * 0.45)
+                    + min(20.0, quantity * 0.03),
                 ),
             )
 
@@ -521,6 +568,8 @@ class AutonomousCommerceAI:
                 {
                     "offer_id": str(item.get("offer_id") or ""),
                     "product_name": str(item.get("product_name") or "Oferta"),
+                    "spoilage_risk_index": round(spoilage_risk_index, 2),
+                    "spoilage_trigger_threshold": round(threshold, 2),
                     "urgency_score": round(urgency_score, 2),
                     "sell_window_score": round(sell_window, 2),
                     "auction_window_minutes": int(guardrails["flash_auction_window_minutes"]),

@@ -67,6 +67,7 @@ class AgendaProfileIn(BaseModel):
     guardrail_max_response_hours: int = Field(default=12, ge=1, le=72)
     guardrail_risk_tolerance: str = Field(default="medio", pattern="^(baixo|medio|alto)$")
     flash_auction_window_minutes: int = Field(default=90, ge=15, le=360)
+    flash_spoilage_risk_threshold: float = Field(default=62, ge=30, le=98)
     auto_execute_limit_per_day: int = Field(default=2, ge=0, le=10)
 
 
@@ -118,6 +119,7 @@ def _default_agenda_profile() -> dict:
         "guardrail_max_response_hours": 12,
         "guardrail_risk_tolerance": "medio",
         "flash_auction_window_minutes": 90,
+        "flash_spoilage_risk_threshold": 62,
         "auto_execute_limit_per_day": 2,
     }
 
