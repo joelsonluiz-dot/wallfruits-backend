@@ -47,6 +47,7 @@
         display: inline-flex;
         align-items: center;
         gap: 0.28rem;
+        display: none !important;
     }
     .notif-refresh-btn.is-paused {
         border-color: rgba(252, 90, 90, 0.3);
@@ -205,6 +206,9 @@
     const NOTIF_FILTER_KEY = 'wf_notifications_active_filter';
     const GLOBAL_TYPING_LOCK_KEY = 'wf_global_typing_context';
     const ADMIN_SYNC_FILTERS = ['library_sync_issue'];
+    const NOTIF_REQUEST_TIMEOUT_MS = 25000;
+    const NOTIF_REQUEST_MAX_ATTEMPTS = 3;
+    const NOTIF_RECONCILE_MAX_EXTRA_PAGES = 5;
     const notifFeedState = {
         skip: 0,
         hasMore: true,
@@ -217,6 +221,30 @@
     let pendingFreshNotifCount = 0;
     let notifRefreshPaused = false;
     let notifRefreshIntervalMs = NOTIF_AUTO_REFRESH_DEFAULT_MS;
+    let notifUnreadServerCount = 0;
+
+    function notifRequest(url, method = 'GET', data = null, options = {}) {
+        return apiRequest(url, {
+            method,
+            data,
+            options: {
+                timeoutMs: Number(options.timeoutMs || NOTIF_REQUEST_TIMEOUT_MS),
+                maxAttempts: Number(options.maxAttempts || NOTIF_REQUEST_MAX_ATTEMPTS),
+            },
+        });
+    }
+
+    function countLocalUnread() {
+        return notifStore.reduce((acc, item) => acc + (item?.is_read ? 0 : 1), 0);
+    }
+
+    function emitUnreadSync(unread) {
+        const safeUnread = Math.max(0, Number(unread || 0));
+        notifUnreadServerCount = safeUnread;
+        window.dispatchEvent(new CustomEvent('wf:notifications-unread-updated', {
+            detail: { unread: safeUnread },
+        }));
+    }
 
     function notifIntervalLabel(ms) {
         return `${Math.max(1, Math.round(ms / 1000))}s`;
@@ -301,13 +329,44 @@
         return `há ${Math.floor(diffSec / 86400)} dia(s)`;
     }
 
+    function markReadInBackground(notificationId) {
+        const id = Number(notificationId || 0);
+        if (!id) return;
+
+        notifRequest(`/notifications/${id}/read`, 'POST', null, { timeoutMs: 16000, maxAttempts: 1 })
+            .then(() => {
+                let touched = false;
+                notifStore = notifStore.map((item) => {
+                    if (Number(item.id) !== id || item.is_read) return item;
+                    touched = true;
+                    return { ...item, is_read: true };
+                });
+
+                if (touched) {
+                    emitUnreadSync(Math.max(0, notifUnreadServerCount - 1));
+                    renderNotifications({ preserveScroll: true });
+                }
+            })
+            .catch(() => {
+                // não bloqueia navegação por falha de marcação
+            });
+    }
+
     function openNotification(item) {
+        if (item && !item.is_read && item.id) {
+            markReadInBackground(item.id);
+        }
+
         if (item.resource_type === 'offer' && item.resource_id) {
             window.location.href = `/offers/${item.resource_id}`;
             return;
         }
         if (item.resource_type === 'thread' && item.resource_id) {
             window.location.href = `/messages?thread_id=${item.resource_id}`;
+            return;
+        }
+        if (item.resource_type === 'notification_feed') {
+            window.location.href = '/notifications';
             return;
         }
         if (item.resource_type === 'transaction' && item.resource_id) {
@@ -384,6 +443,57 @@
         status.textContent = message;
     }
 
+    async function syncUnreadFromServer(options = {}) {
+        try {
+            const data = await notifRequest('/notifications/unread-count', 'GET', null, {
+                timeoutMs: Number(options.timeoutMs || 16000),
+                maxAttempts: Number(options.maxAttempts || 2),
+            });
+            const unread = Number(data?.unread || 0);
+            emitUnreadSync(unread);
+            return unread;
+        } catch {
+            return notifUnreadServerCount;
+        }
+    }
+
+    async function reconcileUnreadWithFeed() {
+        const unreadServer = await syncUnreadFromServer({ timeoutMs: 18000, maxAttempts: 2 });
+        const unreadLocal = countLocalUnread();
+
+        if (unreadServer <= unreadLocal) {
+            return;
+        }
+
+        let extraPagesLoaded = 0;
+        while (
+            notifFeedState.hasMore &&
+            countLocalUnread() < unreadServer &&
+            extraPagesLoaded < NOTIF_RECONCILE_MAX_EXTRA_PAGES
+        ) {
+            const previousSkip = notifFeedState.skip;
+            await loadNextNotificationsPage();
+            if (notifFeedState.skip === previousSkip) {
+                break;
+            }
+            extraPagesLoaded += 1;
+        }
+
+        if (extraPagesLoaded > 0) {
+            renderNotifications({ preserveScroll: true });
+        }
+
+        if (currentFilter !== 'all' && filteredItems().length === 0 && (notifStore.length > 0 || unreadServer > 0)) {
+            currentFilter = 'all';
+            renderNotifications({ preserveScroll: true });
+            updateNotifStatus('Filtro ajustado para "Tudo" para manter seu feed sincronizado.');
+        }
+
+        if (!notifStore.length && unreadServer > 0) {
+            updateNotifStatus('Sincronizando notificações mais antigas para alinhar com o contador...');
+        }
+    }
+
     function saveNotifScroll() {
         const current = Math.max(0, Math.floor(window.scrollY || 0));
         if (Math.abs(current - lastNotifScrollY) < 12) return;
@@ -435,7 +545,10 @@
             return payload;
         }
 
-        return apiRequest(`/notifications?skip=${skip}&limit=${limit}`);
+        return notifRequest(`/notifications?skip=${skip}&limit=${limit}`, 'GET', null, {
+            timeoutMs: 28000,
+            maxAttempts: 3,
+        });
     }
 
     function prefetchNextNotifPage() {
@@ -446,7 +559,10 @@
             return;
         }
 
-        const request = apiRequest(`/notifications?skip=${nextSkip}&limit=${NOTIF_PAGE_SIZE}`)
+        const request = notifRequest(`/notifications?skip=${nextSkip}&limit=${NOTIF_PAGE_SIZE}`, 'GET', null, {
+            timeoutMs: 22000,
+            maxAttempts: 2,
+        })
             .then((payload) => {
                 notifFeedState.prefetch = { skip: nextSkip, payload };
             })
@@ -489,6 +605,8 @@
                 updateNotifStatus('Role para carregar mais.');
                 prefetchNextNotifPage();
             }
+        } catch {
+            updateNotifStatus('Sincronização temporariamente lenta. Tentaremos novamente automaticamente.');
         } finally {
             notifFeedState.isLoading = false;
         }
@@ -528,9 +646,17 @@
 
     async function markRead(item, event) {
         event.stopPropagation();
-        await apiRequest(`/notifications/${item.id}/read`, 'POST');
-        item.is_read = true;
-        renderNotifications();
+
+        const id = Number(item?.id || 0);
+        if (!id) return;
+
+        await notifRequest(`/notifications/${id}/read`, 'POST', null, { timeoutMs: 16000, maxAttempts: 1 });
+        notifStore = notifStore.map((row) => (
+            Number(row.id) === id ? { ...row, is_read: true } : row
+        ));
+        emitUnreadSync(Math.max(0, notifUnreadServerCount - 1));
+        syncUnreadFromServer({ timeoutMs: 12000, maxAttempts: 1 });
+        renderNotifications({ preserveScroll: true });
     }
 
     function renderNotifications(options = {}) {
@@ -545,6 +671,13 @@
         const items = filteredItems();
         if (!items.length) {
             listEl.innerHTML = '';
+            if (currentFilter !== 'all' && notifStore.length > 0) {
+                emptyEl.textContent = `Sem notificações para o filtro "${currentFilter}". Use "Tudo" para visualizar o feed completo.`;
+            } else if (currentFilter !== 'all' && notifUnreadServerCount > 0) {
+                emptyEl.textContent = `Existem ${notifUnreadServerCount} notificação(ões) não lida(s), mas nenhuma neste filtro.`;
+            } else {
+                emptyEl.textContent = 'Sem notificações para este filtro.';
+            }
             emptyEl.style.display = 'block';
             return;
         }
@@ -590,8 +723,10 @@
     }
 
     async function markAllRead() {
-        await apiRequest('/notifications/read-all', 'POST');
+        await notifRequest('/notifications/read-all', 'POST', null, { timeoutMs: 18000, maxAttempts: 2 });
         notifStore = notifStore.map((n) => ({ ...n, is_read: true }));
+        emitUnreadSync(0);
+        syncUnreadFromServer({ timeoutMs: 12000, maxAttempts: 1 });
         renderNotifications();
     }
 
@@ -604,6 +739,7 @@
 
         resetNotificationsFeed();
         await loadNextNotificationsPage();
+        await reconcileUnreadWithFeed();
         setTimeout(restoreNotifScroll, 60);
     }
 
@@ -612,7 +748,10 @@
         if (localStorage.getItem(GLOBAL_TYPING_LOCK_KEY) === 'community') return;
 
         try {
-            const incoming = await apiRequest(`/notifications?skip=0&limit=${Math.min(20, NOTIF_PAGE_SIZE)}`);
+            const incoming = await notifRequest(`/notifications?skip=0&limit=${Math.min(20, NOTIF_PAGE_SIZE)}`, 'GET', null, {
+                timeoutMs: 22000,
+                maxAttempts: 2,
+            });
             const latest = Array.isArray(incoming) ? incoming : [];
             if (!latest.length) return;
 
@@ -623,6 +762,8 @@
             notifStore = fresh.concat(notifStore);
             notifFeedState.skip += fresh.length;
             pendingFreshNotifCount += fresh.length;
+            emitUnreadSync(notifUnreadServerCount + fresh.filter((item) => !item.is_read).length);
+            syncUnreadFromServer({ timeoutMs: 12000, maxAttempts: 1 });
             renderNotifications({ animate: true, preserveScroll: true });
             updateNotifStatus(`${fresh.length} nova(s) notificação(ões) recebida(s).`);
             syncNewNotifIndicator();
@@ -695,7 +836,13 @@
     setupAdminOnlyFilters();
 
     setupNotificationsInfiniteScroll();
-    loadNotifications().catch((error) => alert(error.message || 'Erro ao carregar notificações'));
+    loadNotifications().catch(() => {
+        updateNotifStatus('Falha temporária ao sincronizar notificações. Tentando novamente em segundo plano...');
+        window.setTimeout(() => {
+            silentRefreshNotifications();
+            syncUnreadFromServer({ timeoutMs: 18000, maxAttempts: 2 });
+        }, 1800);
+    });
 
     restartNotifAutoRefresh();
 

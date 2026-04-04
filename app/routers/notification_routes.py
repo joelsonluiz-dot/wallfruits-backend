@@ -28,7 +28,13 @@ def list_my_notifications(
     if only_unread:
         query = query.filter(Notification.is_read.is_(False))
 
-    rows = query.order_by(Notification.created_at.desc()).offset(skip).limit(limit).all()
+    rows = (
+        query
+        .order_by(Notification.created_at.desc(), Notification.id.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
 
     return [
         NotificationResponse(
