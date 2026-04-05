@@ -12,10 +12,16 @@
     <link rel="icon" type="image/svg+xml" href="/static/icon.svg">
     <link rel="apple-touch-icon" href="/static/icon-180.png">
     <title>{% block title %}WallFruits - Marketplace{% endblock %}</title>
+    <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
+    <link rel="dns-prefetch" href="//fonts.googleapis.com">
+    <link rel="dns-prefetch" href="//fonts.gstatic.com">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Merriweather:wght@700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <style>
         :root {
             --wf-bg: #f4efdf;
@@ -2481,6 +2487,11 @@
         const WF_GET_CACHE = new Map();
         const WF_INFLIGHT_GET = new Map();
         const WF_PREFETCHED_PAGES = new Set();
+        const WF_PREFETCH_LINKS = new Set();
+        const WF_SUPPORTS_PREFETCH_LINK = (() => {
+            const probe = document.createElement('link');
+            return Boolean(probe.relList && probe.relList.supports && probe.relList.supports('prefetch'));
+        })();
         const WF_ADV_SETTINGS_KEY = 'wf_hidden_settings_v1';
         const WF_ADV_DEFAULTS = {
             auto_refresh: true,
@@ -3898,6 +3909,8 @@
                 }
             };
 
+            const methodText = String(resolvedMethod || 'GET').toUpperCase();
+
             if (resolvedData instanceof FormData) {
                 delete config.headers['Content-Type'];
             }
@@ -3910,6 +3923,10 @@
                 } else {
                     config.body = JSON.stringify(resolvedData);
                 }
+            }
+
+            if (methodText === 'GET' && (resolvedData === null || resolvedData === undefined)) {
+                delete config.headers['Content-Type'];
             }
 
             const token = localStorage.getItem('token');
@@ -3939,7 +3956,6 @@
             }
 
             const timeoutMs = Number(options.timeoutMs || getAdvancedSetting('request_timeout_ms', 12000));
-            const methodText = String(resolvedMethod || 'GET').toUpperCase();
             const maxAttempts = Number(options.maxAttempts || ((methodText === 'GET' && getAdvancedSetting('auto_retry', true)) ? 2 : 1));
 
             const requestPromise = (async () => {
@@ -4035,10 +4051,20 @@
             if (WF_PREFETCHED_PAGES.has(href)) return;
             WF_PREFETCHED_PAGES.add(href);
 
+            if (WF_SUPPORTS_PREFETCH_LINK && !WF_PREFETCH_LINKS.has(href)) {
+                WF_PREFETCH_LINKS.add(href);
+                const prefetch = document.createElement('link');
+                prefetch.rel = 'prefetch';
+                prefetch.as = 'document';
+                prefetch.href = href;
+                document.head.appendChild(prefetch);
+            }
+
             fetch(href, {
                 method: 'GET',
                 credentials: 'same-origin',
                 headers: { 'X-WF-Prefetch': '1' },
+                cache: 'force-cache',
             }).catch(() => {});
         }
 
@@ -5019,11 +5045,20 @@
             setupProfileMenu();
             initHiddenSettingsPanel();
             initKeyboardMenuGuard();
-            setupFastNavigationPrefetch();
             setupCrossTabSync();
-            setupMonetizationAds();
-            setupRetentionNudges();
             fixInputStability();
+
+            const runDeferredBoot = () => {
+                setupFastNavigationPrefetch();
+                setupMonetizationAds();
+                setupRetentionNudges();
+            };
+
+            if ('requestIdleCallback' in window) {
+                window.requestIdleCallback(runDeferredBoot, { timeout: 1600 });
+            } else {
+                window.setTimeout(runDeferredBoot, 320);
+            }
 
             document.addEventListener('focusin', (event) => {
                 const target = event.target;
@@ -5077,7 +5112,7 @@
             }, 120);
         });
 
-        window.addEventListener('beforeunload', () => {
+        function cleanupRuntimeResources() {
             if (wfUnreadNotificationsPollTimer) {
                 window.clearInterval(wfUnreadNotificationsPollTimer);
                 wfUnreadNotificationsPollTimer = null;
@@ -5114,14 +5149,27 @@
                 finalizeAdViewabilityTracking(element);
             });
             wfAdViewabilityStates.clear();
+        }
+
+        window.addEventListener('pagehide', (event) => {
+            if (event && event.persisted) {
+                return;
+            }
+            cleanupRuntimeResources();
         });
 
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
+            const registerServiceWorker = () => {
                 navigator.serviceWorker.register('/static/sw.js').catch(() => {
                     // fallback silencioso: app continua funcional mesmo sem SW
                 });
-            });
+            };
+
+            if ('requestIdleCallback' in window) {
+                window.requestIdleCallback(registerServiceWorker, { timeout: 3200 });
+            } else {
+                window.addEventListener('load', registerServiceWorker, { once: true });
+            }
         }
     </script>
 

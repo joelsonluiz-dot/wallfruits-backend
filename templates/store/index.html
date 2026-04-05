@@ -609,6 +609,8 @@
         const loadMoreSentinel = document.getElementById('storeLoadMoreSentinel');
         const loadMoreStatus = document.getElementById('storeLoadMoreStatus');
         let storeObserver = null;
+        let storeGridActionsBound = false;
+        const storeCartInFlight = new Set();
 
         function money(value) {
             return `R$ ${Number(value || 0).toFixed(2)}`;
@@ -743,7 +745,7 @@
                 const safeCategory = escapeHtml(product.category || 'Categoria');
                 const safeSlug = encodeURIComponent(String(product.slug || ''));
                 const safeImage = escapeHtml(product.image || '');
-                const image = product.image ? `<img src="${safeImage}" alt="${safeName}">` : '<span style="font-size:2rem;">📦</span>';
+                const image = product.image ? `<img src="${safeImage}" alt="${safeName}" loading="lazy" decoding="async">` : '<span style="font-size:2rem;">📦</span>';
 
                 return `
                     <article class="store-card" style="animation-delay:${index * 0.04}s;">
@@ -777,44 +779,62 @@
             } else {
                 productsGrid.innerHTML = cards;
             }
+        }
 
-            productsGrid.querySelectorAll('[data-favorite-id]').forEach((btn) => {
-                btn.addEventListener('click', () => {
-                    const id = String(btn.getAttribute('data-favorite-id'));
+        function bindProductsGridActions() {
+            if (storeGridActionsBound || !productsGrid) return;
+            storeGridActionsBound = true;
+
+            productsGrid.addEventListener('click', async (event) => {
+                const target = event.target instanceof Element ? event.target : null;
+                if (!target) return;
+
+                const favoriteBtn = target.closest('[data-favorite-id]');
+                if (favoriteBtn && productsGrid.contains(favoriteBtn)) {
+                    const id = String(favoriteBtn.getAttribute('data-favorite-id'));
                     if (state.favorites.has(id)) {
                         state.favorites.delete(id);
-                        btn.classList.remove('active');
+                        favoriteBtn.classList.remove('active');
                     } else {
                         state.favorites.add(id);
-                        btn.classList.add('active');
+                        favoriteBtn.classList.add('active');
                     }
                     saveFavorites();
-                });
-            });
+                    return;
+                }
 
-            productsGrid.querySelectorAll('[data-cart-id]').forEach((btn) => {
-                btn.addEventListener('click', async () => {
-                    const token = localStorage.getItem('token');
-                    if (!token) {
-                        window.location.href = '/login';
-                        return;
-                    }
+                const cartBtn = target.closest('[data-cart-id]');
+                if (!cartBtn || !productsGrid.contains(cartBtn)) return;
 
-                    const productId = Number(btn.getAttribute('data-cart-id'));
-                    try {
-                        const defaultHtml = btn.innerHTML;
-                        btn.disabled = true;
-                        btn.innerHTML = '<span class="btn-spinner" aria-hidden="true"></span>';
-                        await apiRequest('/store/cart/add', 'POST', { product_id: productId, quantity: 1 });
-                        showState('Produto adicionado ao carrinho com sucesso.', 'info');
-                        btn.innerHTML = defaultHtml;
-                        btn.disabled = false;
-                    } catch (error) {
-                        showState(error.message || 'Não foi possível adicionar ao carrinho.', 'error');
-                        btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:1rem;vertical-align:middle;">add_shopping_cart</span>';
-                        btn.disabled = false;
-                    }
-                });
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    window.location.href = '/login';
+                    return;
+                }
+
+                const productId = Number(cartBtn.getAttribute('data-cart-id'));
+                if (!Number.isFinite(productId)) return;
+
+                const lockKey = String(productId);
+                if (storeCartInFlight.has(lockKey)) {
+                    return;
+                }
+
+                storeCartInFlight.add(lockKey);
+                const defaultHtml = cartBtn.innerHTML;
+
+                try {
+                    cartBtn.disabled = true;
+                    cartBtn.innerHTML = '<span class="btn-spinner" aria-hidden="true"></span>';
+                    await apiRequest('/store/cart/add', 'POST', { product_id: productId, quantity: 1 });
+                    showState('Produto adicionado ao carrinho com sucesso.', 'info');
+                } catch (error) {
+                    showState(error.message || 'Não foi possível adicionar ao carrinho.', 'error');
+                } finally {
+                    cartBtn.innerHTML = defaultHtml;
+                    cartBtn.disabled = false;
+                    storeCartInFlight.delete(lockKey);
+                }
             });
         }
 
@@ -971,6 +991,7 @@
         });
 
         readFavorites();
+        bindProductsGridActions();
         setupInfiniteScroll();
         loadProducts();
     })();

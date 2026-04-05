@@ -1316,6 +1316,7 @@
     let offersRefreshIntervalMs = OFFERS_AUTO_REFRESH_DEFAULT_MS;
     let pendingFreshOffers = 0;
     let userGeo = null;
+    let offersCardDelegationBound = false;
     const offersFeedState = {
         skip: 0,
         hasMore: true,
@@ -2131,7 +2132,7 @@
         return `
             <article class="produto-card" data-offer-id="${offer.id}" tabindex="0" role="link" aria-label="Abrir detalhes da oferta ${escapeHtml(offer.product_name)}">
                 <div class="produto-img-wrap">
-                    <img class="produto-img" src="${escapeHtml(getOfferImage(offer))}" alt="Imagem de ${escapeHtml(offer.product_name)}" onerror="this.onerror=null;this.src='${escapeHtml(getRealProductFallbackImage(offer.product_name, offer.category))}'">
+                    <img class="produto-img" src="${escapeHtml(getOfferImage(offer))}" alt="Imagem de ${escapeHtml(offer.product_name)}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='${escapeHtml(getRealProductFallbackImage(offer.product_name, offer.category))}'">
                 </div>
 
                 <div class="produto-content">
@@ -2316,24 +2317,38 @@
     }
 
     function bindCardOpenBehavior() {
-        document.querySelectorAll('.produto-card').forEach((card) => {
-            card.addEventListener('click', (event) => {
-                const interactive = event.target.closest('button');
-                if (interactive) return;
+        const container = document.getElementById('offersContainer');
+        if (!container || offersCardDelegationBound) return;
+        offersCardDelegationBound = true;
 
-                const offerId = card.dataset.offerId;
-                if (!offerId) return;
+        container.addEventListener('click', (event) => {
+            const target = event.target instanceof Element ? event.target : null;
+            if (!target) return;
 
-                window.location.href = `/offers/${offerId}`;
-            });
+            if (target.closest('button')) return;
 
-            card.addEventListener('keydown', (event) => {
-                if (event.key !== 'Enter' && event.key !== ' ') return;
-                const offerId = card.dataset.offerId;
-                if (!offerId) return;
-                event.preventDefault();
-                window.location.href = `/offers/${offerId}`;
-            });
+            const card = target.closest('.produto-card');
+            if (!card || !container.contains(card)) return;
+
+            const offerId = card.dataset.offerId;
+            if (!offerId) return;
+
+            window.location.href = `/offers/${offerId}`;
+        });
+
+        container.addEventListener('keydown', (event) => {
+            const target = event.target instanceof Element ? event.target : null;
+            if (!target) return;
+
+            const card = target.closest('.produto-card');
+            if (!card || !container.contains(card)) return;
+
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            const offerId = card.dataset.offerId;
+            if (!offerId) return;
+
+            event.preventDefault();
+            window.location.href = `/offers/${offerId}`;
         });
     }
 
@@ -3179,7 +3194,10 @@
     renderActiveFilterChips();
     restartOffersAutoRefresh();
 
-    window.addEventListener('beforeunload', () => {
+    window.addEventListener('pagehide', (event) => {
+        if (event && event.persisted) {
+            return;
+        }
         if (offersRefreshTimer) {
             window.clearInterval(offersRefreshTimer);
         }
