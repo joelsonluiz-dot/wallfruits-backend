@@ -1179,6 +1179,77 @@ async def ai_agent_ask(
     def has(*terms: str) -> bool:
         return any(term in text_q for term in terms)
 
+    agenda_profile: dict[str, Any] = {}
+    total_orders: int | None = None
+    pending_quotes: int | None = None
+    unread_notifications: int | None = None
+
+    def build_full_platform_guide() -> str:
+        intro = (
+            "Guia completo da WallFruits:\n"
+            "1) Acesso e conta\n"
+            "- Entrar: /login\n"
+            "- Criar conta: /register\n"
+            "- Recuperar senha: /forgot-password\n"
+            "- Perfil do usuário: /profile\n"
+            "\n"
+            "2) Comercial de ofertas\n"
+            "- Ver ofertas: /offers\n"
+            "- Criar oferta: /offers/new\n"
+            "- Negociar com comprador/vendedor: /messages e detalhes da oferta\n"
+            "- Resolver conflito: /intermediation\n"
+            "\n"
+            "3) Loja Agro (e-commerce)\n"
+            "- Catálogo e compra: /store\n"
+            "- Carrinho e checkout: /store/checkout\n"
+            "- Gestão para fornecedor/admin: /store/manage/dashboard\n"
+            "\n"
+            "4) Comunicação e alertas\n"
+            "- Conversas: /messages\n"
+            "- Notificações: /notifications\n"
+            "\n"
+            "5) Agenda Inteligente\n"
+            "- Acessar: /ai-agent\n"
+            "- Define prioridade, risco e próximos passos com base no seu perfil\n"
+            "- Modos: assistida, semiautomática e autônoma\n"
+            "\n"
+            "6) Administração (somente admin)\n"
+            "- Painel: /admin\n"
+            "- Gestão de usuários, permissões e verificações\n"
+            "\n"
+            "7) Atalhos úteis\n"
+            "- Home: /\n"
+            "- Estratégia: /strategy\n"
+            "- Comunidade/Biblioteca quando habilitadas no menu principal\n"
+            "\n"
+            "8) Erros comuns e solução rápida\n"
+            "- Credencial inválida: revisar ambiente + redefinir senha\n"
+            "- Sem acesso à Agenda: validar janela temporária/plano\n"
+            "- Sem resposta em negociação: conferir notificações e mensagens\n"
+        )
+
+        if current_user:
+            mode = str(agenda_profile.get("autonomy_mode") or "assistida")
+            goal = str(agenda_profile.get("main_goal") or "produtividade")
+            intro += (
+                "\n"
+                "Seu contexto atual:\n"
+                f"- Modo da Agenda: {mode}\n"
+                f"- Objetivo principal: {goal}\n"
+                f"- Pedidos na loja: {int(total_orders or 0)}\n"
+                f"- Propostas pendentes: {int(pending_quotes or 0)}\n"
+                f"- Notificações não lidas: {int(unread_notifications or 0)}\n"
+            )
+
+        intro += (
+            "\n"
+            "Se quiser, eu também te passo um passo a passo por tarefa, por exemplo: \n"
+            "- 'como criar uma oferta e fechar negócio'\n"
+            "- 'como publicar produto na loja'\n"
+            "- 'como usar a agenda no modo autônomo com segurança'"
+        )
+        return intro
+
     answer = (
         "Posso ajudar com tudo da WallFruits: login, ofertas, loja agro, mensagens, notificações, "
         "negociações, pagamentos, reputação, perfil e painel admin. Diga exatamente o que você precisa fazer."
@@ -1236,7 +1307,20 @@ async def ai_agent_ask(
                 "Abra /ai-agent para revisar ou atualizar suas preferências de autonomia e recomendações."
             )
 
-    if has("login", "entrar", "senha", "credencial", "acesso"):
+    if has(
+        "todas instruções",
+        "todas as instruções",
+        "instruções da plataforma",
+        "manual",
+        "guia completo",
+        "ajuda completa",
+        "passo a passo",
+        "suporte inteligente",
+        "como usar a plataforma",
+        "onboarding",
+    ):
+        answer = build_full_platform_guide()
+    elif has("login", "entrar", "senha", "credencial", "acesso"):
         answer = (
             "Para acessar: vá em Login, informe e-mail e senha. Se aparecer credencial inválida, confirme se está no ambiente correto "
             "(produção/local) e tente redefinir a senha. Se for admin, o painel fica em /admin após autenticar."

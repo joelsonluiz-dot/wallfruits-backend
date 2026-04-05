@@ -98,6 +98,13 @@ class AgendaMoveEventIn(BaseModel):
     target_date: date
 
 
+class AgendaAutonomousExecuteIn(BaseModel):
+    action_type: str = Field(pattern="^(flash_auction|auto_negotiation)$")
+    offer_id: str = Field(min_length=1, max_length=80)
+    mode: str = Field(default="commit", pattern="^(commit|rollback)$")
+    buyer_user_id: int | None = Field(default=None, ge=1)
+
+
 def _default_agenda_profile() -> dict:
     return {
         "onboarding_complete": False,
@@ -361,6 +368,34 @@ def get_agenda_autonomous_commerce(
         market_snapshot=market_snapshot,
     )
     return plan
+
+
+@router.post("/agenda/autonomous-commerce/execute")
+def execute_agenda_autonomous_commerce(
+    payload: AgendaAutonomousExecuteIn,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    profile = _load_agenda_profile(db, current_user.id)
+    market_ai = MarketIntelligenceAI(db)
+    market_snapshot = market_ai.build_market_snapshot(user_id=current_user.id, profile=profile)
+    autonomous_ai = AutonomousCommerceAI(db)
+
+    result = autonomous_ai.execute_transactional_action(
+        user_id=current_user.id,
+        profile=profile,
+        market_snapshot=market_snapshot,
+        action_type=payload.action_type,
+        offer_id=payload.offer_id,
+        mode=payload.mode,
+        buyer_user_id=payload.buyer_user_id,
+    )
+
+    if not bool(result.get("committed")):
+        raise HTTPException(status_code=409, detail=str(result.get("message") or "Falha na execução transacional."))
+
+    db.commit()
+    return result
 
 
 @router.get("/agenda/profile")

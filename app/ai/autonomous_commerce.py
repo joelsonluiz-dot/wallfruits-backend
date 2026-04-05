@@ -7,6 +7,7 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from app.models.agenda_event import AgendaEvent
+from app.models.notification import Notification
 from app.models.offer import Offer
 from app.models.profile import Profile
 from app.models.transaction import Transaction
@@ -369,6 +370,463 @@ class AutonomousCommerceAI:
                 )
 
         return {"events_created": created, "automations": automations}
+
+    def execute_transactional_action(
+        self,
+        *,
+        user_id: int,
+        profile: dict[str, Any] | None,
+        market_snapshot: dict[str, Any] | None,
+        action_type: str,
+        offer_id: str,
+        mode: str = "commit",
+        buyer_user_id: int | None = None,
+    ) -> dict[str, Any]:
+        action = str(action_type or "").strip().lower()
+        operation_mode = str(mode or "commit").strip().lower()
+        normalized_offer_id = str(offer_id or "").strip()
+
+        if action not in {"flash_auction", "auto_negotiation"}:
+            return {
+                "committed": False,
+                "message": "Ação inválida. Use flash_auction ou auto_negotiation.",
+            }
+
+        if not normalized_offer_id:
+            return {
+                "committed": False,
+                "message": "offer_id é obrigatório para executar a automação.",
+            }
+
+        if operation_mode == "rollback":
+            return self._rollback_transactional_action(
+                user_id=user_id,
+                action_type=action,
+                offer_id=normalized_offer_id,
+                buyer_user_id=buyer_user_id,
+            )
+
+        if operation_mode != "commit":
+            return {
+                "committed": False,
+                "message": "Modo inválido. Use commit ou rollback.",
+            }
+
+        plan = self.build_autonomous_plan(
+            user_id=user_id,
+            profile=profile,
+            market_snapshot=market_snapshot,
+        )
+
+        if action == "auto_negotiation":
+            return self._commit_auto_negotiation_transaction(
+                user_id=user_id,
+                offer_id=normalized_offer_id,
+                buyer_user_id=buyer_user_id,
+                plan=plan,
+            )
+
+        return self._commit_flash_auction_transaction(
+            user_id=user_id,
+            offer_id=normalized_offer_id,
+            plan=plan,
+        )
+
+    def _commit_auto_negotiation_transaction(
+        self,
+        *,
+        user_id: int,
+        offer_id: str,
+        buyer_user_id: int | None,
+        plan: dict[str, Any],
+    ) -> dict[str, Any]:
+        deals = plan.get("recommended_deals", []) if isinstance(plan, dict) else []
+
+        selected: dict[str, Any] | None = None
+        for item in deals:
+            if not isinstance(item, dict):
+                continue
+            if str(item.get("offer_id") or "") != offer_id:
+                continue
+            if not bool(item.get("guardrails_ok")):
+                continue
+            if buyer_user_id and int(item.get("buyer_user_id") or 0) != int(buyer_user_id):
+                continue
+            selected = item
+            break
+
+        if not selected:
+            return {
+                "committed": False,
+                "message": "Nenhuma negociação autônoma executável encontrada para esta oferta.",
+            }
+
+        buyer_id = int(selected.get("buyer_user_id") or 0)
+        automation_key = f"tx:auto-negotiation:{offer_id}:{buyer_id}"
+
+        existing = self._find_existing_execution_event(user_id=user_id, automation_key=automation_key)
+        if existing:
+            return {
+                "committed": True,
+                "already_executed": True,
+                "action_type": "auto_negotiation",
+                "offer_id": offer_id,
+                "buyer_user_id": buyer_id,
+                "event_id": int(existing.id),
+                "message": "Negociação autônoma já estava em execução para esta oferta.",
+            }
+
+        now = datetime.now(timezone.utc)
+        deadline = self._safe_parse_datetime(selected.get("response_deadline_at"))
+        if deadline is None:
+            deadline = now + timedelta(hours=max(1, int(selected.get("max_response_hours") or 12)))
+
+        try:
+            with self.db.begin_nested():
+                starts_at = now + timedelta(minutes=8)
+                ends_at = starts_at + timedelta(minutes=40)
+
+                event = AgendaEvent(
+                    user_id=user_id,
+                    title=f"Execução transacional IA: negociação {selected.get('product_name', 'oferta')}",
+                    description=(
+                        f"Comprador {selected.get('buyer_name', 'sugerido')} | "
+                        f"preço {float(selected.get('proposed_unit_price', 0.0)):.2f} | "
+                        f"margem {float(selected.get('expected_margin_pct', 0.0)) * 100:.1f}% | "
+                        f"prazo limite {deadline.isoformat()}"
+                    ),
+                    event_type="task",
+                    starts_at=starts_at,
+                    ends_at=ends_at,
+                    location=str(selected.get("buyer_location") or "") or None,
+                    status="scheduled",
+                    is_all_day=False,
+                    meta_json={
+                        "source": "autonomous_commerce_tx",
+                        "automation_type": "auto_negotiation",
+                        "offer_id": offer_id,
+                        "buyer_user_id": buyer_id,
+                        "automation_key": automation_key,
+                        "executed_at": now.isoformat(),
+                        "mode": "commit",
+                    },
+                )
+                self.db.add(event)
+                self.db.flush()
+
+                self.db.add(
+                    Notification(
+                        user_id=user_id,
+                        actor_user_id=None,
+                        notification_type="agenda_proactive",
+                        title="Negociação IA executada",
+                        message=(
+                            f"Execução transacional iniciada para oferta {offer_id}. "
+                            f"Prazo máximo de resposta até {deadline.strftime('%d/%m %H:%M')}"
+                        ),
+                        resource_type="agenda_alert",
+                        resource_id=automation_key,
+                        is_read=False,
+                    )
+                )
+
+            return {
+                "committed": True,
+                "action_type": "auto_negotiation",
+                "offer_id": offer_id,
+                "buyer_user_id": buyer_id,
+                "event_id": int(event.id),
+                "deadline": deadline.isoformat(),
+                "message": "Negociação autônoma executada com transação e checkpoints de rollback.",
+            }
+        except Exception as exc:
+            self.db.rollback()
+            return {
+                "committed": False,
+                "action_type": "auto_negotiation",
+                "offer_id": offer_id,
+                "message": f"Falha transacional ao executar negociação: {exc}",
+            }
+
+    def _commit_flash_auction_transaction(
+        self,
+        *,
+        user_id: int,
+        offer_id: str,
+        plan: dict[str, Any],
+    ) -> dict[str, Any]:
+        candidates = plan.get("flash_auction_candidates", []) if isinstance(plan, dict) else []
+        candidate = next(
+            (
+                item
+                for item in candidates
+                if isinstance(item, dict) and str(item.get("offer_id") or "") == offer_id
+            ),
+            None,
+        )
+        if not candidate:
+            return {
+                "committed": False,
+                "message": "Oferta fora do gatilho de risco para leilão relâmpago no momento.",
+            }
+
+        offer = self._find_offer_by_id_for_user(user_id=user_id, offer_id=offer_id)
+        if not offer:
+            return {
+                "committed": False,
+                "message": "Oferta ativa não encontrada para execução do leilão.",
+            }
+
+        automation_key = f"tx:flash-auction:{offer_id}"
+        existing = self._find_existing_execution_event(user_id=user_id, automation_key=automation_key)
+        if existing:
+            return {
+                "committed": True,
+                "already_executed": True,
+                "action_type": "flash_auction",
+                "offer_id": offer_id,
+                "event_id": int(existing.id),
+                "message": "Leilão relâmpago já estava em execução para esta oferta.",
+            }
+
+        now = datetime.now(timezone.utc)
+        unit_price = self._unit_price(offer)
+        urgency_score = max(0.0, float(candidate.get("urgency_score") or 0.0))
+
+        discount_pct = min(18.0, max(2.0, urgency_score * 0.12))
+        auction_start_price = max(0.01, unit_price * (1.0 - (discount_pct / 100.0))) if unit_price > 0 else 0.01
+        previous_private_price = getattr(offer, "private_price", None)
+        previous_private_price_value = self._to_float(previous_private_price, 0.0) if previous_private_price is not None else None
+        previous_is_featured = bool(getattr(offer, "is_featured", False))
+
+        try:
+            with self.db.begin_nested():
+                offer.is_featured = True
+                if hasattr(offer, "private_price"):
+                    offer.private_price = auction_start_price
+
+                starts_at = now + timedelta(minutes=5)
+                duration_minutes = int(candidate.get("auction_window_minutes") or 90)
+                ends_at = starts_at + timedelta(minutes=max(20, duration_minutes))
+
+                event = AgendaEvent(
+                    user_id=user_id,
+                    title=f"Execução transacional IA: leilão relâmpago {candidate.get('product_name', 'oferta')}",
+                    description=(
+                        f"Leilão ativado por risco de perda {float(candidate.get('spoilage_risk_index', 0.0)):.1f}/100 | "
+                        f"gatilho {float(candidate.get('spoilage_trigger_threshold', 0.0)):.1f}/100 | "
+                        f"preço inicial {auction_start_price:.2f}"
+                    ),
+                    event_type="task",
+                    starts_at=starts_at,
+                    ends_at=ends_at,
+                    location=None,
+                    status="scheduled",
+                    is_all_day=False,
+                    meta_json={
+                        "source": "autonomous_commerce_tx",
+                        "automation_type": "flash_auction",
+                        "offer_id": offer_id,
+                        "automation_key": automation_key,
+                        "executed_at": now.isoformat(),
+                        "mode": "commit",
+                        "auction_start_price": round(auction_start_price, 4),
+                        "rollback_snapshot": {
+                            "is_featured": previous_is_featured,
+                            "private_price": previous_private_price_value,
+                        },
+                    },
+                )
+                self.db.add(event)
+                self.db.flush()
+
+                self.db.add(
+                    Notification(
+                        user_id=user_id,
+                        actor_user_id=None,
+                        notification_type="agenda_proactive",
+                        title="Leilão relâmpago IA executado",
+                        message=(
+                            f"Leilão da oferta {offer_id} foi ativado com preço inicial {auction_start_price:.2f}. "
+                            "Use rollback se precisar desfazer a operação."
+                        ),
+                        resource_type="agenda_alert",
+                        resource_id=automation_key,
+                        is_read=False,
+                    )
+                )
+
+            return {
+                "committed": True,
+                "action_type": "flash_auction",
+                "offer_id": offer_id,
+                "event_id": int(event.id),
+                "auction_start_price": round(auction_start_price, 4),
+                "message": "Leilão relâmpago executado com transação e checkpoint para rollback.",
+            }
+        except Exception as exc:
+            self.db.rollback()
+            return {
+                "committed": False,
+                "action_type": "flash_auction",
+                "offer_id": offer_id,
+                "message": f"Falha transacional ao executar leilão: {exc}",
+            }
+
+    def _rollback_transactional_action(
+        self,
+        *,
+        user_id: int,
+        action_type: str,
+        offer_id: str,
+        buyer_user_id: int | None,
+    ) -> dict[str, Any]:
+        event = self._find_latest_transactional_event(
+            user_id=user_id,
+            action_type=action_type,
+            offer_id=offer_id,
+            buyer_user_id=buyer_user_id,
+        )
+        if not event:
+            return {
+                "committed": False,
+                "message": "Nenhuma execução transacional ativa encontrada para rollback.",
+            }
+
+        meta = event.meta_json if isinstance(event.meta_json, dict) else {}
+        automation_key = str(meta.get("automation_key") or "")
+
+        try:
+            with self.db.begin_nested():
+                if action_type == "flash_auction":
+                    offer = self._find_offer_by_id_for_user(user_id=user_id, offer_id=offer_id)
+                    snapshot = meta.get("rollback_snapshot") if isinstance(meta.get("rollback_snapshot"), dict) else {}
+                    if offer and snapshot:
+                        offer.is_featured = bool(snapshot.get("is_featured", False))
+                        if hasattr(offer, "private_price"):
+                            previous_private = snapshot.get("private_price")
+                            offer.private_price = previous_private if previous_private is None else float(previous_private)
+
+                event.status = "cancelled"
+                updated_meta = dict(meta)
+                updated_meta["rolled_back_at"] = datetime.now(timezone.utc).isoformat()
+                updated_meta["mode"] = "rollback"
+                event.meta_json = updated_meta
+
+                self.db.add(
+                    Notification(
+                        user_id=user_id,
+                        actor_user_id=None,
+                        notification_type="agenda_proactive",
+                        title="Rollback IA concluído",
+                        message=(
+                            f"Rollback executado para {action_type} na oferta {offer_id}. "
+                            "A operação transacional foi revertida com segurança."
+                        ),
+                        resource_type="agenda_alert",
+                        resource_id=automation_key or f"rollback:{action_type}:{offer_id}",
+                        is_read=False,
+                    )
+                )
+
+            return {
+                "committed": True,
+                "rolled_back": True,
+                "action_type": action_type,
+                "offer_id": offer_id,
+                "event_id": int(event.id),
+                "message": "Rollback concluído com sucesso.",
+            }
+        except Exception as exc:
+            self.db.rollback()
+            return {
+                "committed": False,
+                "rolled_back": False,
+                "action_type": action_type,
+                "offer_id": offer_id,
+                "message": f"Falha ao aplicar rollback: {exc}",
+            }
+
+    def _find_existing_execution_event(self, *, user_id: int, automation_key: str) -> AgendaEvent | None:
+        now = datetime.now(timezone.utc)
+        rows = (
+            self.db.query(AgendaEvent)
+            .filter(
+                AgendaEvent.user_id == user_id,
+                AgendaEvent.event_type == "task",
+                AgendaEvent.starts_at >= now - timedelta(days=2),
+            )
+            .order_by(AgendaEvent.starts_at.desc())
+            .all()
+        )
+
+        for row in rows:
+            if row.status == "cancelled":
+                continue
+            meta = row.meta_json if isinstance(row.meta_json, dict) else {}
+            if str(meta.get("automation_key") or "") == automation_key:
+                return row
+        return None
+
+    def _find_latest_transactional_event(
+        self,
+        *,
+        user_id: int,
+        action_type: str,
+        offer_id: str,
+        buyer_user_id: int | None,
+    ) -> AgendaEvent | None:
+        rows = (
+            self.db.query(AgendaEvent)
+            .filter(
+                AgendaEvent.user_id == user_id,
+                AgendaEvent.event_type == "task",
+            )
+            .order_by(AgendaEvent.starts_at.desc())
+            .limit(80)
+            .all()
+        )
+
+        for row in rows:
+            if row.status == "cancelled":
+                continue
+            meta = row.meta_json if isinstance(row.meta_json, dict) else {}
+            if str(meta.get("source") or "") != "autonomous_commerce_tx":
+                continue
+            if str(meta.get("automation_type") or "") != action_type:
+                continue
+            if str(meta.get("offer_id") or "") != offer_id:
+                continue
+            if action_type == "auto_negotiation" and buyer_user_id:
+                if int(meta.get("buyer_user_id") or 0) != int(buyer_user_id):
+                    continue
+            return row
+
+        return None
+
+    def _find_offer_by_id_for_user(self, *, user_id: int, offer_id: str) -> Offer | None:
+        rows = (
+            self.db.query(Offer)
+            .filter(Offer.user_id == user_id)
+            .all()
+        )
+        for row in rows:
+            if str(row.id) == str(offer_id):
+                return row
+        return None
+
+    @staticmethod
+    def _safe_parse_datetime(value: Any) -> datetime | None:
+        raw = str(value or "").strip()
+        if not raw:
+            return None
+        try:
+            parsed = datetime.fromisoformat(raw)
+        except ValueError:
+            return None
+        if parsed.tzinfo is None:
+            return parsed.replace(tzinfo=timezone.utc)
+        return parsed
 
     def _normalize_guardrails(self, profile: dict[str, Any]) -> dict[str, Any]:
         def _num(key: str, default: float, min_value: float, max_value: float) -> float:

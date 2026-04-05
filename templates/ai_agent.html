@@ -1121,6 +1121,26 @@
                         </p>
                         <div class="agenda-action-row" style="margin-top:0.35rem;">
                             <span class="agenda-priority ${item.guardrails_ok ? 'alta' : 'media'}">${item.guardrails_ok ? 'alta' : 'media'}</span>
+                            <button
+                                type="button"
+                                class="agenda-link-btn"
+                                data-autonomous-action="1"
+                                data-action-type="auto_negotiation"
+                                data-offer-id="${item.offer_id || ''}"
+                                data-buyer-id="${Number(item.buyer_user_id || 0)}"
+                                data-mode="commit"
+                                ${item.guardrails_ok && item.offer_id ? '' : 'disabled'}
+                            >Executar IA</button>
+                            <button
+                                type="button"
+                                class="agenda-link-btn secondary"
+                                data-autonomous-action="1"
+                                data-action-type="auto_negotiation"
+                                data-offer-id="${item.offer_id || ''}"
+                                data-buyer-id="${Number(item.buyer_user_id || 0)}"
+                                data-mode="rollback"
+                                ${item.offer_id ? '' : 'disabled'}
+                            >Rollback</button>
                             <a class="agenda-link-btn secondary" href="${href}">Abrir oferta</a>
                         </div>
                     </article>
@@ -1143,6 +1163,24 @@
                         </p>
                         <div class="agenda-action-row" style="margin-top:0.35rem;">
                             <span class="agenda-priority alta">alta</span>
+                            <button
+                                type="button"
+                                class="agenda-link-btn"
+                                data-autonomous-action="1"
+                                data-action-type="flash_auction"
+                                data-offer-id="${item.offer_id || ''}"
+                                data-mode="commit"
+                                ${item.offer_id ? '' : 'disabled'}
+                            >Executar IA</button>
+                            <button
+                                type="button"
+                                class="agenda-link-btn secondary"
+                                data-autonomous-action="1"
+                                data-action-type="flash_auction"
+                                data-offer-id="${item.offer_id || ''}"
+                                data-mode="rollback"
+                                ${item.offer_id ? '' : 'disabled'}
+                            >Rollback</button>
                             <a class="agenda-link-btn secondary" href="${href}">Abrir oferta</a>
                         </div>
                     </article>
@@ -1458,6 +1496,43 @@
             await loadPlan();
         }
 
+        async function executeAutonomousAction({ actionType, offerId, mode, buyerUserId, trigger }) {
+            const action = String(actionType || '').trim();
+            const offer = String(offerId || '').trim();
+            const operationMode = String(mode || 'commit').trim();
+
+            if (!action || !offer) {
+                throw new Error('Ação inválida para execução transacional.');
+            }
+
+            if (trigger) {
+                trigger.disabled = true;
+            }
+
+            try {
+                const payload = {
+                    action_type: action,
+                    offer_id: offer,
+                    mode: operationMode,
+                };
+
+                if (buyerUserId && Number.isFinite(Number(buyerUserId)) && Number(buyerUserId) > 0) {
+                    payload.buyer_user_id = Number(buyerUserId);
+                }
+
+                const response = await apiRequest('/ai/agenda/autonomous-commerce/execute', 'POST', payload);
+                statusBox.className = 'wf-alert wf-alert-info';
+                statusBox.textContent = response?.message || 'Execução transacional concluída.';
+
+                await loadPlan();
+                await loadCalendar();
+            } finally {
+                if (trigger) {
+                    trigger.disabled = false;
+                }
+            }
+        }
+
         async function askAgent(question) {
             const result = await apiRequest('/ai-agent/ask', 'POST', { question });
             return result?.answer || 'Não consegui responder agora.';
@@ -1480,6 +1555,27 @@
             } finally {
                 questionInput.disabled = false;
                 questionInput.focus();
+            }
+        });
+
+        autonomousCommerce?.addEventListener('click', async (event) => {
+            const trigger = event.target.closest('[data-autonomous-action="1"]');
+            if (!trigger) return;
+            if (accessLocked) return;
+
+            event.preventDefault();
+
+            try {
+                await executeAutonomousAction({
+                    actionType: trigger.getAttribute('data-action-type'),
+                    offerId: trigger.getAttribute('data-offer-id'),
+                    mode: trigger.getAttribute('data-mode') || 'commit',
+                    buyerUserId: trigger.getAttribute('data-buyer-id'),
+                    trigger,
+                });
+            } catch (error) {
+                statusBox.className = 'wf-alert wf-alert-error';
+                statusBox.textContent = error.message || 'Falha na execução transacional da automação.';
             }
         });
 
