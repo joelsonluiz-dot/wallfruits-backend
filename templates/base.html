@@ -526,13 +526,15 @@
 
         .wf-mobile-wrap,
         .wf-mobile-floating-add,
-        .wf-ai-fab {
+        .wf-ai-fab,
+        .wf-cart-fab {
             transition: transform 0.22s ease, opacity 0.2s ease;
         }
 
         body.wf-keyboard-open .wf-mobile-wrap,
         body.wf-keyboard-open .wf-mobile-floating-add,
-        body.wf-keyboard-open .wf-ai-fab {
+        body.wf-keyboard-open .wf-ai-fab,
+        body.wf-keyboard-open .wf-cart-fab {
             transform: translateY(130%);
             opacity: 0;
             pointer-events: none;
@@ -1479,6 +1481,14 @@
                 bottom: calc(var(--wf-floating-bottom-offset) + 72px + var(--wf-floating-gap));
             }
 
+            .wf-cart-fab {
+                right: 1rem;
+                left: auto;
+                bottom: calc(var(--wf-floating-bottom-offset) + 140px + (var(--wf-floating-gap) * 2));
+                width: 56px;
+                height: 56px;
+            }
+
             .wf-connection-indicator {
                 left: 0.74rem;
                 right: auto;
@@ -1686,6 +1696,13 @@
                 height: 54px;
             }
 
+            .wf-cart-fab {
+                right: 0.72rem;
+                bottom: calc(72px + env(safe-area-inset-bottom) + 124px + var(--wf-floating-gap));
+                width: 52px;
+                height: 52px;
+            }
+
             .wf-connection-indicator {
                 left: 0.66rem;
                 top: 0.72rem;
@@ -1791,6 +1808,35 @@
 
         .wf-ai-fab .material-icons {
             font-size: 28px;
+        }
+
+        .wf-cart-fab {
+            position: fixed;
+            right: 1rem;
+            bottom: calc(var(--wf-floating-bottom-offset) + 146px + (var(--wf-floating-gap) * 2));
+            z-index: 2551;
+            width: 58px;
+            height: 58px;
+            border: none;
+            border-radius: 999px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            background: linear-gradient(135deg, #146b3f 0%, #2a8f58 54%, #2f6f95 100%);
+            box-shadow: 0 16px 30px rgba(18, 70, 49, 0.3);
+            text-decoration: none;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .wf-cart-fab:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 34px rgba(18, 70, 49, 0.34);
+            color: #fff;
+        }
+
+        .wf-cart-fab .material-icons {
+            font-size: 27px;
         }
 
         .wf-ai-modal-overlay {
@@ -2292,6 +2338,16 @@
             <button class="wf-popup-close" onclick="document.getElementById('wfQuickActionsPopup').classList.remove('show')">Fechar</button>
         </div>
     </div>
+
+    <a
+        href="/store/cart"
+        class="wf-cart-fab"
+        id="wfCartFab"
+        title="Abrir carrinho"
+        aria-label="Abrir carrinho"
+    >
+        <span class="material-icons">shopping_cart</span>
+    </a>
 
     <button
         type="button"
@@ -4133,6 +4189,11 @@
             return path === '/' || path === '/index' || path === '/home';
         }
 
+        function isStorePagePath() {
+            const path = normalizeAdsPath(window.location.pathname);
+            return path === '/store' || path.startsWith('/store/');
+        }
+
         let wfLastNavStateKey = '';
         let wfUnreadNotificationsPollTimer = null;
 
@@ -4195,6 +4256,7 @@
             const isStoreManager = isLogged && ['admin', 'supplier', 'producer'].includes(user?.role);
             const mobileVisible = isMobileOrTabletViewport();
             const isHomePath = isHomePagePath();
+            const isStorePath = isStorePagePath();
             const agendaHref = isLogged ? '/ai-agent' : '/ai-agent?entry=nav';
             const navStateKey = [
                 isLogged ? 1 : 0,
@@ -4202,6 +4264,7 @@
                 isStoreManager ? 1 : 0,
                 mobileVisible ? 1 : 0,
                 isHomePath ? 1 : 0,
+                isStorePath ? 1 : 0,
             ].join('|');
 
             if (!force && wfLastNavStateKey === navStateKey) {
@@ -4271,6 +4334,14 @@
                 }
             });
 
+            const gatedMessagesHref = isLogged ? '/messages' : '/login?next=/messages';
+            ['navMessages', 'navProfileMessages', 'navTopMessages', 'actionMessages', 'rightNavMessages', 'btnMessagesQuickNav'].forEach((id) => {
+                const link = document.getElementById(id);
+                if (link instanceof HTMLAnchorElement) {
+                    link.href = gatedMessagesHref;
+                }
+            });
+
             const actionProfileLink = document.getElementById('actionProfileLink');
             const actionProfileLabel = document.getElementById('actionProfileLabel');
             if (actionProfileLink && actionProfileLabel) {
@@ -4299,6 +4370,12 @@
             const quickActionsFab = document.getElementById('actionFloatingButton');
             if (quickActionsFab) {
                 quickActionsFab.style.display = isHomePath ? '' : 'none';
+            }
+
+            const cartFab = document.getElementById('wfCartFab');
+            if (cartFab instanceof HTMLAnchorElement) {
+                cartFab.href = isLogged ? '/store/cart' : '/login?next=/store/cart';
+                cartFab.style.display = isStorePath ? 'inline-flex' : 'none';
             }
 
             const quickMessagesBadge = document.getElementById('wfMessagesQuickBadge');

@@ -435,25 +435,6 @@
         animation: shimmer 1.2s infinite;
     }
 
-    .store-fab {
-        position: fixed;
-        right: 1rem;
-        bottom: calc(90px + env(safe-area-inset-bottom));
-        border: none;
-        border-radius: 999px;
-        background: var(--store-highlight);
-        color: #fff;
-        box-shadow: 0 12px 24px rgba(255, 152, 0, 0.36);
-        display: inline-flex;
-        align-items: center;
-        gap: 0.36rem;
-        font-weight: 800;
-        font-size: 0.74rem;
-        padding: 0.7rem 0.86rem;
-        z-index: 40;
-        text-decoration: none;
-    }
-
 
     @keyframes shimmer {
         to { transform: translateX(100%); }
@@ -514,10 +495,6 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-        }
-
-        .store-fab {
-            bottom: 1.2rem;
         }
 
         .store-products {
@@ -601,11 +578,6 @@
         </main>
     </div>
 </div>
-
-<a href="/store/cart" class="store-fab" title="Abrir carrinho">
-    <span class="material-symbols-outlined" style="font-size:1.1rem;">shopping_cart</span>
-    <span>Carrinho</span>
-</a>
 
 <script>
     (function setupStoreMarketplace() {

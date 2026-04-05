@@ -27,8 +27,24 @@
     }
 
     .hero-section {
+        position: relative;
         padding: 4rem 0 3rem;
         text-align: center;
+    }
+
+    .home-hero-signature {
+        position: absolute;
+        top: 0.12rem;
+        right: 0.08rem;
+        font-size: clamp(1.02rem, 1.8vw, 1.32rem);
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: rgba(19, 70, 117, 0.92);
+        text-shadow: 0 8px 16px rgba(26, 88, 145, 0.18);
+        opacity: 0.9;
+        user-select: none;
+        pointer-events: none;
     }
     .hero-tag {
         display: inline-flex;
@@ -118,11 +134,13 @@
     .home-products-section,
     .home-services-section,
     .home-community-section {
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(23, 95, 143, 0.16);
         border-radius: 18px;
-        background: linear-gradient(165deg, rgba(14, 24, 35, 0.82), rgba(21, 34, 48, 0.78));
+        background: linear-gradient(165deg, rgba(255, 255, 255, 0.72), rgba(242, 251, 246, 0.68));
+        backdrop-filter: blur(7px);
+        -webkit-backdrop-filter: blur(7px);
         padding: 0.9rem 0.88rem;
-        box-shadow: 0 14px 28px rgba(0, 0, 0, 0.16);
+        box-shadow: 0 14px 28px rgba(24, 81, 123, 0.1);
     }
 
     .home-section-title {
@@ -132,8 +150,8 @@
     }
 
     .home-section-subtitle {
-        color: var(--wf-text-secondary);
-        margin: 0.22rem 0 0;
+        color: #436586;
+        margin: 0.06rem 0 0;
         font-size: 0.84rem;
     }
 
@@ -774,6 +792,199 @@
             font-size: 0.61rem;
         }
     }
+
+    /* Visual refresh da home: transparência, cards maiores e ações por ícone */
+    .home-offers-head {
+        margin-bottom: 0.38rem;
+    }
+
+    .home-offers-list {
+        gap: 0.6rem;
+    }
+
+    .home-product-card {
+        min-width: 272px;
+        max-width: 272px;
+        border: 1px solid rgba(23, 95, 143, 0.16);
+        background: linear-gradient(165deg, rgba(255, 255, 255, 0.9), rgba(241, 250, 245, 0.86));
+        box-shadow: 0 12px 24px rgba(22, 79, 121, 0.12);
+    }
+
+    .home-product-name {
+        font-size: 0.9rem;
+        color: #15426b;
+    }
+
+    .home-product-price {
+        border: 1px solid rgba(29, 114, 70, 0.24);
+        background: rgba(231, 248, 236, 0.92);
+        color: #1d7246;
+        font-size: 0.78rem;
+    }
+
+    .home-service-card {
+        min-width: 274px;
+        max-width: 274px;
+        border: 1px solid rgba(27, 93, 141, 0.16);
+        background: linear-gradient(160deg, rgba(255, 255, 255, 0.86), rgba(244, 252, 247, 0.84));
+        box-shadow: 0 8px 18px rgba(22, 79, 121, 0.12);
+    }
+
+    .home-service-name {
+        font-size: 0.88rem;
+        color: #1a4c80;
+    }
+
+    .home-service-price {
+        font-size: 0.84rem;
+        color: #1d7246;
+    }
+
+    .home-community-card {
+        min-width: 286px;
+        max-width: 286px;
+        border: 1px solid rgba(23, 95, 143, 0.16);
+        background: linear-gradient(165deg, rgba(255, 255, 255, 0.9), rgba(241, 250, 245, 0.86));
+        box-shadow: 0 12px 24px rgba(22, 79, 121, 0.12);
+    }
+
+    .home-community-user {
+        color: #143e69;
+    }
+
+    .home-community-time {
+        color: rgba(48, 94, 132, 0.88);
+    }
+
+    .home-community-role {
+        color: rgba(72, 111, 143, 0.86);
+    }
+
+    .home-community-text {
+        font-size: 0.84rem;
+        color: #17466f;
+    }
+
+    .home-community-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.38rem;
+        margin-top: 0.05rem;
+    }
+
+    .home-community-action-btn {
+        border: 1px solid rgba(23, 95, 143, 0.18);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.82);
+        color: #1b5b8f;
+        min-width: 58px;
+        padding: 0.24rem 0.44rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.2rem;
+        font-size: 0.66rem;
+        font-weight: 800;
+        cursor: pointer;
+        transition: transform var(--wf-motion-fast) ease, border-color var(--wf-motion-fast) ease, box-shadow var(--wf-motion-fast) ease;
+    }
+
+    .home-community-action-btn:hover {
+        transform: translateY(-1px);
+        border-color: rgba(24, 106, 65, 0.38);
+        box-shadow: 0 8px 14px rgba(21, 82, 49, 0.16);
+    }
+
+    .home-community-action-btn .material-icons {
+        font-size: 0.94rem;
+        line-height: 1;
+    }
+
+    .home-community-action-btn.liked {
+        color: #ca3052;
+        border-color: rgba(202, 48, 82, 0.38);
+        background: rgba(255, 235, 241, 0.92);
+    }
+
+    .home-community-action-btn.saved {
+        color: #1f6f45;
+        border-color: rgba(31, 111, 69, 0.34);
+        background: rgba(230, 248, 237, 0.92);
+    }
+
+    .home-community-action-count {
+        min-width: 1ch;
+    }
+
+    .home-community-meta {
+        display: none;
+    }
+
+    .home-offer-card {
+        min-height: 186px;
+        border: 1px solid rgba(23, 95, 143, 0.16);
+        background: linear-gradient(150deg, rgba(255, 255, 255, 0.9), rgba(241, 250, 245, 0.85));
+        box-shadow: 0 8px 20px rgba(22, 79, 121, 0.12);
+    }
+
+    .home-offer-image {
+        width: 96px;
+        min-width: 96px;
+        background: rgba(255,255,255,0.55);
+    }
+
+    .home-fruit {
+        font-size: 1.08rem;
+        color: #18538a;
+    }
+
+    .home-price-row {
+        border: 1px solid rgba(23, 95, 143, 0.14);
+        background: rgba(255,255,255,0.72);
+    }
+
+    .home-price-val {
+        font-size: 0.79rem;
+        color: #1a5689;
+    }
+
+    .home-offer-footer {
+        font-size: 0.72rem;
+        color: #4a6d8f;
+    }
+
+    @media (max-width: 768px) {
+        .home-community-card {
+            min-width: 246px;
+            max-width: 246px;
+        }
+
+        .home-offer-card {
+            min-height: 170px;
+        }
+
+        .home-offer-image {
+            width: 84px;
+            min-width: 84px;
+        }
+
+        .home-product-card {
+            min-width: 236px;
+            max-width: 236px;
+        }
+
+        .home-service-card {
+            min-width: 236px;
+            max-width: 236px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .home-community-card {
+            min-width: 224px;
+            max-width: 224px;
+        }
+    }
 </style>
 
 <div id="homeAuthStrip" class="home-auth-strip" aria-label="Ações de autenticação">
@@ -781,6 +992,7 @@
 </div>
 
 <section class="hero-section" id="homeHeroSection">
+    <div class="home-hero-signature">WallFruits</div>
     <div class="hero-tag">
         <span class="hero-tag-dot"></span>
         <span class="hero-tag-desktop">MARKETPLACE INTELIGENTE</span>
@@ -1174,10 +1386,20 @@
     function updateHomeCommunityStat(postId, statType, value) {
         const target = document.querySelector(`[data-home-${statType}-stat="${Number(postId)}"]`);
         if (!target) return;
+        const safeValue = String(Math.max(0, Number(value || 0)));
+
+        if (target.classList.contains('home-community-action-count')) {
+            target.textContent = safeValue;
+            return;
+        }
+
         const valueEl = target.querySelector('.home-community-stat-value');
         if (valueEl) {
-            valueEl.textContent = String(Math.max(0, Number(value || 0)));
+            valueEl.textContent = safeValue;
+            return;
         }
+
+        target.textContent = safeValue;
     }
 
     async function handleHomeCommunityAction(button) {
@@ -1504,6 +1726,7 @@
                 const likes = Number(post.likes_count || 0);
                 const comments = Number(post.comments_count || 0);
                 const shares = Number(post.shares_count || 0);
+                const saved = isHomeSavedPost(post.id);
                 const published = buildPostPublishedLabel(post.created_at);
                 const profileUrl = profileUrlByUserId(post.author?.id || 0);
                 const postUrl = `/community?post=${encodeURIComponent(post.id)}`;
@@ -1533,24 +1756,36 @@
                                 </div>
                             </div>
                             <a href="${postUrl}" class="home-community-open"><p class="home-community-text">${escapeHtml(postText || 'Atualização da comunidade')}</p></a>
-                            <div class="home-community-meta">
-                                <span class="home-community-stat" data-home-like-stat="${post.id}" title="Curtidas">
-                                    <span class="home-community-stat-value">${likes}</span>
-                                    <span class="home-community-stat-label">curtidas</span>
-                                </span>
-                                <span class="home-community-stat" data-home-comment-stat="${post.id}" title="Comentários">
-                                    <span class="home-community-stat-value">${comments}</span>
-                                    <span class="home-community-stat-label">comentários</span>
-                                </span>
-                                <span class="home-community-stat" data-home-share-stat="${post.id}" title="Compartilhamentos">
-                                    <span class="home-community-stat-value">${shares}</span>
-                                    <span class="home-community-stat-label">compartilhamentos</span>
-                                </span>
+                            <div class="home-community-actions" role="group" aria-label="Ações do post">
+                                <button class="home-community-action-btn ${post.liked_by_me ? 'liked' : ''}" type="button" data-community-action="like" data-post-id="${post.id}" title="Curtir" aria-label="Curtir post">
+                                    <span class="material-icons">${post.liked_by_me ? 'favorite' : 'favorite_border'}</span>
+                                    <span class="home-community-action-count" data-home-like-stat="${post.id}">${likes}</span>
+                                </button>
+                                <button class="home-community-action-btn" type="button" data-community-action="comment" data-post-id="${post.id}" title="Comentar" aria-label="Comentar post">
+                                    <span class="material-icons">chat_bubble_outline</span>
+                                    <span class="home-community-action-count" data-home-comment-stat="${post.id}">${comments}</span>
+                                </button>
+                                <button class="home-community-action-btn" type="button" data-community-action="share" data-post-id="${post.id}" title="Compartilhar" aria-label="Compartilhar post">
+                                    <span class="material-icons">share</span>
+                                    <span class="home-community-action-count" data-home-share-stat="${post.id}">${shares}</span>
+                                </button>
+                                <button class="home-community-action-btn ${saved ? 'saved' : ''}" type="button" data-community-action="save" data-post-id="${post.id}" title="Salvar" aria-label="Salvar post">
+                                    <span class="material-icons">${saved ? 'bookmark' : 'bookmark_border'}</span>
+                                    <span class="home-community-action-count">${saved ? 1 : 0}</span>
+                                </button>
                             </div>
                         </div>
                     </article>
                 `;
             }).join('');
+
+            container.querySelectorAll('[data-community-action]').forEach((btn) => {
+                btn.addEventListener('click', async (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    await handleHomeCommunityAction(btn);
+                });
+            });
 
             if (!silent) {
                 writeHomeSectionHtml(HOME_COMMUNITY_HTML_CACHE_KEY, container.innerHTML);

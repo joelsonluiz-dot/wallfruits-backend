@@ -12,6 +12,7 @@ import re
 import sys
 from threading import Lock
 import time
+import unicodedata
 from typing import Any
 from uuid import uuid4
 
@@ -36,7 +37,7 @@ from app.database.connection import (
     wait_for_database_ready,
     get_db,
 )
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from app.models import Category, Favorite, Message, Offer, Review, Subscription, Transaction, User
 from app.routers import (
     ai_routes,
@@ -811,6 +812,8 @@ async def marketplace_orders_page(request: Request, current_user: User = Depends
 @app.get("/messages")
 async def messages_page(request: Request, current_user: User = Depends(get_current_user_optional)):
     """Página de mensagens em formato chat."""
+    if current_user is None:
+        return RedirectResponse(url="/login?next=/messages", status_code=307)
     return _render_template("messages.html", request, current_user=current_user)
 
 
@@ -1163,6 +1166,707 @@ async def ai_agent_page_legacy_alias():
     return RedirectResponse(url="/ai-agent", status_code=307)
 
 
+_AGENT_QUERY_STOPWORDS = {
+    "de",
+    "da",
+    "do",
+    "das",
+    "dos",
+    "para",
+    "por",
+    "com",
+    "sem",
+    "que",
+    "qual",
+    "quais",
+    "uma",
+    "um",
+    "as",
+    "os",
+    "na",
+    "no",
+    "nas",
+    "nos",
+    "pra",
+    "pro",
+    "mais",
+    "menos",
+    "sobre",
+    "entre",
+    "hoje",
+    "amanha",
+    "amanha",
+}
+
+_AGENT_DOMAIN_LABELS = {
+    "offer": "ofertas",
+    "service": "servicos",
+    "product": "loja",
+}
+
+_AGENT_RESULT_SOURCE_LABELS = {
+    "offer": "Oferta",
+    "service": "Servico",
+    "product": "Loja",
+}
+
+
+def _normalize_agent_text(value: str) -> str:
+    base = unicodedata.normalize("NFKD", str(value or ""))
+    base = "".join(ch for ch in base if not unicodedata.combining(ch))
+    base = re.sub(r"\s+", " ", base)
+    return base.strip().lower()
+
+
+def _agent_tokens(normalized_question: str) -> list[str]:
+    tokens: list[str] = []
+    for token in re.findall(r"[a-z0-9]{3,}", normalized_question):
+        if token in _AGENT_QUERY_STOPWORDS:
+            continue
+        tokens.append(token)
+    return tokens
+
+
+def _agent_parse_number(value: Any) -> float:
+    if value is None:
+        return 0.0
+
+    if isinstance(value, (int, float)):
+        return float(value)
+
+    text = str(value).strip()
+    if not text:
+        return 0.0
+
+    text = re.sub(r"[^0-9,.-]", "", text)
+    if not text:
+        return 0.0
+
+    if "," in text and "." in text:
+        if text.rfind(",") > text.rfind("."):
+            text = text.replace(".", "").replace(",", ".")
+        else:
+            text = text.replace(",", "")
+    elif "," in text and "." not in text:
+        text = text.replace(",", ".")
+
+    try:
+        return float(text)
+    except ValueError:
+        return 0.0
+
+
+def _extract_agent_limit(normalized_question: str, default_value: int = 5) -> int:
+    match = re.search(r"\b(?:top|melhores|melhor|mostrar|liste|listar|quero)\s*(\d{1,2})\b", normalized_question)
+    if not match:
+        return max(3, min(default_value, 10))
+
+    try:
+        return max(3, min(int(match.group(1)), 10))
+    except ValueError:
+        return max(3, min(default_value, 10))
+
+
+def _extract_agent_price_bounds(normalized_question: str) -> tuple[float | None, float | None]:
+    min_price: float | None = None
+    max_price: float | None = None
+
+    between_match = re.search(
+        r"\b(?:entre|de)\s*r?\$?\s*(\d+(?:[.,]\d+)?)\s*(?:e|a|ate|até|-)\s*r?\$?\s*(\d+(?:[.,]\d+)?)",
+        normalized_question,
+    )
+    if between_match:
+        left = _agent_parse_number(between_match.group(1))
+        right = _agent_parse_number(between_match.group(2))
+        min_price = min(left, right)
+        max_price = max(left, right)
+
+    max_match = re.search(r"\b(?:ate|até|no maximo|no maximo de|maximo|maximo de)\s*r?\$?\s*(\d+(?:[.,]\d+)?)", normalized_question)
+    if max_match:
+        max_price = _agent_parse_number(max_match.group(1))
+
+    min_match = re.search(r"\b(?:a partir de|acima de|minimo|minimo de|min)\s*r?\$?\s*(\d+(?:[.,]\d+)?)", normalized_question)
+    if min_match:
+        min_price = _agent_parse_number(min_match.group(1))
+
+    if min_price is not None and max_price is not None and min_price > max_price:
+        min_price, max_price = max_price, min_price
+
+    return min_price, max_price
+
+
+def _extract_agent_domains(normalized_question: str) -> set[str]:
+    domains: set[str] = set()
+
+    if any(term in normalized_question for term in ("oferta", "ofertas", "negociacao", "negociar")):
+        domains.add("offer")
+
+    if any(term in normalized_question for term in ("servico", "servicos", "prestador", "prestacao")):
+        domains.add("service")
+
+    if any(term in normalized_question for term in ("loja", "store", "produto", "produtos", "insumo", "adubo")):
+        domains.add("product")
+
+    if not domains:
+        return {"offer", "service", "product"}
+
+    return domains
+
+
+def _extract_agent_category_hint(normalized_question: str) -> str | None:
+    match = re.search(r"\bcategoria\s+([a-z0-9\s/_-]{3,40})", normalized_question)
+    if not match:
+        return None
+
+    raw = match.group(1).strip()
+    raw = re.split(r"\b(com|entre|ate|até|acima|minimo|minimo de|qualidade|preco|agendar|reservar)\b", raw)[0].strip()
+    if len(raw) < 3:
+        return None
+    return raw
+
+
+def _extract_agent_quality_preference(normalized_question: str) -> str | None:
+    prefers_high = any(
+        term in normalized_question
+        for term in (
+            "qualidade alta",
+            "premium",
+            "primeira",
+            "classe a",
+            "tipo a",
+            "organico",
+            "certificado",
+        )
+    )
+    prefers_value = any(
+        term in normalized_question
+        for term in (
+            "mais barato",
+            "barato",
+            "economico",
+            "baixo custo",
+            "segunda",
+            "classe b",
+            "classe c",
+        )
+    )
+
+    if prefers_high:
+        return "high"
+    if prefers_value:
+        return "value"
+    return None
+
+
+def _extract_agent_sort_preference(normalized_question: str) -> str:
+    if any(term in normalized_question for term in ("mais barato", "barato", "economico", "menor preco", "preco baixo")):
+        return "price_low"
+
+    if any(term in normalized_question for term in ("melhor qualidade", "premium", "classe a", "mais qualidade")):
+        return "quality_high"
+
+    return "balanced"
+
+
+def _is_agent_schedule_intent(normalized_question: str) -> bool:
+    return any(
+        term in normalized_question
+        for term in (
+            "agendar",
+            "agende",
+            "marcar",
+            "marque",
+            "reserva",
+            "reservar",
+            "criar evento",
+            "agendamento",
+        )
+    )
+
+
+def _is_agent_decision_query(normalized_question: str) -> bool:
+    domain_hit = any(
+        term in normalized_question
+        for term in (
+            "oferta",
+            "ofertas",
+            "servico",
+            "servicos",
+            "loja",
+            "produto",
+            "produtos",
+            "store",
+        )
+    )
+    decision_hit = any(
+        term in normalized_question
+        for term in (
+            "buscar",
+            "busca",
+            "encontrar",
+            "recomendar",
+            "comparar",
+            "decidir",
+            "priorizar",
+            "melhor",
+            "categoria",
+            "preco",
+            "preço",
+            "qualidade",
+        )
+    )
+
+    return _is_agent_schedule_intent(normalized_question) or (domain_hit and decision_hit)
+
+
+def _extract_agent_schedule_datetime(question: str) -> datetime | None:
+    normalized_question = _normalize_agent_text(question)
+    now = datetime.now(timezone.utc)
+
+    relative = re.search(r"\b(hoje|amanha)\b(?:\s*(?:as|a))?\s*(\d{1,2})(?:[:h](\d{2}))?", normalized_question)
+    if relative:
+        day_word = relative.group(1)
+        hour = int(relative.group(2))
+        minute = int(relative.group(3) or 0)
+
+        target_date = now.date()
+        if day_word == "amanha":
+            target_date = (now + timedelta(days=1)).date()
+
+        hour = max(0, min(23, hour))
+        minute = max(0, min(59, minute))
+
+        return datetime(
+            year=target_date.year,
+            month=target_date.month,
+            day=target_date.day,
+            hour=hour,
+            minute=minute,
+            tzinfo=timezone.utc,
+        )
+
+    absolute = re.search(
+        r"\b(\d{1,2})[/-](\d{1,2})(?:[/-](\d{2,4}))?(?:\D+(\d{1,2})(?:[:h](\d{2}))?)?",
+        normalized_question,
+    )
+    if absolute:
+        day = int(absolute.group(1))
+        month = int(absolute.group(2))
+        year_raw = absolute.group(3)
+        hour = int(absolute.group(4) or 9)
+        minute = int(absolute.group(5) or 0)
+
+        year = now.year
+        if year_raw:
+            year_num = int(year_raw)
+            year = year_num + 2000 if year_num < 100 else year_num
+
+        try:
+            return datetime(
+                year=year,
+                month=month,
+                day=day,
+                hour=max(0, min(23, hour)),
+                minute=max(0, min(59, minute)),
+                tzinfo=timezone.utc,
+            )
+        except ValueError:
+            return None
+
+    return None
+
+
+def _agent_quality_score(*values: Any) -> float:
+    text = _normalize_agent_text(" ".join(str(value or "") for value in values))
+    score = 0.56
+
+    if any(term in text for term in ("premium", "primeira", "classe a", "tipo a", "selecionad", "extra")):
+        score += 0.24
+    if any(term in text for term in ("organico", "certific", "rastreabilidade")):
+        score += 0.14
+    if any(term in text for term in ("classe b", "segunda", "padrao", "standard")):
+        score -= 0.06
+    if any(term in text for term in ("classe c", "descarte")):
+        score -= 0.20
+
+    return max(0.15, min(0.98, score))
+
+
+def _agent_quality_label(score: float) -> str:
+    if score >= 0.78:
+        return "Alta"
+    if score >= 0.52:
+        return "Media"
+    return "Economica"
+
+
+def _agent_currency(value: float) -> str:
+    return f"R$ {float(value):,.2f}".replace(",", "_").replace(".", ",").replace("_", ".")
+
+
+def _build_agent_commerce_recommendations(db: Session, question: str, limit: int = 5) -> dict[str, Any]:
+    from app.models.service import Service
+    from app.models.store_models import Product, ProductStatus
+
+    normalized_question = _normalize_agent_text(question)
+    requested_limit = _extract_agent_limit(normalized_question, default_value=limit)
+    domains = _extract_agent_domains(normalized_question)
+    category_hint = _extract_agent_category_hint(normalized_question)
+    quality_pref = _extract_agent_quality_preference(normalized_question)
+    sort_pref = _extract_agent_sort_preference(normalized_question)
+    min_price, max_price = _extract_agent_price_bounds(normalized_question)
+    tokens = _agent_tokens(normalized_question)
+
+    candidates: list[dict[str, Any]] = []
+    scanned_total = 0
+
+    def category_matches(search_blob: str) -> bool:
+        if not category_hint:
+            return True
+
+        if category_hint in search_blob:
+            return True
+
+        hint_tokens = [token for token in category_hint.split() if len(token) >= 3]
+        return any(token in search_blob for token in hint_tokens)
+
+    def token_hits_count(search_blob: str) -> int:
+        if not tokens:
+            return 0
+        return sum(1 for token in tokens if token in search_blob)
+
+    if "offer" in domains:
+        offer_rows = (
+            db.query(Offer)
+            .filter(Offer.status == "active")
+            .order_by(Offer.is_featured.desc(), Offer.updated_at.desc(), Offer.created_at.desc())
+            .limit(120)
+            .all()
+        )
+        scanned_total += len(offer_rows)
+
+        for offer in offer_rows:
+            unit_price = _agent_parse_number(offer.price_per_kg)
+            if unit_price <= 0:
+                total_price = _agent_parse_number(offer.price)
+                quantity = _agent_parse_number(offer.quantity)
+                if total_price > 0 and quantity > 0:
+                    unit_price = total_price / max(quantity, 1.0)
+                else:
+                    unit_price = total_price
+
+            quality_raw = str(offer.quality_class or offer.quality_grade or "").strip()
+            quality_score = _agent_quality_score(
+                quality_raw,
+                "organico" if bool(getattr(offer, "organic", False)) else "",
+                str(offer.certification or ""),
+            )
+            quality_label = quality_raw or _agent_quality_label(quality_score)
+            unit_label = str(offer.unit or "kg").strip() or "kg"
+
+            search_blob = _normalize_agent_text(
+                " ".join(
+                    [
+                        str(offer.product_name or ""),
+                        str(offer.description or ""),
+                        str(offer.category or ""),
+                        str(offer.variety or ""),
+                        str(offer.location or ""),
+                        quality_label,
+                    ]
+                )
+            )
+
+            if not category_matches(search_blob):
+                continue
+
+            price_known = unit_price > 0
+            if min_price is not None and (not price_known or unit_price < min_price):
+                continue
+            if max_price is not None and (not price_known or unit_price > max_price):
+                continue
+
+            token_hits = token_hits_count(search_blob)
+            score = 26.0 + (token_hits * 9.0)
+            if tokens and token_hits == 0:
+                score -= 5.0
+            if category_hint:
+                score += 10.0
+            if quality_pref == "high":
+                score += quality_score * 18.0
+            elif quality_pref == "value":
+                score += (1.0 - quality_score) * 8.0
+            elif "qualidade" in normalized_question:
+                score += quality_score * 8.0
+            if bool(getattr(offer, "is_featured", False)):
+                score += 4.0
+            if "oferta" in normalized_question:
+                score += 5.0
+
+            reasons: list[str] = []
+            if token_hits:
+                reasons.append(f"aderencia textual ({token_hits} termo(s))")
+            if category_hint:
+                reasons.append("categoria compatvel")
+            if min_price is not None or max_price is not None:
+                reasons.append("faixa de preco aplicada")
+            if quality_pref:
+                reasons.append("preferencia de qualidade aplicada")
+
+            candidates.append(
+                {
+                    "source": "offer",
+                    "id": str(offer.id),
+                    "title": str(offer.product_name or "Oferta"),
+                    "category": str(offer.category or "Geral"),
+                    "price": float(unit_price) if price_known else 0.0,
+                    "price_known": price_known,
+                    "price_label": f"{_agent_currency(unit_price)}/{unit_label}" if price_known else "Preco sob consulta",
+                    "quality_score": quality_score,
+                    "quality_label": quality_label,
+                    "url": f"/offers/{offer.id}",
+                    "score": score,
+                    "reasons": reasons,
+                    "location": str(offer.location or "").strip() or None,
+                }
+            )
+
+    if "service" in domains:
+        service_rows = (
+            db.query(Service)
+            .filter(Service.is_active.is_(True))
+            .order_by(Service.updated_at.desc(), Service.created_at.desc())
+            .limit(100)
+            .all()
+        )
+        scanned_total += len(service_rows)
+
+        for service in service_rows:
+            ficha = service.ficha_tecnica if isinstance(service.ficha_tecnica, dict) else {}
+            category = str(
+                ficha.get("categoria")
+                or ficha.get("Categoria")
+                or ficha.get("segmento")
+                or "Servicos"
+            )
+
+            price_value = _agent_parse_number(service.preco)
+            price_known = price_value > 0
+
+            search_blob = _normalize_agent_text(
+                " ".join(
+                    [
+                        str(service.titulo or ""),
+                        str(service.descricao or ""),
+                        str(category),
+                        str(service.local or ""),
+                        json.dumps(ficha, ensure_ascii=True),
+                    ]
+                )
+            )
+
+            if not category_matches(search_blob):
+                continue
+
+            if min_price is not None and (not price_known or price_value < min_price):
+                continue
+            if max_price is not None and (not price_known or price_value > max_price):
+                continue
+
+            quality_score = _agent_quality_score(str(service.descricao or ""), json.dumps(ficha, ensure_ascii=True))
+            quality_label = _agent_quality_label(quality_score)
+
+            token_hits = token_hits_count(search_blob)
+            score = 24.0 + (token_hits * 8.0)
+            if tokens and token_hits == 0:
+                score -= 6.0
+            if category_hint:
+                score += 10.0
+            if quality_pref == "high":
+                score += quality_score * 16.0
+            elif quality_pref == "value":
+                score += (1.0 - quality_score) * 7.0
+            if "servico" in normalized_question:
+                score += 5.0
+
+            reasons = []
+            if token_hits:
+                reasons.append(f"aderencia textual ({token_hits} termo(s))")
+            if category_hint:
+                reasons.append("categoria compatvel")
+            if min_price is not None or max_price is not None:
+                reasons.append("faixa de preco aplicada")
+
+            candidates.append(
+                {
+                    "source": "service",
+                    "id": str(service.id),
+                    "title": str(service.titulo or "Servico"),
+                    "category": category,
+                    "price": float(price_value) if price_known else 0.0,
+                    "price_known": price_known,
+                    "price_label": _agent_currency(price_value) if price_known else "Preco sob consulta",
+                    "quality_score": quality_score,
+                    "quality_label": quality_label,
+                    "url": f"/services/detail/{service.id}",
+                    "score": score,
+                    "reasons": reasons,
+                    "location": str(service.local or "").strip() or None,
+                }
+            )
+
+    if "product" in domains:
+        product_rows = (
+            db.query(Product)
+            .options(joinedload(Product.category))
+            .filter(Product.status == ProductStatus.PUBLISHED)
+            .order_by(Product.is_featured.desc(), Product.created_at.desc())
+            .limit(120)
+            .all()
+        )
+        scanned_total += len(product_rows)
+
+        for product in product_rows:
+            category_name = str(product.category.name if product.category else "Loja")
+            specifications = product.specifications if isinstance(product.specifications, dict) else {}
+            promotion_price = _agent_parse_number(product.promotional_price)
+            base_price = _agent_parse_number(product.price)
+            effective_price = promotion_price if promotion_price > 0 else base_price
+            price_known = effective_price > 0
+
+            search_blob = _normalize_agent_text(
+                " ".join(
+                    [
+                        str(product.name or ""),
+                        str(product.description or ""),
+                        category_name,
+                        json.dumps(specifications, ensure_ascii=True),
+                    ]
+                )
+            )
+
+            if not category_matches(search_blob):
+                continue
+
+            if min_price is not None and (not price_known or effective_price < min_price):
+                continue
+            if max_price is not None and (not price_known or effective_price > max_price):
+                continue
+
+            quality_score = _agent_quality_score(
+                str(product.description or ""),
+                json.dumps(specifications, ensure_ascii=True),
+            )
+            quality_label = _agent_quality_label(quality_score)
+
+            token_hits = token_hits_count(search_blob)
+            score = 24.0 + (token_hits * 8.5)
+            if tokens and token_hits == 0:
+                score -= 6.0
+            if category_hint:
+                score += 10.0
+            if quality_pref == "high":
+                score += quality_score * 16.0
+            elif quality_pref == "value":
+                score += (1.0 - quality_score) * 7.0
+            if bool(getattr(product, "is_featured", False)):
+                score += 4.0
+            if "loja" in normalized_question or "produto" in normalized_question:
+                score += 5.0
+
+            reasons = []
+            if token_hits:
+                reasons.append(f"aderencia textual ({token_hits} termo(s))")
+            if category_hint:
+                reasons.append("categoria compatvel")
+            if min_price is not None or max_price is not None:
+                reasons.append("faixa de preco aplicada")
+
+            candidates.append(
+                {
+                    "source": "product",
+                    "id": str(product.id),
+                    "title": str(product.name or "Produto"),
+                    "category": category_name,
+                    "price": float(effective_price) if price_known else 0.0,
+                    "price_known": price_known,
+                    "price_label": _agent_currency(effective_price) if price_known else "Preco sob consulta",
+                    "quality_score": quality_score,
+                    "quality_label": quality_label,
+                    "url": f"/store/product/{product.slug}" if product.slug else "/store",
+                    "score": score,
+                    "reasons": reasons,
+                    "location": None,
+                }
+            )
+
+    known_prices = [row["price"] for row in candidates if row["price_known"] and row["price"] > 0]
+    min_known_price = min(known_prices) if known_prices else 0.0
+    max_known_price = max(known_prices) if known_prices else 0.0
+    price_span = max(max_known_price - min_known_price, 1.0)
+
+    for item in candidates:
+        if sort_pref == "price_low":
+            if item["price_known"] and item["price"] > 0:
+                normalized_price = (item["price"] - min_known_price) / price_span
+                item["score"] += (1.0 - normalized_price) * 22.0
+            else:
+                item["score"] -= 8.0
+        elif sort_pref == "quality_high":
+            item["score"] += float(item["quality_score"]) * 18.0
+        else:
+            if item["price_known"] and max_known_price > 0:
+                normalized_price = (item["price"] - min_known_price) / price_span
+                item["score"] += (1.0 - normalized_price) * 6.0
+            item["score"] += float(item["quality_score"]) * 5.0
+
+    if sort_pref == "price_low":
+        candidates.sort(
+            key=lambda row: (
+                -float(row["score"]),
+                float(row["price"]) if row["price_known"] else float("inf"),
+            )
+        )
+    else:
+        candidates.sort(key=lambda row: float(row["score"]), reverse=True)
+
+    recommendations: list[dict[str, Any]] = []
+    for idx, item in enumerate(candidates[:requested_limit], start=1):
+        reason_text = "; ".join(item["reasons"][:3]) if item["reasons"] else "aderencia geral ao pedido"
+        recommendations.append(
+            {
+                "rank": idx,
+                "source": item["source"],
+                "source_label": _AGENT_RESULT_SOURCE_LABELS.get(item["source"], "Item"),
+                "id": item["id"],
+                "title": item["title"],
+                "category": item["category"],
+                "price": round(float(item["price"]), 2) if item["price_known"] else None,
+                "price_label": item["price_label"],
+                "quality_label": item["quality_label"],
+                "score": round(float(item["score"]), 1),
+                "reason": reason_text,
+                "url": item["url"],
+                "location": item["location"],
+            }
+        )
+
+    return {
+        "recommendations": recommendations,
+        "domains": sorted(list(domains)),
+        "filters": {
+            "domains": sorted(list(domains)),
+            "category": category_hint,
+            "min_price": round(min_price, 2) if min_price is not None else None,
+            "max_price": round(max_price, 2) if max_price is not None else None,
+            "quality_preference": quality_pref,
+            "sort": sort_pref,
+            "limit": requested_limit,
+        },
+        "total_scanned": scanned_total,
+    }
+
+
 @app.post("/api/ai-agent/ask")
 async def ai_agent_ask(
     payload: dict[str, Any],
@@ -1174,15 +1878,18 @@ async def ai_agent_ask(
     if not question:
         raise HTTPException(400, "Pergunta não informada")
 
-    text_q = question.lower()
+    text_q = _normalize_agent_text(question)
 
     def has(*terms: str) -> bool:
-        return any(term in text_q for term in terms)
+        return any(_normalize_agent_text(term) in text_q for term in terms)
 
     agenda_profile: dict[str, Any] = {}
     total_orders: int | None = None
     pending_quotes: int | None = None
     unread_notifications: int | None = None
+    recommendations_payload: list[dict[str, Any]] = []
+    decision_filters: dict[str, Any] = {}
+    scheduled_event_payload: dict[str, Any] | None = None
 
     def build_full_platform_guide() -> str:
         intro = (
@@ -1307,6 +2014,106 @@ async def ai_agent_ask(
                 "Abra /ai-agent para revisar ou atualizar suas preferências de autonomia e recomendações."
             )
 
+    blocked_for_decision_mode = has(
+        "todas instruções",
+        "todas as instruções",
+        "instruções da plataforma",
+        "manual",
+        "guia completo",
+        "ajuda completa",
+        "passo a passo",
+        "suporte inteligente",
+        "como usar a plataforma",
+        "onboarding",
+    )
+
+    decision_query = _is_agent_decision_query(text_q) and not blocked_for_decision_mode
+    if decision_query:
+        decision_bundle = _build_agent_commerce_recommendations(db=db, question=question, limit=5)
+        recommendations_payload = list(decision_bundle.get("recommendations") or [])
+        decision_filters = dict(decision_bundle.get("filters") or {})
+
+        domains = list(decision_bundle.get("domains") or [])
+        domain_labels = [_AGENT_DOMAIN_LABELS.get(domain, domain) for domain in domains]
+        scanned_total = int(decision_bundle.get("total_scanned") or 0)
+
+        if recommendations_payload:
+            top = recommendations_payload[0]
+            scope_label = ", ".join(domain_labels) if domain_labels else "ofertas, servicos e loja"
+            answer = (
+                f"Analisei {scanned_total} itens em {scope_label} e selecionei {len(recommendations_payload)} opcoes aderentes ao seu pedido. "
+                f"A melhor opcao agora e {top.get('title', 'item sugerido')} ({top.get('source_label', 'Item')}) por {top.get('price_label', 'preco sob consulta')}, "
+                f"categoria {top.get('category', 'geral')} e qualidade {top.get('quality_label', 'media')}."
+            )
+            if top.get("reason"):
+                answer += f" Motivo principal: {top.get('reason')}."
+            answer += " Posso refinar imediatamente por outra categoria, faixa de preco ou nivel de qualidade."
+        else:
+            answer = (
+                "Nao encontrei resultados que atendam ao filtro atual. "
+                "Tente ampliar a categoria, ajustar faixa de preco ou reduzir a restricao de qualidade."
+            )
+
+        if _is_agent_schedule_intent(text_q):
+            if current_user is None:
+                answer += " Para agendar reserva automatica, faca login e repita com dia e hora."
+            else:
+                schedule_at = _extract_agent_schedule_datetime(question)
+                if schedule_at is None:
+                    answer += " Para agendar automaticamente, informe dia e horario (ex.: 'amanha 14h' ou '25/04 09:30')."
+                else:
+                    from app.models.agenda_event import AgendaEvent
+
+                    top_item = recommendations_payload[0] if recommendations_payload else None
+                    event_title_suffix = str((top_item or {}).get("title") or "acao estrategica")
+                    event_title = f"Reserva IA: {event_title_suffix}"[:170]
+                    event_description = (
+                        f"Reserva criada pelo Agente Pessoal a partir da pergunta: {question}. "
+                        f"Filtro aplicado: {json.dumps(decision_filters, ensure_ascii=True)}"
+                    )
+                    starts_at = schedule_at
+                    ends_at = schedule_at + timedelta(minutes=45)
+
+                    event = AgendaEvent(
+                        user_id=current_user.id,
+                        title=event_title,
+                        description=event_description,
+                        event_type="reservation",
+                        starts_at=starts_at,
+                        ends_at=ends_at,
+                        location=str((top_item or {}).get("location") or "").strip() or None,
+                        status="scheduled",
+                        is_all_day=False,
+                        meta_json={
+                            "source": "ai_agent_chat",
+                            "question": question,
+                            "recommendation": top_item,
+                            "filters": decision_filters,
+                        },
+                    )
+                    db.add(event)
+                    db.commit()
+                    db.refresh(event)
+
+                    scheduled_event_payload = {
+                        "id": int(event.id),
+                        "title": event.title,
+                        "starts_at": event.starts_at.isoformat(),
+                        "ends_at": event.ends_at.isoformat(),
+                        "event_type": event.event_type,
+                    }
+                    answer += (
+                        " Reserva criada com sucesso na Agenda IA para "
+                        f"{schedule_at.astimezone(timezone.utc).strftime('%d/%m %H:%M UTC')}."
+                    )
+
+        return {
+            "answer": answer,
+            "recommendations": recommendations_payload,
+            "filters": decision_filters,
+            "scheduled_event": scheduled_event_payload,
+        }
+
     if has(
         "todas instruções",
         "todas as instruções",
@@ -1362,12 +2169,17 @@ async def ai_agent_ask(
         answer = (
             "Rotas principais: / (home), /offers, /messages, /notifications, /store, /store/manage/dashboard, /admin, /profile, /strategy."
         )
-    elif re.search(r"(olá|oi|bom dia|boa tarde|boa noite)", text_q):
+    elif re.search(r"(ola|oi|bom dia|boa tarde|boa noite)", text_q):
         answer = (
             "Olá! Posso te orientar em qualquer etapa da WallFruits: acesso, gestão de contas, loja agro, ofertas, transações e administração."
         )
 
-    return {"answer": answer}
+    return {
+        "answer": answer,
+        "recommendations": recommendations_payload,
+        "filters": decision_filters,
+        "scheduled_event": scheduled_event_payload,
+    }
 
 
 @app.post("/api/agenda/access/revoke")

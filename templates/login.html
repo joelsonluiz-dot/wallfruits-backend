@@ -65,6 +65,25 @@
         font-weight: 700;
         padding: 0.2rem 0.45rem;
     }
+    .login-submit-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4rem;
+        font-weight: 800;
+    }
+    .login-submit-btn.is-loading {
+        opacity: 0.92;
+    }
+    .login-submit-spinner {
+        display: inline-block;
+        width: 0.98rem;
+        height: 0.98rem;
+        border: 2px solid #fff;
+        border-top-color: transparent;
+        border-radius: 50%;
+        animation: spin .6s linear infinite;
+    }
     @media (max-width: 480px) {
         .auth-card { max-width: 100%; }
         .auth-header h1 { font-size: 1.5rem; }
@@ -96,8 +115,8 @@
                             <a href="/forgot-password" class="wf-link" style="font-size:0.84rem;">Esqueci minha senha</a>
                         </div>
                     </div>
-                    <div id="loginMsg" style="display:none; padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem; font-size: 0.9rem;"></div>
-                    <button type="submit" id="loginBtn" class="btn btn-wf-primary w-100" style="padding: 0.75rem;">
+                    <div id="loginMsg" role="status" aria-live="polite" style="display:none; padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem; font-size: 0.9rem;"></div>
+                    <button type="submit" id="loginBtn" class="btn btn-wf-primary w-100 login-submit-btn" style="padding: 0.75rem;">
                         Entrar &rarr;
                     </button>
                 </form>
@@ -123,6 +142,16 @@
 <script>
     let loginInFlight = false;
     const AUTH_COOKIE_NAME = 'wf_auth_token';
+    const loginForm = document.getElementById('loginForm');
+    const loginBtn = document.getElementById('loginBtn');
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const loginMsg = document.getElementById('loginMsg');
+    const googleLoginBtn = document.getElementById('googleLoginBtn');
+    const clearTokenBtn = document.getElementById('clearTokenBtn');
+    const toggleLoginPasswordBtn = document.getElementById('toggleLoginPassword');
+    const defaultLoginBtnLabel = loginBtn ? loginBtn.innerHTML : 'Entrar &rarr;';
+    let hideMsgTimer = null;
 
     function syncAuthCookie(token) {
         if (!token) {
@@ -144,20 +173,56 @@
 
     const postLoginRedirect = getPostLoginRedirect();
 
+    function clearLoginMsg() {
+        if (!loginMsg) return;
+        loginMsg.style.display = 'none';
+        loginMsg.textContent = '';
+    }
+
     function setLoginMsg(type, text) {
-        const msgDiv = document.getElementById('loginMsg');
-        if (!msgDiv) return;
-        msgDiv.style.display = 'block';
-        if (type === 'success') {
-            msgDiv.style.background = 'rgba(0,255,136,0.15)';
-            msgDiv.style.border = '1px solid #00ff88';
-            msgDiv.style.color = '#00b573';
-        } else {
-            msgDiv.style.background = 'rgba(255,60,60,0.15)';
-            msgDiv.style.border = '1px solid #ff3c3c';
-            msgDiv.style.color = '#ff6b6b';
+        if (!loginMsg) return;
+        if (hideMsgTimer) {
+            window.clearTimeout(hideMsgTimer);
+            hideMsgTimer = null;
         }
-        msgDiv.textContent = text;
+
+        loginMsg.style.display = 'block';
+        if (type === 'success') {
+            loginMsg.style.background = 'rgba(0,255,136,0.15)';
+            loginMsg.style.border = '1px solid #00ff88';
+            loginMsg.style.color = '#00b573';
+            hideMsgTimer = window.setTimeout(() => {
+                clearLoginMsg();
+            }, 2800);
+        } else {
+            loginMsg.style.background = 'rgba(255,60,60,0.15)';
+            loginMsg.style.border = '1px solid #ff3c3c';
+            loginMsg.style.color = '#ff6b6b';
+        }
+        loginMsg.textContent = text;
+    }
+
+    function setLoginBusy(busy) {
+        loginInFlight = Boolean(busy);
+        if (!loginBtn) return;
+
+        loginBtn.disabled = loginInFlight;
+        loginBtn.classList.toggle('is-loading', loginInFlight);
+        loginBtn.innerHTML = loginInFlight
+            ? '<span class="login-submit-spinner" aria-hidden="true"></span><span>Entrando...</span>'
+            : defaultLoginBtnLabel;
+    }
+
+    function updateLoginButtonState() {
+        if (!loginBtn) return;
+        if (loginInFlight) {
+            loginBtn.disabled = true;
+            return;
+        }
+
+        const hasEmail = Boolean((emailInput?.value || '').trim());
+        const hasPassword = Boolean(passwordInput?.value || '');
+        loginBtn.disabled = !(hasEmail && hasPassword);
     }
 
     async function handleOAuthCallbackIfAny() {
@@ -166,7 +231,7 @@
         const errorDescription = hashParams.get('error_description');
 
         if (errorDescription) {
-            alert('Falha no login Google: ' + decodeURIComponent(errorDescription));
+            setLoginMsg('error', 'Falha no login Google: ' + decodeURIComponent(errorDescription));
             window.history.replaceState({}, document.title, window.location.pathname);
             return;
         }
@@ -187,23 +252,20 @@
             // Remove token/hash da URL para não vazar em histórico.
             window.history.replaceState({}, document.title, window.location.pathname);
             setLoginMsg('success', 'Login Google realizado com sucesso. Redirecionando...');
-            window.location.href = postLoginRedirect;
+            window.location.assign(postLoginRedirect);
         } catch (error) {
             setLoginMsg('error', 'Erro ao concluir login Google: ' + error.message);
         }
     }
 
-    document.getElementById('googleLoginBtn').addEventListener('click', () => {
+    googleLoginBtn?.addEventListener('click', () => {
+        if (loginInFlight) return;
         window.location.href = '/api/auth/google/login';
     });
 
-    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    loginForm?.addEventListener('submit', async (e) => {
         e.preventDefault();
         if (loginInFlight) return;
-
-        const btn = document.getElementById('loginBtn');
-        const emailInput = document.getElementById('email');
-        const passwordInput = document.getElementById('password');
 
         emailInput.value = emailInput.value.trim().toLowerCase();
         const email = emailInput.value;
@@ -211,12 +273,16 @@
 
         if (!email || !password) {
             setLoginMsg('error', 'Informe email e senha para entrar.');
+            if (!email) {
+                emailInput.focus();
+            } else {
+                passwordInput.focus();
+            }
             return;
         }
 
-        loginInFlight = true;
-        btn.disabled = true;
-        btn.innerHTML = '<span style="display:inline-block;width:1rem;height:1rem;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:0.5rem;"></span> Entrando...';
+        clearLoginMsg();
+        setLoginBusy(true);
 
         try {
             const response = await apiRequest('/auth/login', 'POST', { email, password });
@@ -225,30 +291,46 @@
                 localStorage.setItem('user', JSON.stringify(response.user || {}));
                 syncAuthCookie(response.access_token);
                 setLoginMsg('success', 'Login realizado com sucesso. Redirecionando...');
-                window.location.href = postLoginRedirect;
+                window.location.assign(postLoginRedirect);
             } else {
                 setLoginMsg('error', 'Erro no login: ' + (response.detail || 'Credenciais inválidas'));
             }
         } catch (error) {
             setLoginMsg('error', 'Erro: ' + error.message);
         } finally {
-            loginInFlight = false;
-            btn.disabled = false;
-            btn.innerHTML = 'Entrar &rarr;';
+            setLoginBusy(false);
+            updateLoginButtonState();
         }
     });
 
-    document.getElementById('clearTokenBtn').addEventListener('click', () => {
+    clearTokenBtn?.addEventListener('click', () => {
         clearSessionToken();
         setLoginMsg('success', 'Sessão removida no navegador.');
+        updateLoginButtonState();
     });
 
-    document.getElementById('toggleLoginPassword').addEventListener('click', (event) => {
-        const input = document.getElementById('password');
+    toggleLoginPasswordBtn?.addEventListener('click', (event) => {
+        const input = passwordInput;
         const showing = input.type === 'text';
         input.type = showing ? 'password' : 'text';
         event.currentTarget.textContent = showing ? 'Mostrar' : 'Ocultar';
+        input.focus({ preventScroll: true });
     });
+
+    emailInput?.addEventListener('input', () => {
+        if (!loginInFlight) updateLoginButtonState();
+    }, { passive: true });
+
+    passwordInput?.addEventListener('input', () => {
+        if (!loginInFlight) updateLoginButtonState();
+    }, { passive: true });
+
+    window.addEventListener('pageshow', () => {
+        setLoginBusy(false);
+        updateLoginButtonState();
+    });
+
+    updateLoginButtonState();
 
     handleOAuthCallbackIfAny();
 </script>

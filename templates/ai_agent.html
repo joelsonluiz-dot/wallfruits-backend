@@ -771,6 +771,7 @@
         const chatBox = document.getElementById('chatBox');
         const chatForm = document.getElementById('chatForm');
         const questionInput = document.getElementById('questionInput');
+        const chatSubmitBtn = chatForm ? chatForm.querySelector('button[type="submit"]') : null;
 
         const onboardingModal = document.getElementById('agendaOnboardingModal');
         const onboardingForm = document.getElementById('agendaOnboardingForm');
@@ -795,6 +796,48 @@
         const eventStart = document.getElementById('eventStart');
         const eventEnd = document.getElementById('eventEnd');
         const eventLocation = document.getElementById('eventLocation');
+
+        const agendaCache = {
+            profile: null,
+            profileFetchedAt: 0,
+            profilePromise: null,
+            plan: null,
+            planFetchedAt: 0,
+            planPromise: null,
+            planRequestToken: 0,
+            calendar: null,
+            calendarFetchedAt: 0,
+            calendarKey: '',
+            calendarPromise: null,
+            calendarPromiseKey: '',
+            calendarRequestToken: 0,
+        };
+
+        const AGENDA_CACHE_TTL_MS = {
+            profile: 60000,
+            plan: 15000,
+            calendar: 10000,
+        };
+
+        function isFreshCache(timestamp, ttlMs) {
+            return Number(timestamp || 0) > 0 && (Date.now() - Number(timestamp || 0)) < ttlMs;
+        }
+
+        function invalidateAgendaCache({ profile = false, plan = false, calendar = false } = {}) {
+            if (profile) {
+                agendaCache.profile = null;
+                agendaCache.profileFetchedAt = 0;
+            }
+            if (plan) {
+                agendaCache.plan = null;
+                agendaCache.planFetchedAt = 0;
+            }
+            if (calendar) {
+                agendaCache.calendar = null;
+                agendaCache.calendarFetchedAt = 0;
+                agendaCache.calendarKey = '';
+            }
+        }
 
         function requireAuth() {
             if (!localStorage.getItem('token')) {
@@ -839,6 +882,10 @@
 
             if (questionInput) {
                 questionInput.disabled = true;
+            }
+
+            if (chatSubmitBtn) {
+                chatSubmitBtn.disabled = true;
             }
 
             if (saveBtn) {
@@ -994,6 +1041,44 @@
             node.textContent = text;
             chatBox.appendChild(node);
             chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function formatAgentReply(result) {
+            const answer = String(result?.answer || 'Nao consegui responder agora.').trim();
+            const recommendations = Array.isArray(result?.recommendations) ? result.recommendations.slice(0, 3) : [];
+            const lines = [answer];
+
+            if (recommendations.length) {
+                lines.push('');
+                lines.push('Top sugestoes agora:');
+                recommendations.forEach((item, index) => {
+                    const source = String(item?.source_label || 'Item');
+                    const title = String(item?.title || 'Sem titulo');
+                    const price = String(item?.price_label || 'Preco sob consulta');
+                    const quality = String(item?.quality_label || 'Media');
+                    const category = String(item?.category || 'Geral');
+                    lines.push(`${index + 1}. [${source}] ${title} | ${price} | qualidade ${quality} | categoria ${category}`);
+                });
+            }
+
+            const scheduledAt = result?.scheduled_event?.starts_at;
+            if (scheduledAt) {
+                lines.push('');
+                lines.push(`Reserva registrada para ${new Date(scheduledAt).toLocaleString('pt-BR')}.`);
+            }
+
+            return lines.join('\n');
+        }
+
+        function currentCalendarKey() {
+            return `${state.calendarView}:${state.anchorDate}`;
+        }
+
+        async function refreshAgendaData({ forcePlan = false, forceCalendar = false } = {}) {
+            return Promise.all([
+                loadPlan({ force: forcePlan }),
+                loadCalendar({ force: forceCalendar }),
+            ]);
         }
 
         function autonomyLabel(mode) {
@@ -1456,35 +1541,156 @@
             });
         }
 
-        async function loadProfile() {
-            const response = await apiRequest('/ai/agenda/profile');
-            return response?.profile || {};
+        async function loadProfile({ force = false } = {}) {
+            if (!force && agendaCache.profile && isFreshCache(agendaCache.profileFetchedAt, AGENDA_CACHE_TTL_MS.profile)) {
+                return agendaCache.profile;
+            }
+
+            if (!force && agendaCache.profilePromise) {
+                return agendaCache.profilePromise;
+            }
+
+            const requestPromise = apiRequest('/ai/agenda/profile')
+                .then((response) => {
+                    const profile = response?.profile || {};
+                    agendaCache.profile = profile;
+                    agendaCache.profileFetchedAt = Date.now();
+                    return profile;
+                })
+                .catch((error) => {
+                    if (agendaCache.profile) {
+                        return agendaCache.profile;
+                    }
+                    throw error;
+                })
+                .finally(() => {
+                    if (agendaCache.profilePromise === requestPromise) {
+                        agendaCache.profilePromise = null;
+                    }
+                });
+
+            agendaCache.profilePromise = requestPromise;
+            return requestPromise;
         }
 
-        async function loadPlan() {
-            const plan = await apiRequest('/ai/agenda/plan');
-            renderPlan(plan);
+        async function loadPlan({ force = false } = {}) {
+            if (!force && agendaCache.plan && isFreshCache(agendaCache.planFetchedAt, AGENDA_CACHE_TTL_MS.plan)) {
+                renderPlan(agendaCache.plan);
+                return agendaCache.plan;
+            }
+
+            if (!force && agendaCache.planPromise) {
+                return agendaCache.planPromise;
+            }
+
+            const requestToken = ++agendaCache.planRequestToken;
+            const requestPromise = apiRequest('/ai/agenda/plan')
+                .then((plan) => {
+                    if (!plan || typeof plan !== 'object') {
+                        throw new Error('Plano invalido recebido da Agenda IA.');
+                    }
+
+                    agendaCache.plan = plan;
+                    agendaCache.planFetchedAt = Date.now();
+
+                    if (requestToken === agendaCache.planRequestToken) {
+                        renderPlan(plan);
+                    }
+                    return plan;
+                })
+                .catch((error) => {
+                    if (agendaCache.plan) {
+                        if (requestToken === agendaCache.planRequestToken) {
+                            renderPlan(agendaCache.plan);
+                            statusBox.className = 'wf-alert wf-alert-info';
+                            statusBox.textContent = 'Plano exibido em modo de contingencia. Atualize para sincronizar os dados mais recentes.';
+                        }
+                        return agendaCache.plan;
+                    }
+                    throw error;
+                })
+                .finally(() => {
+                    if (agendaCache.planPromise === requestPromise) {
+                        agendaCache.planPromise = null;
+                    }
+                });
+
+            agendaCache.planPromise = requestPromise;
+            return requestPromise;
         }
 
-        async function loadCalendar() {
-            const response = await apiRequest(`/ai/agenda/events?view=${encodeURIComponent(state.calendarView)}&anchor_date=${encodeURIComponent(state.anchorDate)}`);
-            renderCalendar(response);
+        async function loadCalendar({ force = false } = {}) {
+            const key = currentCalendarKey();
+            if (!force
+                && agendaCache.calendar
+                && agendaCache.calendarKey === key
+                && isFreshCache(agendaCache.calendarFetchedAt, AGENDA_CACHE_TTL_MS.calendar)) {
+                renderCalendar(agendaCache.calendar);
+                return agendaCache.calendar;
+            }
+
+            if (!force && agendaCache.calendarPromise && agendaCache.calendarPromiseKey === key) {
+                return agendaCache.calendarPromise;
+            }
+
+            const requestToken = ++agendaCache.calendarRequestToken;
+            const requestPromise = apiRequest(`/ai/agenda/events?view=${encodeURIComponent(state.calendarView)}&anchor_date=${encodeURIComponent(state.anchorDate)}`)
+                .then((response) => {
+                    agendaCache.calendar = response;
+                    agendaCache.calendarFetchedAt = Date.now();
+                    agendaCache.calendarKey = key;
+
+                    if (requestToken === agendaCache.calendarRequestToken) {
+                        renderCalendar(response);
+                    }
+                    return response;
+                })
+                .catch((error) => {
+                    if (agendaCache.calendar && agendaCache.calendarKey === key) {
+                        if (requestToken === agendaCache.calendarRequestToken) {
+                            renderCalendar(agendaCache.calendar);
+                        }
+                        return agendaCache.calendar;
+                    }
+                    throw error;
+                })
+                .finally(() => {
+                    if (agendaCache.calendarPromise === requestPromise) {
+                        agendaCache.calendarPromise = null;
+                        agendaCache.calendarPromiseKey = '';
+                    }
+                });
+
+            agendaCache.calendarPromise = requestPromise;
+            agendaCache.calendarPromiseKey = key;
+            return requestPromise;
         }
 
         async function saveProfile() {
             const payload = readProfilePayload();
             await apiRequest('/ai/agenda/profile', 'POST', payload);
+            invalidateAgendaCache({ profile: true, plan: true });
             onboardingModal.classList.remove('show');
-            await loadPlan();
+            await loadProfile({ force: true });
+            await loadPlan({ force: true });
         }
 
         async function createEvent() {
+            const startsAt = new Date(eventStart.value);
+            const endsAt = new Date(eventEnd.value);
+            if (Number.isNaN(startsAt.getTime()) || Number.isNaN(endsAt.getTime())) {
+                throw new Error('Horario invalido para o evento.');
+            }
+            if (endsAt <= startsAt) {
+                throw new Error('Horario final deve ser maior que o inicio.');
+            }
+
             const payload = {
                 title: String(eventTitle.value || '').trim(),
                 description: String(eventDescription.value || '').trim() || null,
                 event_type: String(eventType.value || 'reservation'),
-                starts_at: new Date(eventStart.value).toISOString(),
-                ends_at: new Date(eventEnd.value).toISOString(),
+                starts_at: startsAt.toISOString(),
+                ends_at: endsAt.toISOString(),
                 location: String(eventLocation.value || '').trim() || null,
                 is_all_day: false,
                 meta_json: { source: 'agenda_ui' },
@@ -1492,8 +1698,8 @@
 
             await apiRequest('/ai/agenda/events', 'POST', payload);
             agendaEventForm.reset();
-            await loadCalendar();
-            await loadPlan();
+            invalidateAgendaCache({ plan: true, calendar: true });
+            await refreshAgendaData({ forcePlan: true, forceCalendar: true });
         }
 
         async function executeAutonomousAction({ actionType, offerId, mode, buyerUserId, trigger }) {
@@ -1524,8 +1730,8 @@
                 statusBox.className = 'wf-alert wf-alert-info';
                 statusBox.textContent = response?.message || 'Execução transacional concluída.';
 
-                await loadPlan();
-                await loadCalendar();
+                invalidateAgendaCache({ plan: true, calendar: true });
+                await refreshAgendaData({ forcePlan: true, forceCalendar: true });
             } finally {
                 if (trigger) {
                     trigger.disabled = false;
@@ -1535,7 +1741,10 @@
 
         async function askAgent(question) {
             const result = await apiRequest('/ai-agent/ask', 'POST', { question });
-            return result?.answer || 'Não consegui responder agora.';
+            if (!result || typeof result !== 'object') {
+                return { answer: 'Nao consegui responder agora.' };
+            }
+            return result;
         }
 
         chatForm.addEventListener('submit', async (event) => {
