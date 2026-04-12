@@ -2523,6 +2523,55 @@
         const WF_AD_VIEWABILITY_KEY = 'wf_ad_viewability_v1';
         const WF_AD_EXPERIMENT_USER_KEY = 'wf_ad_experiment_user_v1';
         const WF_RETENTION_NUDGE_KEY = 'wf_retention_nudge_v1';
+        const WF_SUBSCRIPTION_COPY_AB_KEY = 'wf_subscription_copy_ab_v1';
+        const WF_SUBSCRIPTION_COPY_AB_EVENTS_KEY = 'wf_subscription_copy_ab_events_v1';
+        const WF_SUBSCRIPTION_COPY_VARIANTS = ['a', 'b'];
+        const WF_SUBSCRIPTION_COPY_MAP = {
+            pricing_basic_cta: {
+                a: 'Comecar agora',
+                b: 'Criar conta gratis',
+            },
+            pricing_pro_cta_monthly: {
+                a: 'Assinar Pro',
+                b: 'Desbloquear Pro agora',
+            },
+            pricing_pro_cta_yearly: {
+                a: 'Assinar Pro anual',
+                b: 'Garantir Pro com desconto',
+            },
+            pricing_pro_recommended: {
+                a: 'Assinar Pro (mais escolhido)',
+                b: 'Quero acelerar com Pro',
+            },
+            pricing_premium_cta_monthly: {
+                a: 'Assinar Premium',
+                b: 'Escalar com Premium',
+            },
+            pricing_premium_cta_yearly: {
+                a: 'Assinar Premium anual',
+                b: 'Ativar Premium com economia',
+            },
+            clients_upgrade_pro: {
+                a: 'Upgrade para Pro',
+                b: 'Ativar Pro agora',
+            },
+            clients_upgrade_pro_active: {
+                a: 'Pro ja ativo',
+                b: 'Plano Pro ativo',
+            },
+            clients_upgrade_premium: {
+                a: 'Upgrade para Premium',
+                b: 'Subir para Premium agora',
+            },
+            clients_upgrade_premium_active: {
+                a: 'Premium ja ativo',
+                b: 'Plano Premium ativo',
+            },
+            agenda_upgrade: {
+                a: 'Ver planos e assinar',
+                b: 'Desbloquear acesso completo',
+            },
+        };
         const WF_ADS_RUNTIME_CONFIG_ID = 'wfAdsRuntimeConfig';
         const WF_ADS_PROVIDER_SET = new Set(['fallback', 'adsense', 'custom-script']);
         let wfSyncChannel = null;
@@ -2657,6 +2706,108 @@
         window.wfIsAutoRefreshEnabled = () => Boolean(getAdvancedSetting('auto_refresh', true));
         window.wfGetRefreshIntervalMs = () => Number(getAdvancedSetting('refresh_interval_ms', 45000));
         window.wfGetNetworkAwareInterval = getNetworkAwareInterval;
+
+        function normalizeSubscriptionCopyVariant(value) {
+            const normalized = String(value || '').trim().toLowerCase();
+            return WF_SUBSCRIPTION_COPY_VARIANTS.includes(normalized) ? normalized : '';
+        }
+
+        function resolveSubscriptionCopyVariant() {
+            try {
+                const params = new URLSearchParams(window.location.search || '');
+                const queryVariant = normalizeSubscriptionCopyVariant(
+                    params.get('cta_ab') || params.get('ab_cta') || params.get('ab')
+                );
+                if (queryVariant) {
+                    localStorage.setItem(WF_SUBSCRIPTION_COPY_AB_KEY, queryVariant);
+                    return queryVariant;
+                }
+            } catch {
+                // ignora leitura de query
+            }
+
+            try {
+                const stored = normalizeSubscriptionCopyVariant(localStorage.getItem(WF_SUBSCRIPTION_COPY_AB_KEY));
+                if (stored) {
+                    return stored;
+                }
+            } catch {
+                // ignora indisponibilidade de storage
+            }
+
+            const drawn = Math.random() < 0.5 ? 'a' : 'b';
+            try {
+                localStorage.setItem(WF_SUBSCRIPTION_COPY_AB_KEY, drawn);
+            } catch {
+                // ignora indisponibilidade de storage
+            }
+            return drawn;
+        }
+
+        function wfGetSubscriptionCtaVariant() {
+            return resolveSubscriptionCopyVariant();
+        }
+
+        function wfSubscriptionCtaCopy(key, fallbackValue = '') {
+            const lookupKey = String(key || '').trim();
+            if (!lookupKey) return String(fallbackValue || '');
+
+            const variants = WF_SUBSCRIPTION_COPY_MAP[lookupKey] || {};
+            const variant = resolveSubscriptionCopyVariant();
+            const selected = String(variants[variant] || '').trim();
+            if (selected) return selected;
+
+            const control = String(variants.a || '').trim();
+            if (control) return control;
+
+            return String(fallbackValue || '');
+        }
+
+        function wfTrackSubscriptionCtaEvent(eventName, payload = {}) {
+            const normalizedEvent = String(eventName || '').trim().toLowerCase();
+            if (!normalizedEvent) return;
+
+            const variant = resolveSubscriptionCopyVariant();
+            const safePayload = payload && typeof payload === 'object' ? payload : {};
+
+            try {
+                const raw = localStorage.getItem(WF_SUBSCRIPTION_COPY_AB_EVENTS_KEY);
+                const parsed = raw ? JSON.parse(raw) : {};
+                const counters = parsed && typeof parsed.counters === 'object' ? parsed.counters : {};
+                const counterKey = `${variant}:${normalizedEvent}`;
+
+                counters[counterKey] = Number(counters[counterKey] || 0) + 1;
+
+                const next = {
+                    variant,
+                    counters,
+                    last_event: {
+                        name: normalizedEvent,
+                        ts: Date.now(),
+                        payload: safePayload,
+                    },
+                };
+                localStorage.setItem(WF_SUBSCRIPTION_COPY_AB_EVENTS_KEY, JSON.stringify(next));
+            } catch {
+                // ignora indisponibilidade de storage
+            }
+
+            try {
+                window.dispatchEvent(new CustomEvent('wf:subscription-cta-event', {
+                    detail: {
+                        variant,
+                        event: normalizedEvent,
+                        payload: safePayload,
+                    },
+                }));
+            } catch {
+                // ignora indisponibilidade de eventos customizados
+            }
+        }
+
+        window.wfGetSubscriptionCtaVariant = wfGetSubscriptionCtaVariant;
+        window.wfSubscriptionCtaCopy = wfSubscriptionCtaCopy;
+        window.wfTrackSubscriptionCtaEvent = wfTrackSubscriptionCtaEvent;
 
         function getNetworkAwareInterval(baseMs = 30000) {
             const baseValue = Math.max(12000, Number(baseMs || 30000));

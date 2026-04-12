@@ -906,13 +906,22 @@
             if (!AGENDA_TEMPORARY_ACCESS || accessLocked) return;
 
             const isGuestMode = AGENDA_GUEST_ACCESS;
+            const upgradeLabel = (typeof window.wfSubscriptionCtaCopy === 'function')
+                ? window.wfSubscriptionCtaCopy('agenda_upgrade', 'Ver planos e assinar')
+                : 'Ver planos e assinar';
             const primaryHref = isGuestMode
                 ? '/login?next=/ai-agent%3Fentry%3Dnav'
                 : '/pricing';
-            const primaryLabel = isGuestMode ? 'Entrar para continuar' : 'Ver planos e assinar';
+            const primaryLabel = isGuestMode ? 'Entrar para continuar' : upgradeLabel;
             const redirectTarget = isGuestMode
                 ? '/login?next=/ai-agent%3Fentry%3Dnav'
                 : '/pricing';
+
+            if (!isGuestMode && typeof window.wfTrackSubscriptionCtaEvent === 'function') {
+                window.wfTrackSubscriptionCtaEvent('agenda_upgrade_cta_impression', {
+                    source: 'temporary_access_expiry',
+                });
+            }
 
             lockAgendaAccess(reason, {
                 primaryHref,

@@ -123,6 +123,19 @@
         alert(msg);
     }
 
+    function ctaCopy(key, fallbackValue) {
+        if (typeof window.wfSubscriptionCtaCopy === 'function') {
+            return window.wfSubscriptionCtaCopy(key, fallbackValue);
+        }
+        return String(fallbackValue || '');
+    }
+
+    function trackUpgradeCta(eventName, payload = {}) {
+        if (typeof window.wfTrackSubscriptionCtaEvent === 'function') {
+            window.wfTrackSubscriptionCtaEvent(eventName, payload);
+        }
+    }
+
     function policyBadge(policy) {
         const status = String(policy?.compliance_status || 'ok');
         if (status === 'violation' || policy?.purchase_restricted) {
@@ -240,12 +253,16 @@
 
             if (proBtn) {
                 proBtn.disabled = plan === 'pro' || plan === 'premium';
-                proBtn.textContent = proBtn.disabled ? 'Pro já ativo' : 'Upgrade para Pro';
+                proBtn.textContent = proBtn.disabled
+                    ? ctaCopy('clients_upgrade_pro_active', 'Pro ja ativo')
+                    : ctaCopy('clients_upgrade_pro', 'Upgrade para Pro');
             }
 
             if (premiumBtn) {
                 premiumBtn.disabled = plan === 'premium';
-                premiumBtn.textContent = premiumBtn.disabled ? 'Premium já ativo' : 'Upgrade para Premium';
+                premiumBtn.textContent = premiumBtn.disabled
+                    ? ctaCopy('clients_upgrade_premium_active', 'Premium ja ativo')
+                    : ctaCopy('clients_upgrade_premium', 'Upgrade para Premium');
             }
         } catch {
             info.textContent = 'Assinatura: indisponível no momento';
@@ -258,6 +275,10 @@
             showToast('Plano inválido para upgrade.');
             return;
         }
+
+        trackUpgradeCta('clients_upgrade_click', {
+            plan_id: normalizedPlan,
+        });
 
         const data = await apiRequest(`/payment/checkout/${normalizedPlan}`, 'POST', {
             success_url: `${window.location.origin}/clients/manage`,
@@ -332,6 +353,9 @@
     document.getElementById('upgradeProBtn')?.addEventListener('click', () => startUpgrade('pro'));
     document.getElementById('upgradePremiumBtn')?.addEventListener('click', () => startUpgrade('premium'));
     document.getElementById('clientCreateForm')?.addEventListener('submit', createClient);
+
+    trackUpgradeCta('clients_upgrade_cta_impression', { plan_id: 'pro' });
+    trackUpgradeCta('clients_upgrade_cta_impression', { plan_id: 'premium' });
 
     const adminPanel = document.getElementById('clientsAdminPanel');
     if (isAdminUser() && adminPanel) {

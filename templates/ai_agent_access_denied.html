@@ -22,7 +22,7 @@
     {% endif %}
     <div style="display:flex;gap:0.6rem;flex-wrap:wrap;margin-top:1rem;">
         <a href="/" class="btn btn-wf-secondary">Voltar para início</a>
-        <a href="/pricing" class="btn btn-wf-primary">Ver planos e assinar</a>
+        <a href="/pricing" class="btn btn-wf-primary" id="agendaUpgradePricingCta">Ver planos e assinar</a>
     </div>
     {% else %}
     <h1 style="margin:0;color:#8b1f1f;font-size:1.3rem;font-weight:900;">Acesso da Agenda Inteligente encerrado</h1>
@@ -35,4 +35,26 @@
     </div>
     {% endif %}
 </section>
+
+<script>
+    (function setupAgendaDeniedCtaCopyAb() {
+        const cta = document.getElementById('agendaUpgradePricingCta');
+        if (!cta) return;
+
+        if (typeof window.wfSubscriptionCtaCopy === 'function') {
+            cta.textContent = window.wfSubscriptionCtaCopy('agenda_upgrade', cta.textContent || 'Ver planos e assinar');
+        }
+
+        if (typeof window.wfTrackSubscriptionCtaEvent === 'function') {
+            window.wfTrackSubscriptionCtaEvent('agenda_upgrade_cta_impression', {
+                source: 'access_denied_page',
+            });
+            cta.addEventListener('click', () => {
+                window.wfTrackSubscriptionCtaEvent('agenda_upgrade_cta_click', {
+                    source: 'access_denied_page',
+                });
+            });
+        }
+    })();
+</script>
 {% endblock %}

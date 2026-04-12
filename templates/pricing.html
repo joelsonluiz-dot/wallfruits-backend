@@ -346,6 +346,20 @@
 
         let period = 'monthly';
         let plans = [];
+        const exposureLogged = new Set();
+
+        function ctaCopy(key, fallbackValue) {
+            if (typeof window.wfSubscriptionCtaCopy === 'function') {
+                return window.wfSubscriptionCtaCopy(key, fallbackValue);
+            }
+            return String(fallbackValue || '');
+        }
+
+        function trackPricingCta(eventName, payload = {}) {
+            if (typeof window.wfTrackSubscriptionCtaEvent === 'function') {
+                window.wfTrackSubscriptionCtaEvent(eventName, payload);
+            }
+        }
 
         function showMessage(text, isError = false) {
             if (!feedbackEl) return;
@@ -397,6 +411,34 @@
             return 'Cancele quando quiser';
         }
 
+        function resolvePlanCtaLabel(plan, yearlyDisabled) {
+            if (yearlyDisabled) {
+                return 'Anual em configuracao';
+            }
+
+            const planId = String(plan?.id || '').toLowerCase();
+            if (planId === 'basic') {
+                return ctaCopy('pricing_basic_cta', plan?.cta?.label || 'Comecar agora');
+            }
+
+            if (planId === 'pro') {
+                if (Boolean(plan?.recommended)) {
+                    return ctaCopy('pricing_pro_recommended', plan?.cta?.label || 'Assinar Pro');
+                }
+                return period === 'yearly'
+                    ? ctaCopy('pricing_pro_cta_yearly', plan?.cta?.label || 'Assinar Pro anual')
+                    : ctaCopy('pricing_pro_cta_monthly', plan?.cta?.label || 'Assinar Pro');
+            }
+
+            if (planId === 'premium') {
+                return period === 'yearly'
+                    ? ctaCopy('pricing_premium_cta_yearly', plan?.cta?.label || 'Assinar Premium anual')
+                    : ctaCopy('pricing_premium_cta_monthly', plan?.cta?.label || 'Assinar Premium');
+            }
+
+            return plan?.cta?.label || 'Selecionar plano';
+        }
+
         function renderCards() {
             if (!pricingGrid) return;
 
@@ -412,9 +454,7 @@
                 const badge = recommended ? 'Mais escolhido' : (plan.id === 'premium' ? 'Escala' : 'Entrada');
                 const yearlyEnabled = Boolean(plan?.yearly_checkout_enabled ?? true);
                 const yearlyDisabled = period === 'yearly' && plan.id !== 'basic' && !yearlyEnabled;
-                const ctaLabel = yearlyDisabled
-                    ? 'Anual em configuracao'
-                    : (plan?.cta?.label || 'Selecionar plano');
+                const ctaLabel = resolvePlanCtaLabel(plan, yearlyDisabled);
                 const metaText = yearlyDisabled
                     ? 'Checkout anual deste plano ainda nao esta configurado no Stripe.'
                     : (plan.id === 'basic' ? 'Ideal para validar uso inicial.' : 'Upgrade instantaneo com pagamento online.');
@@ -462,7 +502,26 @@
             pricingGrid.querySelectorAll('[data-checkout-plan]').forEach((btn) => {
                 btn.addEventListener('click', () => {
                     const yearlyEnabled = String(btn.getAttribute('data-yearly-enabled') || 'true') !== 'false';
-                    startCheckout(String(btn.getAttribute('data-checkout-plan') || 'basic'), btn, { yearlyEnabled });
+                    const planId = String(btn.getAttribute('data-checkout-plan') || 'basic');
+                    trackPricingCta('pricing_cta_click', {
+                        plan_id: planId,
+                        billing_cycle: period,
+                    });
+                    startCheckout(planId, btn, { yearlyEnabled });
+                });
+            });
+
+            plans.forEach((plan) => {
+                const planId = String(plan?.id || '').toLowerCase();
+                if (!planId) return;
+
+                const exposureKey = `${planId}:${period}`;
+                if (exposureLogged.has(exposureKey)) return;
+
+                exposureLogged.add(exposureKey);
+                trackPricingCta('pricing_cta_impression', {
+                    plan_id: planId,
+                    billing_cycle: period,
                 });
             });
         }
@@ -478,6 +537,9 @@
             }
 
             if (normalized === 'basic') {
+                trackPricingCta('pricing_basic_redirect', {
+                    billing_cycle: period,
+                });
                 if (localStorage.getItem('token')) {
                     window.location.href = '/offers';
                 } else {
@@ -488,6 +550,10 @@
 
             if (!localStorage.getItem('token')) {
                 sessionStorage.setItem('wf_pending_checkout_plan', normalized);
+                trackPricingCta('pricing_login_required', {
+                    plan_id: normalized,
+                    billing_cycle: period,
+                });
                 window.location.href = `/login?next=${encodeURIComponent('/pricing')}`;
                 return;
             }
@@ -504,6 +570,10 @@
                     cancel_url: `${window.location.origin}/pricing`,
                     billing_cycle: period,
                 };
+                trackPricingCta('pricing_checkout_start', {
+                    plan_id: normalized,
+                    billing_cycle: period,
+                });
                 const result = await apiRequest(`/payment/checkout/${normalized}`, 'POST', payload);
                 if (result?.checkout_url) {
                     window.location.href = result.checkout_url;
@@ -511,6 +581,10 @@
                 }
                 showMessage('Nao foi possivel iniciar o checkout agora. Tente novamente em instantes.', true);
             } catch (error) {
+                trackPricingCta('pricing_checkout_error', {
+                    plan_id: normalized,
+                    billing_cycle: period,
+                });
                 showMessage(error?.message || 'Falha ao abrir checkout do plano.', true);
             } finally {
                 if (btn) {
