@@ -1,6 +1,7 @@
 import os
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 # Force local SQLite for deterministic and fast automated tests.
 os.environ["DATABASE_URL"] = "sqlite:///./test_store_cart_checkout.db"
@@ -162,6 +163,43 @@ class StoreCartCheckoutTests(unittest.TestCase):
         update_resp = self.client.patch(f"/store/cart/item/{item_id}", json={"quantity": 999})
         self.assertEqual(update_resp.status_code, 400)
         self.assertIn("estoque", update_resp.json().get("detail", "").lower())
+
+    def test_checkout_session_creates_online_payment(self):
+        add_resp = self.client.post("/store/cart/add", json={"product_id": self.product.id, "quantity": 2})
+        self.assertEqual(add_resp.status_code, 200)
+
+        with patch("app.routers.store_routes.is_stripe_configured", return_value=True), patch(
+            "app.routers.store_routes.create_store_order_checkout_session",
+            return_value={
+                "checkout_url": "https://checkout.stripe.test/session/cs_test_123",
+                "session_id": "cs_test_123",
+            },
+        ):
+            resp = self.client.post(
+                "/store/checkout/session",
+                json={
+                    "payment_method": "cartao",
+                    "shipping_address": {
+                        "name": "Comprador Teste",
+                        "phone": "(11) 98888-7777",
+                        "city": "Sao Paulo",
+                        "state": "SP",
+                        "address": "Rua Teste, 123",
+                        "zip": "01001-000",
+                    },
+                },
+            )
+
+        self.assertEqual(resp.status_code, 200)
+        payload = resp.json()
+        self.assertEqual(payload["mode"], "checkout")
+        self.assertEqual(payload["session_id"], "cs_test_123")
+        self.assertIn("checkout_url", payload)
+
+        # Cart is converted to a pending online checkout order, so a new open cart is created on next fetch.
+        cart_after = self.client.get("/store/cart/items")
+        self.assertEqual(cart_after.status_code, 200)
+        self.assertEqual(len(cart_after.json().get("items", [])), 0)
 
 
 if __name__ == "__main__":

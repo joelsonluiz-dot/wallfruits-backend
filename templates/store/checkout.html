@@ -81,11 +81,9 @@
             <div>
                 <label class="wf-label">Forma de pagamento</label>
                 <select class="wf-select form-select" id="paymentMethod">
-                    <option value="pix">Pix</option>
-                    <option value="boleto">Boleto</option>
-                    <option value="cartao">Cartão</option>
-                    <option value="transferencia">Transferência</option>
+                    <option value="cartao">Cartão (Stripe)</option>
                 </select>
+                <small class="text-muted">Pagamento online ativo no checkout via Stripe.</small>
             </div>
         </div>
 
@@ -235,14 +233,19 @@
             }
 
             try {
-                const result = await apiRequest('/store/checkout/complete', 'POST', {
+                const result = await apiRequest('/store/checkout/session', 'POST', {
                     payment_method: document.getElementById('paymentMethod').value,
                     shipping_address: shippingAddress,
                 });
-                showMessage('ok', `Compra concluída com sucesso. Pedido #${result.order_id}.`);
-                setTimeout(() => {
-                    window.location.href = '/store/orders';
-                }, 1400);
+
+                if (result?.checkout_url) {
+                    showMessage('ok', `Pedido #${result.order_id} criado. Redirecionando para o pagamento...`);
+                    window.location.href = result.checkout_url;
+                    return;
+                }
+
+                showMessage('error', 'Nao foi possivel iniciar o checkout online.');
+                setButtonLoading(btnFinish, false);
             } catch (error) {
                 showMessage('error', error.message || 'Não foi possível concluir a compra.');
                 setButtonLoading(btnFinish, false);

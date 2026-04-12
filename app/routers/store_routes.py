@@ -2,16 +2,19 @@ from fastapi import APIRouter, Request, Depends, Form, HTTPException, status
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field, model_validator
-from datetime import timedelta
+from datetime import datetime, timezone, timedelta
 from app.database.connection import get_db
 from app.core.auth_middleware import get_current_user
 from app.models.user import User
 from app.models.store_models import Product, ProductStatus, Order, OrderItem, OrderStatus, QuoteRequest, QuoteRequestStatus
+from app.services.payment_service import create_store_order_checkout_session, is_stripe_configured
+import logging
 import re
 import unicodedata
 import uuid
 
 router = APIRouter(prefix="/store", tags=["Store"])
+logger = logging.getLogger("store_routes")
 
 
 def _slugify(value: str) -> str:
@@ -48,6 +51,17 @@ def _recompute_order_total(order: Order) -> None:
     order.total_amount = round(sum(float(item.subtotal or 0) for item in order.items), 2)
 
 
+def _order_status_value(order_status: OrderStatus | str) -> str:
+    return order_status.value if isinstance(order_status, OrderStatus) else str(order_status)
+
+
+def _store_checkout_urls(request: Request) -> tuple[str, str]:
+    base_url = str(request.base_url).rstrip("/")
+    success_url = f"{base_url}/store/orders?checkout=success"
+    cancel_url = f"{base_url}/store/checkout?checkout=cancelled"
+    return success_url, cancel_url
+
+
 def _cart_payload(order: Order) -> dict:
     items_payload = []
     for item in order.items:
@@ -71,7 +85,7 @@ def _cart_payload(order: Order) -> dict:
 
     return {
         "order_id": order.id,
-        "status": order.status,
+        "status": _order_status_value(order.status),
         "total_amount": float(order.total_amount or 0),
         "items": items_payload,
     }
@@ -256,6 +270,89 @@ async def create_product(
 async def checkout(request: Request, current_user: User = Depends(get_current_user)):
     # In a real app, process payment here
     return RedirectResponse(url="/store?success=order_placed", status_code=303)
+
+
+@router.post("/checkout/session")
+async def create_store_checkout_session(
+    payload: CheckoutIn,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    cart = (
+        db.query(Order)
+        .filter(
+            Order.customer_id == current_user.id,
+            Order.status == OrderStatus.PENDING,
+            Order.payment_method == "cart_open",
+        )
+        .first()
+    )
+    if not cart:
+        raise HTTPException(status_code=400, detail="Carrinho nao encontrado")
+
+    if not cart.items:
+        raise HTTPException(status_code=400, detail="Carrinho vazio")
+
+    if payload.payment_method != "cartao":
+        raise HTTPException(
+            status_code=400,
+            detail="Checkout online no momento disponivel apenas para pagamento via cartao",
+        )
+
+    for item in cart.items:
+        if int(item.quantity) > int(item.product.stock_quantity or 0):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Estoque insuficiente para {item.product.name}",
+            )
+
+    if not is_stripe_configured():
+        raise HTTPException(status_code=400, detail="Stripe nao configurado. Defina STRIPE_SECRET_KEY no .env")
+
+    _recompute_order_total(cart)
+    success_url, cancel_url = _store_checkout_urls(request)
+
+    try:
+        checkout = create_store_order_checkout_session(
+            user=current_user,
+            order=cart,
+            payment_method=payload.payment_method,
+            success_url=success_url,
+            cancel_url=cancel_url,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        logger.error("Erro ao criar checkout da loja: %s", exc, exc_info=True)
+        raise HTTPException(status_code=500, detail="Erro ao iniciar checkout online")
+
+    payment_details = dict(cart.payment_details or {})
+    payment_details.update(
+        {
+            "provider": "stripe",
+            "checkout_status": "pending",
+            "selected_payment_method": payload.payment_method,
+            "stripe_checkout_session_id": checkout["session_id"],
+        }
+    )
+
+    cart.payment_method = "stripe_checkout_pending"
+    cart.shipping_address = payload.shipping_address or {}
+    cart.payment_details = payment_details
+
+    db.commit()
+    db.refresh(cart)
+
+    return {
+        "mode": "checkout",
+        "order_id": cart.id,
+        "status": _order_status_value(cart.status),
+        "total_amount": float(cart.total_amount or 0),
+        "session_id": checkout["session_id"],
+        "checkout_url": checkout["checkout_url"],
+        "message": "Checkout criado com sucesso",
+    }
 
 
 @router.get("/cart/items")
@@ -462,13 +559,17 @@ async def complete_checkout(payload: CheckoutIn, db: Session = Depends(get_db), 
     cart.status = OrderStatus.PAID
     cart.payment_method = payload.payment_method
     cart.shipping_address = payload.shipping_address or {}
+    cart.payment_details = {
+        "provider": "simulated",
+        "paid_at": datetime.now(timezone.utc).isoformat(),
+    }
 
     db.commit()
     db.refresh(cart)
 
     return {
         "order_id": cart.id,
-        "status": cart.status,
+        "status": _order_status_value(cart.status),
         "total_amount": float(cart.total_amount or 0),
         "message": "Compra finalizada com sucesso",
     }
@@ -491,7 +592,7 @@ async def my_orders(db: Session = Depends(get_db), current_user: User = Depends(
         payload.append(
             {
                 "id": order.id,
-                "status": str(order.status),
+                "status": _order_status_value(order.status),
                 "total_amount": float(order.total_amount or 0),
                 "payment_method": order.payment_method,
                 "shipping_address": order.shipping_address or {},

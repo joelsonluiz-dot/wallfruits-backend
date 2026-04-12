@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.models.buyer_client import BuyerClientPolicy, BuyerClientSlotPurchase
+from app.models.store_models import Order, OrderStatus
 from app.models.subscription import Subscription
 from app.models.user import User
 from app.models.wallet import Wallet
@@ -60,6 +61,8 @@ def create_checkout_session(
     if not price_id:
         raise ValueError(f"Plano inválido: '{plan}'. Use 'basic' ou 'premium'")
 
+    success_suffix = "&session_id={CHECKOUT_SESSION_ID}" if "?" in success_url else "?session_id={CHECKOUT_SESSION_ID}"
+
     stripe = _stripe()
     session = stripe.checkout.Session.create(
         payment_method_types=["card"],
@@ -68,7 +71,7 @@ def create_checkout_session(
         client_reference_id=str(user.id),
         metadata={"user_id": str(user.id), "plan": plan},
         line_items=[{"price": price_id, "quantity": 1}],
-        success_url=success_url + "?session_id={CHECKOUT_SESSION_ID}",
+        success_url=success_url + success_suffix,
         cancel_url=cancel_url,
     )
     return {"checkout_url": session.url, "session_id": session.id}
@@ -93,6 +96,8 @@ def create_client_slots_checkout_session(
     unit_amount = int((unit_price_brl * 100).quantize(Decimal("1")))
     if unit_amount <= 0:
         raise ValueError("Valor por slot inválido")
+
+    success_suffix = "&session_id={CHECKOUT_SESSION_ID}" if "?" in success_url else "?session_id={CHECKOUT_SESSION_ID}"
 
     stripe = _stripe()
     session = stripe.checkout.Session.create(
@@ -120,7 +125,71 @@ def create_client_slots_checkout_session(
                 "quantity": quantity,
             }
         ],
-        success_url=success_url + "?session_id={CHECKOUT_SESSION_ID}",
+        success_url=success_url + success_suffix,
+        cancel_url=cancel_url,
+    )
+    return {"checkout_url": session.url, "session_id": session.id}
+
+
+def create_store_order_checkout_session(
+    *,
+    user: User,
+    order: Order,
+    payment_method: str,
+    success_url: str,
+    cancel_url: str,
+) -> dict:
+    """Cria Stripe Checkout Session para pagamento de pedido da loja."""
+    if not is_stripe_configured():
+        raise ValueError("Stripe nao configurado. Defina STRIPE_SECRET_KEY no .env")
+
+    if not order.items:
+        raise ValueError("Pedido sem itens para checkout")
+
+    requested_method = (payment_method or "cartao").strip().lower()
+    method_map = {
+        "cartao": ["card"],
+    }
+    stripe_method_types = method_map.get(requested_method)
+    if not stripe_method_types:
+        raise ValueError("Forma de pagamento nao suportada para checkout online")
+
+    line_items = []
+    for item in order.items:
+        unit_amount = int((Decimal(str(item.unit_price or 0)) * 100).quantize(Decimal("1")))
+        if unit_amount <= 0:
+            raise ValueError(f"Item com valor invalido para checkout: item_id={item.id}")
+
+        product_name = item.product.name if item.product else f"Produto {item.product_id}"
+        line_items.append(
+            {
+                "price_data": {
+                    "currency": "brl",
+                    "unit_amount": unit_amount,
+                    "product_data": {
+                        "name": product_name,
+                    },
+                },
+                "quantity": int(item.quantity),
+            }
+        )
+
+    success_suffix = "&session_id={CHECKOUT_SESSION_ID}" if "?" in success_url else "?session_id={CHECKOUT_SESSION_ID}"
+
+    stripe = _stripe()
+    session = stripe.checkout.Session.create(
+        payment_method_types=stripe_method_types,
+        mode="payment",
+        customer_email=user.email,
+        client_reference_id=str(user.id),
+        metadata={
+            "user_id": str(user.id),
+            "checkout_kind": "store_order",
+            "order_id": str(order.id),
+            "payment_method": requested_method,
+        },
+        line_items=line_items,
+        success_url=success_url + success_suffix,
         cancel_url=cancel_url,
     )
     return {"checkout_url": session.url, "session_id": session.id}
@@ -191,6 +260,9 @@ def _on_checkout_completed(session: dict, db: Session) -> None:
     checkout_kind = metadata.get("checkout_kind")
     if checkout_kind == "buyer_client_slots":
         _on_client_slots_checkout_completed(session, db)
+        return
+    if checkout_kind == "store_order":
+        _on_store_order_checkout_completed(session, db)
         return
 
     user_id = int(session.get("client_reference_id", 0))
@@ -308,3 +380,80 @@ def _on_client_slots_checkout_completed(session: dict, db: Session) -> None:
     )
     db.commit()
     logger.info("Slots creditados via checkout: user_id=%s quantity=%s", user_id, applied_quantity)
+
+
+def _on_store_order_checkout_completed(session: dict, db: Session) -> None:
+    metadata = session.get("metadata") or {}
+    user_id = int(metadata.get("user_id") or session.get("client_reference_id") or 0)
+    order_id = int(metadata.get("order_id") or 0)
+    checkout_session_id = session.get("id")
+    payment_intent_id = session.get("payment_intent")
+
+    if user_id <= 0 or order_id <= 0:
+        logger.error("Checkout da loja invalido: user_id=%s order_id=%s", user_id, order_id)
+        return
+
+    order = (
+        db.query(Order)
+        .filter(Order.id == order_id, Order.customer_id == user_id)
+        .first()
+    )
+    if not order:
+        logger.error("Checkout da loja sem pedido local: user_id=%s order_id=%s", user_id, order_id)
+        return
+
+    payment_details = dict(order.payment_details or {})
+    if (
+        order.status == OrderStatus.PAID
+        and payment_details.get("stripe_checkout_session_id") == checkout_session_id
+    ):
+        logger.info("Checkout da loja ja processado: order_id=%s", order_id)
+        return
+
+    if not order.items:
+        logger.error("Pedido sem itens no webhook Stripe: order_id=%s", order_id)
+        return
+
+    for item in order.items:
+        available = int(item.product.stock_quantity or 0)
+        if int(item.quantity) > available:
+            payment_details.update(
+                {
+                    "provider": "stripe",
+                    "checkout_status": "stock_conflict",
+                    "stripe_checkout_session_id": checkout_session_id,
+                    "stripe_payment_intent_id": str(payment_intent_id or "") or None,
+                    "manual_refund_required": True,
+                }
+            )
+            order.payment_details = payment_details
+            order.status = OrderStatus.CANCELLED
+            db.commit()
+            logger.error(
+                "Pagamento confirmado sem estoque suficiente: order_id=%s item_id=%s required=%s available=%s",
+                order_id,
+                item.id,
+                item.quantity,
+                available,
+            )
+            return
+
+    for item in order.items:
+        item.product.stock_quantity = int(item.product.stock_quantity or 0) - int(item.quantity)
+
+    payment_details.update(
+        {
+            "provider": "stripe",
+            "checkout_status": "paid",
+            "stripe_checkout_session_id": checkout_session_id,
+            "stripe_payment_intent_id": str(payment_intent_id or "") or None,
+            "stripe_payment_status": session.get("payment_status") or "paid",
+            "paid_at": datetime.now(timezone.utc).isoformat(),
+        }
+    )
+
+    order.payment_method = "stripe"
+    order.payment_details = payment_details
+    order.status = OrderStatus.PAID
+    db.commit()
+    logger.info("Pedido da loja pago via Stripe: order_id=%s user_id=%s", order_id, user_id)
