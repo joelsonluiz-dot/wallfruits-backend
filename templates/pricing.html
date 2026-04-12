@@ -1,0 +1,569 @@
+{% extends "base.html" %}
+
+{% block title %}Planos WallFruits | Crescimento com Conversao{% endblock %}
+
+{% block content %}
+<style>
+    .pricing-page {
+        position: relative;
+        min-height: 84vh;
+        border-radius: 24px;
+        overflow: hidden;
+        padding: 1rem;
+        background:
+            radial-gradient(circle at 12% 8%, rgba(246, 170, 84, 0.24), transparent 42%),
+            radial-gradient(circle at 86% 14%, rgba(99, 250, 194, 0.22), transparent 35%),
+            linear-gradient(145deg, #0f2532 0%, #153f4b 50%, #14503f 100%);
+        color: #f4f8fb;
+        font-family: "Trebuchet MS", "Century Gothic", sans-serif;
+    }
+
+    .pricing-shell {
+        max-width: 1180px;
+        margin: 0 auto;
+        position: relative;
+        z-index: 1;
+        display: grid;
+        gap: 0.95rem;
+    }
+
+    .pricing-hero {
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        background: linear-gradient(130deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.06));
+        backdrop-filter: blur(10px);
+        padding: 0.95rem;
+        display: grid;
+        gap: 0.45rem;
+        box-shadow: 0 16px 34px rgba(0, 0, 0, 0.25);
+    }
+
+    .pricing-eyebrow {
+        width: fit-content;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        padding: 0.16rem 0.6rem;
+        font-size: 0.67rem;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        background: rgba(0, 0, 0, 0.2);
+        color: #ffe7bf;
+    }
+
+    .pricing-title {
+        margin: 0;
+        font-size: clamp(1.2rem, 2.3vw, 1.7rem);
+        font-weight: 900;
+        letter-spacing: -0.03em;
+        color: #fff;
+    }
+
+    .pricing-subtitle {
+        margin: 0;
+        color: rgba(240, 248, 249, 0.85);
+        font-size: 0.86rem;
+        line-height: 1.5;
+        max-width: 900px;
+    }
+
+    .pricing-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.7rem;
+        flex-wrap: wrap;
+    }
+
+    .billing-switch {
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.24);
+        background: rgba(0, 0, 0, 0.24);
+        padding: 0.2rem;
+        display: inline-flex;
+        gap: 0.2rem;
+    }
+
+    .billing-btn {
+        border: none;
+        border-radius: 999px;
+        padding: 0.4rem 0.68rem;
+        background: transparent;
+        color: rgba(236, 245, 246, 0.86);
+        font-size: 0.78rem;
+        font-weight: 800;
+        cursor: pointer;
+    }
+
+    .billing-btn.active {
+        color: #102431;
+        background: linear-gradient(135deg, #f5b25f, #ffd291);
+    }
+
+    .billing-hint {
+        font-size: 0.74rem;
+        color: rgba(232, 245, 244, 0.84);
+    }
+
+    .pricing-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.75rem;
+    }
+
+    .plan-card {
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        background: rgba(4, 18, 25, 0.36);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 15px 32px rgba(0, 0, 0, 0.25);
+        padding: 0.85rem;
+        display: grid;
+        gap: 0.58rem;
+        opacity: 0;
+        transform: translateY(10px) scale(0.99);
+    }
+
+    .plan-card.is-in {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        transition: opacity 0.32s ease, transform 0.32s ease;
+    }
+
+    .plan-card.recommended {
+        border-color: rgba(251, 199, 119, 0.85);
+        box-shadow: 0 18px 38px rgba(210, 153, 66, 0.36);
+        background: linear-gradient(180deg, rgba(247, 183, 93, 0.16), rgba(4, 18, 25, 0.38));
+    }
+
+    .plan-top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 0.55rem;
+    }
+
+    .plan-name {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 900;
+        color: #fff;
+    }
+
+    .plan-target {
+        margin: 0.14rem 0 0;
+        font-size: 0.73rem;
+        color: rgba(226, 240, 242, 0.76);
+    }
+
+    .plan-badge {
+        border-radius: 999px;
+        padding: 0.18rem 0.56rem;
+        border: 1px solid rgba(255, 255, 255, 0.28);
+        font-size: 0.66rem;
+        font-weight: 800;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #ffe9c4;
+        background: rgba(0, 0, 0, 0.24);
+        white-space: nowrap;
+    }
+
+    .plan-price-wrap {
+        display: grid;
+        gap: 0.2rem;
+    }
+
+    .plan-price {
+        margin: 0;
+        font-size: 1.48rem;
+        font-weight: 900;
+        letter-spacing: -0.03em;
+        color: #ffffff;
+    }
+
+    .plan-price-sub {
+        margin: 0;
+        font-size: 0.73rem;
+        color: rgba(229, 241, 243, 0.78);
+    }
+
+    .plan-desc {
+        margin: 0;
+        font-size: 0.8rem;
+        color: rgba(237, 248, 250, 0.84);
+        line-height: 1.42;
+    }
+
+    .plan-features {
+        margin: 0;
+        padding-left: 1.05rem;
+        display: grid;
+        gap: 0.34rem;
+        font-size: 0.8rem;
+        color: rgba(240, 248, 251, 0.9);
+    }
+
+    .plan-meta {
+        border-radius: 11px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(0, 0, 0, 0.22);
+        padding: 0.46rem 0.54rem;
+        font-size: 0.7rem;
+        color: rgba(227, 240, 240, 0.84);
+    }
+
+    .plan-cta {
+        border: none;
+        border-radius: 11px;
+        padding: 0.62rem 0.86rem;
+        cursor: pointer;
+        font-size: 0.83rem;
+        font-weight: 900;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .plan-cta.primary {
+        color: #1b2a32;
+        background: linear-gradient(135deg, #f3b059, #f8d08d);
+        box-shadow: 0 11px 22px rgba(220, 163, 79, 0.34);
+    }
+
+    .plan-cta.secondary {
+        color: #f5f9ff;
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+    }
+
+    .plan-cta:hover {
+        transform: translateY(-1px);
+    }
+
+    .plan-cta:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .pricing-proof {
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(0, 0, 0, 0.24);
+        padding: 0.75rem;
+        display: grid;
+        gap: 0.45rem;
+    }
+
+    .proof-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.55rem;
+    }
+
+    .proof-item {
+        border-radius: 11px;
+        border: 1px solid rgba(255, 255, 255, 0.17);
+        background: rgba(255, 255, 255, 0.04);
+        padding: 0.52rem;
+        font-size: 0.77rem;
+        color: rgba(237, 247, 248, 0.84);
+    }
+
+    .pricing-feedback {
+        min-height: 1px;
+    }
+
+    .pricing-alert {
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        background: rgba(14, 46, 68, 0.36);
+        color: #d7edff;
+        padding: 0.56rem 0.66rem;
+        font-size: 0.78rem;
+        font-weight: 700;
+    }
+
+    .pricing-alert.error {
+        background: rgba(100, 24, 24, 0.44);
+        color: #ffd4d4;
+        border-color: rgba(255, 166, 166, 0.45);
+    }
+
+    @media (max-width: 980px) {
+        .pricing-grid,
+        .proof-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 700px) {
+        .pricing-page {
+            padding: 0.7rem;
+            border-radius: 16px;
+        }
+    }
+</style>
+
+<section class="pricing-page">
+    <div class="pricing-shell">
+        <header class="pricing-hero">
+            <span class="pricing-eyebrow">Crescimento estrategico</span>
+            <h1 class="pricing-title">Escolha o plano com melhor retorno para sua operacao</h1>
+            <p class="pricing-subtitle">
+                Estrutura de planos desenhada para conversao: entrada simples, plano Pro como opcao principal e Premium para escala.
+                Sem fidelidade, com checkout seguro e upgrade imediato.
+            </p>
+
+            <div class="pricing-toolbar">
+                <div class="billing-switch" role="tablist" aria-label="Periodo de cobranca">
+                    <button class="billing-btn active" id="btnMonthly" type="button">Mensal</button>
+                    <button class="billing-btn" id="btnYearly" type="button">Anual</button>
+                </div>
+                <div class="billing-hint" id="billingHint">No anual, voce economiza e reduz custo por mes.</div>
+            </div>
+        </header>
+
+        <div class="pricing-feedback" id="pricingFeedback"></div>
+        <div class="pricing-grid" id="pricingGrid"></div>
+
+        <section class="pricing-proof">
+            <div class="proof-grid" id="pricingProofGrid">
+                <div class="proof-item">Sem fidelidade contratual: cancele quando quiser.</div>
+                <div class="proof-item">Checkout protegido via Stripe com redirecionamento seguro.</div>
+                <div class="proof-item">Upgrade instantaneo apos confirmacao de pagamento.</div>
+            </div>
+        </section>
+    </div>
+</section>
+
+<script>
+    (function setupPricingPage() {
+        const pricingGrid = document.getElementById('pricingGrid');
+        const feedbackEl = document.getElementById('pricingFeedback');
+        const billingHint = document.getElementById('billingHint');
+        const btnMonthly = document.getElementById('btnMonthly');
+        const btnYearly = document.getElementById('btnYearly');
+
+        let period = 'monthly';
+        let plans = [];
+
+        function showMessage(text, isError = false) {
+            if (!feedbackEl) return;
+            feedbackEl.innerHTML = `<div class="pricing-alert${isError ? ' error' : ''}">${String(text || '')}</div>`;
+        }
+
+        function clearMessage() {
+            if (!feedbackEl) return;
+            feedbackEl.innerHTML = '';
+        }
+
+        function formatMoney(value) {
+            const amount = Number(value || 0);
+            return amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+
+        function periodLabel() {
+            return period === 'yearly' ? '/ano' : '/mes';
+        }
+
+        function activeBtnState() {
+            btnMonthly?.classList.toggle('active', period === 'monthly');
+            btnYearly?.classList.toggle('active', period === 'yearly');
+            if (billingHint) {
+                billingHint.textContent = period === 'yearly'
+                    ? 'Cobranca anual com economia e maior previsibilidade de caixa.'
+                    : 'Plano mensal para entrada rapida e teste de valor.';
+            }
+        }
+
+        function getDisplayPrice(plan) {
+            if (period === 'yearly') {
+                return Number(plan.yearly_price_brl || 0);
+            }
+            return Number(plan.monthly_price_brl || 0);
+        }
+
+        function getPriceSubline(plan) {
+            if (Number(getDisplayPrice(plan)) === 0) {
+                return 'Gratuito para comecar';
+            }
+
+            if (period === 'yearly') {
+                const monthlyEquivalent = Number(plan.yearly_price_brl || 0) / 12;
+                const savings = Number(plan.yearly_savings_percent || 0);
+                return `Equivale a ${formatMoney(monthlyEquivalent)}/mes · economia de ${savings}%`;
+            }
+
+            return 'Cancele quando quiser';
+        }
+
+        function renderCards() {
+            if (!pricingGrid) return;
+
+            if (!plans.length) {
+                pricingGrid.innerHTML = '<div class="pricing-alert">Nao foi possivel carregar os planos agora.</div>';
+                return;
+            }
+
+            pricingGrid.innerHTML = plans.map((plan, index) => {
+                const recommended = Boolean(plan.recommended);
+                const checkoutPlanId = String(plan?.cta?.checkout_plan_id || plan.id || 'basic');
+                const amount = getDisplayPrice(plan);
+                const badge = recommended ? 'Mais escolhido' : (plan.id === 'premium' ? 'Escala' : 'Entrada');
+                const yearlyEnabled = Boolean(plan?.yearly_checkout_enabled ?? true);
+                const yearlyDisabled = period === 'yearly' && plan.id !== 'basic' && !yearlyEnabled;
+                const ctaLabel = yearlyDisabled
+                    ? 'Anual em configuracao'
+                    : (plan?.cta?.label || 'Selecionar plano');
+                const metaText = yearlyDisabled
+                    ? 'Checkout anual deste plano ainda nao esta configurado no Stripe.'
+                    : (plan.id === 'basic' ? 'Ideal para validar uso inicial.' : 'Upgrade instantaneo com pagamento online.');
+
+                return `
+                    <article class="plan-card ${recommended ? 'recommended' : ''}" data-plan="${plan.id}" style="transition-delay:${index * 80}ms;">
+                        <div class="plan-top">
+                            <div>
+                                <h2 class="plan-name">${plan.name}</h2>
+                                <p class="plan-target">${plan.target || ''}</p>
+                            </div>
+                            <span class="plan-badge">${badge}</span>
+                        </div>
+
+                        <div class="plan-price-wrap">
+                            <p class="plan-price">${formatMoney(amount)}<small style="font-size:0.82rem;font-weight:800;">${periodLabel()}</small></p>
+                            <p class="plan-price-sub">${getPriceSubline(plan)}</p>
+                        </div>
+
+                        <p class="plan-desc">${plan.description || ''}</p>
+
+                        <ul class="plan-features">
+                            ${(plan.features || []).map((feature) => `<li>${feature}</li>`).join('')}
+                        </ul>
+
+                        <div class="plan-meta">${metaText}</div>
+
+                        <button
+                            class="plan-cta ${recommended || plan.id === 'premium' ? 'primary' : 'secondary'}"
+                            type="button"
+                            data-checkout-plan="${checkoutPlanId}"
+                            data-yearly-enabled="${yearlyEnabled ? 'true' : 'false'}"
+                            ${yearlyDisabled ? 'disabled' : ''}
+                        >${ctaLabel}</button>
+                    </article>
+                `;
+            }).join('');
+
+            requestAnimationFrame(() => {
+                pricingGrid.querySelectorAll('.plan-card').forEach((card) => {
+                    card.classList.add('is-in');
+                });
+            });
+
+            pricingGrid.querySelectorAll('[data-checkout-plan]').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const yearlyEnabled = String(btn.getAttribute('data-yearly-enabled') || 'true') !== 'false';
+                    startCheckout(String(btn.getAttribute('data-checkout-plan') || 'basic'), btn, { yearlyEnabled });
+                });
+            });
+        }
+
+        async function startCheckout(planId, btn, options = {}) {
+            clearMessage();
+            const normalized = String(planId || 'basic').toLowerCase();
+            const yearlyEnabled = Boolean(options?.yearlyEnabled ?? true);
+
+            if (period === 'yearly' && normalized !== 'basic' && !yearlyEnabled) {
+                showMessage('Este checkout anual ainda nao foi configurado. Selecione mensal por enquanto.', true);
+                return;
+            }
+
+            if (normalized === 'basic') {
+                if (localStorage.getItem('token')) {
+                    window.location.href = '/offers';
+                } else {
+                    window.location.href = '/register?next=/pricing';
+                }
+                return;
+            }
+
+            if (!localStorage.getItem('token')) {
+                sessionStorage.setItem('wf_pending_checkout_plan', normalized);
+                window.location.href = `/login?next=${encodeURIComponent('/pricing')}`;
+                return;
+            }
+
+            const previousLabel = btn?.textContent || 'Processando...';
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = 'Processando...';
+            }
+
+            try {
+                const payload = {
+                    success_url: `${window.location.origin}/me/profile#mySettingsCard`,
+                    cancel_url: `${window.location.origin}/pricing`,
+                    billing_cycle: period,
+                };
+                const result = await apiRequest(`/payment/checkout/${normalized}`, 'POST', payload);
+                if (result?.checkout_url) {
+                    window.location.href = result.checkout_url;
+                    return;
+                }
+                showMessage('Nao foi possivel iniciar o checkout agora. Tente novamente em instantes.', true);
+            } catch (error) {
+                showMessage(error?.message || 'Falha ao abrir checkout do plano.', true);
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = previousLabel;
+                }
+            }
+        }
+
+        async function loadPlans() {
+            try {
+                const payload = await apiRequest('/payment/plans');
+                plans = Array.isArray(payload?.plans) ? payload.plans : [];
+
+                const conversion = payload?.conversion || {};
+                const proofGrid = document.getElementById('pricingProofGrid');
+                if (proofGrid) {
+                    proofGrid.innerHTML = [
+                        conversion.risk_reversal || 'Sem fidelidade contratual: cancele quando quiser.',
+                        conversion.checkout_security || 'Checkout protegido via Stripe com redirecionamento seguro.',
+                        conversion.positioning || 'Estrutura de planos orientada para conversao e crescimento.',
+                    ].map((item) => `<div class="proof-item">${item}</div>`).join('');
+                }
+
+                renderCards();
+                const pendingPlan = String(sessionStorage.getItem('wf_pending_checkout_plan') || '').toLowerCase();
+                if (pendingPlan && localStorage.getItem('token')) {
+                    sessionStorage.removeItem('wf_pending_checkout_plan');
+                    showMessage('Login confirmado. Selecione seu plano para concluir o upgrade.');
+                }
+            } catch (error) {
+                showMessage(error?.message || 'Erro ao carregar planos de assinatura.', true);
+            }
+        }
+
+        btnMonthly?.addEventListener('click', () => {
+            if (period !== 'monthly') {
+                period = 'monthly';
+                activeBtnState();
+                renderCards();
+            }
+        });
+
+        btnYearly?.addEventListener('click', () => {
+            if (period !== 'yearly') {
+                period = 'yearly';
+                activeBtnState();
+                renderCards();
+            }
+        });
+
+        activeBtnState();
+        loadPlans();
+    })();
+</script>
+{% endblock %}

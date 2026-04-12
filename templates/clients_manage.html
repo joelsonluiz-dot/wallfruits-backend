@@ -39,7 +39,9 @@
             <h2 class="clients-title">Contrato e Limites</h2>
             <div id="clientsSubscriptionInfo" class="client-meta" style="margin-bottom:0.55rem;">Assinatura: carregando...</div>
             <div class="clients-actions" style="margin-bottom:0.7rem;">
-                <button class="btn btn-wf-secondary" type="button" id="upgradePremiumBtn">Upgrade para Premium</button>
+                <button class="btn btn-wf-secondary" type="button" id="upgradeProBtn">Upgrade para Pro</button>
+                <button class="btn btn-wf-primary" type="button" id="upgradePremiumBtn">Upgrade para Premium</button>
+                <a class="btn btn-wf-secondary" href="/pricing">Comparar planos</a>
             </div>
             <div id="clientsPolicyAlert" style="display:none;"></div>
             <div class="clients-policy" id="clientsPolicyGrid"></div>
@@ -226,19 +228,38 @@
 
     async function loadSubscription() {
         const info = document.getElementById('clientsSubscriptionInfo');
+        const proBtn = document.getElementById('upgradeProBtn');
+        const premiumBtn = document.getElementById('upgradePremiumBtn');
         if (!info) return;
         try {
             const sub = await apiRequest('/payment/subscription');
             const plan = String(sub?.plan_type || 'none');
             const status = String(sub?.status || 'inactive');
-            info.textContent = `Assinatura: ${plan.toUpperCase()} (${status})`;
+            const friendly = plan === 'none' ? 'BASICO (sem assinatura paga)' : plan.toUpperCase();
+            info.textContent = `Assinatura: ${friendly} (${status})`;
+
+            if (proBtn) {
+                proBtn.disabled = plan === 'pro' || plan === 'premium';
+                proBtn.textContent = proBtn.disabled ? 'Pro já ativo' : 'Upgrade para Pro';
+            }
+
+            if (premiumBtn) {
+                premiumBtn.disabled = plan === 'premium';
+                premiumBtn.textContent = premiumBtn.disabled ? 'Premium já ativo' : 'Upgrade para Premium';
+            }
         } catch {
             info.textContent = 'Assinatura: indisponível no momento';
         }
     }
 
-    async function startPremiumUpgrade() {
-        const data = await apiRequest('/payment/checkout/premium', 'POST', {
+    async function startUpgrade(plan) {
+        const normalizedPlan = String(plan || '').toLowerCase();
+        if (!['pro', 'premium'].includes(normalizedPlan)) {
+            showToast('Plano inválido para upgrade.');
+            return;
+        }
+
+        const data = await apiRequest(`/payment/checkout/${normalizedPlan}`, 'POST', {
             success_url: `${window.location.origin}/clients/manage`,
             cancel_url: `${window.location.origin}/clients/manage`,
         });
@@ -246,7 +267,7 @@
             window.location.href = data.checkout_url;
             return;
         }
-        showToast('Não foi possível iniciar o checkout da assinatura premium.');
+        showToast('Não foi possível iniciar o checkout de upgrade.');
     }
 
     async function buySlots() {
@@ -308,7 +329,8 @@
 
     document.getElementById('refreshClientsBtn')?.addEventListener('click', loadDashboard);
     document.getElementById('buySlotBtn')?.addEventListener('click', buySlots);
-    document.getElementById('upgradePremiumBtn')?.addEventListener('click', startPremiumUpgrade);
+    document.getElementById('upgradeProBtn')?.addEventListener('click', () => startUpgrade('pro'));
+    document.getElementById('upgradePremiumBtn')?.addEventListener('click', () => startUpgrade('premium'));
     document.getElementById('clientCreateForm')?.addEventListener('submit', createClient);
 
     const adminPanel = document.getElementById('clientsAdminPanel');

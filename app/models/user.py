@@ -29,6 +29,30 @@ class User(Base):
     rating = Column(Integer, default=0)  # Rating de 0-5
     total_reviews = Column(Integer, default=0)
 
+    # Preferencias de pagamento (usadas em checkout e upgrades de assinatura)
+    payment_billing_name = Column(String(150))
+    payment_billing_phone = Column(String(30))
+    payment_billing_address_line1 = Column(String(255))
+    payment_billing_address_line2 = Column(String(255))
+    payment_billing_city = Column(String(120))
+    payment_billing_state = Column(String(10))
+    payment_billing_zip = Column(String(20))
+    payment_billing_country = Column(String(60), default="BR")
+
+    payment_pix_key_type = Column(String(20))
+    payment_pix_key = Column(String(160))
+    payment_pix_holder_name = Column(String(150))
+
+    payment_card_holder_name = Column(String(150))
+    payment_card_last4 = Column(String(4))
+    payment_card_brand = Column(String(30))
+    payment_card_exp_month = Column(Integer)
+    payment_card_exp_year = Column(Integer)
+
+    payment_default_method = Column(String(20), default="card")
+    payment_use_for_subscriptions = Column(Boolean, default=True)
+    payment_updated_at = Column(DateTime(timezone=True))
+
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     last_login = Column(DateTime(timezone=True))

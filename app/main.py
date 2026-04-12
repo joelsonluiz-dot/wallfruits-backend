@@ -829,6 +829,18 @@ async def my_profile_page(request: Request, current_user: User = Depends(get_cur
     return _render_template("profile.html", request, current_user=current_user, viewed_user_id=None)
 
 
+@app.get("/pricing")
+async def pricing_page(request: Request, current_user: User = Depends(get_current_user_optional)):
+    """Página de planos com estratégia de conversão para upgrade de assinatura."""
+    return _render_template("pricing.html", request, current_user=current_user)
+
+
+@app.get("/me/payment-settings")
+async def my_payment_settings_page(request: Request, current_user: User = Depends(get_current_user_optional)):
+    """Página de configuração de informações de pagamento para checkout e upgrades."""
+    return _render_template("payment_settings.html", request, current_user=current_user)
+
+
 @app.get("/users/{user_id}")
 async def public_profile_page(
     user_id: int,

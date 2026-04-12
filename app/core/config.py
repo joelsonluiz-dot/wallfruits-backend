@@ -86,7 +86,10 @@ class Settings(BaseSettings):
     STRIPE_PUBLISHABLE_KEY: str = ""
     STRIPE_WEBHOOK_SECRET: str = ""
     STRIPE_PRICE_BASIC: str = ""   # price_xxxx do plano básico no Stripe
+    STRIPE_PRICE_PRO: str = ""     # price_xxxx do plano Pro no Stripe
+    STRIPE_PRICE_PRO_YEARLY: str = ""     # price_xxxx anual do plano Pro no Stripe
     STRIPE_PRICE_PREMIUM: str = "" # price_xxxx do plano premium no Stripe
+    STRIPE_PRICE_PREMIUM_YEARLY: str = "" # price_xxxx anual do plano premium no Stripe
 
     # Monetizacao (Ads)
     WF_ADS_ENABLED: bool = True

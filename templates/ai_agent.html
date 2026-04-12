@@ -908,11 +908,11 @@
             const isGuestMode = AGENDA_GUEST_ACCESS;
             const primaryHref = isGuestMode
                 ? '/login?next=/ai-agent%3Fentry%3Dnav'
-                : '/me/profile#mySettingsCard';
-            const primaryLabel = isGuestMode ? 'Entrar para continuar' : 'Ver assinatura';
+                : '/pricing';
+            const primaryLabel = isGuestMode ? 'Entrar para continuar' : 'Ver planos e assinar';
             const redirectTarget = isGuestMode
                 ? '/login?next=/ai-agent%3Fentry%3Dnav'
-                : '/ai-agent';
+                : '/pricing';
 
             lockAgendaAccess(reason, {
                 primaryHref,

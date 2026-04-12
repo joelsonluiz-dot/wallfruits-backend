@@ -2389,6 +2389,8 @@
                 <a class="wf-nav-link" href="/store/cart" id="navStoreCart" style="display:none;">Carrinho</a>
                 <a class="wf-nav-link" href="/store/orders" id="navStoreOrders" style="display:none;">Meus pedidos</a>
                 <a class="wf-nav-link" href="/store/proposals" id="navStoreProposals" style="display:none;">Propostas por volume</a>
+                <a class="wf-nav-link" href="/me/payment-settings" id="navPaymentSettings" style="display:none;">Pagamentos e cobranca</a>
+                <a class="wf-nav-link" href="/pricing" id="navPricing">Planos Pro e Premium</a>
                 <a class="wf-nav-link" href="/offers">Explorar ofertas</a>
                 <a class="wf-nav-link" href="/offers/new" id="navNewOffer" style="display:none;">Nova oferta</a>
                 <a class="wf-nav-link" href="/messages" id="navMessages" style="display:none;">Mensagens</a>
@@ -2435,6 +2437,18 @@
                             <a class="wf-profile-link" href="/me/profile#mySettingsCard" id="navProfileSettings">
                                 <span>Configurações</span>
                                 <span class="wf-profile-link-icon">⚙️</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="wf-profile-link" href="/me/payment-settings" id="navProfilePaymentSettings">
+                                <span>Pagamentos</span>
+                                <span class="wf-profile-link-icon">💳</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="wf-profile-link" href="/pricing" id="navProfilePricing">
+                                <span>Planos e upgrades</span>
+                                <span class="wf-profile-link-icon">🚀</span>
                             </a>
                         </li>
                         <li>
@@ -4313,6 +4327,8 @@
             setElementDisplay('navStoreCart', isLogged);
             setElementDisplay('navStoreOrders', isLogged);
             setElementDisplay('navStoreProposals', isLogged);
+            setElementDisplay('navPaymentSettings', isLogged);
+            setElementDisplay('navProfilePaymentSettings', isLogged);
             setElementDisplay('navNewOffer', isLogged);
             setElementDisplay('navSidebarNewOffer', isLogged);
             setElementDisplay('navTopMessages', isLogged);
@@ -4333,6 +4349,7 @@
             setElementDisplay('actionPopupHelp', isLogged);
             setElementDisplay('actionPopupServicesManage', isStoreManager);
             setElementDisplay('actionPopupNewOffer', isLogged);
+            setElementDisplay('actionPopupPaymentSettings', isLogged);
             setElementDisplay('actionPopupCreateProduct', isStoreManager);
             setElementDisplay('actionPopupFeatured', isAdmin);
             setElementDisplay('notificationsSection', isLogged);
@@ -4346,6 +4363,7 @@
             setElementDisplay('rightNavHelp', isLogged);
             setElementDisplay('rightNavProfile', isLogged);
             setElementDisplay('rightNavSettings', isLogged);
+            setElementDisplay('rightNavPaymentSettings', isLogged);
             setElementDisplay('rightNavLogout', isLogged);
             setElementDisplay('rightNavLogin', !isLogged);
             setElementDisplay('rightNavRegister', !isLogged);
@@ -4365,6 +4383,14 @@
                 const link = document.getElementById(id);
                 if (link instanceof HTMLAnchorElement) {
                     link.href = gatedMessagesHref;
+                }
+            });
+
+            const gatedPaymentHref = isLogged ? '/me/payment-settings' : '/login?next=/me/payment-settings';
+            ['navPaymentSettings', 'navProfilePaymentSettings', 'actionPopupPaymentSettings', 'rightNavPaymentSettings'].forEach((id) => {
+                const link = document.getElementById(id);
+                if (link instanceof HTMLAnchorElement) {
+                    link.href = gatedPaymentHref;
                 }
             });
 
@@ -5279,6 +5305,14 @@
                             <span class="material-icons">chat</span>
                             <span>Mensagens</span>
                         </a>
+                        <a href="/me/payment-settings" class="wf-popup-item" id="actionPopupPaymentSettings" style="display:none;">
+                            <span class="material-icons">credit_card</span>
+                            <span>Pagamentos</span>
+                        </a>
+                        <a href="/pricing" class="wf-popup-item" id="actionPopupPricing">
+                            <span class="material-icons">rocket_launch</span>
+                            <span>Planos Pro e Premium</span>
+                        </a>
                         <a href="/store/manage/dashboard" class="wf-popup-item" id="actionPopupCreateProduct" style="display:none;">
                             <span class="material-icons">inventory_2</span>
                             <span>Criar produto</span>
@@ -5380,6 +5414,14 @@
                         <a href="/me/profile#mySettingsCard" class="wf-sidebar-right-item" id="rightNavSettings" style="display:none;">
                             <span>⚙️</span>
                             <span>Configurações</span>
+                        </a>
+                        <a href="/me/payment-settings" class="wf-sidebar-right-item" id="rightNavPaymentSettings" style="display:none;">
+                            <span>💳</span>
+                            <span>Pagamentos</span>
+                        </a>
+                        <a href="/pricing" class="wf-sidebar-right-item" id="rightNavPricing">
+                            <span>🚀</span>
+                            <span>Planos Pro e Premium</span>
                         </a>
                     </div>
 

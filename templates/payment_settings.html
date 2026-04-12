@@ -1,0 +1,869 @@
+{% extends "base.html" %}
+
+{% block title %}Configuracoes de Pagamento | WallFruits{% endblock %}
+
+{% block content %}
+<style>
+    .pay-page {
+        position: relative;
+        min-height: 82vh;
+        border-radius: 26px;
+        overflow: hidden;
+        padding: 1rem;
+        background:
+            radial-gradient(circle at 15% 12%, rgba(35, 102, 68, 0.24), transparent 42%),
+            radial-gradient(circle at 86% 8%, rgba(233, 178, 96, 0.24), transparent 36%),
+            linear-gradient(145deg, #102a2e 0%, #1b3f47 46%, #21544f 100%);
+        color: #f3f8f7;
+    }
+
+    .pay-shell {
+        max-width: 1120px;
+        margin: 0 auto;
+        display: grid;
+        gap: 0.85rem;
+        position: relative;
+        z-index: 1;
+    }
+
+    .pay-hero {
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.08));
+        backdrop-filter: blur(12px);
+        padding: 1rem 1rem 0.9rem;
+        display: grid;
+        gap: 0.42rem;
+        box-shadow: 0 18px 36px rgba(9, 32, 43, 0.3);
+    }
+
+    .pay-eyebrow {
+        display: inline-flex;
+        width: fit-content;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.26);
+        padding: 0.16rem 0.62rem;
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        background: rgba(0, 0, 0, 0.22);
+    }
+
+    .pay-title {
+        margin: 0;
+        font-size: clamp(1.2rem, 2.4vw, 1.62rem);
+        font-weight: 900;
+        letter-spacing: -0.03em;
+        color: #fff;
+    }
+
+    .pay-subtitle {
+        margin: 0;
+        color: rgba(241, 249, 248, 0.86);
+        font-size: 0.86rem;
+        line-height: 1.45;
+    }
+
+    .pay-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.82rem;
+    }
+
+    .pay-card {
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(3, 14, 20, 0.32);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 14px 34px rgba(4, 20, 29, 0.26);
+        padding: 0.86rem;
+        display: grid;
+        gap: 0.62rem;
+    }
+
+    .pay-card.wide {
+        grid-column: 1 / -1;
+    }
+
+    .pay-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+    }
+
+    .pay-card-title {
+        margin: 0;
+        font-size: 0.98rem;
+        font-weight: 800;
+        color: #fff;
+    }
+
+    .pay-card-sub {
+        margin: 0.16rem 0 0;
+        font-size: 0.76rem;
+        color: rgba(231, 242, 241, 0.8);
+    }
+
+    .pay-pill {
+        border-radius: 999px;
+        padding: 0.2rem 0.55rem;
+        border: 1px solid rgba(255, 255, 255, 0.26);
+        background: rgba(0, 0, 0, 0.24);
+        color: #ffe8bf;
+        font-size: 0.65rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+    }
+
+    .pay-form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.55rem;
+    }
+
+    .pay-field {
+        display: grid;
+        gap: 0.26rem;
+    }
+
+    .pay-field.full {
+        grid-column: 1 / -1;
+    }
+
+    .pay-label {
+        font-size: 0.73rem;
+        font-weight: 700;
+        color: rgba(243, 250, 249, 0.86);
+        letter-spacing: 0.03em;
+    }
+
+    .pay-input,
+    .pay-select {
+        width: 100%;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 12px;
+        background: rgba(0, 0, 0, 0.28);
+        color: #f5fbfa;
+        padding: 0.55rem 0.62rem;
+        font-size: 0.84rem;
+        outline: none;
+        transition: border-color 0.16s ease, box-shadow 0.16s ease;
+    }
+
+    .pay-input:focus,
+    .pay-select:focus {
+        border-color: rgba(127, 255, 202, 0.6);
+        box-shadow: 0 0 0 3px rgba(127, 255, 202, 0.2);
+    }
+
+    .pay-input::placeholder {
+        color: rgba(220, 234, 232, 0.55);
+    }
+
+    .pay-note {
+        font-size: 0.7rem;
+        color: rgba(230, 243, 241, 0.72);
+        line-height: 1.4;
+    }
+
+    .pay-switch-row {
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(0, 0, 0, 0.24);
+        padding: 0.58rem 0.65rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.6rem;
+    }
+
+    .pay-switch-label {
+        display: grid;
+        gap: 0.12rem;
+    }
+
+    .pay-switch-title {
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: #fff;
+        margin: 0;
+    }
+
+    .pay-switch-sub {
+        font-size: 0.69rem;
+        color: rgba(236, 246, 245, 0.76);
+        margin: 0;
+    }
+
+    .pay-switch {
+        appearance: none;
+        width: 46px;
+        height: 26px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        background: rgba(255, 255, 255, 0.24);
+        position: relative;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .pay-switch::before {
+        content: '';
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #fff;
+        transition: transform 0.2s ease;
+    }
+
+    .pay-switch:checked {
+        background: linear-gradient(135deg, #2bc17b, #1ea86c);
+        border-color: rgba(43, 193, 123, 0.72);
+    }
+
+    .pay-switch:checked::before {
+        transform: translateX(20px);
+    }
+
+    .pay-methods {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .pay-method {
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.24);
+        background: rgba(0, 0, 0, 0.25);
+        color: #ecf7f6;
+        padding: 0.34rem 0.66rem;
+        font-size: 0.74rem;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        cursor: pointer;
+    }
+
+    .pay-method input {
+        accent-color: #2bc17b;
+    }
+
+    .pay-foot {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+    }
+
+    .pay-status-chip {
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        background: rgba(0, 0, 0, 0.25);
+        color: #ffe6b6;
+        padding: 0.28rem 0.6rem;
+        font-size: 0.68rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .pay-status-chip.ready {
+        color: #cbffd8;
+        border-color: rgba(95, 255, 157, 0.46);
+        background: rgba(17, 72, 42, 0.35);
+    }
+
+    .pay-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .pay-btn {
+        border: none;
+        border-radius: 12px;
+        padding: 0.6rem 0.92rem;
+        font-size: 0.82rem;
+        font-weight: 800;
+        cursor: pointer;
+        transition: transform 0.16s ease, box-shadow 0.16s ease;
+    }
+
+    .pay-btn.primary {
+        background: linear-gradient(135deg, #f3ae59, #f1c06f);
+        color: #1f2a31;
+        box-shadow: 0 14px 26px rgba(221, 164, 76, 0.35);
+    }
+
+    .pay-btn.secondary {
+        background: rgba(255, 255, 255, 0.14);
+        color: #f5fbfa;
+        border: 1px solid rgba(255, 255, 255, 0.25);
+    }
+
+    .pay-btn:hover {
+        transform: translateY(-1px);
+    }
+
+    .pay-btn:disabled {
+        opacity: 0.62;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .pay-alert {
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        padding: 0.58rem 0.68rem;
+        font-size: 0.78rem;
+        font-weight: 700;
+    }
+
+    .pay-alert.info {
+        background: rgba(16, 44, 69, 0.4);
+        color: #d5edff;
+    }
+
+    .pay-alert.error {
+        background: rgba(109, 24, 24, 0.42);
+        color: #ffd7d7;
+        border-color: rgba(255, 158, 158, 0.4);
+    }
+
+    .pay-spinner {
+        width: 14px;
+        height: 14px;
+        border: 2px solid rgba(31, 42, 49, 0.25);
+        border-top-color: #1f2a31;
+        border-radius: 50%;
+        display: inline-block;
+        vertical-align: -2px;
+        margin-right: 0.35rem;
+        animation: paySpin 0.8s linear infinite;
+    }
+
+    @keyframes paySpin {
+        to { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 980px) {
+        .pay-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 720px) {
+        .pay-page {
+            padding: 0.72rem;
+            border-radius: 18px;
+        }
+
+        .pay-form-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<section class="pay-page">
+    <div class="pay-shell">
+        <header class="pay-hero">
+            <span class="pay-eyebrow">Pagamento seguro</span>
+            <h1 class="pay-title">Configuracoes de pagamento e cobranca</h1>
+            <p class="pay-subtitle">
+                Configure cartao, PIX, nome e endereco de cobranca em um unico lugar.
+                Esses dados serao reaproveitados nos upgrades de assinatura e fluxos de checkout da plataforma.
+            </p>
+        </header>
+
+        <div id="paymentFeedback"></div>
+
+        <div class="pay-grid">
+            <article class="pay-card">
+                <div class="pay-head">
+                    <div>
+                        <h2 class="pay-card-title">Endereco de cobranca</h2>
+                        <p class="pay-card-sub">Informacoes base para assinatura e faturamento.</p>
+                    </div>
+                    <span class="pay-pill">Obrigatorio</span>
+                </div>
+
+                <div class="pay-form-grid">
+                    <label class="pay-field full">
+                        <span class="pay-label">Nome completo</span>
+                        <input class="pay-input" id="billingName" placeholder="Nome do titular da cobranca">
+                    </label>
+
+                    <label class="pay-field">
+                        <span class="pay-label">Telefone</span>
+                        <input class="pay-input" id="billingPhone" placeholder="(00) 00000-0000">
+                    </label>
+
+                    <label class="pay-field">
+                        <span class="pay-label">CEP</span>
+                        <input class="pay-input" id="billingZip" placeholder="00000-000">
+                    </label>
+
+                    <label class="pay-field full">
+                        <span class="pay-label">Endereco (rua, numero, bairro)</span>
+                        <input class="pay-input" id="billingAddress1" placeholder="Rua, numero e bairro">
+                    </label>
+
+                    <label class="pay-field full">
+                        <span class="pay-label">Complemento (opcional)</span>
+                        <input class="pay-input" id="billingAddress2" placeholder="Apartamento, bloco, referencia...">
+                    </label>
+
+                    <label class="pay-field">
+                        <span class="pay-label">Cidade</span>
+                        <input class="pay-input" id="billingCity" placeholder="Cidade">
+                    </label>
+
+                    <label class="pay-field">
+                        <span class="pay-label">UF</span>
+                        <input class="pay-input" id="billingState" placeholder="SP" maxlength="2">
+                    </label>
+
+                    <label class="pay-field">
+                        <span class="pay-label">Pais</span>
+                        <input class="pay-input" id="billingCountry" placeholder="BR" value="BR">
+                    </label>
+                </div>
+            </article>
+
+            <article class="pay-card">
+                <div class="pay-head">
+                    <div>
+                        <h2 class="pay-card-title">PIX para pagamentos rapidos</h2>
+                        <p class="pay-card-sub">Defina chave e titular para operacoes por PIX.</p>
+                    </div>
+                    <span class="pay-pill">PIX</span>
+                </div>
+
+                <div class="pay-form-grid">
+                    <label class="pay-field">
+                        <span class="pay-label">Tipo de chave PIX</span>
+                        <select class="pay-select" id="pixKeyType">
+                            <option value="email">E-mail</option>
+                            <option value="phone">Telefone</option>
+                            <option value="cpf">CPF</option>
+                            <option value="cnpj">CNPJ</option>
+                            <option value="random">Chave aleatoria</option>
+                        </select>
+                    </label>
+
+                    <label class="pay-field full">
+                        <span class="pay-label">Chave PIX</span>
+                        <input class="pay-input" id="pixKey" placeholder="Informe sua chave PIX">
+                    </label>
+
+                    <label class="pay-field full">
+                        <span class="pay-label">Titular da chave</span>
+                        <input class="pay-input" id="pixHolder" placeholder="Nome do titular da chave PIX">
+                    </label>
+                </div>
+
+                <div class="pay-note" id="pixMaskedHint">Nenhuma chave PIX configurada.</div>
+            </article>
+
+            <article class="pay-card">
+                <div class="pay-head">
+                    <div>
+                        <h2 class="pay-card-title">Cartao principal</h2>
+                        <p class="pay-card-sub">A plataforma armazena apenas dados mascarados do cartao.</p>
+                    </div>
+                    <span class="pay-pill">Card</span>
+                </div>
+
+                <div class="pay-form-grid">
+                    <label class="pay-field full">
+                        <span class="pay-label">Nome no cartao</span>
+                        <input class="pay-input" id="cardHolder" placeholder="Nome impresso no cartao">
+                    </label>
+
+                    <label class="pay-field full">
+                        <span class="pay-label">Numero do cartao (somente para cadastrar ou atualizar)</span>
+                        <input class="pay-input" id="cardNumber" placeholder="0000 0000 0000 0000" inputmode="numeric">
+                    </label>
+
+                    <label class="pay-field">
+                        <span class="pay-label">Mes de validade</span>
+                        <input class="pay-input" id="cardExpMonth" placeholder="MM" inputmode="numeric" maxlength="2">
+                    </label>
+
+                    <label class="pay-field">
+                        <span class="pay-label">Ano de validade</span>
+                        <input class="pay-input" id="cardExpYear" placeholder="AAAA" inputmode="numeric" maxlength="4">
+                    </label>
+
+                    <label class="pay-field">
+                        <span class="pay-label">Bandeira</span>
+                        <select class="pay-select" id="cardBrand">
+                            <option value="">Selecionar</option>
+                            <option value="visa">Visa</option>
+                            <option value="mastercard">Mastercard</option>
+                            <option value="elo">Elo</option>
+                            <option value="amex">Amex</option>
+                            <option value="hipercard">Hipercard</option>
+                            <option value="outros">Outros</option>
+                        </select>
+                    </label>
+                </div>
+
+                <div class="pay-note" id="cardMaskedHint">Nenhum cartao configurado.</div>
+            </article>
+
+            <article class="pay-card wide">
+                <div class="pay-head">
+                    <div>
+                        <h2 class="pay-card-title">Preferencias para upgrades e cobranca</h2>
+                        <p class="pay-card-sub">Defina o metodo preferencial para upgrades de assinatura.</p>
+                    </div>
+                    <span class="pay-pill">Assinaturas</span>
+                </div>
+
+                <div class="pay-methods">
+                    <label class="pay-method">
+                        <input type="radio" name="defaultPaymentMethod" value="card" checked>
+                        <span>Cartao</span>
+                    </label>
+                    <label class="pay-method">
+                        <input type="radio" name="defaultPaymentMethod" value="pix">
+                        <span>PIX</span>
+                    </label>
+                </div>
+
+                <div class="pay-switch-row">
+                    <div class="pay-switch-label">
+                        <p class="pay-switch-title">Usar dados salvos em upgrades de assinatura</p>
+                        <p class="pay-switch-sub">Quando ativo, o fluxo de upgrade reutiliza essas informacoes automaticamente.</p>
+                    </div>
+                    <input type="checkbox" class="pay-switch" id="useForSubscriptions" checked>
+                </div>
+
+                <div class="pay-foot">
+                    <span class="pay-status-chip" id="subscriptionReadyChip">Upgrade pendente de configuracao</span>
+
+                    <div class="pay-actions">
+                        <a href="/me/profile#mySettingsCard" class="pay-btn secondary">Voltar ao perfil</a>
+                        <button class="pay-btn primary" id="btnSavePaymentSettings" type="button">Salvar configuracoes</button>
+                    </div>
+                </div>
+            </article>
+        </div>
+    </div>
+</section>
+
+<script>
+    (function setupPaymentSettingsPage() {
+        const feedbackEl = document.getElementById('paymentFeedback');
+        const saveBtn = document.getElementById('btnSavePaymentSettings');
+        const readyChip = document.getElementById('subscriptionReadyChip');
+        const cardMaskedHint = document.getElementById('cardMaskedHint');
+        const pixMaskedHint = document.getElementById('pixMaskedHint');
+
+        let currentCardLast4 = '';
+
+        function requireAuth() {
+            if (!localStorage.getItem('token')) {
+                window.location.href = '/login?next=/me/payment-settings';
+                return false;
+            }
+            return true;
+        }
+
+        function showMessage(type, text) {
+            if (!feedbackEl) return;
+            const cssClass = type === 'error' ? 'pay-alert error' : 'pay-alert info';
+            feedbackEl.innerHTML = `<div class="${cssClass}">${String(text || '')}</div>`;
+        }
+
+        function setSaveLoading(loading) {
+            if (!saveBtn) return;
+            if (!saveBtn.dataset.defaultLabel) {
+                saveBtn.dataset.defaultLabel = saveBtn.textContent || 'Salvar configuracoes';
+            }
+            saveBtn.disabled = loading;
+            saveBtn.innerHTML = loading
+                ? '<span class="pay-spinner" aria-hidden="true"></span>Salvando...'
+                : saveBtn.dataset.defaultLabel;
+        }
+
+        function onlyDigits(value) {
+            return String(value || '').replace(/\D/g, '');
+        }
+
+        function formatPhone(value) {
+            const digits = onlyDigits(value).slice(0, 11);
+            if (digits.length <= 2) return digits ? `(${digits}` : '';
+            if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+            if (digits.length <= 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+            return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+        }
+
+        function formatZip(value) {
+            const digits = onlyDigits(value).slice(0, 8);
+            if (digits.length <= 5) return digits;
+            return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+        }
+
+        function formatCardNumber(value) {
+            const digits = onlyDigits(value).slice(0, 19);
+            return digits.replace(/(.{4})/g, '$1 ').trim();
+        }
+
+        function detectCardBrand(digits) {
+            if (/^4/.test(digits)) return 'visa';
+            if (/^(5[1-5]|2[2-7])/.test(digits)) return 'mastercard';
+            if (/^(34|37)/.test(digits)) return 'amex';
+            if (/^(4011|4312|4389|4514|4576|5041|5066|5090|6277|6362|6363|650|651|655)/.test(digits)) return 'elo';
+            if (/^(6062|3841)/.test(digits)) return 'hipercard';
+            return '';
+        }
+
+        function pickField(id) {
+            return document.getElementById(id);
+        }
+
+        function setValue(id, value) {
+            const el = pickField(id);
+            if (!el) return;
+            el.value = value == null ? '' : String(value);
+        }
+
+        function getValue(id) {
+            const el = pickField(id);
+            return String(el?.value || '').trim();
+        }
+
+        function setDefaultMethod(method) {
+            const safeMethod = method === 'pix' ? 'pix' : 'card';
+            document.querySelectorAll('input[name="defaultPaymentMethod"]').forEach((input) => {
+                input.checked = input.value === safeMethod;
+            });
+        }
+
+        function getDefaultMethod() {
+            const checked = document.querySelector('input[name="defaultPaymentMethod"]:checked');
+            return checked?.value === 'pix' ? 'pix' : 'card';
+        }
+
+        function refreshReadyChip(isReady) {
+            if (!readyChip) return;
+            readyChip.classList.toggle('ready', Boolean(isReady));
+            readyChip.textContent = isReady
+                ? 'Pronto para upgrade de assinatura'
+                : 'Upgrade pendente de configuracao';
+        }
+
+        function applyPayload(payload) {
+            const billing = payload?.billing_address || {};
+            const pix = payload?.pix || {};
+            const card = payload?.card || {};
+
+            setValue('billingName', billing.full_name || '');
+            setValue('billingPhone', billing.phone ? formatPhone(billing.phone) : '');
+            setValue('billingAddress1', billing.address_line1 || '');
+            setValue('billingAddress2', billing.address_line2 || '');
+            setValue('billingCity', billing.city || '');
+            setValue('billingState', String(billing.state || '').toUpperCase());
+            setValue('billingZip', billing.zip_code ? formatZip(billing.zip_code) : '');
+            setValue('billingCountry', (billing.country || 'BR').toUpperCase());
+
+            setValue('pixKeyType', pix.key_type || 'email');
+            setValue('pixKey', pix.key || '');
+            setValue('pixHolder', pix.holder_name || billing.full_name || '');
+            pixMaskedHint.textContent = pix.key_masked
+                ? `Chave atual mascarada: ${pix.key_masked}`
+                : 'Nenhuma chave PIX configurada.';
+
+            setValue('cardHolder', card.holder_name || billing.full_name || '');
+            setValue('cardExpMonth', card.exp_month > 0 ? String(card.exp_month).padStart(2, '0') : '');
+            setValue('cardExpYear', card.exp_year > 0 ? String(card.exp_year) : '');
+            setValue('cardBrand', card.brand || '');
+            setValue('cardNumber', '');
+
+            currentCardLast4 = String(card.last4 || '');
+            cardMaskedHint.textContent = card.number_masked
+                ? `Cartao atual: ${card.number_masked}`
+                : 'Nenhum cartao configurado.';
+
+            setDefaultMethod(payload?.default_method || 'card');
+            const useForSubscriptions = document.getElementById('useForSubscriptions');
+            if (useForSubscriptions) {
+                useForSubscriptions.checked = Boolean(payload?.use_for_subscriptions ?? true);
+            }
+
+            refreshReadyChip(Boolean(payload?.is_ready_for_subscription_upgrade));
+        }
+
+        function validateBeforeSave(payload) {
+            const billing = payload.billing_address;
+            if (!billing.full_name || !billing.phone || !billing.address_line1 || !billing.city || !billing.state || !billing.zip_code) {
+                return 'Preencha todos os campos obrigatorios de cobranca.';
+            }
+
+            if (billing.state.length !== 2) {
+                return 'Informe uma UF valida com 2 letras.';
+            }
+
+            if (onlyDigits(billing.phone).length < 10) {
+                return 'Informe um telefone valido com DDD.';
+            }
+
+            if (onlyDigits(billing.zip_code).length !== 8) {
+                return 'Informe um CEP valido com 8 digitos.';
+            }
+
+            if (payload.default_method === 'pix' && !payload.pix?.key) {
+                return 'Configure uma chave PIX para usar PIX como metodo padrao.';
+            }
+
+            if (payload.default_method === 'card') {
+                if (!payload.card?.holder_name || !payload.card?.exp_month || !payload.card?.exp_year) {
+                    return 'Preencha titular e validade do cartao para usar cartao como metodo padrao.';
+                }
+                const digits = onlyDigits(payload.card?.number || '');
+                if (!currentCardLast4 && !digits) {
+                    return 'Informe o numero do cartao para cadastrar o primeiro cartao.';
+                }
+            }
+
+            return null;
+        }
+
+        function buildSavePayload() {
+            const cardNumberRaw = getValue('cardNumber');
+            const cardDigits = onlyDigits(cardNumberRaw);
+            const detectedBrand = detectCardBrand(cardDigits);
+            const selectedBrand = getValue('cardBrand').toLowerCase();
+            const defaultMethod = getDefaultMethod();
+            const cardHolderInput = getValue('cardHolder');
+            const cardHolder = cardHolderInput || getValue('billingName');
+            const cardExpMonth = Number(getValue('cardExpMonth') || 0);
+            const cardExpYear = Number(getValue('cardExpYear') || 0);
+
+            const shouldSendCard = Boolean(
+                defaultMethod === 'card'
+                || currentCardLast4
+                || cardDigits
+                || cardHolderInput
+                || cardExpMonth
+                || cardExpYear
+                || selectedBrand
+            );
+
+            return {
+                billing_address: {
+                    full_name: getValue('billingName'),
+                    phone: getValue('billingPhone'),
+                    address_line1: getValue('billingAddress1'),
+                    address_line2: getValue('billingAddress2') || null,
+                    city: getValue('billingCity'),
+                    state: getValue('billingState').toUpperCase(),
+                    zip_code: getValue('billingZip'),
+                    country: (getValue('billingCountry') || 'BR').toUpperCase(),
+                },
+                pix: getValue('pixKey')
+                    ? {
+                        key_type: getValue('pixKeyType') || 'email',
+                        key: getValue('pixKey'),
+                        holder_name: getValue('pixHolder') || getValue('billingName'),
+                    }
+                    : null,
+                card: shouldSendCard
+                    ? {
+                        holder_name: cardHolder,
+                        number: cardDigits || null,
+                        exp_month: cardExpMonth,
+                        exp_year: cardExpYear,
+                        brand: (selectedBrand || detectedBrand || null),
+                    }
+                    : null,
+                default_method: defaultMethod,
+                use_for_subscriptions: Boolean(document.getElementById('useForSubscriptions')?.checked),
+            };
+        }
+
+        async function loadPreferences() {
+            if (!requireAuth()) return;
+            try {
+                const payload = await apiRequest('/payment/preferences');
+                applyPayload(payload || {});
+            } catch (error) {
+                showMessage('error', error.message || 'Nao foi possivel carregar as configuracoes de pagamento.');
+            }
+        }
+
+        async function savePreferences() {
+            if (!requireAuth()) return;
+
+            const payload = buildSavePayload();
+            const validationError = validateBeforeSave(payload);
+            if (validationError) {
+                showMessage('error', validationError);
+                return;
+            }
+
+            try {
+                setSaveLoading(true);
+                const saved = await apiRequest('/payment/preferences', 'PUT', payload);
+                applyPayload(saved || {});
+                showMessage('info', 'Configuracoes de pagamento salvas com sucesso.');
+            } catch (error) {
+                showMessage('error', error.message || 'Falha ao salvar configuracoes de pagamento.');
+            } finally {
+                setSaveLoading(false);
+            }
+        }
+
+        const phoneInput = pickField('billingPhone');
+        const zipInput = pickField('billingZip');
+        const stateInput = pickField('billingState');
+        const cardInput = pickField('cardNumber');
+
+        if (phoneInput) {
+            phoneInput.addEventListener('input', () => {
+                phoneInput.value = formatPhone(phoneInput.value);
+            });
+        }
+
+        if (zipInput) {
+            zipInput.addEventListener('input', () => {
+                zipInput.value = formatZip(zipInput.value);
+            });
+        }
+
+        if (stateInput) {
+            stateInput.addEventListener('input', () => {
+                stateInput.value = String(stateInput.value || '').replace(/[^a-zA-Z]/g, '').slice(0, 2).toUpperCase();
+            });
+        }
+
+        if (cardInput) {
+            cardInput.addEventListener('input', () => {
+                cardInput.value = formatCardNumber(cardInput.value);
+                const digits = onlyDigits(cardInput.value);
+                const brand = detectCardBrand(digits);
+                if (brand) {
+                    setValue('cardBrand', brand);
+                }
+            });
+        }
+
+        if (saveBtn) {
+            saveBtn.addEventListener('click', savePreferences);
+        }
+
+        loadPreferences();
+    })();
+</script>
+{% endblock %}

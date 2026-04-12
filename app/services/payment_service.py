@@ -25,13 +25,26 @@ logger = logging.getLogger("payment_service")
 
 _PLAN_NAMES = {
     "basic": "Básico",
+    "pro": "Pro",
     "premium": "Premium",
 }
 
 _PLAN_PRICES = {
-    "basic": settings.STRIPE_PRICE_BASIC,
-    "premium": settings.STRIPE_PRICE_PREMIUM,
+    "basic": {
+        "monthly": settings.STRIPE_PRICE_BASIC,
+        "yearly": settings.STRIPE_PRICE_BASIC,
+    },
+    "pro": {
+        "monthly": settings.STRIPE_PRICE_PRO,
+        "yearly": settings.STRIPE_PRICE_PRO_YEARLY,
+    },
+    "premium": {
+        "monthly": settings.STRIPE_PRICE_PREMIUM,
+        "yearly": settings.STRIPE_PRICE_PREMIUM_YEARLY,
+    },
 }
+
+_VALID_BILLING_CYCLES = {"monthly", "yearly"}
 
 
 def _stripe():
@@ -50,6 +63,7 @@ def create_checkout_session(
     *,
     user: User,
     plan: str,
+    billing_cycle: str = "monthly",
     success_url: str,
     cancel_url: str,
 ) -> dict:
@@ -57,11 +71,43 @@ def create_checkout_session(
     if not is_stripe_configured():
         raise ValueError("Stripe não configurado. Defina STRIPE_SECRET_KEY no .env")
 
-    price_id = _PLAN_PRICES.get(plan)
+    if plan not in _PLAN_PRICES:
+        raise ValueError(f"Plano inválido: '{plan}'. Use 'basic', 'pro' ou 'premium'")
+
+    normalized_cycle = str(billing_cycle or "monthly").strip().lower()
+    if normalized_cycle not in _VALID_BILLING_CYCLES:
+        raise ValueError("Ciclo de cobrança inválido. Use 'monthly' ou 'yearly'")
+
+    plan_prices = _PLAN_PRICES.get(plan) or {}
+    price_id = plan_prices.get(normalized_cycle)
+    if normalized_cycle == "yearly" and not price_id:
+        raise ValueError(f"Plano '{plan}' ainda nao configurado no Stripe para ciclo '{normalized_cycle}'")
+
     if not price_id:
-        raise ValueError(f"Plano inválido: '{plan}'. Use 'basic' ou 'premium'")
+        price_id = plan_prices.get("monthly")
+
+    if not price_id:
+        raise ValueError(f"Plano '{plan}' ainda nao configurado no Stripe para ciclo '{normalized_cycle}'")
 
     success_suffix = "&session_id={CHECKOUT_SESSION_ID}" if "?" in success_url else "?session_id={CHECKOUT_SESSION_ID}"
+
+    metadata = {
+        "user_id": str(user.id),
+        "plan": plan,
+        "billing_cycle": normalized_cycle,
+        "preferred_method": str(getattr(user, "payment_default_method", "") or "card")[:20],
+    }
+
+    billing_name = str(getattr(user, "payment_billing_name", "") or user.name or "").strip()
+    billing_zip = str(getattr(user, "payment_billing_zip", "") or "").strip()
+    pix_key_type = str(getattr(user, "payment_pix_key_type", "") or "").strip().lower()
+
+    if billing_name:
+        metadata["billing_name"] = billing_name[:120]
+    if billing_zip:
+        metadata["billing_zip"] = billing_zip[:20]
+    if pix_key_type:
+        metadata["pix_key_type"] = pix_key_type[:20]
 
     stripe = _stripe()
     session = stripe.checkout.Session.create(
@@ -69,7 +115,7 @@ def create_checkout_session(
         mode="subscription",
         customer_email=user.email,
         client_reference_id=str(user.id),
-        metadata={"user_id": str(user.id), "plan": plan},
+        metadata=metadata,
         line_items=[{"price": price_id, "quantity": 1}],
         success_url=success_url + success_suffix,
         cancel_url=cancel_url,
