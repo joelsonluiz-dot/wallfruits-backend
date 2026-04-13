@@ -4,894 +4,1189 @@
 
 {% block content %}
 <style>
-    .library-shell {
+    .library-premium {
+        --lib-ink: #17324a;
+        --lib-muted: #4f6f87;
+        --lib-line: rgba(22, 63, 95, 0.18);
+        --lib-surface: linear-gradient(145deg, #f6fff6 0%, #f2f8ff 52%, #fff9ec 100%);
+        --lib-card: #ffffff;
+        --lib-primary: #0f5f87;
+        --lib-primary-2: #1f8757;
+        --lib-shadow: 0 18px 38px rgba(16, 51, 80, 0.14);
         display: grid;
         gap: 0.95rem;
+        font-family: "Sora", "Trebuchet MS", "Segoe UI", sans-serif;
     }
 
-    .library-hero {
-        border-radius: 18px;
-        border: 1px solid rgba(46, 125, 50, 0.26);
-        background: linear-gradient(130deg, #f1f8ed 0%, #f5fbff 65%, #fffdf7 100%);
-        box-shadow: 0 12px 28px rgba(20, 78, 42, 0.12);
-        padding: 1rem 1.05rem;
+    .lib-hero {
+        border: 1px solid rgba(15, 97, 135, 0.2);
+        border-radius: 24px;
+        background: var(--lib-surface);
+        box-shadow: var(--lib-shadow);
+        padding: 1.1rem;
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: 1.2fr 0.8fr;
+        overflow: hidden;
+        position: relative;
     }
 
-    .library-hero h1 {
-        margin: 0;
-        font-size: 1.35rem;
+    .lib-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 0.69rem;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #0f5f87;
+        background: rgba(255, 255, 255, 0.84);
+        border: 1px solid rgba(15, 97, 135, 0.2);
+        border-radius: 999px;
+        padding: 0.28rem 0.58rem;
+        width: fit-content;
+    }
+
+    .lib-hero h1 {
+        margin: 0.56rem 0 0;
+        font-size: clamp(1.35rem, 2vw, 1.9rem);
+        line-height: 1.18;
+        color: var(--lib-ink);
+    }
+
+    .lib-hero p {
+        margin: 0.62rem 0 0;
+        color: var(--lib-muted);
+        line-height: 1.52;
+        font-size: 0.9rem;
+        max-width: 62ch;
+    }
+
+    .lib-hero-metrics {
+        margin-top: 0.9rem;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.6rem;
+    }
+
+    .lib-hero-metric {
+        border-radius: 14px;
+        border: 1px solid var(--lib-line);
+        background: rgba(255, 255, 255, 0.82);
+        padding: 0.56rem 0.62rem;
+        display: grid;
+        gap: 0.16rem;
+    }
+
+    .lib-hero-metric strong {
+        font-size: 1.06rem;
+        color: #0c4060;
         font-weight: 900;
-        color: #174f31;
         letter-spacing: -0.02em;
     }
 
-    .library-hero p {
-        margin: 0.35rem 0 0;
-        color: #3b5f84;
-        font-size: 0.84rem;
-        font-weight: 600;
+    .lib-hero-metric span {
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: #4f6f87;
     }
 
-    .library-actions {
-        margin-top: 0.7rem;
-        display: flex;
-        gap: 0.45rem;
-        flex-wrap: wrap;
-    }
-
-    .library-btn {
-        border: 1px solid rgba(27, 78, 132, 0.25);
-        border-radius: 999px;
-        background: #ffffff;
-        color: #20528a;
-        font-size: 0.75rem;
-        font-weight: 800;
-        padding: 0.42rem 0.76rem;
-        cursor: pointer;
-    }
-
-    .library-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 0.8rem;
-    }
-
-    .library-blog-card {
-        position: relative;
-        height: 220px;
+    .lib-hero-art {
+        min-height: 170px;
         border-radius: 18px;
+        border: 1px solid rgba(10, 74, 102, 0.16);
+        background:
+            radial-gradient(circle at 25% 28%, rgba(22, 127, 176, 0.35), transparent 54%),
+            radial-gradient(circle at 74% 76%, rgba(43, 151, 95, 0.35), transparent 48%),
+            linear-gradient(160deg, #0f5d86 0%, #1c7f58 100%);
+        position: relative;
         overflow: hidden;
-        border: 1px solid rgba(17, 73, 125, 0.2);
-        box-shadow: 0 14px 28px rgba(18, 59, 101, 0.16);
+    }
+
+    .lib-hero-art::before,
+    .lib-hero-art::after {
+        content: "";
+        position: absolute;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.25);
+    }
+
+    .lib-hero-art::before {
+        width: 138px;
+        height: 138px;
+        top: -44px;
+        left: -26px;
+        background: rgba(255, 255, 255, 0.12);
+    }
+
+    .lib-hero-art::after {
+        width: 168px;
+        height: 168px;
+        right: -52px;
+        bottom: -62px;
+        background: rgba(255, 255, 255, 0.09);
+    }
+
+    .lib-admin {
+        border-radius: 20px;
+        border: 1px solid rgba(19, 79, 112, 0.22);
+        background: #ffffff;
+        box-shadow: 0 12px 28px rgba(21, 62, 92, 0.12);
+        padding: 0.95rem;
+        display: grid;
+        gap: 0.7rem;
+    }
+
+    .lib-admin-head h2 {
+        margin: 0;
+        font-size: 1rem;
+        color: #0f4a70;
+        font-weight: 900;
+    }
+
+    .lib-admin-head p {
+        margin: 0.34rem 0 0;
+        color: #4f6f87;
+        font-size: 0.82rem;
+        line-height: 1.45;
+    }
+
+    .lib-form-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.56rem;
+    }
+
+    .lib-form-field {
+        display: grid;
+        gap: 0.3rem;
+    }
+
+    .lib-form-field label {
+        font-size: 0.7rem;
+        color: #40627f;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+
+    .lib-form-field input,
+    .lib-form-field textarea {
+        width: 100%;
+        border: 1px solid rgba(22, 78, 109, 0.2);
+        border-radius: 11px;
+        background: #f9fcff;
+        color: #163a57;
+        font-size: 0.84rem;
+        padding: 0.55rem 0.65rem;
+        font-family: "Sora", "Trebuchet MS", "Segoe UI", sans-serif;
+    }
+
+    .lib-form-field textarea {
+        min-height: 132px;
+        resize: vertical;
+    }
+
+    .lib-form-field--wide {
+        grid-column: span 2;
+    }
+
+    .lib-form-field--full {
+        grid-column: 1 / -1;
+    }
+
+    .lib-form-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.44rem;
+    }
+
+    .lib-btn {
+        border: 1px solid transparent;
+        border-radius: 999px;
+        font-size: 0.76rem;
+        font-weight: 800;
+        padding: 0.44rem 0.76rem;
         cursor: pointer;
         transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
 
-    .library-blog-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 18px 32px rgba(15, 52, 84, 0.2);
+    .lib-btn:hover {
+        transform: translateY(-1px);
     }
 
-    .library-blog-cover {
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(155deg, #f0f8ff, #f7fbf0);
+    .lib-btn-primary {
+        color: #ffffff;
+        background: linear-gradient(135deg, #0f5f87, #1e7f57);
+        box-shadow: 0 10px 20px rgba(16, 86, 120, 0.26);
     }
 
-    .library-blog-cover img {
+    .lib-btn-soft {
+        color: #12507a;
+        background: #f3f9ff;
+        border-color: rgba(20, 78, 110, 0.2);
+    }
+
+    .lib-feedback {
+        margin: 0;
+        min-height: 1.2em;
+        font-size: 0.76rem;
+        font-weight: 700;
+        color: #4f6f87;
+    }
+
+    .lib-feedback[data-kind="ok"] {
+        color: #146b44;
+    }
+
+    .lib-feedback[data-kind="error"] {
+        color: #a3314f;
+    }
+
+    .lib-toolbar {
+        border: 1px solid rgba(16, 78, 111, 0.16);
+        border-radius: 18px;
+        background: #ffffff;
+        box-shadow: 0 10px 24px rgba(19, 61, 93, 0.1);
+        padding: 0.78rem;
+        display: grid;
+        gap: 0.65rem;
+    }
+
+    .lib-featured {
+        border: 1px solid rgba(13, 72, 103, 0.2);
+        border-radius: 20px;
+        background:
+            radial-gradient(circle at 80% 20%, rgba(66, 158, 109, 0.2), transparent 48%),
+            linear-gradient(145deg, #f6fcff 0%, #f2fff5 100%);
+        box-shadow: 0 14px 30px rgba(16, 53, 84, 0.12);
+        overflow: hidden;
+    }
+
+    .lib-featured-inner {
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 0;
+    }
+
+    .lib-featured-content {
+        padding: 1rem;
+        display: grid;
+        gap: 0.56rem;
+    }
+
+    .lib-featured-kicker {
+        display: inline-flex;
+        width: fit-content;
+        border: 1px solid rgba(15, 91, 127, 0.2);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.86);
+        color: #1a5d85;
+        font-size: 0.66rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        padding: 0.2rem 0.52rem;
+    }
+
+    .lib-featured-title {
+        margin: 0;
+        font-size: clamp(1.1rem, 1.7vw, 1.42rem);
+        line-height: 1.28;
+        color: #11344f;
+        font-weight: 900;
+        letter-spacing: -0.01em;
+    }
+
+    .lib-featured-excerpt {
+        margin: 0;
+        color: #3f607b;
+        font-size: 0.84rem;
+        line-height: 1.55;
+    }
+
+    .lib-featured-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.32rem;
+        font-size: 0.72rem;
+        color: #4d6d86;
+        font-weight: 700;
+    }
+
+    .lib-featured-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+    }
+
+    .lib-featured-cover {
+        min-height: 180px;
+        background: linear-gradient(160deg, #def0ff, #e7f7ea);
+    }
+
+    .lib-featured-cover img {
         width: 100%;
         height: 100%;
         object-fit: cover;
     }
 
-    .library-blog-gradient {
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(180deg, rgba(5, 12, 20, 0) 22%, rgba(5, 12, 20, 0.68) 100%);
+    .lib-search-input {
+        width: 100%;
+        border-radius: 12px;
+        border: 1px solid rgba(16, 78, 111, 0.2);
+        background: #f8fcff;
+        color: #17324a;
+        font-size: 0.9rem;
+        font-weight: 600;
+        padding: 0.6rem 0.72rem;
+        font-family: "Sora", "Trebuchet MS", "Segoe UI", sans-serif;
     }
 
-    .library-blog-content {
-        position: absolute;
-        inset: 0;
-        padding: 0.7rem;
-        display: grid;
-        align-content: end;
-        gap: 0.36rem;
-    }
-
-    .library-blog-category {
-        display: inline-flex;
-        width: fit-content;
-        border-radius: 999px;
-        padding: 0.18rem 0.5rem;
-        font-size: 0.66rem;
-        font-weight: 800;
-        color: #f3fbff;
-        background: rgba(8, 28, 45, 0.62);
-        border: 1px solid rgba(181, 224, 255, 0.4);
-    }
-
-    .library-blog-title {
-        margin: 0;
-        font-size: 1rem;
-        font-weight: 800;
-        color: #f4fbff;
-        line-height: 1.28;
-    }
-
-    .library-blog-meta {
+    .lib-filters {
         display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 0.45rem;
+        flex-wrap: wrap;
+        gap: 0.38rem;
     }
 
-    .library-blog-time {
-        font-size: 0.7rem;
-        color: #d3ecff;
-        font-weight: 700;
-    }
-
-    .library-blog-read-btn {
-        border: none;
+    .lib-filter {
+        border: 1px solid rgba(18, 79, 112, 0.2);
         border-radius: 999px;
-        background: #ffffff;
-        color: #1c4d81;
-        font-size: 0.67rem;
+        background: #f6fbff;
+        color: #1f5d89;
+        font-size: 0.73rem;
         font-weight: 800;
-        padding: 0.24rem 0.58rem;
+        padding: 0.34rem 0.64rem;
         cursor: pointer;
     }
 
-    .library-detail {
-        border: 1px solid rgba(17, 73, 125, 0.2);
-        border-radius: 16px;
-        background: #fff;
-        box-shadow: 0 10px 24px rgba(21, 61, 97, 0.12);
+    .lib-filter.active {
+        background: linear-gradient(135deg, #0f5f87, #1e7f57);
+        color: #ffffff;
+        border-color: transparent;
+    }
+
+    .lib-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.86rem;
+    }
+
+    .lib-card {
+        border: 1px solid rgba(14, 75, 108, 0.2);
+        border-radius: 17px;
+        overflow: hidden;
+        background: #ffffff;
+        box-shadow: 0 14px 28px rgba(16, 53, 84, 0.12);
+        display: grid;
+        grid-template-rows: 170px auto;
+        cursor: pointer;
+        transition: transform 0.24s ease, box-shadow 0.24s ease;
+    }
+
+    .lib-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 18px 34px rgba(16, 53, 84, 0.16);
+    }
+
+    .lib-card--feature {
+        grid-column: span 2;
+        grid-template-rows: 195px auto;
+    }
+
+    .lib-card--market {
+        border-color: rgba(20, 92, 138, 0.28);
+    }
+
+    .lib-card--producao {
+        border-color: rgba(28, 120, 68, 0.3);
+    }
+
+    .lib-card--gestao {
+        border-color: rgba(129, 82, 20, 0.3);
+    }
+
+    .lib-card--tecnologia {
+        border-color: rgba(96, 55, 148, 0.3);
+    }
+
+    .lib-card-cover {
+        position: relative;
+        background: linear-gradient(160deg, #dff0ff 0%, #e6f7e9 100%);
         overflow: hidden;
     }
 
-    .library-detail-cover {
+    .lib-card-cover img {
         width: 100%;
-        height: 230px;
+        height: 100%;
         object-fit: cover;
-        background: linear-gradient(155deg, #f0f8ff, #f7fbf0);
     }
 
-    .library-detail-body {
-        padding: 1rem;
+    .lib-card-chip {
+        position: absolute;
+        top: 0.55rem;
+        left: 0.55rem;
+        border-radius: 999px;
+        background: rgba(8, 28, 44, 0.76);
+        color: #ecf7ff;
+        border: 1px solid rgba(193, 227, 255, 0.4);
+        padding: 0.2rem 0.48rem;
+        font-size: 0.65rem;
+        font-weight: 800;
+    }
+
+    .lib-card--market .lib-card-chip {
+        background: rgba(10, 56, 87, 0.78);
+    }
+
+    .lib-card--producao .lib-card-chip {
+        background: rgba(16, 82, 50, 0.78);
+    }
+
+    .lib-card--gestao .lib-card-chip {
+        background: rgba(112, 73, 18, 0.8);
+    }
+
+    .lib-card--tecnologia .lib-card-chip {
+        background: rgba(73, 41, 116, 0.8);
+    }
+
+    .lib-card-body {
+        padding: 0.72rem;
         display: grid;
-        gap: 0.62rem;
+        gap: 0.46rem;
     }
 
-    .library-detail-title {
+    .lib-card-title {
         margin: 0;
-        font-size: 1.18rem;
-        color: #134377;
+        font-size: 0.94rem;
+        line-height: 1.32;
+        color: #13314a;
         font-weight: 900;
+        letter-spacing: -0.01em;
     }
 
-    .library-detail-inline {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        flex-wrap: wrap;
-        font-size: 0.77rem;
-        color: #4b6c91;
+    .lib-card-author {
+        font-size: 0.74rem;
+        color: #4f6f87;
         font-weight: 700;
     }
 
-    .library-detail-content {
+    .lib-card-excerpt {
         margin: 0;
-        color: #34557a;
-        line-height: 1.6;
+        color: #3f607b;
+        font-size: 0.77rem;
+        line-height: 1.45;
+    }
+
+    .lib-card-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.35rem;
+        flex-wrap: wrap;
+    }
+
+    .lib-card-read {
+        border: none;
+        border-radius: 999px;
+        background: linear-gradient(135deg, #0f5f87, #1f8757);
+        color: #ffffff;
+        font-size: 0.7rem;
+        font-weight: 800;
+        padding: 0.32rem 0.62rem;
+        cursor: pointer;
+    }
+
+    .lib-card-admin {
+        display: inline-flex;
+        gap: 0.3rem;
+    }
+
+    .lib-card-admin button {
+        border: 1px solid rgba(18, 79, 112, 0.22);
+        border-radius: 999px;
+        background: #f3f9ff;
+        color: #1b5b86;
+        font-size: 0.65rem;
+        font-weight: 800;
+        padding: 0.26rem 0.48rem;
+        cursor: pointer;
+    }
+
+    .lib-empty {
+        grid-column: 1 / -1;
+        border: 1px dashed rgba(17, 76, 110, 0.28);
+        border-radius: 15px;
+        background: #ffffff;
+        padding: 1.3rem 0.95rem;
+        text-align: center;
+        color: #42627e;
+        font-size: 0.84rem;
+        font-weight: 700;
+    }
+
+    .lib-detail {
+        border: 1px solid rgba(18, 76, 108, 0.2);
+        border-radius: 18px;
+        background: #ffffff;
+        box-shadow: 0 16px 30px rgba(16, 53, 84, 0.12);
+        overflow: hidden;
+    }
+
+    .lib-detail-cover {
+        width: 100%;
+        height: 220px;
+        object-fit: cover;
+        background: linear-gradient(160deg, #deefff, #e7f7ea);
+    }
+
+    .lib-detail-body {
+        padding: 0.92rem;
+        display: grid;
+        gap: 0.56rem;
+    }
+
+    .lib-detail-title {
+        margin: 0;
+        color: #11344f;
+        font-size: 1.12rem;
+        font-weight: 900;
+    }
+
+    .lib-detail-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.38rem;
+        color: #4d6d86;
+        font-size: 0.78rem;
+        font-weight: 700;
+    }
+
+    .lib-detail-text {
+        margin: 0;
+        color: #335774;
+        line-height: 1.65;
         font-size: 0.86rem;
         white-space: pre-wrap;
     }
 
-    .library-detail-actions {
+    .lib-detail-actions {
         display: flex;
         flex-wrap: wrap;
-        gap: 0.45rem;
+        gap: 0.42rem;
     }
 
-    .library-fav-btn,
-    .library-offline-btn,
-    .library-reader-btn,
-    .library-back-btn {
-        border: none;
-        border-radius: 999px;
-        font-size: 0.74rem;
-        font-weight: 800;
-        padding: 0.42rem 0.74rem;
-        cursor: pointer;
-    }
+    @media (max-width: 1080px) {
+        .lib-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
 
-    .library-fav-btn {
-        background: linear-gradient(130deg, #ffeef3, #ffdbe7);
-        color: #9d2c5b;
-        border: 1px solid rgba(168, 40, 98, 0.22);
-    }
+        .lib-card--feature {
+            grid-column: span 1;
+        }
 
-    .library-fav-btn.active {
-        background: linear-gradient(130deg, #ffdae8, #ffc2da);
-        color: #862650;
-    }
+        .lib-hero {
+            grid-template-columns: 1fr;
+        }
 
-    .library-offline-btn {
-        background: linear-gradient(130deg, #eaf5ff, #d8edff);
-        color: #1a4e86;
-        border: 1px solid rgba(21, 83, 133, 0.24);
-    }
+        .lib-featured-inner {
+            grid-template-columns: 1fr;
+        }
 
-    .library-offline-btn.active {
-        background: linear-gradient(130deg, #d7ebff, #c5e2ff);
-        color: #134377;
-    }
-
-    .library-reader-btn {
-        background: linear-gradient(130deg, #1d6f45, #2b8a58);
-        color: #ffffff;
-    }
-
-    .library-back-btn {
-        background: #f2f8ff;
-        color: #1a4e86;
-        border: 1px solid rgba(22, 84, 132, 0.22);
-    }
-
-    .library-empty {
-        border: 1px dashed rgba(17, 73, 125, 0.24);
-        border-radius: 14px;
-        background: #fff;
-        text-align: center;
-        padding: 1.4rem 0.9rem;
-        color: #375b87;
-        font-weight: 700;
-    }
-
-    @media (max-width: 1200px) {
-        .library-grid {
+        .lib-form-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
         }
     }
 
-    @media (max-width: 900px) {
-        .library-grid {
+    @media (max-width: 760px) {
+        .lib-grid {
             grid-template-columns: 1fr;
         }
-    }
 
-    @media (max-width: 560px) {
-        .library-blog-card {
-            height: 200px;
+        .lib-hero-metrics {
+            grid-template-columns: 1fr;
         }
 
-        .library-detail-cover {
-            height: 190px;
+        .lib-form-grid {
+            grid-template-columns: 1fr;
         }
 
-        .library-btn {
+        .lib-form-field--wide,
+        .lib-form-field--full {
+            grid-column: span 1;
+        }
+
+        .lib-btn,
+        .lib-card-read,
+        .lib-card-admin button {
             width: 100%;
         }
 
-        .library-fav-btn,
-        .library-offline-btn,
-        .library-reader-btn,
-        .library-back-btn {
-            width: 100%;
+        .lib-card-footer {
+            align-items: stretch;
         }
     }
 </style>
 
-<div class="library-shell">
-    <section class="library-hero">
-        <h1>Biblioteca de Leitura</h1>
-        <p>Selecione um card para abrir o leitor completo no estilo app, com progresso automático, áudio e suporte offline.</p>
+<div class="library-premium">
+    <section class="lib-hero wf-card store-motion-card" data-wf-reveal>
+        <div>
+            <span class="lib-kicker">Biblioteca premium</span>
+            <h1>Leituras reais para todos os usuarios</h1>
+            <p>
+                Todos os usuarios podem visualizar os cards de leitura e abrir o leitor completo.
+                Publicacao de novos materiais e exclusiva para administradores.
+            </p>
 
-        <div class="library-actions">
-            <button class="library-btn" type="button" id="seedBooksBtn">Adicionar livros de exemplo</button>
-            <button class="library-btn" type="button" id="clearBooksBtn">Limpar biblioteca local</button>
+            <div class="lib-hero-metrics">
+                <div class="lib-hero-metric">
+                    <strong id="catalogCount">0</strong>
+                    <span>Cards publicados</span>
+                </div>
+                <div class="lib-hero-metric">
+                    <strong id="catalogCategories">0</strong>
+                    <span>Categorias ativas</span>
+                </div>
+                <div class="lib-hero-metric">
+                    <strong id="catalogMode">Publico</strong>
+                    <span>Visibilidade</span>
+                </div>
+            </div>
         </div>
+        <div class="lib-hero-art" aria-hidden="true"></div>
     </section>
 
-    <section id="libraryListView">
-        <div id="libraryGrid" class="library-grid"></div>
+    {% if current_user and (current_user.role == "admin" or current_user.is_superuser) %}
+    <section id="libraryAdminPanel" class="lib-admin wf-card store-motion-card" data-wf-reveal>
+        <header class="lib-admin-head">
+            <h2>Painel de publicacao</h2>
+            <p>Publique, edite e atualize os cards que ficam visiveis para todos.</p>
+        </header>
+
+        <form id="catalogPublishForm" novalidate>
+            <input type="hidden" id="catalogEditingId">
+            <div class="lib-form-grid">
+                <div class="lib-form-field lib-form-field--wide">
+                    <label for="catalogTitle">Titulo</label>
+                    <input id="catalogTitle" name="title" type="text" maxlength="300" required>
+                </div>
+                <div class="lib-form-field">
+                    <label for="catalogAuthor">Autor</label>
+                    <input id="catalogAuthor" name="author" type="text" maxlength="180" required>
+                </div>
+                <div class="lib-form-field">
+                    <label for="catalogCategory">Categoria</label>
+                    <input id="catalogCategory" name="category" type="text" maxlength="120" placeholder="Mercado, Producao, Gestao" required>
+                </div>
+                <div class="lib-form-field">
+                    <label for="catalogReadTime">Tempo de leitura</label>
+                    <input id="catalogReadTime" name="read_time" type="text" maxlength="40" placeholder="6 min" required>
+                </div>
+                <div class="lib-form-field lib-form-field--full">
+                    <label for="catalogCover">URL da capa</label>
+                    <input id="catalogCover" name="cover" type="url" maxlength="700" placeholder="https://">
+                </div>
+                <div class="lib-form-field lib-form-field--full">
+                    <label for="catalogText">Conteudo real da leitura</label>
+                    <textarea id="catalogText" name="text" minlength="20" required></textarea>
+                </div>
+            </div>
+
+            <div class="lib-form-actions">
+                <button id="catalogSaveBtn" class="lib-btn lib-btn-primary" type="submit">Publicar leitura</button>
+                <button id="catalogResetBtn" class="lib-btn lib-btn-soft" type="button">Limpar formulario</button>
+            </div>
+            <p id="catalogFeedback" class="lib-feedback" aria-live="polite"></p>
+        </form>
+    </section>
+    {% endif %}
+
+    <section class="lib-toolbar wf-card store-motion-card" data-wf-reveal>
+        <input id="librarySearchInput" class="lib-search-input" type="search" placeholder="Buscar por titulo, autor, categoria ou trecho...">
+        <div id="libraryCategoryFilters" class="lib-filters"></div>
     </section>
 
-    <section id="libraryDetailView" class="library-detail" style="display:none;"></section>
+    <section id="libraryFeaturedPanel" class="lib-featured wf-card store-motion-card" data-wf-reveal hidden></section>
+
+    <section id="libraryCardsGrid" class="lib-grid"></section>
+    <section id="libraryDetailPanel" class="lib-detail" hidden></section>
 </div>
 
 <script>
-    (function setupLibraryPage() {
-        const STORAGE_KEYS = ['wf_library_books', 'libraryBooks', 'books'];
-        const FAVORITES_KEY = 'wf_library_favorites';
-        const OFFLINE_KEY = 'wf_library_offline';
-        const grid = document.getElementById('libraryGrid');
-        const listView = document.getElementById('libraryListView');
-        const detailView = document.getElementById('libraryDetailView');
-        let booksCache = [];
-        let activeSyncOps = 0;
-        const syncMetrics = {
-            fetchAttempts: 0,
-            fetchErrors: 0,
-            singleSyncAttempts: 0,
-            singleSyncErrors: 0,
-            batchSyncAttempts: 0,
-            batchSyncErrors: 0,
-            localPoolCount: 0,
-            remotePoolCount: 0,
-            mergedCount: 0,
-            dedupDiscardedCount: 0,
-            backfillPendingCount: 0,
-            status: 'local',
-            statusMessage: 'Modo local',
+    (function initLibraryPremiumPage() {
+        const IS_ADMIN = {{ 'true' if current_user and (current_user.role == 'admin' or current_user.is_superuser) else 'false' }};
+
+        const gridEl = document.getElementById('libraryCardsGrid');
+        const detailEl = document.getElementById('libraryDetailPanel');
+        const featuredEl = document.getElementById('libraryFeaturedPanel');
+        const filtersEl = document.getElementById('libraryCategoryFilters');
+        const searchInputEl = document.getElementById('librarySearchInput');
+        const countEl = document.getElementById('catalogCount');
+        const categoriesEl = document.getElementById('catalogCategories');
+        const modeEl = document.getElementById('catalogMode');
+
+        const formEl = document.getElementById('catalogPublishForm');
+        const feedbackEl = document.getElementById('catalogFeedback');
+        const editingIdEl = document.getElementById('catalogEditingId');
+        const saveBtnEl = document.getElementById('catalogSaveBtn');
+        const resetBtnEl = document.getElementById('catalogResetBtn');
+
+        const state = {
+            catalog: [],
+            filtered: [],
+            featuredBook: null,
+            activeCategory: 'all',
+            searchTerm: '',
         };
-
-        function publishSyncMetrics(eventName, extra) {
-            const payload = {
-                event: eventName,
-                at: new Date().toISOString(),
-                ...syncMetrics,
-                ...(extra || {}),
-            };
-            window.__wfLibrarySyncMetrics = payload;
-            console.debug('[WF Library Sync]', payload);
-        }
-
-        function setSyncStatus(state, message) {
-            syncMetrics.status = String(state || 'local');
-            syncMetrics.statusMessage = String(message || 'Modo local');
-            publishSyncMetrics('status_update', {
-                status: syncMetrics.status,
-                statusMessage: syncMetrics.statusMessage,
-            });
-        }
-
-        function beginSync(message) {
-            if (!isLoggedIn()) return;
-            activeSyncOps += 1;
-            setSyncStatus('syncing', message || 'Sincronizando...');
-        }
-
-        function endSync(ok, message) {
-            if (!isLoggedIn()) return;
-            activeSyncOps = Math.max(0, activeSyncOps - 1);
-            if (activeSyncOps > 0) return;
-            setSyncStatus(ok ? 'synced' : 'error', message || (ok ? 'Sincronizado' : 'Falha de sync'));
-        }
-
-        function getAuthToken() {
-            return localStorage.getItem('token') || '';
-        }
-
-        function isLoggedIn() {
-            return Boolean(getAuthToken());
-        }
 
         function escapeHtml(text) {
             const div = document.createElement('div');
-            div.textContent = text ?? '';
+            div.textContent = text == null ? '' : String(text);
             return div.innerHTML;
         }
 
-        function readBooksFromKey(key) {
-            try {
-                const parsed = JSON.parse(localStorage.getItem(key) || '[]');
-                return Array.isArray(parsed) ? parsed : [];
-            } catch {
-                return [];
-            }
-        }
-
         function normalizeBook(item, index) {
-            const title = String(item?.title || item?.name || `Livro ${index + 1}`).trim();
-            const author = String(item?.author || item?.writer || 'Autor').trim();
-            const text = String(item?.text || item?.content || '').trim();
-            const cover = item?.cover || item?.image || '';
-            const id = String(item?.id || `${title}-${author}`);
-            const category = String(item?.categoria || item?.category || 'E-book').trim();
-            const readTime = String(item?.tempo || `${Math.max(3, Math.ceil((text.length || 300) / 1000))} min`).trim();
+            const title = String(item?.title || `Leitura ${index + 1}`).trim();
+            const author = String(item?.author || 'Equipe WallFruits').trim();
+            const category = String(item?.category || 'Leitura').trim();
+            const text = String(item?.text || '').trim();
+            const readTime = String(item?.read_time || item?.readTime || `${Math.max(3, Math.ceil((text.length || 2200) / 950))} min`).trim();
+            const cover = String(item?.cover || '').trim();
+            const idSeed = String(item?.id || `${title}-${author}`);
+            const id = idSeed.trim() || `leitura-${index + 1}`;
 
-            return { id, title, author, text, cover, category, readTime };
+            return { id, title, author, category, text, readTime, cover };
         }
 
-        function buildBookSignature(book) {
-            const title = String(book?.title || '').trim().toLowerCase();
-            const author = String(book?.author || '').trim().toLowerCase();
-            const text = String(book?.text || '').trim().replace(/\s+/g, ' ').toLowerCase();
-            const excerpt = text.slice(0, 160);
-            return `${title}|${author}|${excerpt}`;
+        function makeExcerpt(text, size = 150) {
+            const clean = String(text || '').replace(/\s+/g, ' ').trim();
+            if (!clean) return 'Conteudo em atualizacao.';
+            if (clean.length <= size) return clean;
+            return `${clean.slice(0, size).trim()}...`;
         }
 
-        function pickBestValue(localValue, remoteValue) {
-            const local = String(localValue || '').trim();
-            const remote = String(remoteValue || '').trim();
-            if (!local) return remote;
-            if (!remote) return local;
-            return remote.length > local.length ? remote : local;
+        function listCategories(items) {
+            return Array.from(new Set(items.map((item) => item.category).filter(Boolean))).sort((a, b) => a.localeCompare(b));
         }
 
-        function mergeBookData(localBook, remoteBook) {
+        function buildCategoryCounts(items) {
+            return items.reduce((acc, item) => {
+                const key = String(item.category || '').trim();
+                if (!key) return acc;
+                acc[key] = (acc[key] || 0) + 1;
+                return acc;
+            }, {});
+        }
+
+        function normalizeCategoryKey(category) {
+            const value = String(category || '')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase();
+
+            if (value.includes('mercado')) return 'market';
+            if (value.includes('producao') || value.includes('manejo') || value.includes('cultivo')) return 'producao';
+            if (value.includes('gestao') || value.includes('negocio')) return 'gestao';
+            if (value.includes('tecnologia') || value.includes('digital') || value.includes('ia')) return 'tecnologia';
+            return 'default';
+        }
+
+        function cardCategoryClass(category) {
+            const key = normalizeCategoryKey(category);
+            if (key === 'market') return 'lib-card--market';
+            if (key === 'producao') return 'lib-card--producao';
+            if (key === 'gestao') return 'lib-card--gestao';
+            if (key === 'tecnologia') return 'lib-card--tecnologia';
+            return '';
+        }
+
+        function updateMetrics() {
+            if (countEl) countEl.textContent = String(state.catalog.length);
+            if (categoriesEl) categoriesEl.textContent = String(listCategories(state.catalog).length);
+            if (modeEl) modeEl.textContent = 'Publico';
+        }
+
+        function closeDetail() {
+            if (!detailEl) return;
+            detailEl.hidden = true;
+            detailEl.innerHTML = '';
+        }
+
+        function toReaderPayload(book) {
             return {
-                ...localBook,
-                ...remoteBook,
-                title: pickBestValue(localBook?.title, remoteBook?.title),
-                author: pickBestValue(localBook?.author, remoteBook?.author),
-                category: pickBestValue(localBook?.category, remoteBook?.category),
-                readTime: pickBestValue(localBook?.readTime, remoteBook?.readTime),
-                cover: pickBestValue(localBook?.cover, remoteBook?.cover),
-                text: pickBestValue(localBook?.text, remoteBook?.text),
-                isFavorite: Boolean(localBook?.isFavorite) || Boolean(remoteBook?.isFavorite),
-                isOffline: Boolean(localBook?.isOffline) || Boolean(remoteBook?.isOffline),
+                id: book.id,
+                title: book.title,
+                author: book.author,
+                category: book.category,
+                cover: book.cover,
+                readTime: book.readTime,
+                text: book.text,
             };
         }
 
-        function getFavoritesSet() {
-            try {
-                return new Set(JSON.parse(localStorage.getItem(FAVORITES_KEY) || '[]'));
-            } catch {
-                return new Set();
-            }
-        }
-
-        function setFavoritesSet(set) {
-            localStorage.setItem(FAVORITES_KEY, JSON.stringify(Array.from(set)));
-        }
-
-        function getOfflineMap() {
-            try {
-                const parsed = JSON.parse(localStorage.getItem(OFFLINE_KEY) || '{}');
-                return parsed && typeof parsed === 'object' ? parsed : {};
-            } catch {
-                return {};
-            }
-        }
-
-        function setOfflineMap(map) {
-            localStorage.setItem(OFFLINE_KEY, JSON.stringify(map));
-        }
-
-        function hydrateLocalStateFromBooks(books) {
-            const favorites = new Set();
-            const offlineMap = {};
-
-            books.forEach((book) => {
-                const id = String(book.id || '');
-                if (!id) return;
-
-                if (Boolean(book.isFavorite)) {
-                    favorites.add(id);
-                }
-
-                if (Boolean(book.isOffline)) {
-                    offlineMap[id] = {
-                        id: book.id,
-                        title: book.title,
-                        author: book.author,
-                        category: book.category,
-                        text: book.text,
-                        cover: book.cover,
-                        readTime: book.readTime,
-                        savedAt: new Date().toISOString(),
-                    };
-                }
-            });
-
-            setFavoritesSet(favorites);
-            setOfflineMap(offlineMap);
-        }
-
-        async function fetchRemoteLibraryItems() {
-            if (!isLoggedIn()) {
-                setSyncStatus('local', '📱 Modo local');
-                return [];
-            }
-            syncMetrics.fetchAttempts += 1;
-            beginSync('Buscando nuvem...');
-            try {
-                const data = await apiRequest('/library/items');
-                endSync(true, 'Nuvem sincronizada');
-                const items = Array.isArray(data?.items) ? data.items : [];
-                syncMetrics.remotePoolCount = items.length;
-                publishSyncMetrics('fetch_remote_ok', { remotePoolCount: items.length });
-                return items;
-            } catch {
-                syncMetrics.fetchErrors += 1;
-                endSync(false, 'Erro ao buscar nuvem');
-                publishSyncMetrics('fetch_remote_error');
-                return [];
-            }
-        }
-
-        async function syncRemoteLibraryItem(book, nextFavorite, nextOffline) {
-            if (!isLoggedIn()) return;
-
-            syncMetrics.singleSyncAttempts += 1;
-            beginSync('Enviando atualização...');
-            try {
-                await apiRequest(`/library/items/${encodeURIComponent(String(book.id))}`, 'PUT', {
-                    title: book.title || 'Livro',
-                    author: book.author || 'Autor',
-                    category: book.category || 'E-book',
-                    read_time: book.readTime || `${Math.max(3, Math.ceil((String(book.text || '').length || 300) / 1000))} min`,
-                    cover: book.cover || '',
-                    text: book.text || '',
-                    is_favorite: Boolean(nextFavorite),
-                    is_offline: Boolean(nextOffline),
-                });
-                endSync(true, 'Sincronizado');
-                publishSyncMetrics('single_sync_ok', { bookId: String(book.id) });
-            } catch (error) {
-                syncMetrics.singleSyncErrors += 1;
-                endSync(false, 'Falha ao sincronizar');
-                publishSyncMetrics('single_sync_error', { bookId: String(book.id) });
-                throw error;
-            }
-        }
-
-        async function syncRemoteLibraryBatch(items) {
-            if (!isLoggedIn() || !Array.isArray(items) || !items.length) return;
-
-            syncMetrics.batchSyncAttempts += 1;
-            beginSync(`Sincronizando ${items.length} itens...`);
-            try {
-                await apiRequest('/library/items/batch', 'POST', { items });
-                endSync(true, 'Sincronização em lote concluída');
-                publishSyncMetrics('batch_sync_ok', { batchSize: items.length });
-            } catch (error) {
-                syncMetrics.batchSyncErrors += 1;
-                endSync(false, 'Falha no sync em lote');
-                publishSyncMetrics('batch_sync_error', { batchSize: items.length });
-                throw error;
-            }
-        }
-
-        async function backfillRemoteStateFromLocal(books, remoteItems) {
-            if (!isLoggedIn()) return;
-
-            const remoteMap = new Map(
-                (remoteItems || []).map((item) => [String(item.id), item])
-            );
-            const favorites = getFavoritesSet();
-            const offlineMap = getOfflineMap();
-
-            const pending = [];
-            books.forEach((book) => {
-                const id = String(book.id || '');
-                if (!id) return;
-
-                const localFavorite = favorites.has(id);
-                const localOffline = Boolean(offlineMap[id]);
-                const remote = remoteMap.get(id);
-
-                const shouldCreate = !remote && (localFavorite || localOffline);
-                const shouldUpdate = remote && (
-                    Boolean(remote.is_favorite) !== localFavorite ||
-                    Boolean(remote.is_offline) !== localOffline
-                );
-
-                if (shouldCreate || shouldUpdate) {
-                    pending.push({
-                        id,
-                        title: book.title || 'Livro',
-                        author: book.author || 'Autor',
-                        category: book.category || 'E-book',
-                        read_time: book.readTime || `${Math.max(3, Math.ceil((String(book.text || '').length || 300) / 1000))} min`,
-                        cover: book.cover || '',
-                        text: book.text || '',
-                        is_favorite: localFavorite,
-                        is_offline: localOffline,
-                    });
-                }
-            });
-
-            if (pending.length) {
-                syncMetrics.backfillPendingCount = pending.length;
-                try {
-                    await syncRemoteLibraryBatch(pending);
-                } catch {
-                    // fallback local mantido
-                }
-            } else {
-                syncMetrics.backfillPendingCount = 0;
-            }
-        }
-
-        async function getAllBooks() {
-            const pool = [];
-            STORAGE_KEYS.forEach((key) => {
-                pool.push(...readBooksFromKey(key));
-            });
-
-            const current = (() => {
-                try {
-                    return JSON.parse(localStorage.getItem('currentBook') || 'null');
-                } catch {
-                    return null;
-                }
-            })();
-
-            if (current && (current.title || current.text)) {
-                pool.unshift(current);
-            }
-            syncMetrics.localPoolCount = pool.length;
-
-            const seenIds = new Set();
-            const seenSignatures = new Set();
-            const normalized = pool
-                .map(normalizeBook)
-                .filter((book) => book.text || book.title)
-                .filter((book) => {
-                    const id = String(book.id || '');
-                    const signature = buildBookSignature(book);
-
-                    if (id && seenIds.has(id)) return false;
-                    if (signature && seenSignatures.has(signature)) return false;
-
-                    if (id) seenIds.add(id);
-                    if (signature) seenSignatures.add(signature);
-                    return true;
-                });
-            syncMetrics.dedupDiscardedCount = Math.max(0, pool.length - normalized.length);
-
-            const favorites = getFavoritesSet();
-            const offlineMap = getOfflineMap();
-            normalized.forEach((book) => {
-                book.isFavorite = favorites.has(book.id);
-                book.isOffline = Boolean(offlineMap[book.id]);
-            });
-
-            const remoteItems = await fetchRemoteLibraryItems();
-            if (!remoteItems.length) {
-                return normalized;
-            }
-
-            const merged = new Map(normalized.map((book) => [String(book.id), book]));
-            const signatureToId = new Map(
-                normalized.map((book) => [buildBookSignature(book), String(book.id)])
-            );
-            remoteItems.forEach((item, index) => {
-                const remoteBook = normalizeBook(
-                    {
-                        id: item.id,
-                        title: item.title,
-                        author: item.author,
-                        text: item.text,
-                        cover: item.cover,
-                        category: item.category,
-                        tempo: item.read_time,
-                    },
-                    index,
-                );
-                remoteBook.isFavorite = Boolean(item.is_favorite);
-                remoteBook.isOffline = Boolean(item.is_offline);
-
-                const key = String(remoteBook.id);
-                const signature = buildBookSignature(remoteBook);
-                const signatureMatchKey = signatureToId.get(signature);
-
-                if (merged.has(key) || signatureMatchKey) {
-                    const resolvedKey = merged.has(key) ? key : signatureMatchKey;
-                    const localBook = merged.get(resolvedKey);
-                    merged.set(key, mergeBookData(localBook, remoteBook));
-
-                    if (!merged.has(key) && resolvedKey !== key) {
-                        merged.delete(resolvedKey);
-                    }
-                    signatureToId.set(signature, key);
-                } else {
-                    merged.set(key, remoteBook);
-                    signatureToId.set(signature, key);
-                }
-            });
-
-            const mergedBooks = Array.from(merged.values());
-            syncMetrics.mergedCount = mergedBooks.length;
-            hydrateLocalStateFromBooks(mergedBooks);
-            await backfillRemoteStateFromLocal(mergedBooks, remoteItems);
-            publishSyncMetrics('merge_complete', {
-                localPoolCount: syncMetrics.localPoolCount,
-                remotePoolCount: syncMetrics.remotePoolCount,
-                mergedCount: syncMetrics.mergedCount,
-                dedupDiscardedCount: syncMetrics.dedupDiscardedCount,
-            });
-            return mergedBooks;
-        }
-
-        function writePrimaryBooks(books) {
-            localStorage.setItem('wf_library_books', JSON.stringify(books));
-        }
-
         function openReader(book) {
-            localStorage.setItem('currentBook', JSON.stringify(book));
+            localStorage.setItem('currentBook', JSON.stringify(toReaderPayload(book)));
             window.location.href = '/reader';
         }
 
         function openDetail(bookId) {
-            const book = booksCache.find((item) => item.id === bookId);
-            if (!book) return;
+            const book = state.catalog.find((row) => row.id === bookId);
+            if (!book || !detailEl) return;
 
-            const favorites = getFavoritesSet();
-            const offlineMap = getOfflineMap();
-            const isFavorite = favorites.has(book.id);
-            const isOffline = Boolean(offlineMap[book.id]);
-
-            detailView.innerHTML = `
-                ${book.cover ? `<img class="library-detail-cover" src="${escapeHtml(book.cover)}" alt="Capa de ${escapeHtml(book.title)}">` : '<div class="library-detail-cover"></div>'}
-                <div class="library-detail-body">
-                    <h2 class="library-detail-title">${escapeHtml(book.title)}</h2>
-                    <div class="library-detail-inline">
-                        <span>📚 ${escapeHtml(book.category)}</span>
-                        <span>📖 ${escapeHtml(book.readTime)} de leitura</span>
-                        <span>✍️ ${escapeHtml(book.author)}</span>
+            detailEl.innerHTML = `
+                ${book.cover ? `<img class="lib-detail-cover" src="${escapeHtml(book.cover)}" alt="Capa de ${escapeHtml(book.title)}">` : '<div class="lib-detail-cover"></div>'}
+                <div class="lib-detail-body">
+                    <h2 class="lib-detail-title">${escapeHtml(book.title)}</h2>
+                    <div class="lib-detail-meta">
+                        <span>${escapeHtml(book.category)}</span>
+                        <span>${escapeHtml(book.readTime)} de leitura</span>
+                        <span>${escapeHtml(book.author)}</span>
                     </div>
-                    <p class="library-detail-content">${escapeHtml(book.text || 'Conteúdo indisponível no momento.')}</p>
-                    <div class="library-detail-actions">
-                        <button type="button" class="library-fav-btn ${isFavorite ? 'active' : ''}" id="libraryFavBtn">👉 Marcar como favorito ❤️</button>
-                        <button type="button" class="library-offline-btn ${isOffline ? 'active' : ''}" id="libraryOfflineBtn">👉 Salvar leitura offline</button>
-                        <button type="button" class="library-reader-btn" id="libraryReaderBtn">Ler agora</button>
-                        <button type="button" class="library-back-btn" id="libraryBackBtn">← Voltar</button>
+                    <p class="lib-detail-text">${escapeHtml(book.text || 'Conteudo indisponivel no momento.')}</p>
+                    <div class="lib-detail-actions">
+                        <button type="button" class="lib-btn lib-btn-primary" data-lib-reader="${escapeHtml(book.id)}">Abrir leitor completo</button>
+                        <button type="button" class="lib-btn lib-btn-soft" data-lib-close>Fechar</button>
+                        ${IS_ADMIN ? `<button type="button" class="lib-btn lib-btn-soft" data-lib-edit="${escapeHtml(book.id)}">Editar leitura</button>
+                        <button type="button" class="lib-btn lib-btn-soft" data-lib-delete="${escapeHtml(book.id)}">Excluir leitura</button>` : ''}
                     </div>
                 </div>
             `;
 
-            listView.style.display = 'none';
-            detailView.style.display = '';
-
-            const favBtn = document.getElementById('libraryFavBtn');
-            const offlineBtn = document.getElementById('libraryOfflineBtn');
-            const readerBtn = document.getElementById('libraryReaderBtn');
-            const backBtn = document.getElementById('libraryBackBtn');
-
-            if (favBtn) {
-                favBtn.addEventListener('click', async () => {
-                    const updated = getFavoritesSet();
-                    const offline = getOfflineMap();
-                    const currentOffline = Boolean(offline[book.id]);
-                    let nextFavorite = false;
-                    if (updated.has(book.id)) {
-                        updated.delete(book.id);
-                        nextFavorite = false;
-                    } else {
-                        updated.add(book.id);
-                        nextFavorite = true;
-                    }
-                    setFavoritesSet(updated);
-                    try {
-                        await syncRemoteLibraryItem(book, nextFavorite, currentOffline);
-                    } catch {
-                        // fallback local mantido
-                    }
-                    openDetail(book.id);
-                });
-            }
-
-            if (offlineBtn) {
-                offlineBtn.addEventListener('click', async () => {
-                    const updated = getOfflineMap();
-                    const favorites = getFavoritesSet();
-                    const currentFavorite = favorites.has(book.id);
-                    let nextOffline = false;
-                    if (updated[book.id]) {
-                        delete updated[book.id];
-                        nextOffline = false;
-                    } else {
-                        updated[book.id] = {
-                            id: book.id,
-                            title: book.title,
-                            author: book.author,
-                            category: book.category,
-                            text: book.text,
-                            cover: book.cover,
-                            readTime: book.readTime,
-                            savedAt: new Date().toISOString(),
-                        };
-                        nextOffline = true;
-                    }
-                    setOfflineMap(updated);
-                    try {
-                        await syncRemoteLibraryItem(book, currentFavorite, nextOffline);
-                    } catch {
-                        // fallback local mantido
-                    }
-                    openDetail(book.id);
-                });
-            }
-
-            if (readerBtn) {
-                readerBtn.addEventListener('click', () => openReader(book));
-            }
-
-            if (backBtn) {
-                backBtn.addEventListener('click', () => {
-                    detailView.style.display = 'none';
-                    listView.style.display = '';
-                });
-            }
+            detailEl.hidden = false;
+            detailEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
-        function estimatePages(text) {
-            const clean = String(text || '').trim();
-            if (!clean) return 1;
-            return Math.max(1, Math.ceil(clean.length / 1500));
+        function renderFeatured() {
+            if (!featuredEl) return;
+
+            const featured = state.featuredBook;
+            if (!featured) {
+                featuredEl.hidden = true;
+                featuredEl.innerHTML = '';
+                return;
+            }
+
+            featuredEl.innerHTML = `
+                <div class="lib-featured-inner">
+                    <div class="lib-featured-content">
+                        <span class="lib-featured-kicker">Destaque editorial</span>
+                        <h2 class="lib-featured-title">${escapeHtml(featured.title)}</h2>
+                        <div class="lib-featured-meta">
+                            <span>${escapeHtml(featured.category)}</span>
+                            <span>${escapeHtml(featured.readTime)} de leitura</span>
+                            <span>${escapeHtml(featured.author)}</span>
+                        </div>
+                        <p class="lib-featured-excerpt">${escapeHtml(makeExcerpt(featured.text, 240))}</p>
+                        <div class="lib-featured-actions">
+                            <button type="button" class="lib-btn lib-btn-primary" data-feature-reader="${escapeHtml(featured.id)}">Ler destaque</button>
+                            <button type="button" class="lib-btn lib-btn-soft" data-feature-open="${escapeHtml(featured.id)}">Ver detalhes</button>
+                            ${IS_ADMIN ? `<button type="button" class="lib-btn lib-btn-soft" data-lib-edit="${escapeHtml(featured.id)}">Editar</button>` : ''}
+                        </div>
+                    </div>
+                    <div class="lib-featured-cover">
+                        ${featured.cover ? `<img src="${escapeHtml(featured.cover)}" alt="Capa de ${escapeHtml(featured.title)}">` : ''}
+                    </div>
+                </div>
+            `;
+
+            featuredEl.hidden = false;
         }
 
-        async function render() {
-            const books = await getAllBooks();
-            booksCache = books;
+        function renderFilters() {
+            if (!filtersEl) return;
 
-            if (!books.length) {
-                grid.innerHTML = `
-                    <div class="library-empty" style="grid-column:1 / -1;">
-                        Nenhum livro encontrado no navegador. Adicione pela sua página de biblioteca atual ou use o botão de exemplo.
+            const categories = listCategories(state.catalog);
+            const counts = buildCategoryCounts(state.catalog);
+            const options = ['all', ...categories];
+            filtersEl.innerHTML = options.map((value) => {
+                const isActive = value === state.activeCategory;
+                const label = value === 'all' ? 'Todas as categorias' : value;
+                const count = value === 'all' ? state.catalog.length : (counts[value] || 0);
+                return `
+                    <button type="button" class="lib-filter ${isActive ? 'active' : ''}" data-category="${escapeHtml(value)}">
+                        ${escapeHtml(label)} (${count})
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function renderGrid() {
+            if (!gridEl) return;
+
+            if (!state.filtered.length) {
+                gridEl.innerHTML = `
+                    <div class="lib-empty">
+                        Nenhuma leitura encontrada para o filtro atual.
                     </div>
                 `;
                 return;
             }
 
-            grid.innerHTML = books.map((book) => `
-                <article class="library-blog-card" data-book-id="${escapeHtml(book.id)}" tabindex="0" role="button" aria-label="Abrir ${escapeHtml(book.title)}">
-                    <div class="library-blog-cover">
+            gridEl.innerHTML = state.filtered.map((book, index) => `
+                <article class="lib-card ${index === 0 ? 'lib-card--feature' : ''} ${cardCategoryClass(book.category)} wf-card store-motion-card" data-book-id="${escapeHtml(book.id)}" tabindex="0" role="button" aria-label="Abrir leitura ${escapeHtml(book.title)}">
+                    <div class="lib-card-cover">
                         ${book.cover ? `<img src="${escapeHtml(book.cover)}" alt="Capa de ${escapeHtml(book.title)}">` : ''}
+                        <span class="lib-card-chip">${escapeHtml(book.category)}</span>
                     </div>
-                    <div class="library-blog-gradient"></div>
-                    <div class="library-blog-content">
-                        <span class="library-blog-category">${escapeHtml(book.category)}</span>
-                        <h3 class="library-blog-title">${escapeHtml(book.title)}</h3>
-                        <div class="library-blog-meta">
-                            <span class="library-blog-time">${escapeHtml(book.readTime)} de leitura</span>
-                            <button type="button" class="library-blog-read-btn">Leia mais</button>
+                    <div class="lib-card-body">
+                        <h3 class="lib-card-title">${escapeHtml(book.title)}</h3>
+                        <span class="lib-card-author">Por ${escapeHtml(book.author)}</span>
+                        <p class="lib-card-excerpt">${escapeHtml(makeExcerpt(book.text))}</p>
+                        <div class="lib-card-footer">
+                            <small>${escapeHtml(book.readTime)} de leitura</small>
+                            <button type="button" class="lib-card-read" data-lib-reader="${escapeHtml(book.id)}">Ler agora</button>
+                            ${IS_ADMIN ? `<span class="lib-card-admin">
+                                <button type="button" data-lib-edit="${escapeHtml(book.id)}">Editar</button>
+                                <button type="button" data-lib-delete="${escapeHtml(book.id)}">Excluir</button>
+                            </span>` : ''}
                         </div>
                     </div>
                 </article>
             `).join('');
-
-            grid.querySelectorAll('.library-blog-card').forEach((card) => {
-                const id = card.getAttribute('data-book-id');
-                const open = () => openDetail(id);
-                card.addEventListener('click', open);
-                card.addEventListener('keydown', (event) => {
-                    if (event.key === 'Enter' || event.key === ' ') {
-                        event.preventDefault();
-                        open();
-                    }
-                });
-            });
         }
 
-        document.getElementById('seedBooksBtn').addEventListener('click', () => {
-            const samples = [
-                {
-                    id: 'guia-frutas',
-                    title: 'Guia Prático de Fruticultura',
-                    author: 'Equipe WallFruits',
-                    category: 'Solo',
-                    tempo: '5 min',
-                    cover: '',
-                    text: 'Capítulo 1. Planejamento da produção.\n\nA escolha do solo, análise de clima e manejo de irrigação impactam diretamente na produtividade e no padrão de qualidade.\n\nCapítulo 2. Manejo de pragas.\n\nUse controle integrado, monitoramento semanal e ações preventivas para reduzir perdas e custos operacionais.'
-                },
-                {
-                    id: 'mercado-agro',
-                    title: 'Mercado Agro em Transformação',
-                    author: 'Observatório Rural',
-                    category: 'Tecnologia',
-                    tempo: '7 min',
-                    cover: '',
-                    text: 'Tendências de compra mostram preferência por transparência, rastreabilidade e previsibilidade de entrega.\n\nProdutores que digitalizam operação e relacionamento comercial aumentam conversão e recorrência.'
-                }
-            ];
-            writePrimaryBooks(samples);
-            render();
-        });
+        function applyFilters() {
+            const term = state.searchTerm.trim().toLowerCase();
+            state.filtered = state.catalog.filter((book) => {
+                const byCategory = state.activeCategory === 'all' || book.category === state.activeCategory;
+                if (!byCategory) return false;
+                if (!term) return true;
 
-        document.getElementById('clearBooksBtn').addEventListener('click', () => {
-            if (!confirm('Deseja limpar os livros salvos localmente neste navegador?')) return;
-            localStorage.removeItem('wf_library_books');
-            render();
-        });
+                const target = `${book.title} ${book.author} ${book.category} ${book.text}`.toLowerCase();
+                return target.includes(term);
+            });
 
-        render();
+            state.featuredBook = state.filtered.length ? state.filtered[0] : null;
+
+            renderGrid();
+            renderFeatured();
+            updateMetrics();
+        }
+
+        function setFeedback(message, kind) {
+            if (!feedbackEl) return;
+            feedbackEl.textContent = message || '';
+            feedbackEl.dataset.kind = kind || 'neutral';
+        }
+
+        function clearForm() {
+            if (!formEl) return;
+            formEl.reset();
+            if (editingIdEl) editingIdEl.value = '';
+            if (saveBtnEl) saveBtnEl.textContent = 'Publicar leitura';
+            setFeedback('', 'neutral');
+        }
+
+        function startEdit(bookId) {
+            if (!IS_ADMIN || !formEl) return;
+            const book = state.catalog.find((row) => row.id === bookId);
+            if (!book) return;
+
+            if (editingIdEl) editingIdEl.value = book.id;
+            const titleInput = document.getElementById('catalogTitle');
+            const authorInput = document.getElementById('catalogAuthor');
+            const categoryInput = document.getElementById('catalogCategory');
+            const readTimeInput = document.getElementById('catalogReadTime');
+            const coverInput = document.getElementById('catalogCover');
+            const textInput = document.getElementById('catalogText');
+
+            if (titleInput) titleInput.value = book.title;
+            if (authorInput) authorInput.value = book.author;
+            if (categoryInput) categoryInput.value = book.category;
+            if (readTimeInput) readTimeInput.value = book.readTime;
+            if (coverInput) coverInput.value = book.cover;
+            if (textInput) textInput.value = book.text;
+            if (saveBtnEl) saveBtnEl.textContent = 'Salvar alteracoes';
+
+            setFeedback('Editando leitura existente.', 'neutral');
+            const panel = document.getElementById('libraryAdminPanel');
+            if (panel) {
+                panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+
+        async function deleteCatalogItem(bookId) {
+            if (!IS_ADMIN) return;
+
+            const allowed = window.confirm('Deseja excluir esta leitura do catalogo publico?');
+            if (!allowed) return;
+
+            try {
+                await apiRequest(`/library/catalog/${encodeURIComponent(String(bookId))}`, 'DELETE');
+                closeDetail();
+                await loadCatalog();
+                setFeedback('Leitura removida do catalogo.', 'ok');
+            } catch {
+                setFeedback('Nao foi possivel excluir a leitura.', 'error');
+            }
+        }
+
+        async function submitCatalogForm(event) {
+            event.preventDefault();
+            if (!IS_ADMIN || !formEl) return;
+
+            const formData = new FormData(formEl);
+            const payload = {
+                title: String(formData.get('title') || '').trim(),
+                author: String(formData.get('author') || '').trim(),
+                category: String(formData.get('category') || '').trim(),
+                read_time: String(formData.get('read_time') || '').trim(),
+                cover: String(formData.get('cover') || '').trim(),
+                text: String(formData.get('text') || '').trim(),
+            };
+
+            if (!payload.title || !payload.author || !payload.category || !payload.read_time || payload.text.length < 20) {
+                setFeedback('Preencha titulo, autor, categoria, tempo e conteudo real com no minimo 20 caracteres.', 'error');
+                return;
+            }
+
+            const editingId = String(editingIdEl?.value || '').trim();
+            const method = editingId ? 'PUT' : 'POST';
+            const endpoint = editingId
+                ? `/library/catalog/${encodeURIComponent(editingId)}`
+                : '/library/catalog';
+
+            try {
+                await apiRequest(endpoint, method, payload);
+                await loadCatalog();
+                clearForm();
+                setFeedback(editingId ? 'Leitura atualizada com sucesso.' : 'Leitura publicada com sucesso.', 'ok');
+            } catch (error) {
+                const message = String(error?.message || 'Falha ao publicar leitura.');
+                setFeedback(message, 'error');
+            }
+        }
+
+        function bindEvents() {
+            if (searchInputEl) {
+                searchInputEl.addEventListener('input', (event) => {
+                    state.searchTerm = String(event.target.value || '');
+                    applyFilters();
+                });
+            }
+
+            if (filtersEl) {
+                filtersEl.addEventListener('click', (event) => {
+                    const btn = event.target.closest('[data-category]');
+                    if (!btn) return;
+                    state.activeCategory = String(btn.getAttribute('data-category') || 'all');
+                    renderFilters();
+                    applyFilters();
+                });
+            }
+
+            if (gridEl) {
+                gridEl.addEventListener('click', (event) => {
+                    const readerBtn = event.target.closest('[data-lib-reader]');
+                    if (readerBtn) {
+                        event.stopPropagation();
+                        const id = readerBtn.getAttribute('data-lib-reader');
+                        const book = state.catalog.find((row) => row.id === id);
+                        if (book) openReader(book);
+                        return;
+                    }
+
+                    const editBtn = event.target.closest('[data-lib-edit]');
+                    if (editBtn) {
+                        event.stopPropagation();
+                        startEdit(String(editBtn.getAttribute('data-lib-edit') || ''));
+                        return;
+                    }
+
+                    const deleteBtn = event.target.closest('[data-lib-delete]');
+                    if (deleteBtn) {
+                        event.stopPropagation();
+                        deleteCatalogItem(String(deleteBtn.getAttribute('data-lib-delete') || ''));
+                        return;
+                    }
+
+                    const card = event.target.closest('[data-book-id]');
+                    if (!card) return;
+                    openDetail(String(card.getAttribute('data-book-id') || ''));
+                });
+
+                gridEl.addEventListener('keydown', (event) => {
+                    const card = event.target.closest('[data-book-id]');
+                    if (!card) return;
+                    if (event.key !== 'Enter' && event.key !== ' ') return;
+                    event.preventDefault();
+                    openDetail(String(card.getAttribute('data-book-id') || ''));
+                });
+            }
+
+            if (detailEl) {
+                detailEl.addEventListener('click', (event) => {
+                    const closeBtn = event.target.closest('[data-lib-close]');
+                    if (closeBtn) {
+                        closeDetail();
+                        return;
+                    }
+
+                    const readerBtn = event.target.closest('[data-lib-reader]');
+                    if (readerBtn) {
+                        const id = readerBtn.getAttribute('data-lib-reader');
+                        const book = state.catalog.find((row) => row.id === id);
+                        if (book) openReader(book);
+                        return;
+                    }
+
+                    const editBtn = event.target.closest('[data-lib-edit]');
+                    if (editBtn) {
+                        startEdit(String(editBtn.getAttribute('data-lib-edit') || ''));
+                        return;
+                    }
+
+                    const deleteBtn = event.target.closest('[data-lib-delete]');
+                    if (deleteBtn) {
+                        deleteCatalogItem(String(deleteBtn.getAttribute('data-lib-delete') || ''));
+                    }
+                });
+            }
+
+            if (featuredEl) {
+                featuredEl.addEventListener('click', (event) => {
+                    const readerBtn = event.target.closest('[data-feature-reader]');
+                    if (readerBtn) {
+                        const id = String(readerBtn.getAttribute('data-feature-reader') || '');
+                        const book = state.catalog.find((row) => row.id === id);
+                        if (book) openReader(book);
+                        return;
+                    }
+
+                    const openBtn = event.target.closest('[data-feature-open]');
+                    if (openBtn) {
+                        openDetail(String(openBtn.getAttribute('data-feature-open') || ''));
+                    }
+                });
+            }
+
+            if (IS_ADMIN && formEl) {
+                formEl.addEventListener('submit', submitCatalogForm);
+            }
+
+            if (IS_ADMIN && resetBtnEl) {
+                resetBtnEl.addEventListener('click', clearForm);
+            }
+        }
+
+        async function loadCatalog() {
+            try {
+                const data = await apiRequest('/library/catalog', 'GET');
+                const items = Array.isArray(data?.items) ? data.items : [];
+                state.catalog = items.map(normalizeBook);
+                renderFilters();
+                applyFilters();
+            } catch {
+                state.catalog = [];
+                state.filtered = [];
+                renderFilters();
+                renderGrid();
+            }
+        }
+
+        bindEvents();
+        loadCatalog();
     })();
 </script>
 {% endblock %}

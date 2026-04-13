@@ -4,59 +4,198 @@
 
 {% block content %}
 <style>
-    .proposal-shell { display: grid; gap: 0.85rem; }
-    .proposal-head { display: flex; justify-content: space-between; gap: 0.7rem; align-items: center; flex-wrap: wrap; }
-    .proposal-head h1 { margin: 0; font-size: 1.24rem; font-weight: 900; color: #2E7D32; }
-    .proposal-list { display: grid; gap: 0.65rem; }
-    .proposal-card {
-        border: 1px solid #d6e7d8;
-        border-radius: 14px;
-        background: #fff;
-        box-shadow: 0 10px 20px rgba(30, 85, 34, 0.1);
-        padding: 0.76rem;
+    :root {
+        --prop-blue: #2563EB;
+        --prop-blue-soft: #3B82F6;
+        --prop-indigo: #6366F1;
+        --prop-white: #FFFFFF;
+        --prop-gray-050: #F9FAFB;
+        --prop-gray-100: #F3F4F6;
+        --prop-gray-300: #D1D5DB;
+        --prop-gray-500: #6B7280;
+        --prop-gray-800: #1F2937;
+        --prop-shadow: 0 12px 30px rgba(15, 23, 42, 0.1);
+    }
+
+    .propp-page {
         display: grid;
+        gap: 16px;
+        color: var(--prop-gray-800);
+        font-family: "Manrope", "Segoe UI", sans-serif;
+    }
+
+    .propp-header {
+        position: sticky;
+        top: 8px;
+        z-index: 24;
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        background: linear-gradient(130deg, rgba(37, 99, 235, 0.92) 0%, rgba(59, 130, 246, 0.9) 48%, rgba(99, 102, 241, 0.88) 100%);
+        backdrop-filter: blur(16px);
+        box-shadow: 0 14px 32px rgba(37, 99, 235, 0.2);
+        padding: 14px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .propp-header h1 {
+        margin: 0;
+        font-size: 1.08rem;
+        font-weight: 900;
+        color: #FFFFFF;
+    }
+
+    .propp-header p {
+        margin: 3px 0 0;
+        color: rgba(255, 255, 255, 0.86);
+        font-size: 0.76rem;
+        font-weight: 600;
+    }
+
+    .propp-header-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .propp-chip {
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.44);
+        background: rgba(255, 255, 255, 0.2);
+        color: #FFFFFF;
+        font-size: 0.72rem;
+        font-weight: 800;
+        padding: 6px 10px;
+    }
+
+    .propp-link {
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.44);
+        background: rgba(255, 255, 255, 0.2);
+        color: #FFFFFF;
+        font-size: 0.72rem;
+        font-weight: 800;
+        text-decoration: none;
+        padding: 8px 11px;
+    }
+
+    .propp-list {
+        display: grid;
+        gap: 12px;
+    }
+
+    .propp-card {
+        border: 1px solid rgba(209, 213, 219, 0.86);
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.84);
+        backdrop-filter: blur(12px);
+        box-shadow: var(--prop-shadow);
+        padding: 12px;
+        display: grid;
+        gap: 10px;
         grid-template-columns: 1fr auto;
-        gap: 0.65rem;
         align-items: center;
     }
-    .proposal-title { margin: 0; color: #1f5e29; font-size: 0.88rem; font-weight: 800; }
-    .proposal-meta { margin: 0.18rem 0 0; color: #607764; font-size: 0.74rem; }
-    .proposal-badge {
-        border-radius: 999px;
-        padding: 0.28rem 0.62rem;
-        font-size: 0.66rem;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
+
+    .propp-title {
+        margin: 0;
+        color: #0F172A;
+        font-size: 0.9rem;
+        font-weight: 900;
     }
-    .proposal-badge.pending { background: #fff4dc; color: #8a5b00; }
-    .proposal-badge.reviewed { background: #ecf7ff; color: #1f5b85; }
-    .proposal-badge.accepted { background: #e5f7ea; color: #1f6a35; }
-    .proposal-badge.rejected { background: #ffe8ea; color: #8e2f38; }
-    .proposal-badge.cancelled { background: #f0f1f3; color: #59616c; }
+
+    .propp-meta {
+        margin: 3px 0 0;
+        color: #64748B;
+        font-size: 0.74rem;
+        font-weight: 700;
+    }
+
+    .propp-badge {
+        border-radius: 999px;
+        padding: 5px 10px;
+        font-size: 0.66rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        border: 1px solid transparent;
+    }
+
+    .propp-badge.pending { background: #FEF3C7; color: #92400E; border-color: #FDE68A; }
+    .propp-badge.reviewed { background: #DBEAFE; color: #1D4ED8; border-color: #93C5FD; }
+    .propp-badge.accepted { background: #DCFCE7; color: #166534; border-color: #86EFAC; }
+    .propp-badge.rejected { background: #FEE2E2; color: #B91C1C; border-color: #FCA5A5; }
+    .propp-badge.cancelled { background: #E5E7EB; color: #374151; border-color: #D1D5DB; }
+
+    .propp-link-btn {
+        margin-top: 8px;
+        border-radius: 10px;
+        border: 1px solid #BFDBFE;
+        background: #EFF6FF;
+        color: #1D4ED8;
+        font-size: 0.72rem;
+        font-weight: 900;
+        padding: 7px 10px;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .propp-skeleton {
+        border: 1px solid #E5E7EB;
+        border-radius: 14px;
+        min-height: 96px;
+        position: relative;
+        overflow: hidden;
+        background: #FFFFFF;
+    }
+
+    .propp-skeleton::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.72) 50%, rgba(255, 255, 255, 0) 100%);
+        transform: translateX(-100%);
+        animation: propShimmer 1.2s infinite;
+    }
+
+    @keyframes propShimmer {
+        to { transform: translateX(100%); }
+    }
 
     @media (max-width: 768px) {
-        .proposal-card { grid-template-columns: 1fr; align-items: flex-start; }
+        .propp-card {
+            grid-template-columns: 1fr;
+            align-items: flex-start;
+        }
     }
 </style>
 
-<div class="proposal-shell">
-    <div class="proposal-head">
-        <h1>Minhas propostas por volume</h1>
-        <div class="d-flex gap-2 flex-wrap">
-            <a href="/store" class="btn btn-wf-secondary">Voltar para loja</a>
-            <a href="/store/cart" class="btn btn-wf-secondary">Abrir carrinho</a>
+<div class="propp-page">
+    <header class="propp-header">
+        <div>
+            <h1>Minhas propostas por volume</h1>
+            <p>Controle as negociacoes enviadas aos fornecedores.</p>
         </div>
-    </div>
+        <div class="propp-header-actions">
+            <span id="proposalsCountChip" class="propp-chip">0 propostas</span>
+            <a href="/store" class="propp-link" data-wf-press>Voltar para loja</a>
+            <a href="/store/cart" class="propp-link" data-wf-press>Abrir carrinho</a>
+        </div>
+    </header>
 
     <div id="proposalFeedback"></div>
-    <section id="proposalList" class="proposal-list"></section>
+    <section id="proposalList" class="propp-list"></section>
 </div>
 
 <script>
     (function setupProposalsPage() {
         const list = document.getElementById('proposalList');
         const feedback = document.getElementById('proposalFeedback');
+        const proposalsCountChip = document.getElementById('proposalsCountChip');
 
         function showMessage(type, text) {
             if (!feedback) return;
@@ -93,30 +232,52 @@
             return map[status] || status;
         }
 
+        function renderSkeleton() {
+            list.innerHTML = Array.from({ length: 4 })
+                .map(() => '<div class="propp-skeleton"></div>')
+                .join('');
+
+            if (window.WFStoreMotion) {
+                window.WFStoreMotion.refresh(list);
+            }
+        }
+
         async function loadProposals() {
             if (!requireAuth()) return;
 
             try {
+                renderSkeleton();
                 const data = await apiRequest('/store/quote/my');
                 const quotes = Array.isArray(data?.quotes) ? data.quotes : [];
 
+                if (proposalsCountChip) {
+                    proposalsCountChip.textContent = `${quotes.length} ${quotes.length === 1 ? 'proposta' : 'propostas'}`;
+                }
+
                 if (!quotes.length) {
                     list.innerHTML = '<div class="wf-alert wf-alert-info">Você ainda não enviou propostas por volume.</div>';
+                    if (window.WFStoreMotion) {
+                        window.WFStoreMotion.refresh(list);
+                    }
                     return;
                 }
 
                 list.innerHTML = quotes.map((quote) => `
-                    <article class="proposal-card">
+                    <article class="propp-card">
                         <div>
-                            <h2 class="proposal-title">${escapeHtml(quote.product_name)}</h2>
-                            <p class="proposal-meta">Fornecedor: ${escapeHtml(quote.supplier_name)}</p>
-                            <p class="proposal-meta">Quantidade: ${Number(quote.requested_quantity).toFixed(2)} ${quote.unit || 'un'} | Preço alvo: ${quote.target_price ? `R$ ${Number(quote.target_price).toFixed(2)}` : 'não informado'}</p>
-                            ${quote.message ? `<p class="proposal-meta">Mensagem: ${escapeHtml(quote.message)}</p>` : ''}
-                            <a href="/store/product/${encodeURIComponent(quote.product_slug || '')}" class="btn btn-sm btn-outline-success mt-1">Ver produto</a>
+                            <h2 class="propp-title">${escapeHtml(quote.product_name)}</h2>
+                            <p class="propp-meta">Fornecedor: ${escapeHtml(quote.supplier_name)}</p>
+                            <p class="propp-meta">Quantidade: ${Number(quote.requested_quantity).toFixed(2)} ${quote.unit || 'un'} | Preco alvo: ${quote.target_price ? `R$ ${Number(quote.target_price).toFixed(2)}` : 'nao informado'}</p>
+                            ${quote.message ? `<p class="propp-meta">Mensagem: ${escapeHtml(quote.message)}</p>` : ''}
+                            <a href="/store/product/${encodeURIComponent(quote.product_slug || '')}" class="propp-link-btn">Ver produto</a>
                         </div>
-                        <span class="proposal-badge ${escapeHtml(quote.status)}">${escapeHtml(statusLabel(quote.status))}</span>
+                        <span class="propp-badge ${escapeHtml(quote.status)}">${escapeHtml(statusLabel(quote.status))}</span>
                     </article>
                 `).join('');
+
+                if (window.WFStoreMotion) {
+                    window.WFStoreMotion.refresh(list);
+                }
             } catch (error) {
                 showMessage('error', error.message || 'Falha ao carregar propostas.');
             }

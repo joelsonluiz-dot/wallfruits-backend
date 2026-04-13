@@ -5,18 +5,23 @@ Rotas de pagamento e assinatura via Stripe.
 - POST /api/payment/webhook            → recebe eventos do Stripe
 - GET  /api/payment/subscription       → status da assinatura atual
 - DELETE /api/payment/subscription     → cancela assinatura (soft)
+- POST /api/payment/subscription-cta/event   → registra evento A/B de CTA
+- GET  /api/payment/subscription-cta/summary → resume performance A/B (admin)
 """
 import logging
+import json
 import re
+from threading import Lock
 from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Optional
 
-from fastapi import APIRouter, Body, Depends, Header, HTTPException, Request, status
+from fastapi import APIRouter, Body, Depends, Header, HTTPException, Query, Request, status
 from pydantic import BaseModel, Field, model_validator
 from sqlalchemy.orm import Session
 
-from app.core.auth_middleware import get_current_user
+from app.cache.redis_client import delete_cache, get_cache, set_cache
+from app.core.auth_middleware import get_current_user, get_current_user_optional
 from app.core.config import settings
 from app.database.connection import get_db
 from app.models.subscription import Subscription
@@ -34,6 +39,209 @@ logger = logging.getLogger("payment_routes")
 _VALID_PLANS = {"basic", "pro", "premium"}
 _VALID_PIX_KEY_TYPES = {"cpf", "cnpj", "email", "phone", "random"}
 _VALID_PAYMENT_METHODS = {"card", "pix"}
+_SUBSCRIPTION_CTA_VARIANTS = {"a", "b"}
+_SUBSCRIPTION_CTA_METRICS_KEY = "wf:payment:subscription_cta_metrics:v1"
+_SUBSCRIPTION_CTA_RECENT_LIMIT = 200
+_SUBSCRIPTION_CTA_STATE_LOCK = Lock()
+_subscription_cta_state: dict | None = None
+_subscription_cta_state_loaded = False
+
+
+def _new_subscription_cta_state() -> dict:
+    return {
+        "version": 1,
+        "updated_at": None,
+        "counters": {},
+        "recent": [],
+    }
+
+
+def _sanitize_counter_map(value: object) -> dict:
+    if not isinstance(value, dict):
+        return {}
+
+    output: dict[str, int] = {}
+    for raw_key, raw_value in value.items():
+        key = str(raw_key or "").strip()
+        if not key:
+            continue
+        try:
+            count = int(raw_value)
+        except (TypeError, ValueError):
+            continue
+        if count < 0:
+            count = 0
+        output[key] = count
+    return output
+
+
+def _sanitize_recent_events(value: object) -> list[dict]:
+    if not isinstance(value, list):
+        return []
+
+    output: list[dict] = []
+    for item in value[-_SUBSCRIPTION_CTA_RECENT_LIMIT:]:
+        if not isinstance(item, dict):
+            continue
+        output.append(
+            {
+                "ts": str(item.get("ts") or ""),
+                "event": str(item.get("event") or ""),
+                "variant": str(item.get("variant") or ""),
+                "plan_id": str(item.get("plan_id") or "none"),
+                "billing_cycle": str(item.get("billing_cycle") or "none"),
+                "source": str(item.get("source") or "web"),
+                "page": str(item.get("page") or ""),
+                "auth": str(item.get("auth") or "guest"),
+                "user_id": item.get("user_id"),
+            }
+        )
+    return output
+
+
+def _coerce_subscription_cta_state(raw: object) -> dict:
+    state = _new_subscription_cta_state()
+    if not isinstance(raw, dict):
+        return state
+
+    state["updated_at"] = raw.get("updated_at")
+    state["counters"] = _sanitize_counter_map(raw.get("counters"))
+    state["recent"] = _sanitize_recent_events(raw.get("recent"))
+    return state
+
+
+def _load_subscription_cta_state_locked() -> dict:
+    global _subscription_cta_state_loaded
+    global _subscription_cta_state
+
+    if _subscription_cta_state_loaded and isinstance(_subscription_cta_state, dict):
+        return _subscription_cta_state
+
+    raw = get_cache(_SUBSCRIPTION_CTA_METRICS_KEY)
+    if raw:
+        try:
+            parsed = json.loads(raw)
+        except Exception:
+            parsed = {}
+        _subscription_cta_state = _coerce_subscription_cta_state(parsed)
+    else:
+        _subscription_cta_state = _new_subscription_cta_state()
+
+    _subscription_cta_state_loaded = True
+    return _subscription_cta_state
+
+
+def _persist_subscription_cta_state_locked() -> None:
+    if not isinstance(_subscription_cta_state, dict):
+        return
+
+    try:
+        serialized = json.dumps(_subscription_cta_state, ensure_ascii=False)
+        set_cache(_SUBSCRIPTION_CTA_METRICS_KEY, serialized)
+    except Exception as exc:
+        logger.warning("Falha ao persistir métricas A/B no cache: %s", exc)
+
+
+def _inc_counter(counters: dict, key: str, step: int = 1) -> None:
+    counters[key] = int(counters.get(key, 0) or 0) + int(step)
+
+
+def _counter_value(counters: dict, key: str) -> int:
+    return int(counters.get(key, 0) or 0)
+
+
+def _sum_by_prefix_and_suffix(counters: dict, prefix: str, suffix: str) -> int:
+    total = 0
+    for key, raw_value in counters.items():
+        if key.startswith(prefix) and key.endswith(suffix):
+            total += int(raw_value or 0)
+    return total
+
+
+def _pct(part: int, whole: int) -> float:
+    if whole <= 0:
+        return 0.0
+    return round((part / whole) * 100, 2)
+
+
+def _build_subscription_cta_summary(state: dict, include_recent: bool, recent_limit: int) -> dict:
+    counters = _sanitize_counter_map(state.get("counters"))
+
+    by_variant = {}
+    for variant in sorted(_SUBSCRIPTION_CTA_VARIANTS):
+        variant_prefix = f"variant_event:{variant}:"
+        impressions = _sum_by_prefix_and_suffix(counters, variant_prefix, "_impression")
+        clicks = _sum_by_prefix_and_suffix(counters, variant_prefix, "_click")
+        checkout_starts = _counter_value(counters, f"variant_event:{variant}:pricing_checkout_start")
+        checkout_errors = _sum_by_prefix_and_suffix(counters, variant_prefix, "_error")
+
+        by_variant[variant] = {
+            "impressions": impressions,
+            "clicks": clicks,
+            "ctr_percent": _pct(clicks, impressions),
+            "checkout_starts": checkout_starts,
+            "checkout_start_rate_percent": _pct(checkout_starts, clicks),
+            "checkout_errors": checkout_errors,
+            "checkout_error_rate_percent": _pct(checkout_errors, checkout_starts),
+        }
+
+    by_plan = {}
+    for plan in sorted(_VALID_PLANS):
+        plan_prefix = f"plan_event:{plan}:"
+        impressions = _sum_by_prefix_and_suffix(counters, plan_prefix, "_impression")
+        clicks = _sum_by_prefix_and_suffix(counters, plan_prefix, "_click")
+        checkout_starts = _counter_value(counters, f"plan_event:{plan}:pricing_checkout_start")
+        by_plan[plan] = {
+            "impressions": impressions,
+            "clicks": clicks,
+            "ctr_percent": _pct(clicks, impressions),
+            "checkout_starts": checkout_starts,
+            "checkout_start_rate_percent": _pct(checkout_starts, clicks),
+        }
+
+    best_variant = None
+    best_ctr = -1.0
+    for variant, data in by_variant.items():
+        ctr = float(data.get("ctr_percent") or 0.0)
+        if ctr > best_ctr:
+            best_ctr = ctr
+            best_variant = variant
+
+    summary = {
+        "updated_at": state.get("updated_at"),
+        "total_events": _counter_value(counters, "total_events"),
+        "traffic": {
+            "authenticated": _counter_value(counters, "auth:auth"),
+            "guests": _counter_value(counters, "auth:guest"),
+        },
+        "by_variant": by_variant,
+        "by_plan": by_plan,
+        "winner_hint": {
+            "variant": best_variant,
+            "metric": "ctr_percent",
+            "value": round(best_ctr, 2) if best_ctr >= 0 else 0.0,
+        },
+    }
+
+    if include_recent:
+        recent = _sanitize_recent_events(state.get("recent"))
+        summary["recent"] = recent[-recent_limit:] if recent_limit > 0 else []
+
+    return summary
+
+
+def _is_admin_user(user: User) -> bool:
+    return bool(getattr(user, "is_superuser", False) or str(getattr(user, "role", "")) == "admin")
+
+
+def _reset_subscription_cta_metrics_for_tests() -> None:
+    """Utilitário interno para isolamento de testes."""
+    global _subscription_cta_state
+    global _subscription_cta_state_loaded
+    with _SUBSCRIPTION_CTA_STATE_LOCK:
+        _subscription_cta_state = _new_subscription_cta_state()
+        _subscription_cta_state_loaded = True
+        delete_cache(_SUBSCRIPTION_CTA_METRICS_KEY)
 
 
 def _only_digits(value: str | None) -> str:
@@ -157,6 +365,37 @@ class PaymentPreferencesIn(BaseModel):
         return self
 
 
+class SubscriptionCtaEventIn(BaseModel):
+    event: str = Field(..., min_length=3, max_length=80)
+    variant: str = Field(default="a", max_length=1)
+    plan_id: str | None = Field(default=None, max_length=20)
+    billing_cycle: str | None = Field(default=None, max_length=20)
+    source: str | None = Field(default=None, max_length=80)
+    page: str | None = Field(default=None, max_length=200)
+
+    @model_validator(mode="after")
+    def normalize(self):
+        normalized_event = str(self.event or "").strip().lower().replace(" ", "_")
+        if not re.fullmatch(r"[a-z0-9_:\-]{3,80}", normalized_event):
+            raise ValueError("Evento de conversão inválido")
+        self.event = normalized_event
+
+        normalized_variant = str(self.variant or "a").strip().lower()
+        if normalized_variant not in _SUBSCRIPTION_CTA_VARIANTS:
+            raise ValueError("Variante A/B inválida")
+        self.variant = normalized_variant
+
+        normalized_plan = str(self.plan_id or "").strip().lower()
+        self.plan_id = normalized_plan if normalized_plan in _VALID_PLANS else None
+
+        normalized_cycle = str(self.billing_cycle or "").strip().lower()
+        self.billing_cycle = normalized_cycle if normalized_cycle in {"monthly", "yearly"} else None
+
+        self.source = (self.source or "").strip() or None
+        self.page = (self.page or "").strip() or None
+        return self
+
+
 def _build_payment_preferences_payload(user: User) -> dict:
     card_last4 = str(user.payment_card_last4 or "").strip() or None
     pix_key = str(user.payment_pix_key or "").strip() or None
@@ -265,6 +504,88 @@ def update_payment_preferences(
     db.commit()
     db.refresh(db_user)
     return _build_payment_preferences_payload(db_user)
+
+
+@router.post("/subscription-cta/event", status_code=status.HTTP_202_ACCEPTED)
+def track_subscription_cta_event(
+    payload: SubscriptionCtaEventIn,
+    request: Request,
+    current_user: User | None = Depends(get_current_user_optional),
+):
+    """Registra evento de conversão A/B de assinatura (best effort)."""
+    event_name = payload.event
+    variant = payload.variant
+    plan_id = payload.plan_id or "none"
+    billing_cycle = payload.billing_cycle or "none"
+    auth_state = "auth" if current_user else "guest"
+    source = payload.source or "web"
+    page = payload.page or str(request.url.path)
+    now_iso = datetime.now(timezone.utc).isoformat()
+
+    with _SUBSCRIPTION_CTA_STATE_LOCK:
+        state = _load_subscription_cta_state_locked()
+        counters = state.setdefault("counters", {})
+        recent = state.setdefault("recent", [])
+
+        _inc_counter(counters, "total_events")
+        _inc_counter(counters, f"variant:{variant}")
+        _inc_counter(counters, f"event:{event_name}")
+        _inc_counter(counters, f"variant_event:{variant}:{event_name}")
+        _inc_counter(counters, f"plan:{plan_id}")
+        _inc_counter(counters, f"plan_event:{plan_id}:{event_name}")
+        _inc_counter(counters, f"cycle:{billing_cycle}")
+        _inc_counter(counters, f"cycle_event:{billing_cycle}:{event_name}")
+        _inc_counter(counters, f"auth:{auth_state}")
+        _inc_counter(counters, f"auth_event:{auth_state}:{event_name}")
+
+        recent.append(
+            {
+                "ts": now_iso,
+                "event": event_name,
+                "variant": variant,
+                "plan_id": plan_id,
+                "billing_cycle": billing_cycle,
+                "source": source,
+                "page": page,
+                "auth": auth_state,
+                "user_id": getattr(current_user, "id", None),
+            }
+        )
+        if len(recent) > _SUBSCRIPTION_CTA_RECENT_LIMIT:
+            del recent[: len(recent) - _SUBSCRIPTION_CTA_RECENT_LIMIT]
+
+        state["updated_at"] = now_iso
+        _persist_subscription_cta_state_locked()
+
+        event_count = _counter_value(counters, f"variant_event:{variant}:{event_name}")
+
+    return {
+        "accepted": True,
+        "variant": variant,
+        "event": event_name,
+        "event_count": event_count,
+    }
+
+
+@router.get("/subscription-cta/summary", status_code=status.HTTP_200_OK)
+def get_subscription_cta_summary(
+    include_recent: bool = Query(True),
+    recent_limit: int = Query(20, ge=0, le=200),
+    current_user: User = Depends(get_current_user),
+):
+    """Retorna resumo agregado de funil de CTA A/B para painel admin."""
+    if not _is_admin_user(current_user):
+        raise HTTPException(status_code=403, detail="Acesso restrito")
+
+    with _SUBSCRIPTION_CTA_STATE_LOCK:
+        state = _load_subscription_cta_state_locked()
+        summary = _build_subscription_cta_summary(
+            state=state,
+            include_recent=include_recent,
+            recent_limit=recent_limit,
+        )
+
+    return summary
 
 
 # ── Checkout ────────────────────────────────────────────────────────

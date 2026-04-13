@@ -1,4 +1,5 @@
 import logging
+import re
 from time import perf_counter
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -6,7 +7,7 @@ from sqlalchemy import or_
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from app.core.auth_middleware import get_current_user
+from app.core.auth_middleware import get_current_user, get_current_user_optional
 from app.database.connection import get_db
 from app.models.library_item import LibraryItem
 from app.models.notification import Notification
@@ -15,6 +16,28 @@ from app.services.notification_service import create_notification
 
 router = APIRouter(prefix="/library", tags=["Library"])
 logger = logging.getLogger("library_routes")
+
+
+def _is_admin_user(user: User | None) -> bool:
+    if not user:
+        return False
+
+    return str(user.role or "").strip().lower() == "admin" or bool(user.is_superuser)
+
+
+def _assert_library_admin(user: User | None) -> None:
+    if _is_admin_user(user):
+        return
+
+    raise HTTPException(status_code=403, detail="Somente admins podem publicar na biblioteca")
+
+
+def _slugify_book_id(raw_id: str | None, *, fallback_title: str) -> str:
+    base = str(raw_id or "").strip() or str(fallback_title or "").strip()
+    normalized = re.sub(r"[^a-zA-Z0-9]+", "-", base).strip("-").lower()
+    if not normalized:
+        normalized = "leitura"
+    return normalized[:180]
 
 
 def _notify_admins_sync_issue(
@@ -77,6 +100,16 @@ class LibraryItemBatchUpsertIn(BaseModel):
     items: list[LibraryItemUpsertIn] = Field(default_factory=list, max_length=300)
 
 
+class LibraryCatalogUpsertIn(BaseModel):
+    id: str | None = Field(default=None, min_length=1, max_length=180)
+    title: str = Field(..., min_length=2, max_length=300)
+    author: str | None = Field(default=None, max_length=180)
+    category: str | None = Field(default=None, max_length=120)
+    read_time: str | None = Field(default=None, max_length=40)
+    cover: str | None = Field(default=None, max_length=700)
+    text: str = Field(..., min_length=20)
+
+
 def _apply_item_update(item: LibraryItem, payload: LibraryItemUpsertIn) -> None:
     item.title = payload.title.strip()
     item.author = (payload.author or "").strip() or None
@@ -100,6 +133,129 @@ def _item_payload(item: LibraryItem) -> dict:
         "is_favorite": bool(item.is_favorite),
         "is_offline": bool(item.is_offline),
     }
+
+
+def _catalog_item_payload(item: LibraryItem) -> dict:
+    payload = _item_payload(item)
+    payload["is_favorite"] = False
+    payload["is_offline"] = False
+    payload["published_by_user_id"] = item.user_id
+    payload["is_published"] = True
+    return payload
+
+
+def _apply_catalog_item_update(item: LibraryItem, payload: LibraryCatalogUpsertIn) -> None:
+    item.title = payload.title.strip()
+    item.author = (payload.author or "").strip() or None
+    item.category = (payload.category or "").strip() or None
+    item.read_time = (payload.read_time or "").strip() or None
+    item.cover = (payload.cover or "").strip() or None
+    item.text = payload.text.strip()
+    item.is_favorite = False
+    item.is_offline = False
+
+
+@router.get("/catalog")
+async def list_library_catalog(
+    db: Session = Depends(get_db),
+    current_user: User | None = Depends(get_current_user_optional),
+):
+    del current_user
+    admin_items = (
+        db.query(LibraryItem)
+        .join(User, User.id == LibraryItem.user_id)
+        .filter(or_(User.role == "admin", User.is_superuser.is_(True)))
+        .order_by(LibraryItem.updated_at.desc().nullslast(), LibraryItem.id.desc())
+        .all()
+    )
+
+    deduped_items: dict[str, dict] = {}
+    for row in admin_items:
+        key = str(row.book_id or "").strip()
+        if not key or key in deduped_items:
+            continue
+        deduped_items[key] = _catalog_item_payload(row)
+
+    items = list(deduped_items.values())
+    return {"items": items, "total": len(items)}
+
+
+@router.post("/catalog")
+async def publish_library_catalog_item(
+    payload: LibraryCatalogUpsertIn,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    _assert_library_admin(current_user)
+
+    book_id = _slugify_book_id(payload.id, fallback_title=payload.title)
+    item = (
+        db.query(LibraryItem)
+        .join(User, User.id == LibraryItem.user_id)
+        .filter(LibraryItem.book_id == book_id, or_(User.role == "admin", User.is_superuser.is_(True)))
+        .order_by(LibraryItem.updated_at.desc().nullslast(), LibraryItem.id.desc())
+        .first()
+    )
+
+    if not item:
+        item = LibraryItem(user_id=current_user.id, book_id=book_id)
+        db.add(item)
+
+    _apply_catalog_item_update(item, payload)
+    db.commit()
+    db.refresh(item)
+    return _catalog_item_payload(item)
+
+
+@router.put("/catalog/{book_id}")
+async def update_library_catalog_item(
+    book_id: str,
+    payload: LibraryCatalogUpsertIn,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    _assert_library_admin(current_user)
+
+    item = (
+        db.query(LibraryItem)
+        .join(User, User.id == LibraryItem.user_id)
+        .filter(LibraryItem.book_id == str(book_id), or_(User.role == "admin", User.is_superuser.is_(True)))
+        .order_by(LibraryItem.updated_at.desc().nullslast(), LibraryItem.id.desc())
+        .first()
+    )
+
+    if not item:
+        raise HTTPException(status_code=404, detail="Leitura nao encontrada no catalogo")
+
+    _apply_catalog_item_update(item, payload)
+    db.commit()
+    db.refresh(item)
+    return _catalog_item_payload(item)
+
+
+@router.delete("/catalog/{book_id}")
+async def delete_library_catalog_item(
+    book_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    _assert_library_admin(current_user)
+
+    items = (
+        db.query(LibraryItem)
+        .join(User, User.id == LibraryItem.user_id)
+        .filter(LibraryItem.book_id == str(book_id), or_(User.role == "admin", User.is_superuser.is_(True)))
+        .all()
+    )
+
+    if not items:
+        return {"ok": True, "deleted": False, "removed": 0}
+
+    for item in items:
+        db.delete(item)
+
+    db.commit()
+    return {"ok": True, "deleted": True, "removed": len(items)}
 
 
 @router.get("/items")

@@ -22,6 +22,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Merriweather:wght@700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/store_motion.js"></script>
     <style>
         :root {
             --wf-bg: #f4efdf;
@@ -2525,6 +2526,7 @@
         const WF_RETENTION_NUDGE_KEY = 'wf_retention_nudge_v1';
         const WF_SUBSCRIPTION_COPY_AB_KEY = 'wf_subscription_copy_ab_v1';
         const WF_SUBSCRIPTION_COPY_AB_EVENTS_KEY = 'wf_subscription_copy_ab_events_v1';
+        const WF_SUBSCRIPTION_CTA_EVENT_ENDPOINT = '/api/payment/subscription-cta/event';
         const WF_SUBSCRIPTION_COPY_VARIANTS = ['a', 'b'];
         const WF_SUBSCRIPTION_COPY_MAP = {
             pricing_basic_cta: {
@@ -2802,6 +2804,36 @@
                 }));
             } catch {
                 // ignora indisponibilidade de eventos customizados
+            }
+
+            try {
+                const token = localStorage.getItem('token');
+                const headers = {
+                    'Content-Type': 'application/json',
+                };
+                if (token) {
+                    headers.Authorization = `Bearer ${token}`;
+                }
+
+                const body = {
+                    event: normalizedEvent,
+                    variant,
+                    plan_id: safePayload.plan_id || null,
+                    billing_cycle: safePayload.billing_cycle || null,
+                    source: safePayload.source || 'web',
+                    page: safePayload.page || window.location.pathname,
+                };
+
+                fetch(WF_SUBSCRIPTION_CTA_EVENT_ENDPOINT, {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify(body),
+                    keepalive: true,
+                }).catch(() => {
+                    // ignora erro de rede para nao interferir na UX
+                });
+            } catch {
+                // ignora indisponibilidade de envio remoto
             }
         }
 
@@ -5676,37 +5708,127 @@
     <!-- 🌟 REVOLUTIONARY UI SCRIPTS -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            const currentPath = window.location.pathname || '/';
+            const motionProfile = (() => {
+                if (currentPath.startsWith('/messages')) return 'chat';
+                if (currentPath.startsWith('/admin') || currentPath.startsWith('/clients/manage') || currentPath.startsWith('/services/manage') || currentPath.startsWith('/store/manage')) return 'dense';
+                if (currentPath.startsWith('/store')) return 'showcase';
+                if (isAuthFormPath() || currentPath.startsWith('/login') || currentPath.startsWith('/register') || currentPath.startsWith('/forgot-password') || currentPath.startsWith('/reset-password')) return 'minimal';
+                return 'standard';
+            })();
+
+            const wfMotionSelectorsByProfile = {
+                standard: ['.wf-card', '.card', '.wf-alert', '.wf-topbar', '.wf-sidebar-right-section', '.wf-restricted-card', '.wf-hidden-settings', '.store-motion-card'],
+                showcase: ['.wf-card', '.card', '.wf-alert', '.wf-topbar', '.wf-sidebar-right-section', '.wf-restricted-card', '.wf-hidden-settings', '.store-motion-card'],
+                dense: ['.wf-card', '.card', '.wf-alert', '.table-responsive', '.wf-topbar', '.store-motion-card'],
+                chat: ['.wf-card', '.panel-card', '.chat-main-card', '.wf-alert', '.wf-topbar', '.store-motion-card'],
+                minimal: ['.wf-card', '.card', '.wf-alert', '.store-motion-card']
+            };
+
+            const wfGlobalMotionSelectors = wfMotionSelectorsByProfile[motionProfile] || wfMotionSelectorsByProfile.standard;
+            let motionDeviceTier = 'medium';
+
+            if (window.WFStoreMotion) {
+                window.WFStoreMotion.setProfile(motionProfile);
+
+                let autoRefreshThrottle = 180;
+                if (typeof window.WFStoreMotion.getProfile === 'function') {
+                    const motionState = window.WFStoreMotion.getProfile();
+                    const throttleCandidate = Number(motionState && motionState.config ? motionState.config.autoRefreshThrottle : 180);
+                    if (Number.isFinite(throttleCandidate) && throttleCandidate >= 80) {
+                        autoRefreshThrottle = throttleCandidate;
+                    }
+
+                    if (motionState && typeof motionState.deviceTier === 'string') {
+                        motionDeviceTier = motionState.deviceTier;
+                    }
+                }
+
+                window.WFStoreMotion.refresh(document, { revealSelectors: wfGlobalMotionSelectors });
+                window.WFStoreMotion.installAutoRefresh(document.body, {
+                    revealSelectors: wfGlobalMotionSelectors,
+                    throttleMs: autoRefreshThrottle,
+                });
+
+                // Recalibra motion em mudancas de viewport/dispositivo sem recriar animacoes pesadas.
+                let motionRetuneTimer = null;
+                window.addEventListener('resize', () => {
+                    if (motionRetuneTimer) {
+                        window.clearTimeout(motionRetuneTimer);
+                    }
+
+                    motionRetuneTimer = window.setTimeout(() => {
+                        if (!window.WFStoreMotion || typeof window.WFStoreMotion.retuneForDevice !== 'function') {
+                            return;
+                        }
+
+                        const nextState = window.WFStoreMotion.retuneForDevice();
+                        if (nextState && typeof nextState.deviceTier === 'string') {
+                            motionDeviceTier = nextState.deviceTier;
+                        }
+                    }, 220);
+                }, { passive: true });
+            }
+
             // 1. 3D Highlight & Tilt Effect for Cards (desktop only)
             const shouldEnableCardTilt =
-                !isAuthFormPath() &&
+                (motionProfile === 'standard' || motionProfile === 'showcase') &&
+                motionDeviceTier === 'high' &&
                 window.matchMedia('(pointer: fine)').matches &&
                 window.matchMedia('(hover: hover)').matches;
 
             if (shouldEnableCardTilt) {
+                const TILT_MAX_FPS = 30;
+                const TILT_FRAME_BUDGET = 1000 / TILT_MAX_FPS;
                 const cards = document.querySelectorAll('.wf-card');
                 cards.forEach((card) => {
                     card.classList.add('tilt-card');
 
                     let rafId = 0;
-                    card.addEventListener('mousemove', (event) => {
-                        if (rafId) {
-                            window.cancelAnimationFrame(rafId);
+                    let lastFrameAt = 0;
+                    let pendingEvent = null;
+
+                    const renderTilt = () => {
+                        if (document.visibilityState !== 'visible') {
+                            rafId = 0;
+                            return;
                         }
 
-                        rafId = window.requestAnimationFrame(() => {
-                            const rect = card.getBoundingClientRect();
-                            const x = event.clientX - rect.left;
-                            const y = event.clientY - rect.top;
+                        const event = pendingEvent;
+                        if (!event) {
+                            rafId = 0;
+                            return;
+                        }
 
-                            card.style.background = `radial-gradient(circle at ${x}px ${y}px, rgba(255,255,255,0.8), var(--wf-card))`;
+                        const now = performance.now();
+                        if (lastFrameAt && (now - lastFrameAt) < TILT_FRAME_BUDGET) {
+                            rafId = window.requestAnimationFrame(renderTilt);
+                            return;
+                        }
 
-                            const centerX = rect.width / 2;
-                            const centerY = rect.height / 2;
-                            const rotateX = ((y - centerY) / centerY) * -2;
-                            const rotateY = ((x - centerX) / centerX) * 2;
+                        lastFrameAt = now;
+                        pendingEvent = null;
 
-                            card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.005)`;
-                        });
+                        const rect = card.getBoundingClientRect();
+                        const x = event.clientX - rect.left;
+                        const y = event.clientY - rect.top;
+
+                        card.style.background = `radial-gradient(circle at ${x}px ${y}px, rgba(255,255,255,0.8), var(--wf-card))`;
+
+                        const centerX = rect.width / 2;
+                        const centerY = rect.height / 2;
+                        const rotateX = ((y - centerY) / centerY) * -2;
+                        const rotateY = ((x - centerX) / centerX) * 2;
+
+                        card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.005)`;
+                        rafId = 0;
+                    };
+
+                    card.addEventListener('mousemove', (event) => {
+                        pendingEvent = event;
+                        if (!rafId) {
+                            rafId = window.requestAnimationFrame(renderTilt);
+                        }
                     });
 
                     card.addEventListener('mouseleave', () => {
@@ -5714,6 +5836,8 @@
                             window.cancelAnimationFrame(rafId);
                             rafId = 0;
                         }
+                        pendingEvent = null;
+                        lastFrameAt = 0;
                         card.style.background = 'var(--wf-card)';
                         card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) scale(1)';
                     });
@@ -5721,7 +5845,6 @@
             }
 
             // 2. Active State for Navigation Links
-            const currentPath = window.location.pathname;
 
             const normalizePath = (value) => {
                 if (!value) return '/';

@@ -5,74 +5,383 @@
 {% block content %}
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,500,0,0" />
 <style>
-    .detail-shell { display: grid; gap: 0.9rem; }
-    .detail-card {
-        border: 1px solid #d4e6d6;
-        border-radius: 16px;
-        background: #fff;
-        box-shadow: 0 10px 24px rgba(30, 85, 34, 0.1);
-        padding: 0.85rem;
+    :root {
+        --pd-blue: #2563EB;
+        --pd-blue-soft: #3B82F6;
+        --pd-indigo: #6366F1;
+        --pd-white: #FFFFFF;
+        --pd-gray-050: #F9FAFB;
+        --pd-gray-100: #F3F4F6;
+        --pd-gray-300: #D1D5DB;
+        --pd-gray-500: #6B7280;
+        --pd-gray-800: #1F2937;
+        --pd-shadow: 0 14px 34px rgba(15, 23, 42, 0.12);
     }
-    .detail-media {
-        border: 1px solid #d9eadb;
+
+    .pd-page {
+        display: grid;
+        gap: 14px;
+        color: var(--pd-gray-800);
+        font-family: "Manrope", "Segoe UI", sans-serif;
+    }
+
+    .pd-header {
+        position: sticky;
+        top: 8px;
+        z-index: 24;
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.34);
+        background: linear-gradient(130deg, rgba(37, 99, 235, 0.92) 0%, rgba(59, 130, 246, 0.9) 48%, rgba(99, 102, 241, 0.88) 100%);
+        backdrop-filter: blur(16px);
+        box-shadow: 0 14px 32px rgba(37, 99, 235, 0.2);
+        padding: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .pd-header h1 {
+        margin: 0;
+        color: #FFFFFF;
+        font-size: 1.08rem;
+        font-weight: 900;
+    }
+
+    .pd-header p {
+        margin: 2px 0 0;
+        color: rgba(255, 255, 255, 0.86);
+        font-size: 0.74rem;
+        font-weight: 700;
+    }
+
+    .pd-head-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .pd-chip,
+    .pd-head-link {
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.42);
+        background: rgba(255, 255, 255, 0.2);
+        color: #FFFFFF;
+        font-size: 0.7rem;
+        font-weight: 900;
+        padding: 6px 10px;
+        text-decoration: none;
+    }
+
+    .pd-main {
+        display: grid;
+        grid-template-columns: minmax(0, 1.02fr) minmax(0, 1fr);
+        gap: 12px;
+    }
+
+    .pd-card {
+        border: 1px solid rgba(209, 213, 219, 0.9);
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.88);
+        backdrop-filter: blur(10px);
+        box-shadow: var(--pd-shadow);
+        padding: 12px;
+    }
+
+    .pd-media-wrap {
         border-radius: 14px;
-        height: 360px;
-        background: linear-gradient(180deg, #f0f8f1 0%, #e8f5e9 100%);
+        border: 1px solid #DBEAFE;
+        background: linear-gradient(180deg, #EFF6FF 0%, #DBEAFE 100%);
+        min-height: 360px;
         display: flex;
         align-items: center;
         justify-content: center;
+        overflow: hidden;
     }
-    .detail-media img { max-width: 92%; max-height: 92%; object-fit: contain; }
-    .detail-thumbs { display: flex; gap: 0.4rem; overflow-x: auto; margin-top: 0.5rem; }
-    .detail-thumb {
-        width: 66px;
-        height: 66px;
+
+    .pd-media-wrap img {
+        width: 100%;
+        height: 360px;
+        object-fit: contain;
+    }
+
+    .pd-no-image {
+        color: #64748B;
+        font-size: 0.82rem;
+        font-weight: 800;
+    }
+
+    .pd-thumbs {
+        margin-top: 10px;
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding-bottom: 2px;
+    }
+
+    .pd-thumb-btn {
+        border: 1px solid #BFDBFE;
         border-radius: 10px;
-        border: 1px solid #d8e7da;
-        object-fit: cover;
-        background: #fff;
+        background: #EFF6FF;
+        padding: 0;
+        width: 68px;
+        height: 68px;
+        overflow: hidden;
+        flex: 0 0 auto;
     }
-    .detail-cat {
+
+    .pd-thumb-btn img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .pd-thumb-btn.active {
+        border-color: #2563EB;
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.24);
+    }
+
+    .pd-cat {
         margin: 0;
-        font-size: 0.72rem;
+        color: #64748B;
+        font-size: 0.7rem;
+        font-weight: 900;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        color: #4f6f57;
-        font-weight: 800;
     }
-    .detail-title { margin: 0.3rem 0; color: #1d5825; font-size: 1.38rem; font-weight: 900; }
-    .detail-supplier { margin: 0; color: #57715f; font-size: 0.86rem; }
-    .detail-price-box {
-        border: 1px solid #d8e9da;
+
+    .pd-title {
+        margin: 5px 0 2px;
+        color: #0F172A;
+        font-size: 1.28rem;
+        font-weight: 900;
+        line-height: 1.18;
+    }
+
+    .pd-supplier {
+        margin: 0;
+        color: #64748B;
+        font-size: 0.78rem;
+        font-weight: 700;
+    }
+
+    .pd-price-box {
+        margin-top: 10px;
+        border: 1px solid #DBEAFE;
         border-radius: 14px;
-        padding: 0.7rem;
-        background: #f8fcf8;
-        margin: 0.7rem 0;
+        background: #F8FAFF;
+        padding: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
     }
-    .detail-price { color: #2E7D32; font-size: 1.6rem; font-weight: 900; line-height: 1; margin: 0; }
-    .detail-stock { font-size: 0.76rem; font-weight: 800; }
-    .detail-stock.ok { color: #2E7D32; }
-    .detail-stock.off { color: #b14545; }
-    .detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.55rem; }
-    .detail-btn {
-        border: none;
-        border-radius: 10px;
+
+    .pd-price-box p {
+        margin: 0;
+    }
+
+    .pd-price-label {
+        color: #64748B;
+        font-size: 0.68rem;
         font-weight: 800;
-        font-size: 0.8rem;
-        padding: 0.56rem 0.7rem;
     }
-    .detail-btn.primary { background: #2E7D32; color: #fff; }
-    .detail-btn.secondary { background: #FF9800; color: #fff; }
-    .detail-tech-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.5rem; }
-    .detail-tech-item {
-        border: 1px solid #dceadc;
+
+    .pd-price {
+        color: #1D4ED8;
+        font-size: 1.5rem;
+        font-weight: 900;
+        line-height: 1;
+    }
+
+    .pd-stock {
+        border-radius: 999px;
+        font-size: 0.68rem;
+        font-weight: 900;
+        padding: 5px 9px;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+
+    .pd-stock.ok {
+        border: 1px solid #86EFAC;
+        background: #DCFCE7;
+        color: #166534;
+    }
+
+    .pd-stock.off {
+        border: 1px solid #FCA5A5;
+        background: #FEE2E2;
+        color: #B91C1C;
+    }
+
+    .pd-description {
+        margin: 10px 0 0;
+        color: #334155;
+        font-size: 0.84rem;
+        line-height: 1.45;
+    }
+
+    .pd-grid {
+        margin-top: 10px;
+        display: grid;
+        gap: 8px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .pd-grid label,
+    .pd-message label {
+        margin-bottom: 4px;
+        color: #334155;
+        font-size: 0.7rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .pd-grid .form-control,
+    .pd-message .form-control {
+        border-radius: 11px;
+        border: 1px solid #CBD5E1;
+        font-size: 0.84rem;
+        font-weight: 600;
+    }
+
+    .pd-message {
+        margin-top: 8px;
+    }
+
+    .pd-actions {
+        margin-top: 10px;
+        display: grid;
+        gap: 8px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .pd-btn {
+        border: 0;
+        border-radius: 12px;
+        font-size: 0.78rem;
+        font-weight: 900;
+        padding: 10px;
+    }
+
+    .pd-btn.primary {
+        background: linear-gradient(120deg, #2563EB 0%, #4F46E5 100%);
+        color: #FFFFFF;
+    }
+
+    .pd-btn.secondary {
+        background: linear-gradient(120deg, #0EA5E9 0%, #0284C7 100%);
+        color: #FFFFFF;
+    }
+
+    .pd-links {
+        margin-top: 9px;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .pd-link {
         border-radius: 10px;
-        background: #fff;
-        padding: 0.52rem;
+        border: 1px solid #BFDBFE;
+        background: #EFF6FF;
+        color: #1D4ED8;
+        font-size: 0.72rem;
+        font-weight: 900;
+        padding: 7px 10px;
+        text-decoration: none;
     }
-    .detail-tech-item p { margin: 0; }
-    .detail-tech-key { font-size: 0.66rem; font-weight: 800; color: #607264; text-transform: uppercase; }
-    .detail-tech-val { margin-top: 0.2rem; font-size: 0.8rem; font-weight: 700; color: #2e4a34; }
+
+    .pd-tech-head,
+    .pd-related-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+        flex-wrap: wrap;
+    }
+
+    .pd-tech-head h2,
+    .pd-related-head h2 {
+        margin: 0;
+        color: #0F172A;
+        font-size: 0.92rem;
+        font-weight: 900;
+    }
+
+    .pd-tech-grid {
+        display: grid;
+        gap: 8px;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    }
+
+    .pd-tech-item {
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        background: #FFFFFF;
+        padding: 9px;
+    }
+
+    .pd-tech-key {
+        margin: 0;
+        color: #64748B;
+        font-size: 0.66rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .pd-tech-value {
+        margin: 4px 0 0;
+        color: #1F2937;
+        font-size: 0.78rem;
+        font-weight: 700;
+        word-break: break-word;
+    }
+
+    .pd-related-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        gap: 9px;
+    }
+
+    .pd-related-card {
+        border: 1px solid #DBEAFE;
+        border-radius: 12px;
+        background: #FFFFFF;
+        box-shadow: 0 9px 24px rgba(37, 99, 235, 0.1);
+        padding: 9px;
+        text-decoration: none;
+        display: grid;
+        gap: 4px;
+    }
+
+    .pd-related-cat {
+        margin: 0;
+        color: #64748B;
+        font-size: 0.66rem;
+        font-weight: 800;
+    }
+
+    .pd-related-name {
+        margin: 0;
+        color: #0F172A;
+        font-size: 0.8rem;
+        font-weight: 900;
+        line-height: 1.35;
+    }
+
+    .pd-related-price {
+        margin: 0;
+        color: #1D4ED8;
+        font-size: 0.78rem;
+        font-weight: 900;
+    }
 
     .btn-spinner {
         width: 14px;
@@ -91,116 +400,149 @@
     }
 
     @media (max-width: 992px) {
-        .detail-media { height: 290px; }
-        .detail-grid { grid-template-columns: 1fr; }
+        .pd-main {
+            grid-template-columns: 1fr;
+        }
+
+        .pd-media-wrap,
+        .pd-media-wrap img {
+            min-height: 300px;
+            height: 300px;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .pd-grid,
+        .pd-actions {
+            grid-template-columns: 1fr;
+        }
     }
 </style>
 
-<div class="detail-shell">
-    <div class="row g-3">
-        <div class="col-lg-6">
-            <section class="detail-card">
-                <div class="detail-media">
-                    {% if product.images %}
-                    <img src="{{ product.images[0] }}" alt="{{ product.name }}">
+<input type="hidden" id="productIdValue" value="{{ product.id }}" />
+<input type="hidden" id="productStockValue" value="{{ product.stock_quantity or 0 }}" />
+
+<div class="pd-page">
+    <header class="pd-header store-motion-card">
+        <div>
+            <h1>{{ product.name }}</h1>
+            <p>Detalhes completos do produto, proposta e compra rapida no mesmo fluxo.</p>
+        </div>
+        <div class="pd-head-actions">
+            <span class="pd-chip">{{ product.category.name if product.category else 'Categoria' }}</span>
+            <a href="/store" class="pd-head-link" data-wf-press>Voltar para loja</a>
+            <a href="/store/cart" class="pd-head-link" data-wf-press>Carrinho</a>
+        </div>
+    </header>
+
+    <div class="pd-main">
+        <section class="pd-card store-motion-card">
+            <div class="pd-media-wrap">
+                {% if product.images %}
+                <img id="detailMainImage" src="{{ product.images[0] }}" alt="{{ product.name }}" data-wf-priority="high" fetchpriority="high" decoding="async" loading="eager">
+                {% else %}
+                <span class="pd-no-image">Imagem nao disponivel</span>
+                {% endif %}
+            </div>
+
+            {% if product.images %}
+            <div class="pd-thumbs" id="detailThumbs">
+                {% for img in product.images %}
+                <button type="button" class="pd-thumb-btn ripple {% if loop.first %}active{% endif %}" data-image-src="{{ img }}" data-wf-press aria-label="Imagem {{ loop.index }}">
+                    <img src="{{ img }}" alt="Imagem {{ loop.index }}" loading="lazy" decoding="async">
+                </button>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </section>
+
+        <section class="pd-card store-motion-card">
+            <p class="pd-cat">{{ product.category.name if product.category else 'Categoria' }}</p>
+            <h1 class="pd-title">{{ product.name }}</h1>
+            <p class="pd-supplier">Fornecedor: {{ product.supplier.name if product.supplier else 'Fornecedor' }}</p>
+
+            <div class="pd-price-box">
+                <div>
+                    <p class="pd-price-label">Preco unitario</p>
+                    <p class="pd-price">R$ {{ "%.2f"|format(product.price) }}</p>
+                </div>
+                <span class="pd-stock {% if product.stock_quantity > 0 %}ok{% else %}off{% endif %}">
+                    {% if product.stock_quantity > 0 %}
+                    Estoque: {{ product.stock_quantity }}
                     {% else %}
-                    <div style="font-size: 3rem;">📦</div>
+                    Indisponivel
                     {% endif %}
+                </span>
+            </div>
+
+            <p class="pd-description">{{ product.description }}</p>
+
+            <div class="pd-grid">
+                <div>
+                    <label for="buyQty">Quantidade</label>
+                    <input id="buyQty" type="number" min="1" max="{{ product.stock_quantity }}" value="1" class="form-control">
                 </div>
-                <div class="detail-thumbs">
-                    {% for img in product.images %}
-                    <img src="{{ img }}" class="detail-thumb" alt="Imagem {{ loop.index }}">
-                    {% endfor %}
+                <div>
+                    <label for="targetPrice">Preco alvo (opcional)</label>
+                    <input id="targetPrice" type="number" min="0" step="0.01" class="form-control" placeholder="R$">
                 </div>
-            </section>
-        </div>
+            </div>
 
-        <div class="col-lg-6">
-            <section class="detail-card">
-                <p class="detail-cat">{{ product.category.name if product.category else 'Categoria' }}</p>
-                <h1 class="detail-title">{{ product.name }}</h1>
-                <p class="detail-supplier">Fornecedor: {{ product.supplier.name if product.supplier else 'Fornecedor' }}</p>
+            <div class="pd-message">
+                <label for="quoteMessage">Mensagem da proposta (opcional)</label>
+                <textarea id="quoteMessage" class="form-control" rows="2" maxlength="500" placeholder="Ex: Compra recorrente com entrega programada semanal."></textarea>
+            </div>
 
-                <div class="detail-price-box d-flex justify-content-between align-items-center gap-2">
-                    <div>
-                        <p class="mb-1 text-muted" style="font-size:0.74rem;">Preço unitário</p>
-                        <p class="detail-price">R$ {{ "%.2f"|format(product.price) }}</p>
-                    </div>
-                    <div class="detail-stock {% if product.stock_quantity > 0 %}ok{% else %}off{% endif %}">
-                        {% if product.stock_quantity > 0 %}
-                        Estoque: {{ product.stock_quantity }}
-                        {% else %}
-                        Indisponível
-                        {% endif %}
-                    </div>
-                </div>
+            <div class="pd-actions">
+                <button class="pd-btn primary ripple" id="btnAddToCart" data-wf-press>Adicionar ao carrinho</button>
+                <button class="pd-btn secondary ripple" id="btnRequestQuote" data-wf-press>Solicitar proposta</button>
+            </div>
 
-                <p style="font-size:0.88rem;color:#47624e;">{{ product.description }}</p>
+            <div class="pd-links">
+                <a href="/store/proposals" class="pd-link" data-wf-press>Minhas propostas</a>
+                <a href="/store/orders" class="pd-link" data-wf-press>Meus pedidos</a>
+                <a href="/ai-agent?entry=nav" class="pd-link" data-wf-press>Agenda inteligente</a>
+            </div>
 
-                <div class="detail-grid mb-2">
-                    <div>
-                        <label class="wf-label">Quantidade</label>
-                        <input id="buyQty" type="number" min="1" max="{{ product.stock_quantity }}" value="1" class="wf-input form-control">
-                    </div>
-                    <div>
-                        <label class="wf-label">Preço alvo (opcional)</label>
-                        <input id="targetPrice" type="number" min="0" step="0.01" class="wf-input form-control" placeholder="R$">
-                    </div>
-                </div>
-
-                <div class="mb-2">
-                    <label class="wf-label">Mensagem da proposta (opcional)</label>
-                    <textarea id="quoteMessage" class="wf-input form-control" rows="2" maxlength="500" placeholder="Ex: Compra recorrente com entrega programada semanal."></textarea>
-                </div>
-
-                <div class="d-grid gap-2 d-md-flex">
-                    <button class="detail-btn primary" id="btnAddToCart">Adicionar ao carrinho</button>
-                    <button class="detail-btn secondary" id="btnRequestQuote">Solicitar proposta</button>
-                </div>
-
-                <div class="d-flex gap-2 mt-2 flex-wrap">
-                    <a href="/store/cart" class="btn btn-wf-secondary btn-sm">Carrinho</a>
-                    <a href="/store/proposals" class="btn btn-wf-secondary btn-sm">Propostas</a>
-                    <a href="/ai-agent?entry=nav" class="btn btn-outline-success btn-sm">Agenda Inteligente</a>
-                </div>
-
-                <div id="detailFeedback" class="mt-2"></div>
-            </section>
-        </div>
+            <div id="detailFeedback" class="mt-2"></div>
+        </section>
     </div>
 
-    <section class="detail-card">
-        <h2 class="h6 mb-2" style="color:#2E7D32;font-weight:900;">Ficha técnica</h2>
-        <div class="detail-tech-grid">
+    <section class="pd-card store-motion-card">
+        <div class="pd-tech-head">
+            <h2>Ficha tecnica</h2>
+            <span class="pd-chip" style="color:#1D4ED8;background:#EFF6FF;border-color:#BFDBFE;">Dados de aplicacao</span>
+        </div>
+        <div class="pd-tech-grid">
             {% if product.specifications %}
             {% for key, value in product.specifications.items() %}
-            <article class="detail-tech-item">
-                <p class="detail-tech-key">{{ key }}</p>
-                <p class="detail-tech-val">{{ value }}</p>
+            <article class="pd-tech-item">
+                <p class="pd-tech-key">{{ key }}</p>
+                <p class="pd-tech-value">{{ value }}</p>
             </article>
             {% endfor %}
             {% else %}
-            <article class="detail-tech-item">
-                <p class="detail-tech-val">Ficha técnica ainda não informada para este produto.</p>
+            <article class="pd-tech-item">
+                <p class="pd-tech-value">Ficha tecnica ainda nao informada para este produto.</p>
             </article>
             {% endif %}
         </div>
     </section>
 
     {% if related_products %}
-    <section class="detail-card">
-        <h2 class="h6 mb-2" style="color:#2E7D32;font-weight:900;">Produtos relacionados</h2>
-        <div class="row g-2">
+    <section class="pd-card store-motion-card">
+        <div class="pd-related-head">
+            <h2>Produtos relacionados</h2>
+            <span style="font-size:0.72rem;color:#64748B;font-weight:700;">Sugestoes por categoria</span>
+        </div>
+
+        <div class="pd-related-grid">
             {% for rel in related_products %}
-            <div class="col-12 col-md-6 col-xl-3">
-                <a href="/store/product/{{ rel.slug }}" class="text-decoration-none">
-                    <div class="border rounded-3 p-2 h-100 bg-white" style="border-color:#d7e7d9 !important;">
-                        <p class="mb-1" style="font-size:0.66rem;color:#627b67;">{{ rel.category.name if rel.category else 'Categoria' }}</p>
-                        <h3 class="h6 mb-1" style="font-size:0.86rem;color:#1f4f28;font-weight:800;">{{ rel.name }}</h3>
-                        <p class="mb-0" style="font-weight:900;color:#2E7D32;">R$ {{ "%.2f"|format(rel.price) }}</p>
-                    </div>
-                </a>
-            </div>
+            <a href="/store/product/{{ rel.slug }}" class="pd-related-card" data-wf-press>
+                <p class="pd-related-cat">{{ rel.category.name if rel.category else 'Categoria' }}</p>
+                <h3 class="pd-related-name">{{ rel.name }}</h3>
+                <p class="pd-related-price">R$ {{ "%.2f"|format(rel.price) }}</p>
+            </a>
             {% endfor %}
         </div>
     </section>
@@ -209,23 +551,22 @@
 
 <script>
     (function setupProductActions() {
-        const productId = Number('{{ product.id }}');
+        const productId = Number(document.getElementById('productIdValue')?.value || 0);
+        const maxQty = Number(document.getElementById('productStockValue')?.value || 0);
+
+        const mainImage = document.getElementById('detailMainImage');
+        const thumbs = document.getElementById('detailThumbs');
         const btnAdd = document.getElementById('btnAddToCart');
         const btnQuote = document.getElementById('btnRequestQuote');
         const qtyInput = document.getElementById('buyQty');
         const targetPriceInput = document.getElementById('targetPrice');
         const quoteMessageInput = document.getElementById('quoteMessage');
         const feedback = document.getElementById('detailFeedback');
-        const maxQty = Number('{{ product.stock_quantity or 0 }}');
 
         function showMessage(type, text) {
             if (!feedback) return;
             const cls = type === 'error' ? 'wf-alert wf-alert-error' : 'wf-alert wf-alert-info';
-            const wrap = document.createElement('div');
-            wrap.className = cls;
-            wrap.textContent = String(text || '');
-            feedback.innerHTML = '';
-            feedback.appendChild(wrap);
+            feedback.innerHTML = `<div class="${cls}">${String(text || '')}</div>`;
         }
 
         function requireAuth() {
@@ -242,30 +583,54 @@
             if (!btn.dataset.defaultLabel) {
                 btn.dataset.defaultLabel = btn.textContent || '';
             }
+
             btn.disabled = loading;
             btn.innerHTML = loading
                 ? '<span class="btn-spinner" aria-hidden="true"></span>Processando...'
                 : btn.dataset.defaultLabel;
         }
 
+        if (thumbs && mainImage) {
+            thumbs.addEventListener('click', (event) => {
+                const target = event.target instanceof Element ? event.target : null;
+                const button = target ? target.closest('[data-image-src]') : null;
+                if (!button) return;
+
+                const src = button.getAttribute('data-image-src') || '';
+                if (!src) return;
+
+                mainImage.setAttribute('src', src);
+                thumbs.querySelectorAll('.pd-thumb-btn').forEach((item) => item.classList.remove('active'));
+                button.classList.add('active');
+            });
+        }
+
+        if (maxQty <= 0) {
+            if (btnAdd) btnAdd.disabled = true;
+            if (btnQuote) btnQuote.disabled = true;
+        }
+
         if (btnAdd) {
             btnAdd.addEventListener('click', async () => {
                 if (!requireAuth()) return;
+
                 const quantity = Number(qtyInput?.value || 1);
                 if (!Number.isFinite(quantity) || quantity <= 0) {
-                    showMessage('error', 'Informe uma quantidade válida.');
+                    showMessage('error', 'Informe uma quantidade valida.');
                     return;
                 }
+
                 if (maxQty > 0 && quantity > maxQty) {
-                    showMessage('error', `Quantidade acima do estoque disponível (${maxQty}).`);
+                    showMessage('error', `Quantidade acima do estoque disponivel (${maxQty}).`);
                     return;
                 }
+
                 try {
                     setButtonLoading(btnAdd, true);
                     await apiRequest('/store/cart/add', 'POST', { product_id: productId, quantity });
                     showMessage('ok', 'Produto adicionado ao carrinho com sucesso.');
                 } catch (error) {
-                    showMessage('error', error.message || 'Não foi possível adicionar ao carrinho.');
+                    showMessage('error', error.message || 'Nao foi possivel adicionar ao carrinho.');
                 } finally {
                     setButtonLoading(btnAdd, false);
                 }
@@ -275,15 +640,18 @@
         if (btnQuote) {
             btnQuote.addEventListener('click', async () => {
                 if (!requireAuth()) return;
+
                 const quantity = Number(qtyInput?.value || 1);
                 if (!Number.isFinite(quantity) || quantity <= 0) {
-                    showMessage('error', 'Informe uma quantidade válida para proposta.');
+                    showMessage('error', 'Informe uma quantidade valida para proposta.');
                     return;
                 }
+
                 if (maxQty > 0 && quantity > maxQty) {
-                    showMessage('error', `Quantidade acima do estoque disponível (${maxQty}).`);
+                    showMessage('error', `Quantidade acima do estoque disponivel (${maxQty}).`);
                     return;
                 }
+
                 const target = targetPriceInput?.value ? Number(targetPriceInput.value) : null;
                 const message = (quoteMessageInput?.value || '').trim();
 
@@ -302,6 +670,10 @@
                     setButtonLoading(btnQuote, false);
                 }
             });
+        }
+
+        if (window.WFStoreMotion) {
+            window.WFStoreMotion.refresh(document.querySelector('.pd-page'));
         }
     })();
 </script>

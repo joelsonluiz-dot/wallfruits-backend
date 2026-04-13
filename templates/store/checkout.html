@@ -4,100 +4,378 @@
 
 {% block content %}
 <style>
-    .checkout-wrap { display: grid; grid-template-columns: 1.35fr 0.95fr; gap: 0.9rem; }
-    .checkout-card {
-        border: 1px solid #d7e7d9;
-        border-radius: 16px;
-        background: #fff;
-        box-shadow: 0 10px 24px rgba(30, 85, 34, 0.1);
-        padding: 0.9rem;
+    :root {
+        --check-blue: #2563EB;
+        --check-blue-soft: #3B82F6;
+        --check-indigo: #6366F1;
+        --check-white: #FFFFFF;
+        --check-gray-050: #F9FAFB;
+        --check-gray-100: #F3F4F6;
+        --check-gray-300: #D1D5DB;
+        --check-gray-500: #6B7280;
+        --check-gray-800: #1F2937;
+        --check-yellow: #FACC15;
+        --check-shadow: 0 10px 30px rgba(15, 23, 42, 0.1);
     }
-    .checkout-title { margin: 0 0 0.8rem; color: #2E7D32; font-size: 1.22rem; font-weight: 900; }
-    .checkout-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
-    .checkout-item { display: flex; justify-content: space-between; gap: 0.55rem; padding: 0.38rem 0; border-bottom: 1px solid #e2eee4; font-size: 0.8rem; }
-    .checkout-item:last-child { border-bottom: none; }
-    .checkout-total {
-        margin-top: 0.5rem;
-        padding-top: 0.5rem;
-        border-top: 1px solid #dce9de;
+
+    .checkp-page {
+        display: grid;
+        gap: 16px;
+        font-family: "Manrope", "Segoe UI", sans-serif;
+        color: var(--check-gray-800);
+    }
+
+    .checkp-header {
+        position: sticky;
+        top: 8px;
+        z-index: 25;
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        background: linear-gradient(132deg, rgba(37, 99, 235, 0.92) 0%, rgba(59, 130, 246, 0.9) 46%, rgba(99, 102, 241, 0.88) 100%);
+        backdrop-filter: blur(16px);
+        box-shadow: 0 14px 32px rgba(37, 99, 235, 0.2);
+        padding: 14px;
         display: flex;
         justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .checkp-header h1 {
+        margin: 0;
+        color: #FFFFFF;
+        font-size: 1.08rem;
         font-weight: 900;
-        color: #2E7D32;
+        letter-spacing: 0.01em;
+    }
+
+    .checkp-header p {
+        margin: 3px 0 0;
+        color: rgba(255, 255, 255, 0.86);
+        font-size: 0.76rem;
+        font-weight: 600;
+    }
+
+    .checkp-header-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .checkp-link {
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.44);
+        background: rgba(255, 255, 255, 0.2);
+        color: #FFFFFF;
+        font-size: 0.72rem;
+        font-weight: 800;
+        text-decoration: none;
+        padding: 8px 11px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .checkp-wrap {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .checkp-card {
+        border: 1px solid rgba(209, 213, 219, 0.84);
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.84);
+        backdrop-filter: blur(12px);
+        box-shadow: var(--check-shadow);
+        padding: 14px;
+    }
+
+    .checkp-title {
+        margin: 0 0 10px;
+        color: #0F172A;
+        font-size: 1rem;
+        font-weight: 900;
+    }
+
+    .checkp-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .checkp-field {
+        display: grid;
+        gap: 5px;
+    }
+
+    .checkp-label {
+        font-size: 0.72rem;
+        font-weight: 800;
+        color: #475569;
+    }
+
+    .checkp-input,
+    .checkp-select {
+        width: 100%;
+        border: 1px solid #CBD5E1;
+        border-radius: 12px;
+        background: #FFFFFF;
+        color: #0F172A;
+        font-size: 0.82rem;
+        font-weight: 700;
+        padding: 10px;
+        outline: none;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .checkp-input:focus,
+    .checkp-select:focus {
+        border-color: rgba(37, 99, 235, 0.6);
+        box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+    }
+
+    .checkp-note {
+        margin: 0;
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: #64748B;
+    }
+
+    .checkp-actions {
+        display: grid;
+        gap: 8px;
+        margin-top: 12px;
+    }
+
+    .checkp-btn {
+        border: none;
+        border-radius: 12px;
+        text-align: center;
+        padding: 11px 12px;
+        font-size: 0.8rem;
+        font-weight: 900;
+        text-decoration: none;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .checkp-btn.primary {
+        background: linear-gradient(140deg, #2563EB 0%, #3B82F6 100%);
+        color: #FFFFFF;
+    }
+
+    .checkp-btn.secondary {
+        border: 1px solid #BFDBFE;
+        background: #EFF6FF;
+        color: #1D4ED8;
+    }
+
+    .checkp-btn:active {
+        transform: scale(0.97);
+    }
+
+    .checkp-summary-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+
+    .checkp-summary-head h2 {
+        margin: 0;
+        font-size: 0.95rem;
+        color: #0F172A;
+        font-weight: 900;
+    }
+
+    .checkp-security-chip {
+        border-radius: 999px;
+        border: 1px solid #FDE68A;
+        background: #FEF9C3;
+        color: #854D0E;
+        font-size: 0.66rem;
+        font-weight: 900;
+        padding: 4px 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+
+    .checkp-items {
+        display: grid;
+        gap: 8px;
+    }
+
+    .checkp-item {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 8px 0;
+        border-bottom: 1px solid #E2E8F0;
+        font-size: 0.8rem;
+        color: #334155;
+    }
+
+    .checkp-item:last-child {
+        border-bottom: none;
+    }
+
+    .checkp-total {
+        margin-top: 8px;
+        padding-top: 10px;
+        border-top: 1px solid #CBD5E1;
+        display: flex;
+        justify-content: space-between;
+        color: #0F172A;
+        font-size: 1rem;
+        font-weight: 900;
+    }
+
+    .checkp-skeleton {
+        border: 1px solid #E5E7EB;
+        border-radius: 12px;
+        min-height: 96px;
+        position: relative;
+        overflow: hidden;
+        background: #FFFFFF;
+    }
+
+    .checkp-skeleton::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.72) 50%, rgba(255, 255, 255, 0) 100%);
+        transform: translateX(-100%);
+        animation: checkShimmer 1.2s infinite;
+    }
+
+    .ripple-wave {
+        position: absolute;
+        border-radius: 999px;
+        transform: scale(0);
+        background: rgba(255, 255, 255, 0.52);
+        animation: checkRipple 0.55s ease-out;
+        pointer-events: none;
     }
 
     .btn-spinner {
-        width: 14px;
-        height: 14px;
-        border: 2px solid rgba(255, 255, 255, 0.45);
-        border-top-color: #fff;
-        border-radius: 50%;
+        width: 13px;
+        height: 13px;
+        border: 2px solid rgba(255, 255, 255, 0.44);
+        border-top-color: #FFFFFF;
+        border-radius: 999px;
         display: inline-block;
-        animation: wfSpin 0.8s linear infinite;
-        margin-right: 0.35rem;
+        animation: checkSpin 0.8s linear infinite;
+        margin-right: 6px;
         vertical-align: -2px;
     }
 
-    @keyframes wfSpin {
+    @keyframes checkSpin {
         to { transform: rotate(360deg); }
     }
 
-    @media (max-width: 992px) {
-        .checkout-wrap { grid-template-columns: 1fr; }
-        .checkout-grid { grid-template-columns: 1fr; }
+    @keyframes checkShimmer {
+        to { transform: translateX(100%); }
+    }
+
+    @keyframes checkRipple {
+        to {
+            transform: scale(4);
+            opacity: 0;
+        }
+    }
+
+    @media (min-width: 860px) {
+        .checkp-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .checkp-grid .full {
+            grid-column: 1 / -1;
+        }
+    }
+
+    @media (min-width: 1024px) {
+        .checkp-wrap {
+            grid-template-columns: 1.35fr 0.95fr;
+            align-items: start;
+        }
+
+        .checkp-card.sticky {
+            position: sticky;
+            top: 102px;
+        }
     }
 </style>
 
-<div class="checkout-wrap">
-    <section class="checkout-card">
-        <h1 class="checkout-title">Finalizar compra</h1>
+<div class="checkp-page">
+    <header class="checkp-header">
+        <div>
+            <h1>Checkout Premium</h1>
+            <p>Pagamento seguro via Stripe com validacao em tempo real.</p>
+        </div>
+        <div class="checkp-header-actions">
+            <a href="/store/cart" class="checkp-link ripple">Voltar ao carrinho</a>
+            <a href="/store/orders" class="checkp-link ripple">Meus pedidos</a>
+        </div>
+    </header>
+
+    <div class="checkp-wrap">
+    <section class="checkp-card">
+        <h2 class="checkp-title">Dados de entrega e pagamento</h2>
         <div id="checkoutFeedback"></div>
 
-        <div class="checkout-grid">
-            <div>
-                <label class="wf-label">Nome do destinatário</label>
-                <input class="wf-input form-control" id="shipName" placeholder="Nome completo">
+        <div class="checkp-grid">
+            <div class="checkp-field">
+                <label class="checkp-label" for="shipName">Nome do destinatario</label>
+                <input class="checkp-input" id="shipName" placeholder="Nome completo">
             </div>
-            <div>
-                <label class="wf-label">Telefone</label>
-                <input class="wf-input form-control" id="shipPhone" placeholder="(00) 00000-0000">
+            <div class="checkp-field">
+                <label class="checkp-label" for="shipPhone">Telefone</label>
+                <input class="checkp-input" id="shipPhone" placeholder="(00) 00000-0000">
             </div>
-            <div>
-                <label class="wf-label">Cidade</label>
-                <input class="wf-input form-control" id="shipCity" placeholder="Cidade">
+            <div class="checkp-field">
+                <label class="checkp-label" for="shipCity">Cidade</label>
+                <input class="checkp-input" id="shipCity" placeholder="Cidade">
             </div>
-            <div>
-                <label class="wf-label">Estado</label>
-                <input class="wf-input form-control" id="shipState" placeholder="UF">
+            <div class="checkp-field">
+                <label class="checkp-label" for="shipState">Estado (UF)</label>
+                <input class="checkp-input" id="shipState" placeholder="UF">
             </div>
-            <div style="grid-column: 1 / -1;">
-                <label class="wf-label">Endereço completo</label>
-                <input class="wf-input form-control" id="shipAddress" placeholder="Rua, número, bairro, complemento">
+            <div class="checkp-field full">
+                <label class="checkp-label" for="shipAddress">Endereco completo</label>
+                <input class="checkp-input" id="shipAddress" placeholder="Rua, numero, bairro, complemento">
             </div>
-            <div>
-                <label class="wf-label">CEP</label>
-                <input class="wf-input form-control" id="shipZip" placeholder="00000-000">
+            <div class="checkp-field">
+                <label class="checkp-label" for="shipZip">CEP</label>
+                <input class="checkp-input" id="shipZip" placeholder="00000-000">
             </div>
-            <div>
-                <label class="wf-label">Forma de pagamento</label>
-                <select class="wf-select form-select" id="paymentMethod">
+            <div class="checkp-field">
+                <label class="checkp-label" for="paymentMethod">Forma de pagamento</label>
+                <select class="checkp-select" id="paymentMethod">
                     <option value="cartao">Cartão (Stripe)</option>
                 </select>
-                <small class="text-muted">Pagamento online ativo no checkout via Stripe.</small>
+                <p class="checkp-note">Pagamento online ativo no checkout via Stripe.</p>
             </div>
         </div>
 
-        <div class="d-flex gap-2 mt-3 flex-wrap">
-            <a href="/store/cart" class="btn btn-wf-secondary">Voltar ao carrinho</a>
-            <button class="btn btn-wf-primary" id="btnFinishPurchase">Concluir compra</button>
+        <div class="checkp-actions">
+            <a href="/store/cart" class="checkp-btn secondary ripple">Voltar ao carrinho</a>
+            <button class="checkp-btn primary ripple" id="btnFinishPurchase">Concluir compra</button>
         </div>
     </section>
 
-    <aside class="checkout-card">
-        <h2 class="h6 mb-2" style="color:#2E7D32;font-weight:900;">Resumo do pedido</h2>
-        <div id="checkoutItems"></div>
-        <div class="checkout-total"><span>Total</span><span id="checkoutTotal">R$ 0.00</span></div>
+    <aside class="checkp-card sticky">
+        <div class="checkp-summary-head">
+            <h2>Resumo do pedido</h2>
+            <span class="checkp-security-chip">safe checkout</span>
+        </div>
+        <div id="checkoutItems" class="checkp-items"></div>
+        <div class="checkp-total"><span>Total</span><span id="checkoutTotal">R$ 0.00</span></div>
     </aside>
+</div>
 </div>
 
 <script>
@@ -125,6 +403,16 @@
             wrap.textContent = String(text || '');
             feedback.innerHTML = '';
             feedback.appendChild(wrap);
+        }
+
+        function renderSummarySkeleton() {
+            itemsEl.innerHTML = Array.from({ length: 3 })
+                .map(() => '<div class="checkp-skeleton"></div>')
+                .join('');
+
+            if (window.WFStoreMotion) {
+                window.WFStoreMotion.refresh(itemsEl);
+            }
         }
 
         function onlyDigits(value) {
@@ -170,15 +458,22 @@
                 itemsEl.innerHTML = '<div class="wf-alert wf-alert-info">Seu carrinho está vazio para checkout.</div>';
                 totalEl.textContent = money(0);
                 btnFinish.disabled = true;
+                if (window.WFStoreMotion) {
+                    window.WFStoreMotion.refresh(itemsEl);
+                }
                 return;
             }
 
             itemsEl.innerHTML = items.map((item) => `
-                <div class="checkout-item">
+                <div class="checkp-item">
                     <span>${escapeHtml(item.product_name)} x${item.quantity}</span>
                     <strong>${money(item.subtotal)}</strong>
                 </div>
             `).join('');
+
+            if (window.WFStoreMotion) {
+                window.WFStoreMotion.refresh(itemsEl);
+            }
 
             totalEl.textContent = money(cart.total_amount || 0);
             btnFinish.disabled = false;
@@ -187,6 +482,7 @@
         async function loadCart() {
             if (!requireAuth()) return;
             try {
+                renderSummarySkeleton();
                 const cart = await apiRequest('/store/cart/items');
                 renderSummary(cart);
             } catch (error) {
@@ -209,7 +505,7 @@
             };
 
             if (!shippingAddress.name || !shippingAddress.address || !shippingAddress.city || !shippingAddress.state) {
-                showMessage('error', 'Preencha nome, cidade e endereço para concluir a compra.');
+                showMessage('error', 'Preencha nome, cidade e endereco para concluir a compra.');
                 setButtonLoading(btnFinish, false);
                 return;
             }
@@ -272,6 +568,10 @@
             stateInput.addEventListener('input', () => {
                 stateInput.value = String(stateInput.value || '').replace(/[^a-zA-Z]/g, '').slice(0, 2).toUpperCase();
             });
+        }
+
+        if (window.WFStoreMotion) {
+            window.WFStoreMotion.refresh(document.querySelector('.checkp-page'));
         }
 
         loadCart();

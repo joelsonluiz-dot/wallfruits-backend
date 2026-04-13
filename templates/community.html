@@ -200,6 +200,198 @@
         gap: 0.65rem;
     }
 
+    .community-feed-toolbar {
+        border: 1px solid rgba(11, 46, 99, 0.12);
+        border-radius: 16px;
+        background: #ffffff;
+        box-shadow: 0 12px 22px rgba(16, 44, 90, 0.08);
+        padding: 0.72rem;
+        display: grid;
+        gap: 0.54rem;
+    }
+
+    .community-feed-topline {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .community-feed-top-actions {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.34rem;
+        flex-wrap: wrap;
+    }
+
+    .community-feed-tabs {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.32rem;
+        border: 1px solid rgba(11, 46, 99, 0.12);
+        border-radius: 999px;
+        background: #f5f9ff;
+        padding: 0.22rem;
+    }
+
+    .community-feed-tab {
+        border: none;
+        background: transparent;
+        color: #45678f;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        font-weight: 900;
+        letter-spacing: 0.01em;
+        padding: 0.3rem 0.62rem;
+        cursor: pointer;
+    }
+
+    .community-feed-tab.is-active {
+        background: #ffffff;
+        color: #1f5f25;
+        box-shadow: 0 8px 14px rgba(16, 44, 90, 0.12);
+    }
+
+    .community-feed-refine-toggle {
+        border: 1px solid rgba(11, 46, 99, 0.16);
+        border-radius: 999px;
+        background: #fff;
+        color: #45678f;
+        font-size: 0.68rem;
+        font-weight: 900;
+        padding: 0.3rem 0.62rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.24rem;
+        cursor: pointer;
+    }
+
+    .community-feed-mode-toggle {
+        border: 1px solid rgba(11, 46, 99, 0.16);
+        border-radius: 999px;
+        background: #fff;
+        color: #45678f;
+        font-size: 0.68rem;
+        font-weight: 900;
+        padding: 0.3rem 0.62rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.24rem;
+        cursor: pointer;
+    }
+
+    .community-feed-mode-toggle.is-active {
+        border-color: rgba(46, 125, 50, 0.45);
+        background: rgba(46, 125, 50, 0.12);
+        color: #1e6d24;
+    }
+
+    .community-feed-search {
+        width: 100%;
+        border: 1px solid rgba(11, 46, 99, 0.16);
+        border-radius: 999px;
+        padding: 0.48rem 0.72rem;
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: #2a4d74;
+        background: #f8fbff;
+    }
+
+    .community-feed-search:focus {
+        outline: none;
+        border-color: rgba(46, 125, 50, 0.5);
+        box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.16);
+    }
+
+    .community-feed-advanced {
+        display: none;
+        border-top: 1px dashed rgba(11, 46, 99, 0.12);
+        padding-top: 0.55rem;
+    }
+
+    .community-feed-advanced.is-open {
+        display: grid;
+        gap: 0.46rem;
+    }
+
+    .community-feed-advanced-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .community-feed-filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.36rem;
+    }
+
+    .community-filter-chip {
+        border: 1px solid rgba(11, 46, 99, 0.14);
+        border-radius: 999px;
+        background: #f5f9ff;
+        color: #355d87;
+        font-size: 0.69rem;
+        font-weight: 800;
+        padding: 0.28rem 0.54rem;
+        cursor: pointer;
+    }
+
+    .community-filter-chip.is-active {
+        border-color: rgba(46, 125, 50, 0.45);
+        background: rgba(46, 125, 50, 0.12);
+        color: #1e6d24;
+    }
+
+    .community-feed-sort {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 0.69rem;
+        font-weight: 800;
+        color: #3f628b;
+    }
+
+    .community-feed-sort select {
+        border: 1px solid rgba(11, 46, 99, 0.18);
+        border-radius: 999px;
+        background: #fff;
+        color: #355d87;
+        font-size: 0.69rem;
+        font-weight: 800;
+        padding: 0.26rem 0.46rem;
+    }
+
+    .community-feed-clear {
+        border: 1px solid rgba(11, 46, 99, 0.16);
+        border-radius: 999px;
+        background: #fff;
+        color: #45678f;
+        font-size: 0.67rem;
+        font-weight: 800;
+        padding: 0.28rem 0.5rem;
+        cursor: pointer;
+    }
+
+    .community-feed-metrics {
+        display: inline-flex;
+        flex-wrap: wrap;
+        gap: 0.3rem;
+    }
+
+    .community-feed-metric {
+        border: 1px solid rgba(11, 46, 99, 0.12);
+        border-radius: 999px;
+        background: #f8fbff;
+        color: #45678f;
+        font-size: 0.65rem;
+        font-weight: 800;
+        padding: 0.2rem 0.44rem;
+    }
+
     .community-feed > * {
         content-visibility: auto;
         contain-intrinsic-size: 240px;
@@ -211,6 +403,20 @@
         font-weight: 700;
         text-align: center;
         padding: 0.25rem 0;
+    }
+
+    html.community-reels-mode,
+    body.community-reels-mode {
+        scroll-snap-type: y proximity;
+    }
+
+    .community-feed.is-reels-mode {
+        gap: 0.88rem;
+    }
+
+    .community-feed.is-reels-mode .post-card {
+        scroll-snap-align: start;
+        scroll-snap-stop: always;
     }
 
     .community-skeleton {
@@ -273,9 +479,13 @@
 
     .post-main {
         display: grid;
-        gap: 0.74rem;
+        gap: 0.68rem;
         padding: 1rem;
         position: relative;
+    }
+
+    .post-main.has-media {
+        gap: 0.48rem;
     }
 
     .post-top {
@@ -311,7 +521,7 @@
 
     .post-head {
         display: grid;
-        gap: 0.04rem;
+        gap: 0.08rem;
         min-width: 0;
     }
 
@@ -424,6 +634,12 @@
         color: #236228;
     }
 
+    .post-admin-item.is-save {
+        border-color: rgba(11, 46, 99, 0.2);
+        background: rgba(11, 46, 99, 0.08);
+        color: #234a7f;
+    }
+
     .post-admin-item.is-report:hover {
         border-color: rgba(46, 125, 50, 0.36);
         background: rgba(46, 125, 50, 0.12);
@@ -486,15 +702,24 @@
         margin: 0;
         color: #374151;
         font-size: 0.86rem;
-        line-height: 1.5;
+        line-height: 1.42;
         white-space: pre-wrap;
         word-break: break-word;
+    }
+
+    .post-text.post-text-compact {
+        font-size: 0.8rem;
+        color: #4b5563;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
     }
 
     .post-image-wrap {
         position: relative;
         width: 100%;
-        aspect-ratio: 1 / 1;
+        aspect-ratio: 4 / 5;
         border-radius: 16px;
         overflow: hidden;
         border: 1px solid #ecf1f6;
@@ -517,13 +742,48 @@
         pointer-events: none;
     }
 
+    .post-video-wrap {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 9 / 14;
+        border-radius: 16px;
+        overflow: hidden;
+        border: 1px solid #ecf1f6;
+        background: #0c1118;
+    }
+
+    .post-video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 16px;
+        background: #0c1118;
+        cursor: pointer;
+    }
+
+    .community-feed.is-reels-mode .post-image-wrap,
+    .community-feed.is-reels-mode .post-video-wrap {
+        aspect-ratio: 9 / 14;
+        max-height: min(80vh, 860px);
+    }
+
+    .post-image,
+    .post-video {
+        transition: transform 6.2s ease;
+    }
+
+    .post-card.is-reel-active .post-image,
+    .post-card.is-reel-active .post-video {
+        transform: scale(1.03);
+    }
+
     .post-actions {
-        display: flex;
-        gap: 0.42rem;
-        margin-top: 0.18rem;
-        align-items: center;
-        flex-wrap: nowrap;
-        overflow-x: auto;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.32rem;
+        margin-top: 0.12rem;
+        align-items: stretch;
+        overflow: hidden;
         padding-bottom: 0.08rem;
     }
 
@@ -532,15 +792,17 @@
         border-radius: 999px;
         background: #ffffff;
         color: #667788;
-        font-size: 0.72rem;
+        font-size: 0.64rem;
         font-weight: 800;
-        padding: 0.42rem 0.6rem;
+        width: 100%;
+        min-width: 0;
+        padding: 0.32rem 0.36rem;
         display: inline-flex;
         justify-content: center;
         align-items: center;
-        gap: 0.24rem;
+        gap: 0.16rem;
         cursor: pointer;
-        min-height: 34px;
+        min-height: 30px;
         transition: transform var(--wf-motion-normal) ease, box-shadow var(--wf-motion-normal) ease, border-color var(--wf-motion-normal) ease;
     }
 
@@ -554,7 +816,19 @@
     }
 
     .post-action-btn .material-icons {
-        font-size: 0.96rem;
+        font-size: 0.78rem;
+        line-height: 1;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .post-action-btn span:last-child {
+        min-width: 1ch;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
     }
 
     .post-action-btn.moderation {
@@ -854,6 +1128,63 @@
             display: none;
         }
 
+        .community-feed-toolbar {
+            padding: 0.58rem;
+            gap: 0.45rem;
+        }
+
+        .community-feed-topline,
+        .community-feed-advanced-row {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .community-feed-tabs {
+            width: 100%;
+            justify-content: space-between;
+        }
+
+        .community-feed-top-actions {
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.4rem;
+        }
+
+        .community-feed-tab {
+            flex: 1 1 auto;
+            text-align: center;
+        }
+
+        .community-feed-refine-toggle {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .community-feed-mode-toggle {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .community-feed-filters {
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            padding-bottom: 0.14rem;
+        }
+
+        .community-filter-chip {
+            white-space: nowrap;
+        }
+
+        .community-feed-sort {
+            width: 100%;
+            justify-content: space-between;
+        }
+
+        .community-feed-sort select {
+            flex: 1 1 auto;
+        }
+
         .community-toast {
             right: 0.75rem;
             bottom: calc(208px + env(safe-area-inset-bottom));
@@ -898,6 +1229,30 @@
             gap: 0.44rem;
         }
 
+        .community-feed-toolbar {
+            border-radius: 12px;
+            padding: 0.52rem;
+        }
+
+        .community-feed-search {
+            font-size: 0.75rem;
+            padding: 0.42rem 0.66rem;
+        }
+
+        .community-feed-tab {
+            font-size: 0.66rem;
+            padding: 0.28rem 0.4rem;
+        }
+
+        .community-feed-clear {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .community-feed-top-actions {
+            grid-template-columns: 1fr;
+        }
+
         .community-input {
             min-height: 56px;
             padding: 0.5rem 0.64rem;
@@ -915,12 +1270,12 @@
         }
 
         .post-actions {
-            gap: 0.32rem;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.3rem;
         }
 
         .post-action-btn {
-            flex: 1 1 auto;
-            justify-content: center;
+            width: 100%;
         }
 
         .post-comment-form {
@@ -971,6 +1326,53 @@
         </div>
     </section>
 
+    <section class="community-feed-toolbar" aria-label="Filtro do feed">
+        <div class="community-feed-topline">
+            <div id="communityFeedTabs" class="community-feed-tabs" role="tablist" aria-label="Tipo de feed">
+                <button class="community-feed-tab is-active" type="button" data-feed-tab="for-you" role="tab" aria-selected="true">Para você</button>
+                <button class="community-feed-tab" type="button" data-feed-tab="recent" role="tab" aria-selected="false">Recentes</button>
+            </div>
+            <div class="community-feed-top-actions">
+                <button id="communityFeedModeToggle" class="community-feed-mode-toggle" type="button" aria-pressed="false">
+                    <span class="material-icons">smart_display</span>
+                    <span>Modo Reels</span>
+                </button>
+                <button id="communityFeedRefineToggle" class="community-feed-refine-toggle" type="button" aria-expanded="false" aria-controls="communityFeedAdvanced">
+                    <span class="material-icons">tune</span>
+                    <span>Refinar</span>
+                </button>
+            </div>
+        </div>
+
+        <input id="communityFeedSearch" class="community-feed-search" type="search" placeholder="Buscar no feed por texto ou autor...">
+
+        <div id="communityFeedAdvanced" class="community-feed-advanced" aria-hidden="true">
+            <div class="community-feed-advanced-row">
+                <div id="communityFeedFilters" class="community-feed-filters">
+                    <button class="community-filter-chip is-active" type="button" data-feed-filter="all">Todos</button>
+                    <button class="community-filter-chip" type="button" data-feed-filter="images">Com imagem</button>
+                    <button class="community-filter-chip" type="button" data-feed-filter="saved">Salvos</button>
+                    <button class="community-filter-chip" type="button" data-feed-filter="trending">Em alta</button>
+                </div>
+
+                <div style="display:inline-flex;align-items:center;gap:0.4rem;flex-wrap:wrap;">
+                    <label class="community-feed-sort" for="communityFeedSort">
+                        <span>Ordenar</span>
+                        <select id="communityFeedSort">
+                            <option value="auto">Automático</option>
+                            <option value="recent">Recentes</option>
+                            <option value="popular">Populares</option>
+                            <option value="comments">Mais comentados</option>
+                        </select>
+                    </label>
+                    <button id="communityFeedClear" class="community-feed-clear" type="button">Limpar filtros</button>
+                </div>
+            </div>
+
+            <div id="communityFeedMetrics" class="community-feed-metrics"></div>
+        </div>
+    </section>
+
     <section id="communityFeed" class="community-feed" aria-live="polite"></section>
     <div id="communityFeedSentinel" style="height:2px;"></div>
     <div id="communityFeedStatus" class="community-feed-status" role="status" aria-live="polite" aria-atomic="true"></div>
@@ -1007,6 +1409,15 @@
         const sendBtn = document.getElementById('communitySendBtn');
         const purgeBtn = document.getElementById('communityPurgeBtn');
         const feed = document.getElementById('communityFeed');
+        const feedTabs = document.getElementById('communityFeedTabs');
+        const feedModeToggle = document.getElementById('communityFeedModeToggle');
+        const feedRefineToggle = document.getElementById('communityFeedRefineToggle');
+        const feedAdvanced = document.getElementById('communityFeedAdvanced');
+        const feedSearch = document.getElementById('communityFeedSearch');
+        const feedFilters = document.getElementById('communityFeedFilters');
+        const feedSort = document.getElementById('communityFeedSort');
+        const feedClear = document.getElementById('communityFeedClear');
+        const feedMetrics = document.getElementById('communityFeedMetrics');
         const previewWrap = document.getElementById('communityPreview');
         const previewImg = document.getElementById('communityPreviewImg');
         const previewText = document.getElementById('communityPreviewText');
@@ -1038,12 +1449,25 @@
         const COMMUNITY_REFRESH_PAUSED_KEY = 'wf_community_refresh_paused';
         const COMMUNITY_REFRESH_INTERVAL_KEY = 'wf_community_refresh_interval_ms';
         const COMMUNITY_SAVED_POSTS_KEY = 'wf_community_saved_posts';
+        const COMMUNITY_FEED_TAB_KEY = 'wf_community_feed_tab';
+        const COMMUNITY_FEED_FILTER_KEY = 'wf_community_feed_filter';
+        const COMMUNITY_FEED_SORT_KEY = 'wf_community_feed_sort';
+        const COMMUNITY_FEED_QUERY_KEY = 'wf_community_feed_query';
+        const COMMUNITY_FEED_REFINER_OPEN_KEY = 'wf_community_feed_refiner_open';
+        const COMMUNITY_REELS_MODE_KEY = 'wf_community_reels_mode';
         const GLOBAL_TYPING_LOCK_KEY = 'wf_global_typing_context';
         let postsObserver = null;
+        let mediaAutoplayObserver = null;
         let lastSavedScrollY = 0;
         let postsRefreshTimer = null;
         let postsRefreshPaused = false;
         let postsRefreshIntervalMs = COMMUNITY_AUTO_REFRESH_DEFAULT_MS;
+        let activeFeedTab = 'for-you';
+        let activeFeedFilter = 'all';
+        let activeFeedSort = 'auto';
+        let activeFeedQuery = '';
+        let feedRefinerOpen = false;
+        let reelsMode = false;
         const postsFeedState = {
             skip: 0,
             hasMore: true,
@@ -1194,6 +1618,226 @@
             return set.has(id);
         }
 
+        function resolvePostVideoUrl(post) {
+            const explicitVideo = String(post?.video_url || post?.media_url || '').trim();
+            if (explicitVideo) {
+                return explicitVideo;
+            }
+
+            const imageLike = String(post?.image_url || '').trim();
+            if (!imageLike) {
+                return '';
+            }
+
+            const normalized = imageLike.toLowerCase();
+            if (normalized.startsWith('data:video/')) {
+                return imageLike;
+            }
+
+            if (/\.(mp4|webm|mov|m4v)(\?|#|$)/i.test(imageLike)) {
+                return imageLike;
+            }
+
+            return '';
+        }
+
+        function postHasVisualMedia(post) {
+            return Boolean(post?.image_url) || Boolean(resolvePostVideoUrl(post));
+        }
+
+        function postEngagementScore(post) {
+            return (Number(post.likes_count || 0) * 3)
+                + (Number(post.comments_count || 0) * 2)
+                + (Number(post.shares_count || 0) * 2)
+                + (postHasVisualMedia(post) ? 1 : 0);
+        }
+
+        function setReelsMode(nextMode) {
+            reelsMode = Boolean(nextMode);
+
+            if (feed) {
+                feed.classList.toggle('is-reels-mode', reelsMode);
+            }
+
+            if (document.documentElement) {
+                document.documentElement.classList.toggle('community-reels-mode', reelsMode);
+            }
+
+            if (document.body) {
+                document.body.classList.toggle('community-reels-mode', reelsMode);
+            }
+
+            if (feedModeToggle) {
+                feedModeToggle.classList.toggle('is-active', reelsMode);
+                feedModeToggle.setAttribute('aria-pressed', reelsMode ? 'true' : 'false');
+                const label = feedModeToggle.querySelector('span:last-child');
+                if (label) {
+                    label.textContent = reelsMode ? 'Modo Reels ativo' : 'Modo Reels';
+                }
+            }
+        }
+
+        function setFeedRefinerOpen(nextOpen) {
+            feedRefinerOpen = Boolean(nextOpen);
+            if (feedAdvanced) {
+                feedAdvanced.classList.toggle('is-open', feedRefinerOpen);
+                feedAdvanced.setAttribute('aria-hidden', feedRefinerOpen ? 'false' : 'true');
+            }
+            if (feedRefineToggle) {
+                feedRefineToggle.setAttribute('aria-expanded', feedRefinerOpen ? 'true' : 'false');
+                const label = feedRefineToggle.querySelector('span:last-child');
+                if (label) {
+                    label.textContent = feedRefinerOpen ? 'Fechar refinamento' : 'Refinar';
+                }
+            }
+        }
+
+        function persistFeedControlsState() {
+            try {
+                localStorage.setItem(COMMUNITY_FEED_TAB_KEY, activeFeedTab);
+                localStorage.setItem(COMMUNITY_FEED_FILTER_KEY, activeFeedFilter);
+                localStorage.setItem(COMMUNITY_FEED_SORT_KEY, activeFeedSort);
+                localStorage.setItem(COMMUNITY_FEED_QUERY_KEY, activeFeedQuery);
+                localStorage.setItem(COMMUNITY_FEED_REFINER_OPEN_KEY, feedRefinerOpen ? '1' : '0');
+                localStorage.setItem(COMMUNITY_REELS_MODE_KEY, reelsMode ? '1' : '0');
+            } catch {
+                // ignora indisponibilidade de storage
+            }
+        }
+
+        function restoreFeedControlsState() {
+            try {
+                const storedTab = (localStorage.getItem(COMMUNITY_FEED_TAB_KEY) || 'for-you').toLowerCase();
+                const storedFilter = (localStorage.getItem(COMMUNITY_FEED_FILTER_KEY) || 'all').toLowerCase();
+                const storedSort = (localStorage.getItem(COMMUNITY_FEED_SORT_KEY) || 'auto').toLowerCase();
+                const storedQuery = localStorage.getItem(COMMUNITY_FEED_QUERY_KEY) || '';
+                const storedRefinerOpen = localStorage.getItem(COMMUNITY_FEED_REFINER_OPEN_KEY) || '0';
+                const storedReelsMode = localStorage.getItem(COMMUNITY_REELS_MODE_KEY) || '0';
+
+                if (['for-you', 'recent'].includes(storedTab)) {
+                    activeFeedTab = storedTab;
+                }
+
+                if (['all', 'images', 'saved', 'trending'].includes(storedFilter)) {
+                    activeFeedFilter = storedFilter;
+                }
+
+                if (['auto', 'recent', 'popular', 'comments'].includes(storedSort)) {
+                    activeFeedSort = storedSort;
+                }
+
+                activeFeedQuery = String(storedQuery || '').slice(0, 120);
+                feedRefinerOpen = storedRefinerOpen === '1';
+                reelsMode = storedReelsMode === '1';
+            } catch {
+                // ignora indisponibilidade de storage
+            }
+        }
+
+        function syncFeedControlsUI() {
+            if (feedTabs) {
+                feedTabs.querySelectorAll('[data-feed-tab]').forEach((button) => {
+                    const value = (button.getAttribute('data-feed-tab') || '').toLowerCase();
+                    const active = value === activeFeedTab;
+                    button.classList.toggle('is-active', active);
+                    button.setAttribute('aria-selected', active ? 'true' : 'false');
+                });
+            }
+
+            if (feedSearch) {
+                feedSearch.value = activeFeedQuery;
+            }
+
+            if (feedSort) {
+                if (!['auto', 'recent', 'popular', 'comments'].includes(activeFeedSort)) {
+                    activeFeedSort = 'auto';
+                }
+                feedSort.value = activeFeedSort;
+            }
+
+            if (feedFilters) {
+                feedFilters.querySelectorAll('[data-feed-filter]').forEach((button) => {
+                    const value = (button.getAttribute('data-feed-filter') || '').toLowerCase();
+                    button.classList.toggle('is-active', value === activeFeedFilter);
+                    button.setAttribute('aria-pressed', value === activeFeedFilter ? 'true' : 'false');
+                });
+            }
+
+            setReelsMode(reelsMode);
+            setFeedRefinerOpen(feedRefinerOpen);
+        }
+
+        function getVisiblePosts() {
+            const query = activeFeedQuery.trim().toLowerCase();
+            let visible = postsCache.slice();
+
+            if (activeFeedFilter === 'images') {
+                visible = visible.filter((post) => postHasVisualMedia(post));
+            } else if (activeFeedFilter === 'saved') {
+                visible = visible.filter((post) => isSavedPost(post.id));
+            } else if (activeFeedFilter === 'trending') {
+                visible = visible.filter((post) => postEngagementScore(post) >= 3);
+            }
+
+            if (query) {
+                visible = visible.filter((post) => {
+                    const authorName = String(post.author?.name || '').toLowerCase();
+                    const content = String(post.content || '').toLowerCase();
+                    return authorName.includes(query) || content.includes(query);
+                });
+            }
+
+            const sortByRecent = () => {
+                visible.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+            };
+
+            const sortByPopular = () => {
+                visible.sort((a, b) => {
+                    const diff = postEngagementScore(b) - postEngagementScore(a);
+                    if (diff !== 0) return diff;
+                    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+                });
+            };
+
+            const sortByComments = () => {
+                visible.sort((a, b) => {
+                    const diff = Number(b.comments_count || 0) - Number(a.comments_count || 0);
+                    if (diff !== 0) return diff;
+                    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+                });
+            };
+
+            if (activeFeedTab === 'recent') {
+                sortByRecent();
+            } else {
+                sortByPopular();
+            }
+
+            if (activeFeedSort === 'recent') {
+                sortByRecent();
+            } else if (activeFeedSort === 'popular') {
+                sortByPopular();
+            } else if (activeFeedSort === 'comments') {
+                sortByComments();
+            }
+
+            return visible;
+        }
+
+        function renderFeedMetrics(totalLoaded, visibleCount) {
+            if (!feedMetrics) return;
+
+            const withMedia = postsCache.filter((post) => postHasVisualMedia(post)).length;
+            const savedCount = postsCache.filter((post) => isSavedPost(post.id)).length;
+
+            feedMetrics.innerHTML = [
+                `<span class="community-feed-metric">Visíveis: ${visibleCount}</span>`,
+                `<span class="community-feed-metric">Carregados: ${totalLoaded}</span>`,
+                `<span class="community-feed-metric">Com mídia: ${withMedia}</span>`,
+                `<span class="community-feed-metric">Salvos: ${savedCount}</span>`,
+            ].join('');
+        }
+
         function requireAuth() {
             if (localStorage.getItem('token')) return true;
             window.location.href = '/login';
@@ -1239,6 +1883,94 @@
                 setTimeout(() => {
                     card.classList.add('is-in');
                 }, index * 22);
+            });
+        }
+
+        function stopFeedMediaPlayback() {
+            if (mediaAutoplayObserver) {
+                mediaAutoplayObserver.disconnect();
+                mediaAutoplayObserver = null;
+            }
+
+            if (!feed) return;
+
+            feed.querySelectorAll('.post-card.is-reel-active').forEach((card) => {
+                card.classList.remove('is-reel-active');
+            });
+
+            feed.querySelectorAll('[data-post-video]').forEach((video) => {
+                video.pause();
+            });
+        }
+
+        function setActiveMediaCard(activeCard, mediaCards) {
+            mediaCards.forEach((card) => {
+                const isActive = card === activeCard;
+                card.classList.toggle('is-reel-active', isActive);
+
+                const video = card.querySelector('[data-post-video]');
+                if (!video) return;
+
+                if (isActive) {
+                    video.muted = true;
+                    video.defaultMuted = true;
+                    video.playsInline = true;
+                    const playPromise = video.play();
+                    if (playPromise && typeof playPromise.catch === 'function') {
+                        playPromise.catch(() => {
+                            // autoplay pode ser bloqueado em alguns dispositivos
+                        });
+                    }
+                } else {
+                    video.pause();
+                }
+            });
+        }
+
+        function setupFeedMediaPlayback() {
+            stopFeedMediaPlayback();
+            if (!feed) return;
+
+            const mediaCards = Array.from(feed.querySelectorAll('.post-card[data-has-media="1"]'));
+            if (!mediaCards.length) return;
+
+            if (typeof IntersectionObserver !== 'function') {
+                setActiveMediaCard(mediaCards[0], mediaCards);
+                return;
+            }
+
+            const visibilityByCard = new Map(mediaCards.map((card) => [card, 0]));
+            const minVisibleRatio = reelsMode ? 0.58 : 0.36;
+
+            const updateActiveByVisibility = () => {
+                let bestCard = null;
+                let bestRatio = 0;
+
+                visibilityByCard.forEach((ratio, card) => {
+                    if (ratio > bestRatio) {
+                        bestRatio = ratio;
+                        bestCard = card;
+                    }
+                });
+
+                if (bestRatio < minVisibleRatio) {
+                    bestCard = null;
+                }
+
+                setActiveMediaCard(bestCard, mediaCards);
+            };
+
+            mediaAutoplayObserver = new IntersectionObserver((entries) => {
+                entries.forEach((entry) => {
+                    visibilityByCard.set(entry.target, entry.isIntersecting ? entry.intersectionRatio : 0);
+                });
+                updateActiveByVisibility();
+            }, {
+                threshold: [0, 0.2, 0.36, 0.58, 0.75, 0.9],
+            });
+
+            mediaCards.forEach((card) => {
+                mediaAutoplayObserver.observe(card);
             });
         }
 
@@ -1337,10 +2069,26 @@
 
                 renderFeed(postsFeedState.skip > incoming.length);
 
+                const visibleCount = getVisiblePosts().length;
+                const customFeedView = activeFeedTab !== 'for-you'
+                    || activeFeedFilter !== 'all'
+                    || activeFeedSort !== 'auto'
+                    || activeFeedQuery.trim().length > 0;
+
                 if (!postsFeedState.hasMore) {
-                    updateFeedStatus(postsCache.length ? 'Você chegou ao fim dos posts.' : '');
+                    if (!postsCache.length) {
+                        updateFeedStatus('');
+                    } else if (customFeedView) {
+                        updateFeedStatus(`Mostrando ${visibleCount} de ${postsCache.length} post(s).`);
+                    } else {
+                        updateFeedStatus('Você chegou ao fim dos posts.');
+                    }
                 } else {
-                    updateFeedStatus('Role para carregar mais.');
+                    if (customFeedView) {
+                        updateFeedStatus(`Mostrando ${visibleCount} de ${postsCache.length} post(s). Role para carregar mais.`);
+                    } else {
+                        updateFeedStatus('Role para carregar mais.');
+                    }
                     prefetchNextPostsPage();
                 }
             } catch (error) {
@@ -1720,24 +2468,37 @@
         }
 
         function renderFeed(animate = false) {
-            const posts = postsCache;
+            const posts = getVisiblePosts();
+            const hasPosts = postsCache.length > 0;
+
+            renderFeedMetrics(postsCache.length, posts.length);
+
+            if (!hasPosts) {
+                stopFeedMediaPlayback();
+                feed.innerHTML = '<div class="community-empty">Ainda não há publicações. Seja o primeiro a compartilhar uma atualização.</div>';
+                return;
+            }
 
             if (!posts.length) {
-                feed.innerHTML = '<div class="community-empty">Ainda não há publicações. Seja o primeiro a compartilhar uma atualização.</div>';
+                stopFeedMediaPlayback();
+                feed.innerHTML = '<div class="community-empty">Nenhum post encontrado para este filtro. Tente outro critério.</div>';
                 return;
             }
 
             feed.innerHTML = posts.map((post) => {
                 const isLiked = Boolean(post.liked_by_me);
                 const isSaved = isSavedPost(post.id);
-                const hasImage = Boolean(post.image_url);
+                const videoUrl = resolvePostVideoUrl(post);
+                const hasVideo = Boolean(videoUrl);
+                const hasImage = Boolean(post.image_url) && !hasVideo;
+                const hasMedia = hasImage || hasVideo;
                 const authorName = String(post.author?.name || 'Usuário');
                 const authorHandle = authorName.startsWith('@') ? authorName : `@${authorName.toLowerCase().replace(/\s+/g, '')}`;
                 const postTimestampCompact = fmtRelativeInstagram(post.created_at);
                 const postTimestampFull = fmtDateFull(post.created_at);
                 return `
-                    <article class="post-card ${focusPostId && Number(post.id) === Number(focusPostId) ? 'post-focus' : ''} ${animate ? 'feed-enter' : ''}" data-post-id="${escapeHtml(post.id)}">
-                        <div class="post-main">
+                    <article class="post-card ${focusPostId && Number(post.id) === Number(focusPostId) ? 'post-focus' : ''} ${animate ? 'feed-enter' : ''} ${reelsMode && hasMedia ? 'reel-card' : ''}" data-post-id="${escapeHtml(post.id)}" data-has-media="${hasMedia ? '1' : '0'}">
+                        <div class="post-main ${hasMedia ? 'has-media' : ''}">
                             <div class="post-top">
                                 <div class="post-author">
                                     <a class="post-avatar-link" href="${escapeHtml(profileUrlByUserId(post.author?.id || 0))}" onclick="event.stopPropagation()">
@@ -1755,10 +2516,11 @@
 
                                 <div class="post-admin-menu" data-admin-menu="${escapeHtml(post.id)}">
                                     <button class="post-admin-trigger" type="button" data-admin-toggle="${escapeHtml(post.id)}" aria-label="Editar ou moderar" aria-haspopup="menu" aria-expanded="false">
-                                        <span class="material-icons">edit</span>
+                                        <span class="material-icons">more_horiz</span>
                                     </button>
                                     <div class="post-admin-pop" data-admin-pop="${escapeHtml(post.id)}" role="menu" aria-label="Ações do post">
                                         <button class="post-admin-item is-report" type="button" role="menuitem" data-report-post="${escapeHtml(post.id)}">Denunciar post</button>
+                                        <button class="post-admin-item is-save" type="button" role="menuitem" data-save-post-menu="${escapeHtml(post.id)}">${isSaved ? 'Remover dos salvos' : 'Salvar post'}</button>
                                         ${isAdmin ? `
                                             <div class="post-admin-separator" aria-hidden="true"></div>
                                             <button class="post-admin-item" type="button" role="menuitem" data-mod-hide-post="${escapeHtml(post.id)}">Ocultar post</button>
@@ -1769,13 +2531,19 @@
                                 </div>
                             </div>
 
+                            ${hasVideo ? `
+                                <div class="post-video-wrap">
+                                    <video class="post-video" src="${escapeHtml(videoUrl)}" ${post.image_url ? `poster="${escapeHtml(post.image_url)}"` : ''} data-post-video="${escapeHtml(post.id)}" muted playsinline loop preload="metadata"></video>
+                                </div>
+                            ` : ''}
+
                             ${hasImage ? `
                                 <div class="post-image-wrap">
                                     <img class="post-image" src="${escapeHtml(post.image_url)}" alt="Imagem de lavoura" data-open-img="${escapeHtml(post.id)}">
                                 </div>
                             ` : ''}
 
-                            <p class="post-text">${escapeHtml(post.content || '')}</p>
+                            <p class="post-text ${hasMedia ? 'post-text-compact' : ''}">${escapeHtml(post.content || '')}</p>
 
                             <div class="post-actions">
                                 <button class="post-action-btn ${isLiked ? 'liked' : ''}" type="button" data-like-post="${escapeHtml(post.id)}" aria-label="Curtir">
@@ -1789,10 +2557,6 @@
                                 <button class="post-action-btn" type="button" data-share-post="${escapeHtml(post.id)}" aria-label="Compartilhar">
                                     <span class="material-icons">north_east</span>
                                     <span>${Number(post.shares_count || 0)}</span>
-                                </button>
-                                <button class="post-action-btn ${isSaved ? 'saved' : ''}" type="button" data-save-post="${escapeHtml(post.id)}" aria-label="Salvar">
-                                    <span class="material-icons">${isSaved ? 'bookmark' : 'bookmark_border'}</span>
-                                    <span>${isSaved ? 1 : 0}</span>
                                 </button>
                             </div>
 
@@ -1809,6 +2573,7 @@
             }).join('');
 
             bindPostActions();
+            setupFeedMediaPlayback();
 
             if (animate) {
                 requestAnimationFrame(animateFeedCards);
@@ -1881,17 +2646,21 @@
                     return;
                 }
 
-                const saveButton = target.closest('[data-save-post]');
+                const saveButton = target.closest('[data-save-post], [data-save-post-menu]');
                 if (saveButton) {
-                    const postId = Number(saveButton.getAttribute('data-save-post'));
+                    const rawPostId = saveButton.getAttribute('data-save-post') || saveButton.getAttribute('data-save-post-menu');
+                    const postId = Number(rawPostId);
+                    if (!postId) return;
+                    closePostAdminMenus();
                     toggleSavedPost(postId);
-                    renderFeed();
+                    applyFeedControls();
                     return;
                 }
 
                 const reportPostButton = target.closest('[data-report-post]');
                 if (reportPostButton) {
                     const postId = Number(reportPostButton.getAttribute('data-report-post'));
+                    closePostAdminMenus();
                     openReportModal(postId);
                     return;
                 }
@@ -1899,6 +2668,7 @@
                 const hidePostButton = target.closest('[data-mod-hide-post]');
                 if (hidePostButton) {
                     const postId = Number(hidePostButton.getAttribute('data-mod-hide-post'));
+                    closePostAdminMenus();
                     moderateHidePost(postId);
                     return;
                 }
@@ -1906,6 +2676,7 @@
                 const removePostButton = target.closest('[data-mod-remove-post]');
                 if (removePostButton) {
                     const postId = Number(removePostButton.getAttribute('data-mod-remove-post'));
+                    closePostAdminMenus();
                     moderateRemovePost(postId);
                     return;
                 }
@@ -1913,6 +2684,7 @@
                 const blockUserButton = target.closest('[data-mod-block-post-user]');
                 if (blockUserButton) {
                     const userId = Number(blockUserButton.getAttribute('data-mod-block-post-user'));
+                    closePostAdminMenus();
                     moderateBlockUser(userId);
                     return;
                 }
@@ -1929,6 +2701,22 @@
                     const postId = Number(commentSendButton.getAttribute('data-comment-send'));
                     const inputEl = document.querySelector(`[data-comment-input="${postId}"]`);
                     submitComment(postId, inputEl);
+                    return;
+                }
+
+                const videoEl = target.closest('[data-post-video]');
+                if (videoEl) {
+                    if (videoEl.paused) {
+                        videoEl.muted = true;
+                        const playPromise = videoEl.play();
+                        if (playPromise && typeof playPromise.catch === 'function') {
+                            playPromise.catch(() => {
+                                // autoplay pode falhar silenciosamente
+                            });
+                        }
+                    } else {
+                        videoEl.pause();
+                    }
                     return;
                 }
 
@@ -1952,6 +2740,109 @@
                 event.preventDefault();
                 const postId = Number(inputEl.getAttribute('data-comment-input'));
                 submitComment(postId, inputEl);
+            });
+        }
+
+        function applyFeedControls({ animate = false } = {}) {
+            syncFeedControlsUI();
+            persistFeedControlsState();
+            renderFeed(animate);
+
+            if (!postsCache.length) {
+                updateFeedStatus('');
+                return;
+            }
+
+            const visibleCount = getVisiblePosts().length;
+            const customFeedView = activeFeedTab !== 'for-you'
+                || activeFeedFilter !== 'all'
+                || activeFeedSort !== 'auto'
+                || activeFeedQuery.trim().length > 0;
+
+            if (customFeedView) {
+                updateFeedStatus(`Mostrando ${visibleCount} de ${postsCache.length} post(s).`);
+            } else if (reelsMode) {
+                updateFeedStatus('Modo Reels ativo: role verticalmente para navegar post a post.');
+            } else if (postsFeedState.hasMore) {
+                updateFeedStatus('Role para carregar mais.');
+            } else {
+                updateFeedStatus('Você chegou ao fim dos posts.');
+            }
+        }
+
+        if (feedTabs) {
+            feedTabs.addEventListener('click', (event) => {
+                const button = event.target instanceof Element ? event.target.closest('[data-feed-tab]') : null;
+                if (!button) return;
+
+                const nextTab = String(button.getAttribute('data-feed-tab') || '').toLowerCase();
+                if (!['for-you', 'recent'].includes(nextTab)) return;
+                if (nextTab === activeFeedTab) return;
+
+                activeFeedTab = nextTab;
+                applyFeedControls({ animate: true });
+            });
+        }
+
+        if (feedModeToggle) {
+            feedModeToggle.addEventListener('click', () => {
+                setReelsMode(!reelsMode);
+                applyFeedControls({ animate: true });
+            });
+        }
+
+        if (feedRefineToggle) {
+            feedRefineToggle.addEventListener('click', () => {
+                setFeedRefinerOpen(!feedRefinerOpen);
+                persistFeedControlsState();
+            });
+        }
+
+        if (feedFilters) {
+            feedFilters.addEventListener('click', (event) => {
+                const button = event.target instanceof Element ? event.target.closest('[data-feed-filter]') : null;
+                if (!button) return;
+                const nextFilter = (button.getAttribute('data-feed-filter') || 'all').toLowerCase();
+                if (!['all', 'images', 'saved', 'trending'].includes(nextFilter)) return;
+                if (nextFilter === activeFeedFilter) return;
+
+                activeFeedFilter = nextFilter;
+                applyFeedControls({ animate: true });
+            });
+        }
+
+        if (feedSort) {
+            feedSort.addEventListener('change', () => {
+                const nextSort = String(feedSort.value || 'auto').toLowerCase();
+                if (!['auto', 'recent', 'popular', 'comments'].includes(nextSort)) {
+                    feedSort.value = activeFeedSort;
+                    return;
+                }
+                activeFeedSort = nextSort;
+                applyFeedControls({ animate: true });
+            });
+        }
+
+        if (feedSearch) {
+            let searchDebounce = null;
+            feedSearch.addEventListener('input', () => {
+                activeFeedQuery = String(feedSearch.value || '').slice(0, 120);
+                if (searchDebounce) {
+                    window.clearTimeout(searchDebounce);
+                }
+                searchDebounce = window.setTimeout(() => {
+                    applyFeedControls();
+                }, 120);
+            });
+        }
+
+        if (feedClear) {
+            feedClear.addEventListener('click', () => {
+                activeFeedFilter = 'all';
+                activeFeedSort = 'auto';
+                activeFeedQuery = '';
+                setFeedRefinerOpen(false);
+                applyFeedControls();
             });
         }
 
@@ -2101,6 +2992,17 @@
             // ignora indisponibilidade de storage
         }
 
+        restoreFeedControlsState();
+        if (focusPostId) {
+            activeFeedTab = 'recent';
+            activeFeedFilter = 'all';
+            activeFeedSort = 'recent';
+            activeFeedQuery = '';
+            feedRefinerOpen = false;
+            reelsMode = false;
+        }
+        syncFeedControlsUI();
+
         const refreshToggleBtn = document.getElementById('communityRefreshToggle');
         const refreshIntervalBtn = document.getElementById('communityRefreshInterval');
         if (refreshToggleBtn) {
@@ -2144,6 +3046,13 @@
         window.addEventListener('beforeunload', () => {
             if (postsRefreshTimer) {
                 window.clearInterval(postsRefreshTimer);
+            }
+            stopFeedMediaPlayback();
+            if (document.documentElement) {
+                document.documentElement.classList.remove('community-reels-mode');
+            }
+            if (document.body) {
+                document.body.classList.remove('community-reels-mode');
             }
             setCommunityTypingLock(false);
         });

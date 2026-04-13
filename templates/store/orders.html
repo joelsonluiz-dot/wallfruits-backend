@@ -4,88 +4,279 @@
 
 {% block content %}
 <style>
-    .orders-shell { display: grid; gap: 0.85rem; }
-    .orders-head { display: flex; justify-content: space-between; align-items: center; gap: 0.65rem; flex-wrap: wrap; }
-    .orders-head h1 { margin: 0; color: #2E7D32; font-size: 1.26rem; font-weight: 900; }
-    .orders-list { display: grid; gap: 0.68rem; }
-    .order-card {
-        border: 1px solid #d8e7d9;
-        border-radius: 15px;
-        background: #fff;
-        box-shadow: 0 10px 22px rgba(30, 85, 34, 0.1);
-        padding: 0.75rem;
-        display: grid;
-        gap: 0.6rem;
+    :root {
+        --orders-blue: #2563EB;
+        --orders-blue-soft: #3B82F6;
+        --orders-indigo: #6366F1;
+        --orders-white: #FFFFFF;
+        --orders-gray-050: #F9FAFB;
+        --orders-gray-100: #F3F4F6;
+        --orders-gray-300: #D1D5DB;
+        --orders-gray-500: #6B7280;
+        --orders-gray-800: #1F2937;
+        --orders-shadow: 0 12px 30px rgba(15, 23, 42, 0.1);
     }
-    .order-top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
-    .order-title { margin: 0; color: #1f5e29; font-size: 0.9rem; font-weight: 900; }
-    .order-meta { margin: 0.16rem 0 0; color: #607764; font-size: 0.72rem; }
-    .order-pill {
-        border-radius: 999px;
-        padding: 0.26rem 0.6rem;
-        border: 1px solid #cfe3d1;
-        background: #f3fbf4;
-        color: #2f6d37;
-        font-size: 0.66rem;
-        font-weight: 800;
-        text-transform: uppercase;
-    }
-    .order-items { border: 1px solid #dde9de; border-radius: 12px; background: #fbfffc; padding: 0.52rem; display: grid; gap: 0.28rem; }
-    .order-item-row { display: flex; justify-content: space-between; gap: 0.45rem; font-size: 0.75rem; color: #35583b; }
 
-    .order-timeline { position: relative; display: grid; gap: 0.42rem; padding-left: 1.2rem; }
-    .order-timeline::before {
+    .ordersp-page {
+        display: grid;
+        gap: 16px;
+        color: var(--orders-gray-800);
+        font-family: "Manrope", "Segoe UI", sans-serif;
+    }
+
+    .ordersp-header {
+        position: sticky;
+        top: 8px;
+        z-index: 24;
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        background: linear-gradient(130deg, rgba(37, 99, 235, 0.92) 0%, rgba(59, 130, 246, 0.9) 48%, rgba(99, 102, 241, 0.88) 100%);
+        backdrop-filter: blur(16px);
+        box-shadow: 0 14px 32px rgba(37, 99, 235, 0.2);
+        padding: 14px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .ordersp-header h1 {
+        margin: 0;
+        color: #FFFFFF;
+        font-size: 1.08rem;
+        font-weight: 900;
+    }
+
+    .ordersp-header p {
+        margin: 3px 0 0;
+        color: rgba(255, 255, 255, 0.86);
+        font-size: 0.76rem;
+        font-weight: 600;
+    }
+
+    .ordersp-header-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .ordersp-chip {
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.44);
+        background: rgba(255, 255, 255, 0.2);
+        color: #FFFFFF;
+        font-size: 0.72rem;
+        font-weight: 800;
+        padding: 6px 10px;
+    }
+
+    .ordersp-link {
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.44);
+        background: rgba(255, 255, 255, 0.2);
+        color: #FFFFFF;
+        font-size: 0.72rem;
+        font-weight: 800;
+        text-decoration: none;
+        padding: 8px 11px;
+    }
+
+    .ordersp-list {
+        display: grid;
+        gap: 12px;
+    }
+
+    .ordersp-card {
+        border: 1px solid rgba(209, 213, 219, 0.86);
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.84);
+        backdrop-filter: blur(12px);
+        box-shadow: var(--orders-shadow);
+        padding: 12px;
+        display: grid;
+        gap: 10px;
+    }
+
+    .ordersp-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .ordersp-title {
+        margin: 0;
+        color: #0F172A;
+        font-size: 0.92rem;
+        font-weight: 900;
+    }
+
+    .ordersp-meta {
+        margin: 3px 0 0;
+        color: #64748B;
+        font-size: 0.72rem;
+        font-weight: 700;
+    }
+
+    .ordersp-pill {
+        border-radius: 999px;
+        padding: 5px 10px;
+        border: 1px solid #BFDBFE;
+        background: #EFF6FF;
+        color: #1D4ED8;
+        font-size: 0.66rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+
+    .ordersp-items {
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        background: #FFFFFF;
+        padding: 10px;
+        display: grid;
+        gap: 6px;
+    }
+
+    .ordersp-item-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        color: #334155;
+        font-size: 0.76rem;
+        font-weight: 700;
+    }
+
+    .ordersp-item-row.total {
+        border-top: 1px solid #E2E8F0;
+        padding-top: 7px;
+        color: #0F172A;
+        font-size: 0.8rem;
+        font-weight: 900;
+    }
+
+    .ordersp-timeline {
+        position: relative;
+        display: grid;
+        gap: 7px;
+        padding-left: 16px;
+    }
+
+    .ordersp-timeline::before {
         content: "";
         position: absolute;
-        left: 6px;
+        left: 7px;
         top: 0;
         bottom: 0;
         width: 2px;
-        background: #d9e9db;
+        background: #E2E8F0;
     }
-    .timeline-step {
+
+    .ordersp-step {
         position: relative;
-        border: 1px solid #dce9de;
+        border: 1px solid #E2E8F0;
         border-radius: 10px;
-        background: #fff;
-        padding: 0.42rem 0.56rem;
+        background: #FFFFFF;
+        padding: 8px 9px;
     }
-    .timeline-step::before {
+
+    .ordersp-step::before {
         content: "";
         position: absolute;
-        left: -0.95rem;
-        top: 0.72rem;
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        border: 2px solid #9fbca4;
-        background: #fff;
+        left: -13px;
+        top: 12px;
+        width: 9px;
+        height: 9px;
+        border-radius: 999px;
+        border: 2px solid #94A3B8;
+        background: #FFFFFF;
     }
-    .timeline-step.done { background: #f3fbf4; border-color: #cae2cd; }
-    .timeline-step.done::before { border-color: #2E7D32; background: #2E7D32; }
-    .timeline-step.active { background: #fff8ee; border-color: #ffdcae; }
-    .timeline-title { margin: 0; font-size: 0.74rem; font-weight: 800; color: #2f5a36; }
-    .timeline-desc { margin: 0.16rem 0 0; font-size: 0.68rem; color: #647d69; }
-    .timeline-eta { margin: 0.14rem 0 0; font-size: 0.64rem; color: #7b917f; }
+
+    .ordersp-step.done {
+        border-color: #BBF7D0;
+        background: #F0FDF4;
+    }
+
+    .ordersp-step.done::before {
+        border-color: #16A34A;
+        background: #16A34A;
+    }
+
+    .ordersp-step.active {
+        border-color: #FDE68A;
+        background: #FEFCE8;
+    }
+
+    .ordersp-step-title {
+        margin: 0;
+        color: #0F172A;
+        font-size: 0.74rem;
+        font-weight: 900;
+    }
+
+    .ordersp-step-desc {
+        margin: 2px 0 0;
+        color: #64748B;
+        font-size: 0.68rem;
+        font-weight: 700;
+    }
+
+    .ordersp-step-eta {
+        margin: 2px 0 0;
+        color: #64748B;
+        font-size: 0.64rem;
+        font-weight: 700;
+    }
+
+    .ordersp-skeleton {
+        border: 1px solid #E5E7EB;
+        border-radius: 14px;
+        min-height: 150px;
+        position: relative;
+        overflow: hidden;
+        background: #FFFFFF;
+    }
+
+    .ordersp-skeleton::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.72) 50%, rgba(255, 255, 255, 0) 100%);
+        transform: translateX(-100%);
+        animation: ordersShimmer 1.2s infinite;
+    }
+
+    @keyframes ordersShimmer {
+        to { transform: translateX(100%); }
+    }
 </style>
 
-<div class="orders-shell">
-    <div class="orders-head">
-        <h1>Acompanhamento de pedidos</h1>
-        <div class="d-flex gap-2 flex-wrap">
-            <a href="/store" class="btn btn-wf-secondary">Voltar para loja</a>
-            <a href="/store/cart" class="btn btn-wf-secondary">Carrinho</a>
+<div class="ordersp-page">
+    <header class="ordersp-header">
+        <div>
+            <h1>Acompanhamento de pedidos</h1>
+            <p>Status atualizado da sua operacao de compra.</p>
         </div>
-    </div>
+        <div class="ordersp-header-actions">
+            <span id="ordersCountChip" class="ordersp-chip">0 pedidos</span>
+            <a href="/store" class="ordersp-link" data-wf-press>Voltar para loja</a>
+            <a href="/store/cart" class="ordersp-link" data-wf-press>Carrinho</a>
+        </div>
+    </header>
 
     <div id="ordersFeedback"></div>
-    <section id="ordersList" class="orders-list"></section>
+    <section id="ordersList" class="ordersp-list"></section>
 </div>
 
 <script>
     (function setupOrdersPage() {
         const list = document.getElementById('ordersList');
         const feedback = document.getElementById('ordersFeedback');
+        const ordersCountChip = document.getElementById('ordersCountChip');
 
         function showMessage(type, text) {
             if (!feedback) return;
@@ -123,55 +314,77 @@
             return map[status] || status;
         }
 
+        function renderSkeleton() {
+            list.innerHTML = Array.from({ length: 3 })
+                .map(() => '<div class="ordersp-skeleton"></div>')
+                .join('');
+
+            if (window.WFStoreMotion) {
+                window.WFStoreMotion.refresh(list);
+            }
+        }
+
         function renderOrders(orders) {
+            if (ordersCountChip) {
+                ordersCountChip.textContent = `${orders.length} ${orders.length === 1 ? 'pedido' : 'pedidos'}`;
+            }
+
             if (!orders.length) {
                 list.innerHTML = '<div class="wf-alert wf-alert-info">Você ainda não possui pedidos concluídos.</div>';
+                if (window.WFStoreMotion) {
+                    window.WFStoreMotion.refresh(list);
+                }
                 return;
             }
 
             list.innerHTML = orders.map((order) => {
                 const itemsHtml = (order.items || []).map((item) => `
-                    <div class="order-item-row">
+                    <div class="ordersp-item-row">
                         <span>${escapeHtml(item.product_name)} x${item.quantity}</span>
                         <strong>${money(item.subtotal)}</strong>
                     </div>
                 `).join('');
 
                 const timelineHtml = (order.timeline || []).map((step) => `
-                    <article class="timeline-step ${step.done ? 'done' : ''} ${step.active ? 'active' : ''}">
-                        <h3 class="timeline-title">${escapeHtml(step.title)}</h3>
-                        <p class="timeline-desc">${escapeHtml(step.description)}</p>
-                        <p class="timeline-eta">${step.done ? 'Concluído em: ' : 'Previsão: '}${formatDate(step.eta)}</p>
+                    <article class="ordersp-step ${step.done ? 'done' : ''} ${step.active ? 'active' : ''}">
+                        <h3 class="ordersp-step-title">${escapeHtml(step.title)}</h3>
+                        <p class="ordersp-step-desc">${escapeHtml(step.description)}</p>
+                        <p class="ordersp-step-eta">${step.done ? 'Concluido em: ' : 'Previsao: '}${formatDate(step.eta)}</p>
                     </article>
                 `).join('');
 
                 return `
-                    <article class="order-card">
-                        <div class="order-top">
+                    <article class="ordersp-card">
+                        <div class="ordersp-top">
                             <div>
-                                <h2 class="order-title">Pedido #${order.id}</h2>
-                                <p class="order-meta">Criado em ${formatDate(order.created_at)} | Pagamento: ${escapeHtml(String(order.payment_method || '-').toUpperCase())}</p>
+                                <h2 class="ordersp-title">Pedido #${order.id}</h2>
+                                <p class="ordersp-meta">Criado em ${formatDate(order.created_at)} | Pagamento: ${escapeHtml(String(order.payment_method || '-').toUpperCase())}</p>
                             </div>
-                            <div class="order-pill">${escapeHtml(statusLabel(order.status))}</div>
+                            <div class="ordersp-pill">${escapeHtml(statusLabel(order.status))}</div>
                         </div>
 
-                        <div class="order-items">
+                        <div class="ordersp-items">
                             ${itemsHtml}
-                            <div class="order-item-row" style="border-top:1px solid #dce9de;padding-top:0.35rem;">
+                            <div class="ordersp-item-row total">
                                 <strong>Total</strong>
                                 <strong>${money(order.total_amount)}</strong>
                             </div>
                         </div>
 
-                        <div class="order-timeline">${timelineHtml}</div>
+                        <div class="ordersp-timeline">${timelineHtml}</div>
                     </article>
                 `;
             }).join('');
+
+            if (window.WFStoreMotion) {
+                window.WFStoreMotion.refresh(list);
+            }
         }
 
         async function loadOrders() {
             if (!requireAuth()) return;
             try {
+                renderSkeleton();
                 const data = await apiRequest('/store/orders/my');
                 renderOrders(Array.isArray(data?.orders) ? data.orders : []);
             } catch (error) {

@@ -717,7 +717,7 @@ async def community_page(request: Request, current_user: User = Depends(get_curr
 
 @app.get("/library")
 async def library_page(request: Request, current_user: User = Depends(get_current_user_optional)):
-    """Página da biblioteca de leitura baseada em dados locais do navegador."""
+    """Página da biblioteca com catálogo público e leitura completa."""
     return _render_template("library.html", request, current_user=current_user)
 
 

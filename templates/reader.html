@@ -5,38 +5,43 @@
 {% block content %}
 <style>
     .reader-shell {
-        max-width: 980px;
+        --reader-ink: #142f45;
+        --reader-muted: #4f6f87;
+        --reader-line: rgba(17, 73, 125, 0.16);
+        --reader-surface: linear-gradient(145deg, #f7fff6 0%, #f3f9ff 52%, #fffaf0 100%);
+        max-width: 1040px;
         margin: 0 auto;
-        border: 1px solid rgba(17, 73, 125, 0.14);
-        border-radius: 18px;
+        border: 1px solid var(--reader-line);
+        border-radius: 20px;
         overflow: hidden;
         background: #fffef8;
-        box-shadow: 0 14px 30px rgba(17, 52, 98, 0.12);
+        box-shadow: 0 16px 34px rgba(17, 52, 98, 0.14);
     }
 
     .reader-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 0.55rem;
-        padding: 0.72rem 0.8rem;
-        background: linear-gradient(135deg, #2f7f35, #4a9b4c);
-        color: #fff;
+        gap: 0.58rem;
+        padding: 0.75rem 0.82rem;
+        background: linear-gradient(132deg, #0f5f87, #1e7f57);
+        color: #ffffff;
         position: sticky;
         top: 0;
         z-index: 50;
+        transition: transform 0.22s ease, opacity 0.22s ease;
     }
 
     .reader-title-group {
         min-width: 0;
         display: grid;
-        gap: 0.12rem;
+        gap: 0.14rem;
     }
 
     .reader-title {
         margin: 0;
         font-size: 0.95rem;
-        font-weight: 800;
+        font-weight: 900;
         line-height: 1.2;
         white-space: nowrap;
         overflow: hidden;
@@ -46,7 +51,7 @@
     .reader-author {
         margin: 0;
         font-size: 0.7rem;
-        opacity: 0.9;
+        opacity: 0.92;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -54,11 +59,11 @@
 
     .reader-btn,
     .reader-icon-btn {
-        border: none;
-        background: rgba(255, 255, 255, 0.16);
-        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        background: rgba(255, 255, 255, 0.15);
+        color: #ffffff;
         border-radius: 10px;
-        font-weight: 700;
+        font-weight: 800;
         cursor: pointer;
         transition: transform 0.18s ease, background 0.18s ease;
     }
@@ -70,7 +75,7 @@
     }
 
     .reader-btn {
-        padding: 0.45rem 0.65rem;
+        padding: 0.44rem 0.65rem;
         font-size: 0.75rem;
     }
 
@@ -85,46 +90,275 @@
 
     .reader-controls {
         display: flex;
-        gap: 0.35rem;
+        gap: 0.32rem;
         flex-wrap: wrap;
         justify-content: flex-end;
     }
 
+    .reader-status {
+        font-size: 0.66rem;
+        font-weight: 800;
+        color: #2f6e3d;
+        border: 1px solid rgba(47, 110, 61, 0.25);
+        background: #f0faef;
+        border-radius: 999px;
+        padding: 0.2rem 0.52rem;
+        align-self: center;
+    }
+
+    .reader-progress-track {
+        height: 5px;
+        width: 100%;
+        background: rgba(16, 84, 122, 0.14);
+        overflow: hidden;
+        transition: opacity 0.2s ease, transform 0.2s ease, height 0.2s ease;
+    }
+
+    .reader-progress-track span {
+        display: block;
+        width: 0%;
+        height: 100%;
+        background: linear-gradient(90deg, #0f5f87, #1f8757);
+        transition: width 0.24s ease;
+    }
+
+    .reader-context-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        border-bottom: 1px solid rgba(17, 73, 125, 0.16);
+        background: rgba(255, 255, 255, 0.92);
+        padding: 0.42rem 0.8rem;
+    }
+
+    .reader-context-label {
+        min-width: 0;
+        font-size: 0.72rem;
+        font-weight: 800;
+        color: #1a537d;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .reader-context-progress {
+        font-size: 0.7rem;
+        font-weight: 800;
+        color: #226e49;
+        white-space: nowrap;
+        border-radius: 999px;
+        border: 1px solid rgba(28, 112, 72, 0.24);
+        background: #eefaf2;
+        padding: 0.16rem 0.46rem;
+    }
+
     .reader-content {
-        padding: 1rem 1.1rem 0.85rem;
-        min-height: 70vh;
-        background: linear-gradient(180deg, #fffef8 0%, #fbfaf4 100%);
+        padding: 0.95rem 1.1rem 0.86rem;
+        min-height: 72vh;
+        background: var(--reader-surface);
+        transition: padding-top 0.2s ease;
+    }
+
+    .reader-shell.header-hidden .reader-header {
+        transform: translateY(-110%);
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .reader-shell.header-hidden .reader-progress-track {
+        opacity: 0;
+        transform: translateY(-8px);
+        height: 0;
+    }
+
+    .reader-shell.header-hidden .reader-content {
+        padding-top: 0.72rem;
     }
 
     .reader-cover {
         width: 100%;
-        max-width: 280px;
+        max-width: 340px;
         height: auto;
         display: block;
-        margin: 0 auto 0.95rem;
+        margin: 0 auto 0.82rem;
         border-radius: 12px;
         border: 1px solid rgba(17, 73, 125, 0.14);
-        box-shadow: 0 10px 22px rgba(23, 63, 112, 0.12);
+        box-shadow: 0 11px 24px rgba(23, 63, 112, 0.14);
+    }
+
+    .reader-meta {
+        border: 1px solid var(--reader-line);
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.85);
+        box-shadow: 0 8px 18px rgba(20, 58, 101, 0.08);
+        padding: 0.56rem 0.66rem;
+        display: grid;
+        gap: 0.54rem;
+        margin-bottom: 0.62rem;
+    }
+
+    .reader-meta-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.32rem;
+    }
+
+    .reader-meta-pill {
+        display: inline-flex;
+        border-radius: 999px;
+        border: 1px solid rgba(17, 73, 125, 0.2);
+        background: #f5fbff;
+        color: #1b5883;
+        font-size: 0.71rem;
+        font-weight: 800;
+        padding: 0.2rem 0.5rem;
+    }
+
+    .reader-jump {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        align-items: center;
+        gap: 0.48rem;
+    }
+
+    .reader-jump span {
+        font-size: 0.71rem;
+        color: var(--reader-muted);
+        font-weight: 800;
+    }
+
+    .reader-jump input[type="range"] {
+        width: 100%;
+        accent-color: #186d4a;
+    }
+
+    .reader-auto-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.46rem;
+    }
+
+    .reader-auto-row span {
+        font-size: 0.7rem;
+        color: var(--reader-muted);
+        font-weight: 800;
+    }
+
+    .reader-speed-select {
+        border: 1px solid rgba(18, 79, 112, 0.2);
+        border-radius: 10px;
+        background: #ffffff;
+        color: #1a557e;
+        font-size: 0.72rem;
+        font-weight: 800;
+        padding: 0.32rem 0.44rem;
+    }
+
+    .reader-sections {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.34rem;
+        margin-bottom: 0.62rem;
+    }
+
+    .reader-bookmarks {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.34rem;
+        margin-bottom: 0.62rem;
+    }
+
+    .reader-sections,
+    .reader-bookmarks {
+        scrollbar-width: thin;
+    }
+
+    .reader-bookmarks:empty {
+        display: none;
+    }
+
+    .reader-bookmark-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        border: 1px solid rgba(20, 83, 119, 0.22);
+        background: #f3f9ff;
+        color: #1b5883;
+        border-radius: 999px;
+        font-size: 0.66rem;
+        font-weight: 800;
+        padding: 0.22rem 0.46rem;
+        max-width: 240px;
+    }
+
+    .reader-bookmark-chip button {
+        border: none;
+        width: 18px;
+        height: 18px;
+        border-radius: 999px;
+        background: rgba(10, 60, 92, 0.14);
+        color: #154d74;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.66rem;
+        line-height: 1;
+        padding: 0;
+    }
+
+    .reader-bookmark-chip[data-active="true"] {
+        border-color: rgba(25, 114, 73, 0.34);
+        background: #edfaf1;
+        color: #1c6a43;
+    }
+
+    .reader-section-chip {
+        border: 1px solid rgba(20, 83, 119, 0.18);
+        background: #ffffff;
+        color: #1b5883;
+        border-radius: 999px;
+        font-size: 0.67rem;
+        font-weight: 800;
+        padding: 0.24rem 0.5rem;
+        max-width: 220px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        cursor: pointer;
+    }
+
+    .reader-section-chip.active {
+        background: linear-gradient(135deg, #0f5f87, #1e7f57);
+        color: #ffffff;
+        border-color: transparent;
     }
 
     .reader-page {
         border: 1px solid rgba(17, 73, 125, 0.12);
         border-radius: 14px;
-        background: #fff;
+        background: #ffffff;
         padding: 1rem 1rem;
         box-shadow: 0 8px 18px rgba(20, 58, 101, 0.08);
-        transition: opacity 0.25s ease, transform 0.25s ease;
+        transition: opacity 0.2s ease, transform 0.2s ease;
     }
 
-    .reader-page.slide {
+    .reader-page.slide-next {
         opacity: 0;
-        transform: translateX(20px);
+        transform: translateX(18px);
+    }
+
+    .reader-page.slide-prev {
+        opacity: 0;
+        transform: translateX(-18px);
     }
 
     .reader-text {
         margin: 0;
-        font-family: Georgia, 'Times New Roman', serif;
-        line-height: 1.85;
+        font-family: "Lora", Georgia, "Times New Roman", serif;
+        line-height: 1.86;
         color: #273039;
         font-size: 19px;
         white-space: pre-wrap;
@@ -135,9 +369,16 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        gap: 0.6rem;
-        margin-top: 0.75rem;
+        gap: 0.62rem;
+        margin-top: 0.74rem;
         flex-wrap: wrap;
+        transition: transform 0.22s ease, opacity 0.22s ease;
+    }
+
+    .reader-shell.footer-hidden .reader-footer {
+        opacity: 0;
+        transform: translateY(120%);
+        pointer-events: none;
     }
 
     .reader-progress {
@@ -154,24 +395,24 @@
     .reader-nav-btn {
         border: 1px solid rgba(17, 73, 125, 0.22);
         border-radius: 10px;
-        background: #fff;
+        background: #ffffff;
         color: #1a4e88;
         font-size: 0.74rem;
         font-weight: 800;
         padding: 0.45rem 0.76rem;
+        cursor: pointer;
     }
 
-    .reader-status {
-        font-size: 0.66rem;
-        font-weight: 800;
-        color: #2f6e3d;
-        border: 1px solid rgba(47, 110, 61, 0.25);
-        background: #f0faef;
-        border-radius: 999px;
-        padding: 0.2rem 0.5rem;
+    .reader-nav-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
     }
 
     .reader-shell.dark {
+        --reader-ink: #d7e4f3;
+        --reader-muted: #9fb4cc;
+        --reader-line: rgba(148, 182, 221, 0.22);
+        --reader-surface: linear-gradient(180deg, #13171d 0%, #171d26 100%);
         background: #13171d;
         border-color: rgba(148, 182, 221, 0.22);
     }
@@ -180,8 +421,75 @@
         background: linear-gradient(135deg, #1b2530, #2c3e52);
     }
 
-    .reader-shell.dark .reader-content {
-        background: linear-gradient(180deg, #13171d 0%, #171d26 100%);
+    .reader-shell.dark .reader-progress-track {
+        background: rgba(113, 145, 183, 0.2);
+    }
+
+    .reader-shell.dark .reader-progress-track span {
+        background: linear-gradient(90deg, #4d9ad1, #56bc8b);
+    }
+
+    .reader-shell.dark .reader-context-bar {
+        border-bottom-color: rgba(148, 182, 221, 0.2);
+        background: rgba(29, 36, 48, 0.9);
+    }
+
+    .reader-shell.dark .reader-context-label {
+        color: #d4e2f5;
+    }
+
+    .reader-shell.dark .reader-context-progress {
+        color: #c7f0de;
+        border-color: rgba(91, 191, 143, 0.44);
+        background: #1d3a34;
+    }
+
+    .reader-shell.dark .reader-meta {
+        background: rgba(29, 36, 48, 0.85);
+        border-color: rgba(148, 182, 221, 0.2);
+    }
+
+    .reader-shell.dark .reader-meta-pill {
+        background: #233248;
+        color: #d6e4f6;
+        border-color: rgba(148, 182, 221, 0.25);
+    }
+
+    .reader-shell.dark .reader-jump span {
+        color: #b5c7dc;
+    }
+
+    .reader-shell.dark .reader-auto-row span {
+        color: #b5c7dc;
+    }
+
+    .reader-shell.dark .reader-speed-select {
+        background: #223044;
+        color: #d5e2f3;
+        border-color: rgba(148, 182, 221, 0.26);
+    }
+
+    .reader-shell.dark .reader-section-chip {
+        background: #1f2a3a;
+        color: #cfe0f3;
+        border-color: rgba(148, 182, 221, 0.22);
+    }
+
+    .reader-shell.dark .reader-bookmark-chip {
+        background: #203146;
+        color: #d4e3f6;
+        border-color: rgba(148, 182, 221, 0.24);
+    }
+
+    .reader-shell.dark .reader-bookmark-chip button {
+        background: rgba(148, 182, 221, 0.2);
+        color: #d4e3f6;
+    }
+
+    .reader-shell.dark .reader-bookmark-chip[data-active="true"] {
+        border-color: rgba(91, 191, 143, 0.44);
+        background: #1d3a34;
+        color: #c6f0df;
     }
 
     .reader-shell.dark .reader-page {
@@ -204,9 +512,116 @@
         color: #d5e2f3;
     }
 
+    .reader-reveal-footer {
+        position: fixed;
+        right: 16px;
+        bottom: 64px;
+        border: 1px solid rgba(18, 79, 112, 0.24);
+        background: rgba(255, 255, 255, 0.94);
+        color: #1a547d;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        font-weight: 800;
+        padding: 0.3rem 0.58rem;
+        cursor: pointer;
+        z-index: 110;
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(8px);
+        transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .reader-shell.footer-hidden ~ .reader-reveal-footer {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translateY(0);
+    }
+
+    .reader-shell.dark ~ .reader-reveal-footer {
+        background: rgba(29, 36, 48, 0.95);
+        color: #d3e3f7;
+        border-color: rgba(148, 182, 221, 0.22);
+    }
+
+    .reader-reveal-header {
+        position: fixed;
+        right: 16px;
+        top: 78px;
+        border: 1px solid rgba(18, 79, 112, 0.24);
+        background: rgba(255, 255, 255, 0.94);
+        color: #1a547d;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        font-weight: 800;
+        padding: 0.3rem 0.58rem;
+        cursor: pointer;
+        z-index: 110;
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(-8px);
+        transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .reader-shell.header-hidden ~ .reader-reveal-header {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translateY(0);
+    }
+
+    .reader-shell.dark ~ .reader-reveal-header {
+        background: rgba(29, 36, 48, 0.95);
+        color: #d3e3f7;
+        border-color: rgba(148, 182, 221, 0.22);
+    }
+
+    .reader-shell.focus-mode .reader-meta,
+    .reader-shell.focus-mode .reader-sections,
+    .reader-shell.focus-mode .reader-bookmarks,
+    .reader-shell.focus-mode .reader-cover {
+        display: none;
+    }
+
+    .reader-shell.focus-mode .reader-content {
+        padding-top: 0.8rem;
+    }
+
+    .reader-shell.focus-mode .reader-author {
+        display: none;
+    }
+
+    .reader-toast {
+        position: fixed;
+        right: 16px;
+        bottom: 18px;
+        border-radius: 12px;
+        border: 1px solid rgba(18, 79, 112, 0.24);
+        background: rgba(255, 255, 255, 0.94);
+        color: #1a547d;
+        padding: 0.54rem 0.7rem;
+        box-shadow: 0 10px 22px rgba(19, 61, 93, 0.16);
+        font-size: 0.74rem;
+        font-weight: 800;
+        opacity: 0;
+        transform: translateY(8px);
+        pointer-events: none;
+        transition: opacity 0.2s ease, transform 0.2s ease;
+        z-index: 120;
+    }
+
+    .reader-toast.show {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .reader-shell.dark ~ .reader-toast {
+        background: rgba(29, 36, 48, 0.95);
+        color: #d3e3f7;
+        border-color: rgba(148, 182, 221, 0.22);
+    }
+
     @media (max-width: 960px) {
         .reader-content {
-            min-height: 64vh;
+            min-height: 66vh;
         }
     }
 
@@ -226,7 +641,49 @@
         }
 
         .reader-page {
-            padding: 0.85rem 0.8rem;
+            padding: 0.85rem 0.82rem;
+        }
+
+        .reader-sections,
+        .reader-bookmarks {
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            overflow-y: hidden;
+            scroll-snap-type: x proximity;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 0.18rem;
+            gap: 0.36rem;
+        }
+
+        .reader-section-chip,
+        .reader-bookmark-chip {
+            flex: 0 0 auto;
+            scroll-snap-align: start;
+        }
+
+        .reader-section-chip {
+            max-width: 240px;
+        }
+
+        .reader-bookmark-chip {
+            max-width: 270px;
+        }
+
+        .reader-footer {
+            position: sticky;
+            bottom: 8px;
+            border-radius: 12px;
+            border: 1px solid rgba(17, 73, 125, 0.16);
+            background: rgba(255, 255, 255, 0.92);
+            box-shadow: 0 10px 24px rgba(20, 58, 101, 0.12);
+            backdrop-filter: blur(6px);
+            padding: 0.42rem;
+            z-index: 12;
+        }
+
+        .reader-shell.dark .reader-footer {
+            border-color: rgba(148, 182, 221, 0.24);
+            background: rgba(29, 36, 48, 0.92);
         }
     }
 
@@ -237,7 +694,7 @@
 
         .reader-text {
             font-size: 16px;
-            line-height: 1.75;
+            line-height: 1.76;
         }
 
         .reader-footer {
@@ -252,22 +709,40 @@
         .reader-nav-btn {
             flex: 1;
         }
+
+        .reader-jump {
+            grid-template-columns: 1fr;
+            gap: 0.24rem;
+        }
+
+        .reader-reveal-footer {
+            bottom: 70px;
+        }
     }
 </style>
 
-<section class="reader-shell" id="readerShell">
+<section class="reader-shell wf-card store-motion-card" id="readerShell" data-wf-reveal>
     <header class="reader-header">
         <button class="reader-icon-btn" id="btnBack" title="Voltar">
             <span class="material-icons">arrow_back</span>
         </button>
 
         <div class="reader-title-group">
-            <h1 class="reader-title" id="readerTitle">Título</h1>
+            <h1 class="reader-title" id="readerTitle">Titulo</h1>
             <p class="reader-author" id="readerAuthor">Autor</p>
         </div>
 
         <div class="reader-controls">
             <span class="reader-status" id="offlineStatus">Online</span>
+            <button class="reader-icon-btn" id="btnFullscreen" title="Tela cheia">
+                <span class="material-icons">fullscreen</span>
+            </button>
+            <button class="reader-icon-btn" id="btnPinHeader" title="Fixar controles visiveis">
+                <span class="material-icons">push_pin</span>
+            </button>
+            <button class="reader-icon-btn" id="btnFocus" title="Modo foco">
+                <span class="material-icons">center_focus_strong</span>
+            </button>
             <button class="reader-icon-btn" id="btnTheme" title="Modo escuro">
                 <span class="material-icons">dark_mode</span>
             </button>
@@ -277,37 +752,97 @@
             <button class="reader-icon-btn" id="btnFontDown" title="Diminuir fonte">
                 <span class="material-icons">text_decrease</span>
             </button>
-            <button class="reader-btn" id="btnAudio">Ler em áudio</button>
+            <button class="reader-icon-btn" id="btnBookmark" title="Salvar marcador">
+                <span class="material-icons">bookmark_add</span>
+            </button>
+            <button class="reader-icon-btn" id="btnAutoplay" title="Iniciar leitura automatica">
+                <span class="material-icons">play_arrow</span>
+            </button>
+            <button class="reader-btn" id="btnAudio">Ler em audio</button>
         </div>
     </header>
 
-    <div class="reader-content">
+    <div class="reader-progress-track" aria-hidden="true">
+        <span id="readerProgressBar"></span>
+    </div>
+
+    <div class="reader-context-bar" id="readerContextBar">
+        <span class="reader-context-label" id="readerContextLabel">Capitulo 1/1: Inicio</span>
+        <span class="reader-context-progress" id="readerContextProgress">0% concluido</span>
+    </div>
+
+    <div class="reader-content" id="readerContent">
         <img id="readerCover" class="reader-cover" alt="Capa do livro" style="display:none;">
+
+        <div class="reader-meta">
+            <div class="reader-meta-group">
+                <span class="reader-meta-pill" id="readerMetaPages">Pagina 1/1</span>
+                <span class="reader-meta-pill" id="readerMetaRemaining">1 min restante</span>
+                <span class="reader-meta-pill" id="readerMetaWords">0 palavras</span>
+                <span class="reader-meta-pill" id="readerMetaSession">Sessao 00:00</span>
+                <span class="reader-meta-pill" id="readerMetaAutoplay">Auto pausado</span>
+            </div>
+            <label class="reader-jump" for="pageRange">
+                <span>Pular para pagina</span>
+                <input id="pageRange" type="range" min="1" max="1" value="1">
+            </label>
+            <div class="reader-auto-row">
+                <span>Velocidade automatica</span>
+                <select id="autoPlaySpeed" class="reader-speed-select">
+                    <option value="5200">Lenta</option>
+                    <option value="3600">Equilibrada</option>
+                    <option value="2400" selected>Rapida</option>
+                    <option value="1600">Turbo</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="reader-sections" id="readerSections"></div>
+        <div class="reader-bookmarks" id="readerBookmarks"></div>
 
         <article class="reader-page" id="readerPage">
             <p class="reader-text" id="readerText"></p>
         </article>
 
         <div class="reader-footer">
-            <div class="reader-progress" id="readerProgress">Página 1 de 1</div>
+            <div class="reader-progress" id="readerProgress">Pagina 1 de 1</div>
             <div class="reader-nav">
-                <button class="reader-nav-btn" id="btnPrev">Página anterior</button>
-                <button class="reader-nav-btn" id="btnNext">Próxima página</button>
+                <button class="reader-nav-btn" id="btnPrev">Pagina anterior</button>
+                <button class="reader-nav-btn" id="btnNext">Proxima pagina</button>
             </div>
         </div>
     </div>
 </section>
 
+<button type="button" class="reader-reveal-header" id="btnRevealHeader">Mostrar controles</button>
+<button type="button" class="reader-reveal-footer" id="btnRevealFooter">Mostrar navegacao</button>
+
+<div class="reader-toast" id="readerToast" aria-live="polite"></div>
+
 <script>
     (function setupReader() {
         const shell = document.getElementById('readerShell');
         const page = document.getElementById('readerPage');
+        const contentEl = document.getElementById('readerContent');
         const titleEl = document.getElementById('readerTitle');
         const authorEl = document.getElementById('readerAuthor');
         const coverEl = document.getElementById('readerCover');
         const textEl = document.getElementById('readerText');
         const progressEl = document.getElementById('readerProgress');
+        const progressBarEl = document.getElementById('readerProgressBar');
+        const contextLabelEl = document.getElementById('readerContextLabel');
+        const contextProgressEl = document.getElementById('readerContextProgress');
+        const pageRangeEl = document.getElementById('pageRange');
+        const sectionsEl = document.getElementById('readerSections');
+        const bookmarksEl = document.getElementById('readerBookmarks');
+        const toastEl = document.getElementById('readerToast');
         const offlineStatusEl = document.getElementById('offlineStatus');
+        const metaPagesEl = document.getElementById('readerMetaPages');
+        const metaRemainingEl = document.getElementById('readerMetaRemaining');
+        const metaWordsEl = document.getElementById('readerMetaWords');
+        const metaSessionEl = document.getElementById('readerMetaSession');
+        const metaAutoplayEl = document.getElementById('readerMetaAutoplay');
+        const autoPlaySpeedEl = document.getElementById('autoPlaySpeed');
 
         const btnBack = document.getElementById('btnBack');
         const btnTheme = document.getElementById('btnTheme');
@@ -316,20 +851,267 @@
         const btnAudio = document.getElementById('btnAudio');
         const btnPrev = document.getElementById('btnPrev');
         const btnNext = document.getElementById('btnNext');
+        const btnFullscreen = document.getElementById('btnFullscreen');
+        const btnPinHeader = document.getElementById('btnPinHeader');
+        const btnRevealHeader = document.getElementById('btnRevealHeader');
+        const btnRevealFooter = document.getElementById('btnRevealFooter');
+        const btnFocus = document.getElementById('btnFocus');
+        const btnBookmark = document.getElementById('btnBookmark');
+        const btnAutoplay = document.getElementById('btnAutoplay');
 
         const THEME_KEY = 'wf_reader_theme';
         const FONT_KEY = 'wf_reader_font';
+        const FOCUS_KEY = 'wf_reader_focus_mode';
+        const PIN_HEADER_KEY = 'wf_reader_pin_header';
+        const AUTO_PLAY_SPEED_KEY = 'wf_reader_autoplay_speed';
 
         let book = null;
         let pages = [''];
+        let sections = [];
         let currentPage = 0;
         let fontSize = Number(localStorage.getItem(FONT_KEY) || '19') || 19;
         let darkMode = localStorage.getItem(THEME_KEY) === 'dark';
+        let focusMode = localStorage.getItem(FOCUS_KEY) === '1';
+        let pinHeader = localStorage.getItem(PIN_HEADER_KEY) === '1';
         let speaking = false;
+        let resizeTimer = 0;
+        let touchStartX = null;
+        let bookmarks = [];
+        let sessionSeconds = 0;
+        let sessionTimer = 0;
+        let toastTimer = 0;
+        let lastScrollY = Number(window.scrollY || 0);
+        let headerHidden = false;
+        let footerHidden = false;
+        let autoplayActive = false;
+        let autoplayTimer = 0;
+
+        function isMobileViewport() {
+            return Number(window.innerWidth || 0) <= 768;
+        }
+
+        function countWords(text) {
+            const clean = String(text || '').trim();
+            if (!clean) return 0;
+            return clean.split(/\s+/).filter(Boolean).length;
+        }
+
+        function formatClock(totalSeconds) {
+            const safe = Math.max(0, Number(totalSeconds || 0));
+            const mins = Math.floor(safe / 60);
+            const secs = safe % 60;
+            return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        }
+
+        function showToast(message) {
+            if (!toastEl) return;
+            toastEl.textContent = String(message || '').trim();
+            if (!toastEl.textContent) return;
+
+            toastEl.classList.add('show');
+            window.clearTimeout(toastTimer);
+            toastTimer = window.setTimeout(() => {
+                toastEl.classList.remove('show');
+            }, 1500);
+        }
+
+        function getAutoplayDelayMs() {
+            const fallback = 2400;
+            const raw = Number(autoPlaySpeedEl?.value || localStorage.getItem(AUTO_PLAY_SPEED_KEY) || fallback);
+            if (!Number.isFinite(raw)) return fallback;
+            return Math.max(1200, Math.min(10000, raw));
+        }
+
+        function hydrateAutoplaySpeed() {
+            if (!autoPlaySpeedEl) return;
+            const allowed = new Set(['5200', '3600', '2400', '1600']);
+            const saved = String(localStorage.getItem(AUTO_PLAY_SPEED_KEY) || '2400');
+            autoPlaySpeedEl.value = allowed.has(saved) ? saved : '2400';
+        }
+
+        function clearAutoplayTimer() {
+            if (!autoplayTimer) return;
+            window.clearTimeout(autoplayTimer);
+            autoplayTimer = 0;
+        }
+
+        function applyAutoplayUi() {
+            if (btnAutoplay) {
+                const icon = btnAutoplay.querySelector('.material-icons');
+                if (icon) {
+                    icon.textContent = autoplayActive ? 'pause' : 'play_arrow';
+                }
+                btnAutoplay.title = autoplayActive ? 'Pausar leitura automatica' : 'Iniciar leitura automatica';
+            }
+
+            if (metaAutoplayEl) {
+                const speed = getAutoplayDelayMs();
+                const speedText = speed <= 1700 ? 'turbo' : (speed <= 2600 ? 'rapida' : (speed <= 4200 ? 'equilibrada' : 'lenta'));
+                metaAutoplayEl.textContent = autoplayActive ? `Auto ativo (${speedText})` : 'Auto pausado';
+            }
+        }
+
+        function stopAutoplay(notify, message) {
+            if (!autoplayActive && !autoplayTimer) {
+                applyAutoplayUi();
+                return;
+            }
+
+            autoplayActive = false;
+            clearAutoplayTimer();
+            applyAutoplayUi();
+
+            if (notify) {
+                showToast(message || 'Leitura automatica pausada.');
+            }
+        }
+
+        function scheduleAutoplayTick() {
+            clearAutoplayTimer();
+            if (!autoplayActive) return;
+
+            autoplayTimer = window.setTimeout(() => {
+                if (!autoplayActive) return;
+
+                if (currentPage >= pages.length - 1) {
+                    stopAutoplay(false);
+                    showToast('Fim da leitura automatica.');
+                    return;
+                }
+
+                currentPage += 1;
+                renderPage(true, 'next');
+                scheduleAutoplayTick();
+            }, getAutoplayDelayMs());
+        }
+
+        function startAutoplay() {
+            if (!pages.length || currentPage >= pages.length - 1) {
+                showToast('Voce esta na ultima pagina.');
+                return;
+            }
+
+            autoplayActive = true;
+            applyAutoplayUi();
+            scheduleAutoplayTick();
+            showToast('Leitura automatica iniciada.');
+        }
+
+        function toggleAutoplay() {
+            if (autoplayActive) {
+                stopAutoplay(true, 'Leitura automatica pausada.');
+                return;
+            }
+            startAutoplay();
+        }
+
+        function stopAutoplayForManualAction() {
+            if (!autoplayActive) return;
+            stopAutoplay(true, 'Leitura automatica pausada por interacao manual.');
+        }
+
+        function setHeaderHidden(nextHidden, force) {
+            if (!shell) return;
+
+            if (pinHeader && !force) {
+                nextHidden = false;
+            }
+
+            if (headerHidden === nextHidden) return;
+            headerHidden = nextHidden;
+            shell.classList.toggle('header-hidden', headerHidden);
+        }
+
+        function setFooterHidden(nextHidden, force) {
+            if (!shell) return;
+
+            if (!isMobileViewport() && !force) {
+                nextHidden = false;
+            }
+
+            if (footerHidden === nextHidden) return;
+            footerHidden = nextHidden;
+            shell.classList.toggle('footer-hidden', footerHidden);
+        }
+
+        function applyPinHeaderState() {
+            localStorage.setItem(PIN_HEADER_KEY, pinHeader ? '1' : '0');
+
+            if (btnPinHeader) {
+                const icon = btnPinHeader.querySelector('.material-icons');
+                if (icon) {
+                    icon.textContent = pinHeader ? 'keep_off' : 'push_pin';
+                }
+                btnPinHeader.title = pinHeader ? 'Desfixar controles' : 'Fixar controles visiveis';
+            }
+
+            if (pinHeader) {
+                setHeaderHidden(false, true);
+            }
+        }
+
+        function handleWindowScroll() {
+            const currentY = Number(window.scrollY || 0);
+            const delta = currentY - lastScrollY;
+
+            if (pinHeader) {
+                setHeaderHidden(false, true);
+                lastScrollY = currentY;
+                return;
+            }
+
+            if (currentY < 72) {
+                setHeaderHidden(false);
+                lastScrollY = currentY;
+                return;
+            }
+
+            if (delta > 8) {
+                setHeaderHidden(true);
+            } else if (delta < -8) {
+                setHeaderHidden(false);
+            }
+
+            if (!isMobileViewport()) {
+                setFooterHidden(false, true);
+                lastScrollY = currentY;
+                return;
+            }
+
+            if (currentY < 96) {
+                setFooterHidden(false);
+                lastScrollY = currentY;
+                return;
+            }
+
+            if (delta > 10) {
+                setFooterHidden(true);
+            } else if (delta < -8) {
+                setFooterHidden(false);
+            }
+
+            lastScrollY = currentY;
+        }
 
         function readCurrentBook() {
             try {
                 return JSON.parse(localStorage.getItem('currentBook') || 'null');
+            } catch {
+                return null;
+            }
+        }
+
+        function readLatestOfflineBook() {
+            try {
+                const cache = JSON.parse(localStorage.getItem('wf_reader_offline_cache') || '{}');
+                const entries = Object.values(cache || {}).filter(Boolean);
+                if (!entries.length) return null;
+                entries.sort((a, b) => {
+                    const ta = new Date(a.updatedAt || 0).getTime();
+                    const tb = new Date(b.updatedAt || 0).getTime();
+                    return tb - ta;
+                });
+                return entries[0] || null;
             } catch {
                 return null;
             }
@@ -340,26 +1122,209 @@
             return `wf_reader_progress_${raw.slice(0, 120)}`;
         }
 
+        function getBookmarksKey(bookObj) {
+            return `wf_reader_bookmarks_${getBookKey(bookObj)}`;
+        }
+
         function splitIntoPages(text) {
             const content = String(text || '').trim();
-            if (!content) return ['Sem conteúdo para leitura.'];
+            if (!content) return ['Sem conteudo para leitura.'];
 
             const normalized = content.replace(/\r\n/g, '\n').replace(/\n{3,}/g, '\n\n');
             const chunks = [];
-            const maxChars = window.innerWidth < 640 ? 900 : (window.innerWidth < 900 ? 1200 : 1600);
+            const width = Number(window.innerWidth || 0);
+
+            const baseChars = width < 640 ? 780 : (width < 900 ? 1080 : 1500);
+            const fontFactor = Math.max(0.72, Math.min(1.25, 19 / Math.max(14, fontSize)));
+            const maxChars = Math.max(520, Math.round(baseChars * fontFactor));
 
             let start = 0;
             while (start < normalized.length) {
                 let end = Math.min(start + maxChars, normalized.length);
                 if (end < normalized.length) {
                     const boundary = normalized.lastIndexOf(' ', end);
-                    if (boundary > start + 300) end = boundary;
+                    if (boundary > start + 220) end = boundary;
                 }
                 chunks.push(normalized.slice(start, end).trim());
                 start = end;
             }
 
-            return chunks.length ? chunks : ['Sem conteúdo para leitura.'];
+            return chunks.length ? chunks : ['Sem conteudo para leitura.'];
+        }
+
+        function makeExcerpt(text, size) {
+            const clean = String(text || '').replace(/\s+/g, ' ').trim();
+            if (!clean) return 'Trecho';
+            if (clean.length <= size) return clean;
+            return `${clean.slice(0, size).trim()}...`;
+        }
+
+        function buildSections(pageList) {
+            const maxSections = Math.min(8, pageList.length);
+            if (!maxSections) return [];
+
+            const step = Math.max(1, Math.floor(pageList.length / maxSections));
+            const out = [];
+
+            for (let i = 0; i < pageList.length && out.length < maxSections; i += step) {
+                out.push({
+                    page: i,
+                    label: makeExcerpt(pageList[i], 42),
+                });
+            }
+
+            return out;
+        }
+
+        function getActiveSectionMeta(pageNumber) {
+            const safePage = Number.isFinite(pageNumber) ? pageNumber : currentPage;
+            if (!sections.length) {
+                return {
+                    index: 0,
+                    total: 1,
+                    page: safePage,
+                    label: 'Leitura',
+                };
+            }
+
+            let activeIndex = 0;
+            for (let i = 0; i < sections.length; i += 1) {
+                if (sections[i].page <= safePage) {
+                    activeIndex = i;
+                } else {
+                    break;
+                }
+            }
+
+            return {
+                index: activeIndex,
+                total: sections.length,
+                page: sections[activeIndex].page,
+                label: sections[activeIndex].label || `Capitulo ${activeIndex + 1}`,
+            };
+        }
+
+        function scrollChipIntoView(container, selector) {
+            if (!container || !isMobileViewport()) return;
+            const target = container.querySelector(selector);
+            if (!target) return;
+
+            target.scrollIntoView({
+                behavior: 'smooth',
+                block: 'nearest',
+                inline: 'center',
+            });
+        }
+
+        function updateBookmarkButtonState() {
+            if (!btnBookmark) return;
+            const icon = btnBookmark.querySelector('.material-icons');
+            const isMarked = bookmarks.some((row) => row.page === currentPage);
+            if (icon) {
+                icon.textContent = isMarked ? 'bookmark' : 'bookmark_add';
+            }
+            btnBookmark.title = isMarked ? 'Remover marcador' : 'Salvar marcador';
+        }
+
+        function persistBookmarks() {
+            if (!book) return;
+            localStorage.setItem(getBookmarksKey(book), JSON.stringify(bookmarks));
+        }
+
+        function loadBookmarks() {
+            if (!book) {
+                bookmarks = [];
+                return;
+            }
+
+            try {
+                const parsed = JSON.parse(localStorage.getItem(getBookmarksKey(book)) || '[]');
+                bookmarks = Array.isArray(parsed)
+                    ? parsed
+                        .map((row) => ({
+                            page: Number(row?.page || 0),
+                            label: String(row?.label || ''),
+                            createdAt: String(row?.createdAt || ''),
+                        }))
+                        .filter((row) => Number.isFinite(row.page) && row.page >= 0)
+                    : [];
+                bookmarks.sort((a, b) => a.page - b.page);
+            } catch {
+                bookmarks = [];
+            }
+        }
+
+        function renderBookmarks() {
+            if (!bookmarksEl) return;
+
+            if (!bookmarks.length) {
+                bookmarksEl.innerHTML = '';
+                updateBookmarkButtonState();
+                return;
+            }
+
+            bookmarksEl.innerHTML = bookmarks.map((mark) => {
+                const active = mark.page === currentPage;
+                const pageLabel = mark.page + 1;
+                const snippet = makeExcerpt(mark.label || `Pagina ${pageLabel}`, 28);
+                return `
+                    <span class="reader-bookmark-chip" data-active="${active ? 'true' : 'false'}">
+                        <button type="button" data-bookmark-page="${mark.page}" title="Abrir marcador ${pageLabel}">#${pageLabel}</button>
+                        <span title="${snippet}">${snippet}</span>
+                        <button type="button" data-bookmark-remove="${mark.page}" title="Remover marcador">x</button>
+                    </span>
+                `;
+            }).join('');
+
+            updateBookmarkButtonState();
+            window.requestAnimationFrame(() => {
+                scrollChipIntoView(bookmarksEl, '.reader-bookmark-chip[data-active="true"]');
+            });
+        }
+
+        function toggleCurrentBookmark() {
+            const existingIndex = bookmarks.findIndex((row) => row.page === currentPage);
+            if (existingIndex >= 0) {
+                bookmarks.splice(existingIndex, 1);
+                persistBookmarks();
+                renderBookmarks();
+                showToast('Marcador removido.');
+                return;
+            }
+
+            bookmarks.push({
+                page: currentPage,
+                label: pages[currentPage] || `Pagina ${currentPage + 1}`,
+                createdAt: new Date().toISOString(),
+            });
+            bookmarks.sort((a, b) => a.page - b.page);
+            persistBookmarks();
+            renderBookmarks();
+            showToast('Marcador salvo.');
+        }
+
+        function applyFocusMode() {
+            shell.classList.toggle('focus-mode', focusMode);
+            localStorage.setItem(FOCUS_KEY, focusMode ? '1' : '0');
+
+            if (btnFocus) {
+                const icon = btnFocus.querySelector('.material-icons');
+                if (icon) {
+                    icon.textContent = focusMode ? 'fullscreen_exit' : 'center_focus_strong';
+                }
+                btnFocus.title = focusMode ? 'Sair do foco' : 'Modo foco';
+            }
+        }
+
+        function startSessionTimer() {
+            window.clearInterval(sessionTimer);
+            sessionTimer = window.setInterval(() => {
+                if (document.hidden) return;
+                sessionSeconds += 1;
+                if (metaSessionEl) {
+                    metaSessionEl.textContent = `Sessao ${formatClock(sessionSeconds)}`;
+                }
+            }, 1000);
         }
 
         function persistProgress() {
@@ -401,12 +1366,14 @@
                 window.speechSynthesis.cancel();
             }
             speaking = false;
-            btnAudio.textContent = 'Ler em áudio';
+            btnAudio.textContent = 'Ler em audio';
         }
 
         function speakCurrentPage() {
+            stopAutoplayForManualAction();
+
             if (!('speechSynthesis' in window)) {
-                alert('Leitura em áudio não suportada neste navegador.');
+                alert('Leitura em audio nao suportada neste navegador.');
                 return;
             }
 
@@ -425,47 +1392,126 @@
             utter.pitch = 1;
             utter.onend = () => {
                 speaking = false;
-                btnAudio.textContent = 'Ler em áudio';
+                btnAudio.textContent = 'Ler em audio';
             };
             window.speechSynthesis.speak(utter);
             speaking = true;
-            btnAudio.textContent = 'Parar áudio';
+            btnAudio.textContent = 'Parar audio';
         }
 
-        function renderPage(animate = false) {
+        function estimateRemainingMinutes() {
+            const remaining = pages.slice(currentPage).join(' ');
+            const words = countWords(remaining);
+            const wpm = 180;
+            const mins = Math.max(1, Math.ceil(words / wpm));
+            return mins;
+        }
+
+        function renderSections() {
+            if (!sectionsEl) return;
+            if (!sections.length) {
+                sectionsEl.innerHTML = '';
+                return;
+            }
+
+            const activeSectionPage = getActiveSectionMeta(currentPage).page;
+
+            sectionsEl.innerHTML = sections.map((section) => `
+                <button
+                    type="button"
+                    class="reader-section-chip ${activeSectionPage === section.page ? 'active' : ''}"
+                    data-section-page="${section.page}"
+                    title="Ir para pagina ${section.page + 1}"
+                >
+                    ${section.label}
+                </button>
+            `).join('');
+
+            window.requestAnimationFrame(() => {
+                scrollChipIntoView(sectionsEl, '.reader-section-chip.active');
+            });
+        }
+
+        function renderPage(animate = false, direction = 'next') {
             if (animate) {
-                page.classList.add('slide');
+                page.classList.remove('slide-next', 'slide-prev');
+                page.classList.add(direction === 'prev' ? 'slide-prev' : 'slide-next');
                 setTimeout(() => {
                     textEl.textContent = pages[currentPage] || '';
-                    page.classList.remove('slide');
-                }, 120);
+                    page.classList.remove('slide-next', 'slide-prev');
+                }, 110);
             } else {
                 textEl.textContent = pages[currentPage] || '';
             }
 
             textEl.style.fontSize = `${fontSize}px`;
-            progressEl.textContent = `Página ${currentPage + 1} de ${pages.length}`;
+
+            const total = pages.length;
+            const current = currentPage + 1;
+            const percentage = total > 1 ? (currentPage / (total - 1)) * 100 : 100;
+            const percentRounded = Math.max(0, Math.min(100, Math.round(percentage)));
+            const activeSection = getActiveSectionMeta(currentPage);
+
+            progressEl.textContent = `Pagina ${current} de ${total}`;
+            progressBarEl.style.width = `${percentage}%`;
+
+            if (contextLabelEl) {
+                contextLabelEl.textContent = `Capitulo ${activeSection.index + 1}/${activeSection.total}: ${makeExcerpt(activeSection.label, 52)}`;
+            }
+
+            if (contextProgressEl) {
+                contextProgressEl.textContent = `${percentRounded}% concluido`;
+            }
+
+            pageRangeEl.max = String(total);
+            pageRangeEl.value = String(current);
+
+            metaPagesEl.textContent = `Pagina ${current}/${total}`;
+            metaRemainingEl.textContent = `${estimateRemainingMinutes()} min restantes`;
+            metaWordsEl.textContent = `${countWords(pages[currentPage])} palavras`;
+            applyAutoplayUi();
 
             btnPrev.disabled = currentPage <= 0;
-            btnNext.disabled = currentPage >= pages.length - 1;
+            btnNext.disabled = currentPage >= total - 1;
 
             localStorage.setItem(FONT_KEY, String(fontSize));
             persistProgress();
+            renderSections();
+            renderBookmarks();
             stopSpeech();
         }
 
+        function repaginatePreservingPosition() {
+            if (!book) return;
+            const oldTotal = pages.length;
+            const ratio = oldTotal > 1 ? currentPage / (oldTotal - 1) : 0;
+
+            pages = splitIntoPages(book.text || '');
+            sections = buildSections(pages);
+
+            const nextTotal = pages.length;
+            currentPage = nextTotal > 1
+                ? Math.max(0, Math.min(nextTotal - 1, Math.round(ratio * (nextTotal - 1))))
+                : 0;
+
+            renderPage();
+        }
+
         function openBook() {
-            book = readCurrentBook();
+            stopAutoplay(false);
+
+            book = readCurrentBook() || readLatestOfflineBook();
             if (!book) {
                 titleEl.textContent = 'Nenhum livro selecionado';
                 authorEl.textContent = 'Abra a Biblioteca e escolha um card';
-                pages = ['Nenhum conteúdo disponível para leitura.'];
+                pages = ['Nenhum conteudo disponivel para leitura.'];
+                sections = [];
                 currentPage = 0;
                 renderPage();
                 return;
             }
 
-            titleEl.textContent = book.title || 'Título';
+            titleEl.textContent = book.title || 'Titulo';
             authorEl.textContent = book.author || 'Autor';
 
             if (book.cover) {
@@ -476,9 +1522,14 @@
             }
 
             pages = splitIntoPages(book.text || '');
+            sections = buildSections(pages);
             loadProgress();
+            loadBookmarks();
+            sessionSeconds = 0;
+            if (metaSessionEl) {
+                metaSessionEl.textContent = 'Sessao 00:00';
+            }
 
-            // cache local para leitura offline do livro aberto
             try {
                 const cache = JSON.parse(localStorage.getItem('wf_reader_offline_cache') || '{}');
                 cache[getBookKey(book)] = {
@@ -497,53 +1548,217 @@
         }
 
         btnBack.addEventListener('click', () => {
-            window.history.back();
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                window.location.href = '/library';
+            }
+        });
+
+        btnFullscreen.addEventListener('click', async () => {
+            try {
+                if (!document.fullscreenElement) {
+                    await shell.requestFullscreen();
+                } else {
+                    await document.exitFullscreen();
+                }
+            } catch {
+                // fallback silencioso
+            }
+        });
+
+        btnPinHeader.addEventListener('click', () => {
+            pinHeader = !pinHeader;
+            applyPinHeaderState();
+            showToast(pinHeader ? 'Controles fixados.' : 'Auto-ocultacao ativa.');
+        });
+
+        btnRevealHeader.addEventListener('click', () => {
+            setHeaderHidden(false, true);
+            showToast('Controles exibidos.');
+        });
+
+        btnRevealFooter.addEventListener('click', () => {
+            setFooterHidden(false, true);
+            showToast('Navegacao exibida.');
         });
 
         btnTheme.addEventListener('click', () => {
             darkMode = !darkMode;
             shell.classList.toggle('dark', darkMode);
             localStorage.setItem(THEME_KEY, darkMode ? 'dark' : 'light');
+            showToast(darkMode ? 'Modo escuro ativo.' : 'Modo claro ativo.');
+        });
+
+        btnFocus.addEventListener('click', () => {
+            stopAutoplayForManualAction();
+            focusMode = !focusMode;
+            applyFocusMode();
+            showToast(focusMode ? 'Modo foco ativo.' : 'Modo foco desativado.');
+        });
+
+        btnBookmark.addEventListener('click', () => {
+            stopAutoplayForManualAction();
+            toggleCurrentBookmark();
+        });
+
+        btnAutoplay.addEventListener('click', () => {
+            toggleAutoplay();
+        });
+
+        autoPlaySpeedEl.addEventListener('change', () => {
+            localStorage.setItem(AUTO_PLAY_SPEED_KEY, String(getAutoplayDelayMs()));
+            applyAutoplayUi();
+
+            if (autoplayActive) {
+                scheduleAutoplayTick();
+                showToast('Velocidade automatica atualizada.');
+            }
         });
 
         btnFontUp.addEventListener('click', () => {
+            stopAutoplayForManualAction();
             fontSize = Math.min(30, fontSize + 2);
-            renderPage();
+            repaginatePreservingPosition();
         });
 
         btnFontDown.addEventListener('click', () => {
+            stopAutoplayForManualAction();
             fontSize = Math.max(14, fontSize - 2);
-            renderPage();
+            repaginatePreservingPosition();
         });
 
         btnAudio.addEventListener('click', speakCurrentPage);
 
         btnPrev.addEventListener('click', () => {
             if (currentPage <= 0) return;
+            stopAutoplayForManualAction();
             currentPage -= 1;
-            renderPage(true);
+            renderPage(true, 'prev');
         });
 
         btnNext.addEventListener('click', () => {
             if (currentPage >= pages.length - 1) return;
+            stopAutoplayForManualAction();
             currentPage += 1;
-            renderPage(true);
+            renderPage(true, 'next');
         });
 
+        pageRangeEl.addEventListener('input', (event) => {
+            stopAutoplayForManualAction();
+            const pageNumber = Number(event.target.value || '1');
+            currentPage = Math.max(0, Math.min(pages.length - 1, pageNumber - 1));
+            renderPage();
+        });
+
+        if (sectionsEl) {
+            sectionsEl.addEventListener('click', (event) => {
+                const btn = event.target.closest('[data-section-page]');
+                if (!btn) return;
+                stopAutoplayForManualAction();
+                const pageNumber = Number(btn.getAttribute('data-section-page') || '0');
+                const direction = pageNumber < currentPage ? 'prev' : 'next';
+                currentPage = Math.max(0, Math.min(pages.length - 1, pageNumber));
+                renderPage(true, direction);
+            });
+        }
+
+        if (bookmarksEl) {
+            bookmarksEl.addEventListener('click', (event) => {
+                const removeBtn = event.target.closest('[data-bookmark-remove]');
+                if (removeBtn) {
+                    stopAutoplayForManualAction();
+                    const pageNumber = Number(removeBtn.getAttribute('data-bookmark-remove') || '-1');
+                    bookmarks = bookmarks.filter((row) => row.page !== pageNumber);
+                    persistBookmarks();
+                    renderBookmarks();
+                    showToast('Marcador removido.');
+                    return;
+                }
+
+                const jumpBtn = event.target.closest('[data-bookmark-page]');
+                if (!jumpBtn) return;
+                stopAutoplayForManualAction();
+                const pageNumber = Number(jumpBtn.getAttribute('data-bookmark-page') || '0');
+                const direction = pageNumber < currentPage ? 'prev' : 'next';
+                currentPage = Math.max(0, Math.min(pages.length - 1, pageNumber));
+                renderPage(true, direction);
+            });
+        }
+
         document.addEventListener('keydown', (event) => {
+            const tag = String(document.activeElement?.tagName || '').toLowerCase();
+            if (tag === 'input' || tag === 'textarea') return;
+
             if (event.key === 'ArrowRight') {
                 btnNext.click();
             } else if (event.key === 'ArrowLeft') {
                 btnPrev.click();
+            } else if (event.key.toLowerCase() === 'f') {
+                btnFullscreen.click();
+            } else if (event.key.toLowerCase() === 'm') {
+                btnFocus.click();
+            } else if (event.key.toLowerCase() === 'b') {
+                btnBookmark.click();
+            } else if (event.key.toLowerCase() === 'p') {
+                btnAutoplay.click();
             }
         });
 
+        if (contentEl) {
+            contentEl.addEventListener('touchstart', (event) => {
+                touchStartX = Number(event.changedTouches?.[0]?.clientX || 0);
+                if (isMobileViewport()) {
+                    setFooterHidden(false);
+                }
+            }, { passive: true });
+
+            contentEl.addEventListener('touchend', (event) => {
+                if (touchStartX === null) return;
+                const endX = Number(event.changedTouches?.[0]?.clientX || 0);
+                const delta = endX - touchStartX;
+                touchStartX = null;
+
+                if (Math.abs(delta) < 60) return;
+                if (delta < 0) {
+                    btnNext.click();
+                } else {
+                    btnPrev.click();
+                }
+            }, { passive: true });
+        }
+
         window.addEventListener('online', updateOfflineStatus);
         window.addEventListener('offline', updateOfflineStatus);
+        window.addEventListener('scroll', handleWindowScroll, { passive: true });
 
+        window.addEventListener('resize', () => {
+            window.clearTimeout(resizeTimer);
+            resizeTimer = window.setTimeout(repaginatePreservingPosition, 150);
+
+            if (!isMobileViewport()) {
+                setFooterHidden(false, true);
+            }
+        });
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                stopAutoplay(false);
+                stopSpeech();
+                setHeaderHidden(false, true);
+                setFooterHidden(false, true);
+            }
+        });
+
+        hydrateAutoplaySpeed();
         shell.classList.toggle('dark', darkMode);
+        applyFocusMode();
+        applyPinHeaderState();
+        setFooterHidden(false, true);
         updateOfflineStatus();
         openBook();
+        applyAutoplayUi();
+        startSessionTimer();
     })();
 </script>
 {% endblock %}
