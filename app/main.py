@@ -899,8 +899,27 @@ async def store_home(request: Request, category: str | None = None, q: str | Non
         
     products = query.order_by(Product.is_featured.desc(), Product.created_at.desc()).all()
     categories = db.query(ProductCategory).filter(ProductCategory.is_active == True).all()
+    categories_payload = [
+        {
+            "id": item.id,
+            "name": item.name,
+            "slug": item.slug,
+            "icon": item.icon,
+            "description": item.description,
+            "is_active": bool(item.is_active),
+        }
+        for item in categories
+    ]
     
-    return _render_template("store/index.html", request, products=products, categories=categories, current_user=current_user, search_query=q, active_category=category)
+    return _render_template(
+        "store/index.html",
+        request,
+        products=products,
+        categories=categories_payload,
+        current_user=current_user,
+        search_query=q,
+        active_category=category,
+    )
 
 @app.get("/store/product/{slug}")
 async def product_detail(slug: str, request: Request, db: Session = Depends(get_db), current_user: User = Depends(get_current_user_optional)):

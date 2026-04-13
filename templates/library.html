@@ -1013,7 +1013,7 @@
             if (!allowed) return;
 
             try {
-                await apiRequest(`/library/catalog/${encodeURIComponent(String(bookId))}`, 'DELETE');
+                await apiRequest(`/api/library/catalog/${encodeURIComponent(String(bookId))}`, 'DELETE');
                 closeDetail();
                 await loadCatalog();
                 setFeedback('Leitura removida do catalogo.', 'ok');
@@ -1044,8 +1044,8 @@
             const editingId = String(editingIdEl?.value || '').trim();
             const method = editingId ? 'PUT' : 'POST';
             const endpoint = editingId
-                ? `/library/catalog/${encodeURIComponent(editingId)}`
-                : '/library/catalog';
+                ? `/api/library/catalog/${encodeURIComponent(editingId)}`
+                : '/api/library/catalog';
 
             try {
                 await apiRequest(endpoint, method, payload);
@@ -1172,7 +1172,7 @@
 
         async function loadCatalog() {
             try {
-                const data = await apiRequest('/library/catalog', 'GET');
+                const data = await apiRequest('/api/library/catalog', 'GET');
                 const items = Array.isArray(data?.items) ? data.items : [];
                 state.catalog = items.map(normalizeBook);
                 renderFilters();
