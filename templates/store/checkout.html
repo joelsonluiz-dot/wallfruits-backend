@@ -21,8 +21,19 @@
     .checkp-page {
         display: grid;
         gap: 16px;
+        width: 100%;
+        min-width: 0;
         font-family: "Manrope", "Segoe UI", sans-serif;
         color: var(--check-gray-800);
+        -webkit-text-size-adjust: 100%;
+        text-size-adjust: 100%;
+    }
+
+    .checkp-page,
+    .checkp-page *,
+    .checkp-page *::before,
+    .checkp-page *::after {
+        box-sizing: border-box;
     }
 
     .checkp-header {
@@ -81,6 +92,8 @@
         display: grid;
         grid-template-columns: 1fr;
         gap: 14px;
+        width: 100%;
+        min-width: 0;
     }
 
     .checkp-card {
@@ -90,6 +103,8 @@
         backdrop-filter: blur(12px);
         box-shadow: var(--check-shadow);
         padding: 14px;
+        width: 100%;
+        min-width: 0;
     }
 
     .checkp-title {
@@ -103,11 +118,13 @@
         display: grid;
         grid-template-columns: 1fr;
         gap: 10px;
+        min-width: 0;
     }
 
     .checkp-field {
         display: grid;
         gap: 5px;
+        min-width: 0;
     }
 
     .checkp-label {
@@ -216,6 +233,7 @@
         border-bottom: 1px solid #E2E8F0;
         font-size: 0.8rem;
         color: #334155;
+        min-width: 0;
     }
 
     .checkp-item:last-child {
@@ -287,6 +305,12 @@
         }
     }
 
+    @media (min-width: 640px) {
+        .checkp-actions {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
     @media (min-width: 860px) {
         .checkp-grid {
             grid-template-columns: 1fr 1fr;
@@ -294,6 +318,18 @@
 
         .checkp-grid .full {
             grid-column: 1 / -1;
+        }
+    }
+
+    @media (min-width: 860px) and (max-width: 1023px) {
+        .checkp-wrap {
+            grid-template-columns: 1.12fr 0.88fr;
+            align-items: start;
+        }
+
+        .checkp-card.sticky {
+            position: sticky;
+            top: 96px;
         }
     }
 
@@ -306,6 +342,56 @@
         .checkp-card.sticky {
             position: sticky;
             top: 102px;
+        }
+    }
+
+    @media (max-width: 767px) {
+        .checkp-header {
+            align-items: flex-start;
+        }
+
+        .checkp-header-actions {
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .checkp-link {
+            text-align: center;
+        }
+
+        .checkp-summary-head {
+            align-items: flex-start;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .checkp-item {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 3px;
+        }
+
+        .checkp-input,
+        .checkp-select {
+            font-size: 16px;
+            min-height: 44px;
+        }
+
+        .checkp-btn,
+        .checkp-link {
+            min-height: 44px;
+            font-size: 0.84rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .checkp-header-actions {
+            grid-template-columns: 1fr;
         }
     }
 </style>

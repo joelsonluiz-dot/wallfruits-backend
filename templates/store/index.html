@@ -41,11 +41,23 @@
 		color: var(--loja-gray-900);
 		font-family: "Manrope", "Segoe UI", sans-serif;
 		padding-bottom: calc(var(--loja-grid) * 6);
+		width: 100%;
+		min-width: 0;
+		-webkit-text-size-adjust: 100%;
+		text-size-adjust: 100%;
+	}
+
+	.loja-page,
+	.loja-page *,
+	.loja-page *::before,
+	.loja-page *::after {
+		box-sizing: border-box;
 	}
 
 	.loja-shell {
 		display: grid;
 		gap: calc(var(--loja-grid) * 2);
+		min-width: 0;
 	}
 
 	.loja-aside {
@@ -55,6 +67,7 @@
 	.loja-main {
 		display: grid;
 		gap: calc(var(--loja-grid) * 2);
+		min-width: 0;
 	}
 
 	.loja-header {
@@ -552,7 +565,7 @@
 
 	.loja-section-grid {
 		display: grid;
-		grid-template-columns: repeat(2, minmax(0, 1fr));
+		grid-template-columns: 1fr;
 		gap: calc(var(--loja-grid) * 1.5);
 	}
 
@@ -948,7 +961,183 @@
 		to { opacity: 1; transform: translateY(0); }
 	}
 
-	@media (min-width: 700px) {
+	@media (max-width: 639px) {
+		.loja-page {
+			gap: calc(var(--loja-grid) * 1.5);
+			overflow-x: clip;
+			padding-inline: 2px;
+		}
+
+		.loja-header {
+			top: 6px;
+			border-radius: 16px;
+		}
+
+		.loja-header-inner {
+			gap: 8px;
+			padding: 10px;
+		}
+
+		.loja-back-btn,
+		.loja-icon-btn {
+			width: 34px;
+			height: 34px;
+			border-radius: 11px;
+		}
+
+		.loja-header-actions {
+			gap: 4px;
+		}
+
+		.loja-brand-title {
+			font-size: 0.92rem;
+		}
+
+		.loja-brand-sub {
+			font-size: 0.68rem;
+		}
+
+		.loja-panel,
+		.loja-section {
+			padding: 10px;
+			border-radius: 14px;
+		}
+
+		.loja-search-shell {
+			grid-template-columns: 1fr;
+		}
+
+		.loja-search-btn {
+			width: 100%;
+			min-width: 0;
+			min-height: 44px;
+			font-size: 0.95rem;
+		}
+
+		.loja-search-input,
+		.loja-filter-select {
+			font-size: 16px;
+		}
+
+		.loja-filter-select {
+			min-height: 44px;
+		}
+
+		.loja-banner {
+			min-height: 170px;
+		}
+
+		.loja-banner-content {
+			padding: 14px;
+		}
+
+		.loja-banner-content h2 {
+			font-size: 1.18rem;
+		}
+
+		.loja-banner-content p {
+			font-size: 0.9rem;
+		}
+
+		.loja-section-head {
+			align-items: flex-start;
+			flex-direction: column;
+			gap: 6px;
+		}
+
+		.loja-card-actions {
+			grid-template-columns: 1fr 1fr;
+			gap: 10px;
+		}
+
+		.loja-card-actions .loja-btn.detail {
+			grid-column: 1 / -1;
+			min-height: 36px;
+		}
+
+		.loja-card-category {
+			font-size: 0.72rem;
+		}
+
+		.loja-card-name {
+			font-size: 0.94rem;
+			line-height: 1.4;
+		}
+
+		.loja-proof-row {
+			font-size: 0.78rem;
+		}
+
+		.loja-price-main {
+			font-size: 1.14rem;
+		}
+
+		.loja-btn {
+			min-height: 44px;
+			font-size: 0.82rem;
+		}
+
+		.loja-toast-wrap {
+			right: 10px;
+			left: 10px;
+			bottom: 12px;
+		}
+
+		.loja-toast {
+			max-width: none;
+			min-width: 0;
+		}
+	}
+
+	@media (min-width: 640px) {
+		.loja-section-grid {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+
+		.loja-filter-grid {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+
+	@media (min-width: 768px) and (max-width: 1279px) {
+		.loja-aside {
+			display: flex;
+			gap: 8px;
+			overflow-x: auto;
+			padding: 2px 0;
+			scroll-snap-type: x proximity;
+		}
+
+		.loja-aside-link {
+			border: 1px solid rgba(209, 213, 219, 0.84);
+			border-radius: 12px;
+			background: rgba(255, 255, 255, 0.9);
+			color: #334155;
+			text-decoration: none;
+			font-size: 0.8rem;
+			font-weight: 800;
+			padding: 10px 12px;
+			display: inline-flex;
+			align-items: center;
+			gap: 8px;
+			white-space: nowrap;
+			scroll-snap-align: start;
+		}
+
+		.loja-header {
+			top: 10px;
+		}
+
+		.loja-header-inner {
+			padding: 12px 14px;
+		}
+
+		.loja-banner {
+			min-height: 204px;
+		}
+	}
+
+	@media (min-width: 1024px) {
 		.loja-filter-grid {
 			grid-template-columns: repeat(3, minmax(0, 1fr));
 		}
@@ -966,20 +1155,14 @@
 		}
 	}
 
-	@media (min-width: 1024px) {
-		.loja-section-grid {
-			grid-template-columns: repeat(4, minmax(0, 1fr));
-		}
-
-		.loja-header-inner {
-			padding: 14px 16px;
-		}
-	}
-
 	@media (min-width: 1280px) {
 		.loja-shell {
 			grid-template-columns: 260px minmax(0, 1fr);
 			align-items: start;
+		}
+
+		.loja-section-grid {
+			grid-template-columns: repeat(4, minmax(0, 1fr));
 		}
 
 		.loja-aside {
