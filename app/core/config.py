@@ -286,16 +286,29 @@ def get_settings() -> Settings:
         raise RuntimeError("SECRET_KEY padrão não pode ser usada em produção")
 
     if env_lower in {"prod", "production"} and settings.SECURITY_ENFORCE_PRODUCTION_HARDENING:
+        import sys
+
+        # Fallback de hardening para evitar downtime por env faltante.
+        # Em produção, forçamos defaults seguros e registramos aviso.
         if settings.DEBUG:
-            raise RuntimeError("DEBUG deve estar desabilitado em produção")
+            print("AVISO: DEBUG=true em produção; forçando DEBUG=false.", file=sys.stderr)
+            settings.DEBUG = False
+
         if not settings.RATE_LIMIT_ENABLED:
-            raise RuntimeError("RATE_LIMIT_ENABLED deve estar habilitado em produção")
+            print("AVISO: RATE_LIMIT_ENABLED=false em produção; forçando true.", file=sys.stderr)
+            settings.RATE_LIMIT_ENABLED = True
+
         if not settings.JWT_REQUIRE_ISSUER:
-            raise RuntimeError("JWT_REQUIRE_ISSUER deve estar habilitado em produção")
+            print("AVISO: JWT_REQUIRE_ISSUER=false em produção; forçando true.", file=sys.stderr)
+            settings.JWT_REQUIRE_ISSUER = True
+
         if not settings.JWT_REQUIRE_AUDIENCE:
-            raise RuntimeError("JWT_REQUIRE_AUDIENCE deve estar habilitado em produção")
+            print("AVISO: JWT_REQUIRE_AUDIENCE=false em produção; forçando true.", file=sys.stderr)
+            settings.JWT_REQUIRE_AUDIENCE = True
+
         if not settings.AI_ENFORCE_SUBSCRIPTION_GUARDRAILS:
-            raise RuntimeError("AI_ENFORCE_SUBSCRIPTION_GUARDRAILS deve estar habilitado em produção")
+            print("AVISO: AI_ENFORCE_SUBSCRIPTION_GUARDRAILS=false em produção; forçando true.", file=sys.stderr)
+            settings.AI_ENFORCE_SUBSCRIPTION_GUARDRAILS = True
     
     # Validações adicionais
     if settings.SECRET_KEY == "wallfruits_super_secret_key_change_in_production":
