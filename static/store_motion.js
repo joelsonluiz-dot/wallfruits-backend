@@ -226,6 +226,8 @@
         var isSmallViewport = width > 0 && width < 1024;
         var isCoarsePointer = false;
         var saveData = false;
+        var effectiveType = "";
+        var downlink = numberOrFallback(window.navigator && window.navigator.connection && window.navigator.connection.downlink, NaN);
         var deviceMemory = numberOrFallback(window.navigator && window.navigator.deviceMemory, NaN);
         var hardwareConcurrency = numberOrFallback(window.navigator && window.navigator.hardwareConcurrency, NaN);
 
@@ -241,11 +243,21 @@
             saveData = false;
         }
 
+        try {
+            effectiveType = String(window.navigator && window.navigator.connection && window.navigator.connection.effectiveType || "").toLowerCase();
+        } catch (error) {
+            effectiveType = "";
+        }
+
         var lowMemory = Number.isFinite(deviceMemory) && deviceMemory > 0 && deviceMemory <= 4;
         var lowCpu = Number.isFinite(hardwareConcurrency) && hardwareConcurrency > 0 && hardwareConcurrency <= 4;
+        var veryLowMemory = Number.isFinite(deviceMemory) && deviceMemory > 0 && deviceMemory <= 2;
+        var veryLowCpu = Number.isFinite(hardwareConcurrency) && hardwareConcurrency > 0 && hardwareConcurrency <= 2;
 
         var tier = "high";
-        if (reducedMotion || saveData || lowMemory || lowCpu) {
+        if (reducedMotion || saveData || effectiveType.indexOf("2g") >= 0 || veryLowMemory || veryLowCpu) {
+            tier = "ultra-low";
+        } else if (effectiveType.indexOf("3g") >= 0 || lowMemory || lowCpu) {
             tier = "low";
         } else if (isSmallViewport || isCoarsePointer || isTabletViewport || isMobileViewport) {
             tier = "medium";
@@ -258,6 +270,8 @@
             isTabletViewport: isTabletViewport,
             isCoarsePointer: isCoarsePointer,
             saveData: saveData,
+            effectiveType: effectiveType,
+            downlink: downlink,
             deviceMemory: deviceMemory,
             hardwareConcurrency: hardwareConcurrency,
             reducedMotion: reducedMotion
@@ -290,7 +304,19 @@
         var adapted = sanitizeProfile(profile);
         var tier = hints && hints.tier ? hints.tier : "high";
 
-        if (tier === "low") {
+        if (tier === "ultra-low") {
+            adapted.delayStep = 0;
+            adapted.maxDelay = 0;
+            adapted.threshold = clamp(adapted.threshold + 0.14, 0, 1);
+            adapted.autoRefreshThrottle = Math.max(adapted.autoRefreshThrottle, 280);
+            adapted.enableRipple = false;
+            adapted.revealDistancePx = 0;
+            adapted.revealScale = 1;
+            adapted.opacityDurationMs = 120;
+            adapted.transformDurationMs = 130;
+            adapted.pressScale = 1;
+            adapted.rippleColor = "rgba(255,255,255,0.14)";
+        } else if (tier === "low") {
             adapted.delayStep = 0;
             adapted.maxDelay = Math.min(adapted.maxDelay, 120);
             adapted.threshold = clamp(adapted.threshold + 0.1, 0, 1);

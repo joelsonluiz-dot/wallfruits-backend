@@ -1317,6 +1317,7 @@
     let pendingFreshOffers = 0;
     let userGeo = null;
     let offersCardDelegationBound = false;
+    let offersVirtualList = null;
     const offersFeedState = {
         skip: 0,
         hasMore: true,
@@ -2782,6 +2783,72 @@
         }
 
         bindCardOpenBehavior();
+        syncOffersVirtualization();
+        primeOffersMedia(items);
+    }
+
+    function ensureOffersVirtualization() {
+        if (offersVirtualList) {
+            return offersVirtualList;
+        }
+
+        if (typeof window.wfCreateVirtualList !== 'function') {
+            return null;
+        }
+
+        const container = document.getElementById('offersContainer');
+        if (!container) {
+            return null;
+        }
+
+        offersVirtualList = window.wfCreateVirtualList({
+            container,
+            itemSelector: '.produto-card',
+            estimateHeight: 420,
+            overscanPx: 1150,
+            minItems: 72,
+            maxVisible: 180,
+        });
+
+        return offersVirtualList;
+    }
+
+    function syncOffersVirtualization() {
+        const virtualList = ensureOffersVirtualization();
+        if (!virtualList) return;
+        virtualList.refresh({ forceMeasure: true });
+    }
+
+    function primeOffersMedia(items = []) {
+        if (typeof window.wfPrimeMedia !== 'function') return;
+        if (!Array.isArray(items) || !items.length) return;
+
+        const media = items
+            .map((offer) => getOfferImage(offer))
+            .filter(Boolean);
+
+        if (!media.length) return;
+
+        const highPriority = media.slice(0, 4);
+        const prebuffer = media.slice(4, 14);
+
+        if (highPriority.length) {
+            window.wfPrimeMedia(highPriority, {
+                type: 'image',
+                budget: highPriority.length,
+                priority: 'high',
+                timeout: 1200,
+            });
+        }
+
+        if (prebuffer.length) {
+            window.wfPrimeMedia(prebuffer, {
+                type: 'image',
+                budget: prebuffer.length,
+                priority: 'low',
+                timeout: 2200,
+            });
+        }
     }
 
     async function refreshFirstOffersPage(expectedSignature) {
@@ -3006,6 +3073,20 @@
             const data = await apiRequest('/store/featured?limit=6');
             const products = Array.isArray(data?.products) ? data.products : [];
 
+            if (typeof window.wfPrimeMedia === 'function' && products.length) {
+                window.wfPrimeMedia(
+                    products
+                        .map((product) => getStoreProductImage(product))
+                        .filter(Boolean),
+                    {
+                        type: 'image',
+                        budget: 8,
+                        priority: 'low',
+                        timeout: 2400,
+                    }
+                );
+            }
+
             if (!products.length) {
                 container.innerHTML = '<div class="wf-alert wf-alert-info" style="min-width:100%;">Sem produtos em destaque no momento.</div>';
                 return;
@@ -3200,6 +3281,10 @@
         }
         if (offersRefreshTimer) {
             window.clearInterval(offersRefreshTimer);
+        }
+        if (offersVirtualList && typeof offersVirtualList.disconnect === 'function') {
+            offersVirtualList.disconnect();
+            offersVirtualList = null;
         }
     });
 </script>

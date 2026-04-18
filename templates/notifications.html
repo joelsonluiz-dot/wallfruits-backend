@@ -222,6 +222,7 @@
     let notifRefreshPaused = false;
     let notifRefreshIntervalMs = NOTIF_AUTO_REFRESH_DEFAULT_MS;
     let notifUnreadServerCount = 0;
+    let notifVirtualList = null;
 
     function notifRequest(url, method = 'GET', data = null, options = {}) {
         return apiRequest(url, {
@@ -535,6 +536,38 @@
         `;
     }
 
+    function ensureNotifVirtualization() {
+        if (notifVirtualList) {
+            return notifVirtualList;
+        }
+
+        if (typeof window.wfCreateVirtualList !== 'function') {
+            return null;
+        }
+
+        const listEl = document.getElementById('notifList');
+        if (!listEl) {
+            return null;
+        }
+
+        notifVirtualList = window.wfCreateVirtualList({
+            container: listEl,
+            itemSelector: '.notif-item',
+            estimateHeight: 116,
+            overscanPx: 900,
+            minItems: 64,
+            maxVisible: 190,
+        });
+
+        return notifVirtualList;
+    }
+
+    function syncNotifVirtualization() {
+        const virtualList = ensureNotifVirtualization();
+        if (!virtualList) return;
+        virtualList.refresh({ forceMeasure: true });
+    }
+
     async function fetchNotifPage(skip, limit = NOTIF_PAGE_SIZE) {
         if (notifFeedState.prefetch && notifFeedState.prefetch.skip === skip) {
             if (notifFeedState.prefetch.request) {
@@ -704,6 +737,8 @@
             }
         }
 
+        syncNotifVirtualization();
+
         if (animate) {
             requestAnimationFrame(animateNotificationCards);
         }
@@ -849,6 +884,10 @@
     window.addEventListener('beforeunload', () => {
         if (notifRefreshTimer) {
             window.clearInterval(notifRefreshTimer);
+        }
+        if (notifVirtualList && typeof notifVirtualList.disconnect === 'function') {
+            notifVirtualList.disconnect();
+            notifVirtualList = null;
         }
     });
 </script>

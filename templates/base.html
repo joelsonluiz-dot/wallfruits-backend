@@ -144,6 +144,22 @@
             contain-intrinsic-size: 260px;
         }
 
+        .wf-vlist-spacer {
+            width: 100%;
+            pointer-events: none;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: 0 !important;
+            background: transparent !important;
+            content-visibility: auto;
+            contain-intrinsic-size: 1px;
+        }
+
+        .wf-vlist-spacer[data-wf-vlist-spacer="top"],
+        .wf-vlist-spacer[data-wf-vlist-spacer="bottom"] {
+            grid-column: 1 / -1;
+        }
+
         /* 🌌 Super Aurora Background */
         body::before {
             content: '';
@@ -2486,15 +2502,46 @@
         const WF_FAST_NAV_BREAKPOINT = 992;
         const WF_GET_CACHE_TTL_MS = 45000;
         const WF_GET_CACHE_PERSIST_TTL_MS = 240000;
+        const WF_GET_CACHE_STALE_IF_ERROR_MS = 20 * 60 * 1000;
+        const WF_GET_CACHE_MAX_ITEMS = 160;
         const WF_GET_CACHE_SESSION_KEY = 'wf_get_cache_v1';
         const WF_GET_CACHE = new Map();
         const WF_INFLIGHT_GET = new Map();
         const WF_PREFETCHED_PAGES = new Set();
+        const WF_PREFETCHED_APIS = new Set();
         const WF_PREFETCH_LINKS = new Set();
         const WF_SUPPORTS_PREFETCH_LINK = (() => {
             const probe = document.createElement('link');
             return Boolean(probe.relList && probe.relList.supports && probe.relList.supports('prefetch'));
         })();
+        const WF_SUPPORTS_SPECULATION_RULES = (() => {
+            try {
+                return Boolean(window.HTMLScriptElement && typeof window.HTMLScriptElement.supports === 'function' && window.HTMLScriptElement.supports('speculationrules'));
+            } catch {
+                return false;
+            }
+        })();
+        const WF_SPECULATION_RULES_ID = 'wfSpeculationRules';
+        const WF_MEDIA_PRIME_MAX_ITEMS = 220;
+        const WF_PRIMED_MEDIA = new Set();
+        const WF_RUNTIME_PERF = {
+            startedAt: Date.now(),
+            api: {
+                calls: 0,
+                memory_hits: 0,
+                persistent_hits: 0,
+                network_success: 0,
+                stale_fallbacks: 0,
+                errors: 0,
+            },
+            vitals: {
+                fcp_ms: null,
+                lcp_ms: null,
+                cls: 0,
+                inp_ms: null,
+                ttfb_ms: null,
+            },
+        };
         const WF_ADV_SETTINGS_KEY = 'wf_hidden_settings_v1';
         const WF_ADV_DEFAULTS = {
             auto_refresh: true,
@@ -2570,6 +2617,7 @@
         let wfAdViewabilityObserver = null;
         const wfAdViewabilityStates = new Map();
         let wfAdsBootstrapped = false;
+        let wfViewportPrefetchObserver = null;
 
         function readServerAdsRuntimeConfigRaw() {
             const holder = document.getElementById(WF_ADS_RUNTIME_CONFIG_ID);
@@ -2829,25 +2877,591 @@
         window.wfSubscriptionCtaCopy = wfSubscriptionCtaCopy;
         window.wfTrackSubscriptionCtaEvent = wfTrackSubscriptionCtaEvent;
 
+        function getConnectionProfile() {
+            const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+            const effectiveType = String(connection?.effectiveType || '').toLowerCase();
+            const saveData = Boolean(connection?.saveData);
+            const downlink = Number(connection?.downlink || 0);
+            const rtt = Number(connection?.rtt || 0);
+
+            return {
+                connection,
+                effectiveType,
+                saveData,
+                downlink,
+                rtt,
+                lowBandwidth: saveData || effectiveType.includes('2g') || effectiveType.includes('3g'),
+            };
+        }
+
+        function isLowBandwidthConnection() {
+            return getConnectionProfile().lowBandwidth;
+        }
+
         function getNetworkAwareInterval(baseMs = 30000) {
             const baseValue = Math.max(12000, Number(baseMs || 30000));
-            const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-            if (!connection) return baseValue;
+            const profile = getConnectionProfile();
+            if (!profile.connection) return baseValue;
 
-            const saveData = Boolean(connection.saveData);
-            const effectiveType = String(connection.effectiveType || '').toLowerCase();
-
-            if (saveData) {
+            if (profile.saveData) {
                 return Math.round(baseValue * 1.9);
             }
-            if (effectiveType.includes('2g')) {
+            if (profile.effectiveType.includes('2g')) {
                 return Math.round(baseValue * 1.75);
             }
-            if (effectiveType.includes('3g')) {
+            if (profile.effectiveType.includes('3g')) {
                 return Math.round(baseValue * 1.35);
             }
             return baseValue;
         }
+
+        function getNetworkAwareGetCacheTtl(baseMs = WF_GET_CACHE_TTL_MS) {
+            const baseValue = Math.max(18000, Number(baseMs || WF_GET_CACHE_TTL_MS));
+            const profile = getConnectionProfile();
+            if (profile.lowBandwidth) {
+                return Math.round(baseValue * 1.55);
+            }
+            return baseValue;
+        }
+
+        function getNetworkAwareRequestTimeout(baseMs = 12000) {
+            const baseValue = Math.max(6000, Number(baseMs || 12000));
+            const profile = getConnectionProfile();
+            if (profile.saveData) {
+                return Math.round(baseValue * 1.9);
+            }
+            if (profile.effectiveType.includes('2g')) {
+                return Math.round(baseValue * 2.1);
+            }
+            if (profile.effectiveType.includes('3g')) {
+                return Math.round(baseValue * 1.45);
+            }
+            return baseValue;
+        }
+
+        function scheduleBackgroundTask(task, options = {}) {
+            if (typeof task !== 'function') return;
+
+            const timeout = Math.max(80, Number(options.timeout || 1200));
+            const priority = String(options.priority || 'background');
+
+            if (window.scheduler && typeof window.scheduler.postTask === 'function') {
+                window.scheduler.postTask(task, { priority }).catch(() => {
+                    window.setTimeout(task, 32);
+                });
+                return;
+            }
+
+            if ('requestIdleCallback' in window) {
+                window.requestIdleCallback(task, { timeout });
+                return;
+            }
+
+            window.setTimeout(task, 32);
+        }
+
+        function toRuntimeMetric(value, digits = 2) {
+            const numeric = Number(value);
+            if (!Number.isFinite(numeric)) return null;
+            const factor = Math.pow(10, digits);
+            return Math.round(numeric * factor) / factor;
+        }
+
+        function noteApiPerf(metric) {
+            if (!metric) return;
+            if (!Object.prototype.hasOwnProperty.call(WF_RUNTIME_PERF.api, metric)) return;
+            WF_RUNTIME_PERF.api[metric] = Number(WF_RUNTIME_PERF.api[metric] || 0) + 1;
+        }
+
+        function initRuntimePerfObservers() {
+            if (initRuntimePerfObservers.__bootstrapped) return;
+            initRuntimePerfObservers.__bootstrapped = true;
+
+            try {
+                const navEntry = performance.getEntriesByType('navigation')?.[0];
+                if (navEntry) {
+                    WF_RUNTIME_PERF.vitals.ttfb_ms = toRuntimeMetric(navEntry.responseStart, 1);
+                }
+            } catch {
+                // ignora ambientes sem navigation timing
+            }
+
+            if (typeof PerformanceObserver !== 'function') {
+                return;
+            }
+
+            const supportedTypes = Array.isArray(PerformanceObserver.supportedEntryTypes)
+                ? PerformanceObserver.supportedEntryTypes
+                : [];
+
+            if (supportedTypes.includes('paint')) {
+                try {
+                    const paintObserver = new PerformanceObserver((list) => {
+                        list.getEntries().forEach((entry) => {
+                            if (entry.name === 'first-contentful-paint' && WF_RUNTIME_PERF.vitals.fcp_ms == null) {
+                                WF_RUNTIME_PERF.vitals.fcp_ms = toRuntimeMetric(entry.startTime, 1);
+                            }
+                        });
+                    });
+                    paintObserver.observe({ type: 'paint', buffered: true });
+                } catch {
+                    // ignora falha de observer em browsers específicos
+                }
+            }
+
+            if (supportedTypes.includes('largest-contentful-paint')) {
+                try {
+                    const lcpObserver = new PerformanceObserver((list) => {
+                        const entries = list.getEntries();
+                        const lastEntry = entries[entries.length - 1];
+                        if (!lastEntry) return;
+                        WF_RUNTIME_PERF.vitals.lcp_ms = toRuntimeMetric(lastEntry.startTime, 1);
+                    });
+                    lcpObserver.observe({ type: 'largest-contentful-paint', buffered: true });
+                } catch {
+                    // ignora falha de observer em browsers específicos
+                }
+            }
+
+            if (supportedTypes.includes('layout-shift')) {
+                try {
+                    const clsObserver = new PerformanceObserver((list) => {
+                        list.getEntries().forEach((entry) => {
+                            if (entry.hadRecentInput) return;
+                            WF_RUNTIME_PERF.vitals.cls = toRuntimeMetric((WF_RUNTIME_PERF.vitals.cls || 0) + Number(entry.value || 0), 4);
+                        });
+                    });
+                    clsObserver.observe({ type: 'layout-shift', buffered: true });
+                } catch {
+                    // ignora falha de observer em browsers específicos
+                }
+            }
+
+            if (supportedTypes.includes('event')) {
+                try {
+                    let maxInteractionDuration = 0;
+                    const inpObserver = new PerformanceObserver((list) => {
+                        list.getEntries().forEach((entry) => {
+                            if (!entry || Number(entry.interactionId || 0) <= 0) return;
+                            const duration = Number(entry.duration || 0);
+                            if (duration > maxInteractionDuration) {
+                                maxInteractionDuration = duration;
+                                WF_RUNTIME_PERF.vitals.inp_ms = toRuntimeMetric(maxInteractionDuration, 1);
+                            }
+                        });
+                    });
+                    inpObserver.observe({ type: 'event', buffered: true, durationThreshold: 40 });
+                } catch {
+                    // ignora falha de observer em browsers específicos
+                }
+            }
+        }
+
+        function getRuntimePerformanceSnapshot() {
+            const api = WF_RUNTIME_PERF.api;
+            const cacheHits = Number(api.memory_hits || 0) + Number(api.persistent_hits || 0);
+            const fulfilled = cacheHits + Number(api.network_success || 0) + Number(api.stale_fallbacks || 0);
+            const cacheHitRate = fulfilled > 0 ? (cacheHits / fulfilled) * 100 : 0;
+            const profile = getConnectionProfile();
+
+            return {
+                collected_at: new Date().toISOString(),
+                uptime_ms: Math.max(0, Date.now() - Number(WF_RUNTIME_PERF.startedAt || Date.now())),
+                connection: {
+                    effective_type: profile.effectiveType || '',
+                    save_data: Boolean(profile.saveData),
+                    downlink_mbps: Number(profile.downlink || 0),
+                    rtt_ms: Number(profile.rtt || 0),
+                    low_bandwidth: Boolean(profile.lowBandwidth),
+                },
+                api: {
+                    calls: Number(api.calls || 0),
+                    memory_hits: Number(api.memory_hits || 0),
+                    persistent_hits: Number(api.persistent_hits || 0),
+                    network_success: Number(api.network_success || 0),
+                    stale_fallbacks: Number(api.stale_fallbacks || 0),
+                    errors: Number(api.errors || 0),
+                    cache_hit_rate_percent: toRuntimeMetric(cacheHitRate, 2),
+                },
+                vitals: {
+                    fcp_ms: WF_RUNTIME_PERF.vitals.fcp_ms,
+                    lcp_ms: WF_RUNTIME_PERF.vitals.lcp_ms,
+                    cls: WF_RUNTIME_PERF.vitals.cls,
+                    inp_ms: WF_RUNTIME_PERF.vitals.inp_ms,
+                    ttfb_ms: WF_RUNTIME_PERF.vitals.ttfb_ms,
+                },
+            };
+        }
+
+        function normalizePrimeMediaUrl(rawUrl) {
+            const value = String(rawUrl || '').trim();
+            if (!value || value.startsWith('data:')) return '';
+
+            try {
+                const parsed = new URL(value, window.location.origin);
+                if (!['http:', 'https:'].includes(parsed.protocol)) return '';
+                return parsed.toString();
+            } catch {
+                return '';
+            }
+        }
+
+        function detectPrimeMediaType(url) {
+            const normalized = String(url || '').toLowerCase();
+            if (/\.(mp4|webm|mov|m4v)(\?|#|$)/i.test(normalized)) return 'video';
+            if (/\.(png|jpe?g|gif|webp|avif|svg)(\?|#|$)/i.test(normalized)) return 'image';
+            return 'fetch';
+        }
+
+        function prunePrimedMediaSet() {
+            if (WF_PRIMED_MEDIA.size <= WF_MEDIA_PRIME_MAX_ITEMS) return;
+            const overflow = WF_PRIMED_MEDIA.size - WF_MEDIA_PRIME_MAX_ITEMS;
+            for (let index = 0; index < overflow; index += 1) {
+                const first = WF_PRIMED_MEDIA.values().next().value;
+                if (!first) break;
+                WF_PRIMED_MEDIA.delete(first);
+            }
+        }
+
+        function primeSingleMedia(url, options = {}) {
+            const normalized = normalizePrimeMediaUrl(url);
+            if (!normalized) return;
+            if (WF_PRIMED_MEDIA.has(normalized)) return;
+
+            WF_PRIMED_MEDIA.add(normalized);
+            prunePrimedMediaSet();
+
+            const mediaType = String(options.type || detectPrimeMediaType(normalized)).toLowerCase();
+            const priority = String(options.priority || 'low').toLowerCase();
+
+            if (mediaType === 'image') {
+                const image = new Image();
+                image.decoding = 'async';
+                image.loading = 'eager';
+                image.fetchPriority = priority === 'high' ? 'high' : 'low';
+                image.src = normalized;
+                return;
+            }
+
+            if (mediaType === 'video') {
+                const preload = document.createElement('link');
+                preload.rel = 'preload';
+                preload.as = 'video';
+                preload.href = normalized;
+                preload.crossOrigin = 'anonymous';
+                preload.fetchPriority = priority === 'high' ? 'high' : 'low';
+                document.head.appendChild(preload);
+                window.setTimeout(() => {
+                    preload.remove();
+                }, 10000);
+                return;
+            }
+
+            fetch(normalized, {
+                method: 'GET',
+                cache: 'force-cache',
+                credentials: 'same-origin',
+                priority: priority === 'high' ? 'high' : 'low',
+            }).catch(() => {});
+        }
+
+        function wfPrimeMedia(urls, options = {}) {
+            const list = Array.isArray(urls) ? urls : [urls];
+            const normalized = Array.from(new Set(list
+                .map((item) => normalizePrimeMediaUrl(item))
+                .filter(Boolean)));
+
+            if (!normalized.length) return;
+
+            const budget = Math.max(1, Number(options.budget || normalized.length));
+            normalized.slice(0, budget).forEach((url, index) => {
+                const priority = index < 2 ? 'high' : 'low';
+                scheduleBackgroundTask(() => {
+                    primeSingleMedia(url, {
+                        ...options,
+                        priority: options.priority || priority,
+                    });
+                }, {
+                    timeout: Number(options.timeout || 1800),
+                    priority: priority === 'high' ? 'user-visible' : 'background',
+                });
+            });
+        }
+
+        function createVirtualSpacers(container) {
+            let topSpacer = container.querySelector('[data-wf-vlist-spacer="top"]');
+            let bottomSpacer = container.querySelector('[data-wf-vlist-spacer="bottom"]');
+
+            if (!topSpacer) {
+                topSpacer = document.createElement('div');
+                topSpacer.className = 'wf-vlist-spacer';
+                topSpacer.setAttribute('data-wf-vlist-spacer', 'top');
+                container.prepend(topSpacer);
+            }
+
+            if (!bottomSpacer) {
+                bottomSpacer = document.createElement('div');
+                bottomSpacer.className = 'wf-vlist-spacer';
+                bottomSpacer.setAttribute('data-wf-vlist-spacer', 'bottom');
+                container.appendChild(bottomSpacer);
+            }
+
+            return { topSpacer, bottomSpacer };
+        }
+
+        function wfCreateVirtualList(config = {}) {
+            const container = config.container instanceof HTMLElement
+                ? config.container
+                : document.querySelector(String(config.container || ''));
+
+            if (!container) return null;
+
+            const selector = String(config.itemSelector || '*').trim();
+            const estimateHeight = Math.max(80, Number(config.estimateHeight || 320));
+            const overscanPx = Math.max(240, Number(config.overscanPx || 900));
+            const minItems = Math.max(20, Number(config.minItems || 70));
+            const maxVisible = Math.max(minItems, Number(config.maxVisible || 180));
+
+            let rafId = 0;
+            let pendingForceMeasure = false;
+            let items = [];
+            let heights = [];
+            let starts = [];
+            let totalHeight = 0;
+
+            let { topSpacer, bottomSpacer } = createVirtualSpacers(container);
+
+            function ensureSpacerElements() {
+                if (!topSpacer || topSpacer.parentElement !== container) {
+                    const spacers = createVirtualSpacers(container);
+                    topSpacer = spacers.topSpacer;
+                    bottomSpacer = spacers.bottomSpacer;
+                    return;
+                }
+
+                if (!bottomSpacer || bottomSpacer.parentElement !== container) {
+                    const spacers = createVirtualSpacers(container);
+                    topSpacer = spacers.topSpacer;
+                    bottomSpacer = spacers.bottomSpacer;
+                }
+            }
+
+            function collectItems() {
+                return Array.from(container.children).filter((node) => {
+                    if (!(node instanceof HTMLElement)) return false;
+                    if (node === topSpacer || node === bottomSpacer) return false;
+                    if (selector === '*') return true;
+                    return node.matches(selector);
+                });
+            }
+
+            function restoreAllItems() {
+                items.forEach((item) => {
+                    if (item.getAttribute('data-wf-vhidden') === '1') {
+                        item.removeAttribute('data-wf-vhidden');
+                        item.style.removeProperty('display');
+                    }
+                });
+            }
+
+            function measureLayout(forceMeasure = false) {
+                ensureSpacerElements();
+                items = collectItems();
+
+                if (!items.length) {
+                    heights = [];
+                    starts = [];
+                    totalHeight = 0;
+                    topSpacer.style.height = '0px';
+                    bottomSpacer.style.height = '0px';
+                    return;
+                }
+
+                if (forceMeasure) {
+                    restoreAllItems();
+                    topSpacer.style.height = '0px';
+                    bottomSpacer.style.height = '0px';
+                }
+
+                starts = new Array(items.length);
+                const nextHeights = new Array(items.length);
+                let offset = 0;
+
+                items.forEach((item, index) => {
+                    starts[index] = offset;
+                    const measured = Math.ceil(item.getBoundingClientRect().height || item.offsetHeight || 0);
+                    const previous = Number(heights[index] || 0);
+                    const resolved = measured > 0 ? measured : (previous > 0 ? previous : estimateHeight);
+                    nextHeights[index] = resolved;
+                    offset += resolved;
+                });
+
+                heights = nextHeights;
+                totalHeight = offset;
+            }
+
+            function findStartIndex(targetTop) {
+                if (!items.length) return 0;
+
+                let low = 0;
+                let high = items.length - 1;
+                let result = items.length - 1;
+
+                while (low <= high) {
+                    const middle = Math.floor((low + high) / 2);
+                    const itemBottom = Number(starts[middle] || 0) + Number(heights[middle] || estimateHeight);
+                    if (itemBottom >= targetTop) {
+                        result = middle;
+                        high = middle - 1;
+                    } else {
+                        low = middle + 1;
+                    }
+                }
+
+                return result;
+            }
+
+            function findEndIndex(targetBottom) {
+                if (!items.length) return 0;
+
+                let low = 0;
+                let high = items.length - 1;
+                let result = 0;
+
+                while (low <= high) {
+                    const middle = Math.floor((low + high) / 2);
+                    const itemTop = Number(starts[middle] || 0);
+                    if (itemTop <= targetBottom) {
+                        result = middle;
+                        low = middle + 1;
+                    } else {
+                        high = middle - 1;
+                    }
+                }
+
+                return result;
+            }
+
+            function applyWindow() {
+                if (!items.length) return;
+
+                if (items.length <= minItems) {
+                    restoreAllItems();
+                    topSpacer.style.height = '0px';
+                    bottomSpacer.style.height = '0px';
+                    return;
+                }
+
+                const scrollY = window.scrollY || window.pageYOffset || 0;
+                const viewportHeight = window.innerHeight || 900;
+                const containerTop = scrollY + container.getBoundingClientRect().top;
+
+                const viewportTop = scrollY - containerTop - overscanPx;
+                const viewportBottom = viewportTop + viewportHeight + (overscanPx * 2);
+
+                let startIndex = findStartIndex(viewportTop);
+                let endIndex = findEndIndex(viewportBottom);
+
+                if (endIndex < startIndex) {
+                    endIndex = startIndex;
+                }
+
+                if ((endIndex - startIndex + 1) > maxVisible) {
+                    endIndex = Math.min(items.length - 1, startIndex + maxVisible - 1);
+                }
+
+                const topHeight = Math.max(0, Number(starts[startIndex] || 0));
+                const endBottom = Number(starts[endIndex] || 0) + Number(heights[endIndex] || estimateHeight);
+                const bottomHeight = Math.max(0, totalHeight - endBottom);
+
+                topSpacer.style.height = `${topHeight}px`;
+                bottomSpacer.style.height = `${bottomHeight}px`;
+
+                items.forEach((item, index) => {
+                    const shouldShow = index >= startIndex && index <= endIndex;
+                    if (shouldShow) {
+                        if (item.getAttribute('data-wf-vhidden') === '1') {
+                            item.removeAttribute('data-wf-vhidden');
+                            item.style.removeProperty('display');
+                        }
+                        return;
+                    }
+
+                    if (item.getAttribute('data-wf-vhidden') !== '1') {
+                        item.setAttribute('data-wf-vhidden', '1');
+                        item.style.display = 'none';
+                    }
+                });
+            }
+
+            function schedule(forceMeasure = false) {
+                pendingForceMeasure = pendingForceMeasure || Boolean(forceMeasure);
+                if (rafId) return;
+
+                rafId = window.requestAnimationFrame(() => {
+                    rafId = 0;
+                    const force = pendingForceMeasure;
+                    pendingForceMeasure = false;
+                    measureLayout(force);
+                    applyWindow();
+                });
+            }
+
+            const onScroll = () => schedule(false);
+            const onResize = () => schedule(true);
+            const onLoadCapture = (event) => {
+                const target = event.target;
+                if (target instanceof HTMLImageElement || target instanceof HTMLVideoElement) {
+                    schedule(true);
+                }
+            };
+
+            window.addEventListener('scroll', onScroll, { passive: true });
+            window.addEventListener('resize', onResize, { passive: true });
+            container.addEventListener('load', onLoadCapture, true);
+
+            let resizeObserver = null;
+            if (typeof ResizeObserver === 'function') {
+                resizeObserver = new ResizeObserver(() => {
+                    schedule(true);
+                });
+                resizeObserver.observe(container);
+            }
+
+            const mutationObserver = new MutationObserver(() => {
+                schedule(true);
+            });
+            mutationObserver.observe(container, { childList: true });
+
+            schedule(true);
+
+            return {
+                refresh(options = {}) {
+                    schedule(Boolean(options.forceMeasure));
+                },
+                disconnect() {
+                    window.removeEventListener('scroll', onScroll);
+                    window.removeEventListener('resize', onResize);
+                    container.removeEventListener('load', onLoadCapture, true);
+                    mutationObserver.disconnect();
+                    if (resizeObserver) {
+                        resizeObserver.disconnect();
+                    }
+                    if (rafId) {
+                        window.cancelAnimationFrame(rafId);
+                        rafId = 0;
+                    }
+                    restoreAllItems();
+                    topSpacer.style.height = '0px';
+                    bottomSpacer.style.height = '0px';
+                },
+            };
+        }
+
+        initRuntimePerfObservers();
+        window.wfGetRuntimePerformanceSnapshot = getRuntimePerformanceSnapshot;
+        window.wfPrimeMedia = wfPrimeMedia;
+        window.wfCreateVirtualList = wfCreateVirtualList;
 
         function publishCrossTabEvent(type, payload = {}) {
             const message = {
@@ -4017,6 +4631,20 @@
             );
         }
 
+        function isTransientNetworkError(error) {
+            if (!error) return false;
+            if (error.name === 'AbortError') return true;
+
+            const message = String(error.message || '').toLowerCase();
+            return (
+                message.includes('failed to fetch') ||
+                message.includes('networkerror') ||
+                message.includes('network request failed') ||
+                message.includes('load failed') ||
+                message.includes('timeout')
+            );
+        }
+
         function buildGetCacheKey(url, token) {
             const scope = token ? `user:${token.slice(0, 16)}` : 'anon';
             return `${scope}::${url}`;
@@ -4034,6 +4662,37 @@
                 return entry.payload ?? null;
             } catch {
                 return null;
+            }
+        }
+
+        function readPersistentGetCacheStale(key, maxAgeMs = WF_GET_CACHE_STALE_IF_ERROR_MS) {
+            try {
+                const now = Date.now();
+                const raw = sessionStorage.getItem(WF_GET_CACHE_SESSION_KEY);
+                if (!raw) return null;
+                const parsed = JSON.parse(raw);
+                const entry = parsed?.[key];
+                if (!entry || typeof entry !== 'object') return null;
+                if (now - Number(entry.ts || 0) > Number(maxAgeMs || WF_GET_CACHE_STALE_IF_ERROR_MS)) return null;
+                return entry.payload ?? null;
+            } catch {
+                return null;
+            }
+        }
+
+        function pruneInMemoryGetCache(maxItems = WF_GET_CACHE_MAX_ITEMS) {
+            const safeMax = Math.max(40, Number(maxItems || WF_GET_CACHE_MAX_ITEMS));
+            if (WF_GET_CACHE.size <= safeMax) return;
+
+            const entries = Array.from(WF_GET_CACHE.entries())
+                .sort((left, right) => Number(left?.[1]?.ts || 0) - Number(right?.[1]?.ts || 0));
+
+            const toDrop = Math.max(0, entries.length - safeMax);
+            for (let index = 0; index < toDrop; index += 1) {
+                const cacheKey = entries[index]?.[0];
+                if (cacheKey) {
+                    WF_GET_CACHE.delete(cacheKey);
+                }
             }
         }
 
@@ -4095,6 +4754,7 @@
             };
 
             const methodText = String(resolvedMethod || 'GET').toUpperCase();
+            noteApiPerf('calls');
 
             if (resolvedData instanceof FormData) {
                 delete config.headers['Content-Type'];
@@ -4120,17 +4780,21 @@
             const isGet = String(resolvedMethod || 'GET').toUpperCase() === 'GET';
             const shouldUseGetCache = isGet && resolvedData == null && isCacheableGetUrl(apiUrl);
             const getCacheKey = shouldUseGetCache ? buildGetCacheKey(apiUrl, token) : null;
+            const cacheTtlMs = getNetworkAwareGetCacheTtl(WF_GET_CACHE_TTL_MS);
 
             if (getCacheKey) {
                 const now = Date.now();
                 const cached = WF_GET_CACHE.get(getCacheKey);
-                if (cached && now - cached.ts < WF_GET_CACHE_TTL_MS) {
+                if (cached && now - cached.ts < cacheTtlMs) {
+                    noteApiPerf('memory_hits');
                     return cached.payload;
                 }
 
                 const persisted = readPersistentGetCache(getCacheKey);
                 if (persisted !== null) {
                     WF_GET_CACHE.set(getCacheKey, { ts: now, payload: persisted });
+                    pruneInMemoryGetCache();
+                    noteApiPerf('persistent_hits');
                     return persisted;
                 }
 
@@ -4140,8 +4804,12 @@
                 }
             }
 
-            const timeoutMs = Number(options.timeoutMs || getAdvancedSetting('request_timeout_ms', 12000));
-            const maxAttempts = Number(options.maxAttempts || ((methodText === 'GET' && getAdvancedSetting('auto_retry', true)) ? 2 : 1));
+            const timeoutBaseMs = Number(options.timeoutMs || getAdvancedSetting('request_timeout_ms', 12000));
+            const timeoutMs = getNetworkAwareRequestTimeout(timeoutBaseMs);
+            const defaultAttempts = (methodText === 'GET' && getAdvancedSetting('auto_retry', true))
+                ? (isLowBandwidthConnection() ? 3 : 2)
+                : 1;
+            const maxAttempts = Math.max(1, Number(options.maxAttempts || defaultAttempts));
 
             const requestPromise = (async () => {
                 let attempt = 0;
@@ -4181,7 +4849,10 @@
                         if (getCacheKey) {
                             WF_GET_CACHE.set(getCacheKey, { ts: Date.now(), payload });
                             writePersistentGetCache(getCacheKey, payload);
+                            pruneInMemoryGetCache();
                         }
+
+                        noteApiPerf('network_success');
 
                         window.clearTimeout(timeoutId);
                         return payload;
@@ -4190,16 +4861,31 @@
                         const isAbort = error && error.name === 'AbortError';
                         const canRetry = attempt < maxAttempts;
                         if (canRetry && (isAbort || methodText === 'GET')) {
-                            await new Promise((resolve) => setTimeout(resolve, 280));
+                            const retryDelay = Math.min(1200, 180 * Math.pow(2, Math.max(0, attempt - 1)));
+                            await new Promise((resolve) => setTimeout(resolve, retryDelay));
                             continue;
                         }
+
+                        if (getCacheKey && methodText === 'GET' && isTransientNetworkError(error)) {
+                            const stalePayload = readPersistentGetCacheStale(getCacheKey, WF_GET_CACHE_STALE_IF_ERROR_MS);
+                            if (stalePayload !== null) {
+                                WF_GET_CACHE.set(getCacheKey, { ts: Date.now(), payload: stalePayload });
+                                pruneInMemoryGetCache();
+                                noteApiPerf('stale_fallbacks');
+                                return stalePayload;
+                            }
+                        }
+
                         if (isAbort) {
+                            noteApiPerf('errors');
                             throw new Error('Tempo de resposta excedido. Verifique a internet e tente novamente.');
                         }
+                        noteApiPerf('errors');
                         throw error;
                     }
                 }
 
+                noteApiPerf('errors');
                 throw new Error('Falha ao processar a requisição.');
             })();
 
@@ -4230,9 +4916,90 @@
             clearPersistentGetCache();
         }
 
-        function prefetchRoute(url) {
+        function normalizePrefetchRoute(url) {
             const href = String(url || '').trim();
-            if (!href || href.startsWith('/api') || href.startsWith('javascript:') || href.startsWith('#')) return;
+            if (!href || href.startsWith('/api') || href.startsWith('javascript:') || href.startsWith('#')) return '';
+
+            try {
+                const parsed = new URL(href, window.location.origin);
+                if (parsed.origin !== window.location.origin) return '';
+                return `${parsed.pathname}${parsed.search}`;
+            } catch {
+                return '';
+            }
+        }
+
+        function applySpeculationRules(plan) {
+            if (!WF_SUPPORTS_SPECULATION_RULES) return;
+
+            const routeList = Array.isArray(plan?.routes)
+                ? plan.routes.map((item) => normalizePrefetchRoute(item)).filter(Boolean)
+                : [];
+            if (!routeList.length) return;
+
+            const prefetchUrls = Array.from(new Set(routeList));
+            const prerenderUrls = (plan?.lowBandwidth
+                ? []
+                : prefetchUrls.slice(0, 2)
+            ).filter((url) => url !== window.location.pathname);
+
+            const rules = {
+                prefetch: [{ source: 'list', urls: prefetchUrls }],
+            };
+
+            if (prerenderUrls.length) {
+                rules.prerender = [{ source: 'list', urls: prerenderUrls }];
+            }
+
+            let holder = document.getElementById(WF_SPECULATION_RULES_ID);
+            if (!holder) {
+                holder = document.createElement('script');
+                holder.id = WF_SPECULATION_RULES_ID;
+                holder.type = 'speculationrules';
+                document.head.appendChild(holder);
+            }
+
+            holder.textContent = JSON.stringify(rules);
+        }
+
+        function setupViewportLinkPrefetch(plan) {
+            if (!('IntersectionObserver' in window)) return;
+
+            if (wfViewportPrefetchObserver) {
+                wfViewportPrefetchObserver.disconnect();
+                wfViewportPrefetchObserver = null;
+            }
+
+            const sampleRate = plan?.lowBandwidth ? 0.45 : 1;
+            wfViewportPrefetchObserver = new IntersectionObserver((entries) => {
+                entries.forEach((entry) => {
+                    if (!entry.isIntersecting) return;
+
+                    const element = entry.target;
+                    wfViewportPrefetchObserver.unobserve(element);
+
+                    if (sampleRate < 1 && Math.random() > sampleRate) return;
+
+                    const href = normalizePrefetchRoute(element.getAttribute('href') || '');
+                    if (!href) return;
+                    prefetchRoute(href, { reason: 'viewport' });
+                });
+            }, {
+                root: null,
+                rootMargin: '380px 0px',
+                threshold: 0,
+            });
+
+            document.querySelectorAll('a[href]').forEach((anchor) => {
+                const href = normalizePrefetchRoute(anchor.getAttribute('href') || '');
+                if (!href) return;
+                wfViewportPrefetchObserver.observe(anchor);
+            });
+        }
+
+        function prefetchRoute(url, options = {}) {
+            const href = normalizePrefetchRoute(url);
+            if (!href) return;
             if (WF_PREFETCHED_PAGES.has(href)) return;
             WF_PREFETCHED_PAGES.add(href);
 
@@ -4242,14 +5009,19 @@
                 prefetch.rel = 'prefetch';
                 prefetch.as = 'document';
                 prefetch.href = href;
+                prefetch.crossOrigin = 'anonymous';
                 document.head.appendChild(prefetch);
             }
 
             fetch(href, {
                 method: 'GET',
                 credentials: 'same-origin',
-                headers: { 'X-WF-Prefetch': '1' },
+                headers: {
+                    'X-WF-Prefetch': '1',
+                    'Purpose': 'prefetch',
+                },
                 cache: 'force-cache',
+                priority: options.priority || 'low',
             }).catch(() => {});
         }
 
@@ -4262,10 +5034,8 @@
             const path = normalizeAdsPath(window.location.pathname);
             const isLogged = Boolean(localStorage.getItem('token'));
             const compactViewport = isFastNavMode();
-            const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-            const saveData = Boolean(connection?.saveData);
-            const effectiveType = String(connection?.effectiveType || '').toLowerCase();
-            const lowBandwidth = compactViewport || saveData || effectiveType.includes('2g') || effectiveType.includes('3g');
+            const networkProfile = getConnectionProfile();
+            const lowBandwidth = compactViewport || networkProfile.lowBandwidth;
 
             const baseRoutes = ['/', '/offers', '/services', '/community', '/store', '/ai-agent'];
             const contextRoutes = {
@@ -4340,40 +5110,43 @@
                 return;
             }
 
-            const plan = getNavigationPrefetchPlan();
-
-            if ('requestIdleCallback' in window) {
-                window.requestIdleCallback(() => {
-                    plan.routes.forEach(prefetchRoute);
-                    plan.apis.forEach((apiUrl) => {
-                        apiRequest(apiUrl, 'GET').catch(() => {});
-                    });
-                }, { timeout: plan.timeoutMs });
-            } else {
-                setTimeout(() => {
-                    plan.routes.forEach(prefetchRoute);
-                    plan.apis.forEach((apiUrl) => {
-                        apiRequest(apiUrl, 'GET').catch(() => {});
-                    });
-                }, plan.fallbackDelayMs);
+            if (setupFastNavigationPrefetch.__bootstrapped) {
+                return;
             }
+            setupFastNavigationPrefetch.__bootstrapped = true;
+
+            const plan = getNavigationPrefetchPlan();
+            applySpeculationRules(plan);
+            setupViewportLinkPrefetch(plan);
+
+            scheduleBackgroundTask(() => {
+                plan.routes.forEach((route) => prefetchRoute(route, { reason: 'plan' }));
+                plan.apis.forEach((apiUrl) => {
+                    if (WF_PREFETCHED_APIS.has(apiUrl)) return;
+                    WF_PREFETCHED_APIS.add(apiUrl);
+                    apiRequest(apiUrl, 'GET').catch(() => {});
+                });
+            }, {
+                timeout: plan.timeoutMs,
+                priority: plan.lowBandwidth ? 'background' : 'user-visible',
+            });
 
             document.addEventListener('pointerenter', (event) => {
                 const target = event.target instanceof Element ? event.target.closest('a[href]') : null;
                 if (!target) return;
-                const href = target.getAttribute('href') || '';
-                if (!href.startsWith('/')) return;
+                const href = normalizePrefetchRoute(target.getAttribute('href') || '');
+                if (!href) return;
                 if (plan.lowBandwidth && Math.random() > 0.35) return;
-                prefetchRoute(href);
+                prefetchRoute(href, { reason: 'hover' });
             }, true);
 
             document.addEventListener('touchstart', (event) => {
                 const target = event.target instanceof Element ? event.target.closest('a[href]') : null;
                 if (!target) return;
-                const href = target.getAttribute('href') || '';
-                if (!href.startsWith('/')) return;
+                const href = normalizePrefetchRoute(target.getAttribute('href') || '');
+                if (!href) return;
                 if (plan.lowBandwidth && Math.random() > 0.4) return;
-                prefetchRoute(href);
+                prefetchRoute(href, { reason: 'touch' });
             }, { passive: true, capture: true });
         }
 
@@ -5424,6 +6197,15 @@
                 wfAdViewabilityObserver = null;
             }
 
+            if (wfViewportPrefetchObserver) {
+                try {
+                    wfViewportPrefetchObserver.disconnect();
+                } catch {
+                    // ignora falha no observer
+                }
+                wfViewportPrefetchObserver = null;
+            }
+
             wfAdViewabilityStates.forEach((_, element) => {
                 finalizeAdViewabilityTracking(element);
             });
@@ -5978,11 +6760,25 @@
 
             // Warm cache for frequently used feeds so page switches feel instant.
             if (!isAuthFormPath()) {
-                setTimeout(() => {
-                    apiRequest('/offers?limit=12').catch(() => {});
-                    apiRequest('/store/featured?limit=8').catch(() => {});
-                    apiRequest('/community/posts?limit=6').catch(() => {});
-                }, 60);
+                scheduleBackgroundTask(() => {
+                    const profile = getConnectionProfile();
+                    const warmEndpoints = [
+                        '/offers?limit=12',
+                        '/store/featured?limit=8',
+                        '/community/posts?limit=6',
+                    ];
+
+                    const selected = profile.lowBandwidth
+                        ? warmEndpoints.slice(0, 2)
+                        : warmEndpoints;
+
+                    selected.forEach((endpoint) => {
+                        apiRequest(endpoint, 'GET').catch(() => {});
+                    });
+                }, {
+                    timeout: 2200,
+                    priority: 'background',
+                });
             }
         });
     </script>

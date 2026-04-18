@@ -45,6 +45,17 @@
 
 <div class="wf-card mt-3">
     <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;gap:0.6rem;flex-wrap:wrap;">
+        <span>Performance Runtime (Web Vitals + Cache)</span>
+        <button id="refreshRuntimePerfBtn" class="btn btn-wf-secondary">Atualizar métricas</button>
+    </div>
+    <div class="card-body">
+        <div id="runtimePerfMeta" style="color:var(--wf-text-secondary);margin-bottom:0.2rem;">Coletando métricas do navegador...</div>
+        <div class="admin-mini-grid" id="runtimePerfKpis"></div>
+    </div>
+</div>
+
+<div class="wf-card mt-3">
+    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;gap:0.6rem;flex-wrap:wrap;">
         <span>Funil de Assinatura A/B</span>
         <button id="refreshAbMetricsBtn" class="btn btn-wf-secondary">Atualizar métricas</button>
     </div>
@@ -279,6 +290,11 @@
     function numberFmt(n) { return Number(n || 0).toLocaleString('pt-BR'); }
     function money(v) { return `R$ ${Number(v || 0).toFixed(2)}`; }
     function pct(v) { return `${Number(v || 0).toFixed(2)}%`; }
+    function ms(v) {
+        const numeric = Number(v);
+        if (!Number.isFinite(numeric)) return '-';
+        return `${numeric.toFixed(1)} ms`;
+    }
 
     function esc(v) {
         return String(v ?? '').replace(/[&<>"']/g, (char) => ({
@@ -344,6 +360,43 @@
 
     let aiGovernanceWindowDays = 30;
     let aiBusinessOsMinSignals = 3;
+    let runtimePerfTimer = null;
+
+    function loadRuntimePerformancePanel() {
+        const meta = document.getElementById('runtimePerfMeta');
+        const kpis = document.getElementById('runtimePerfKpis');
+        if (!meta || !kpis) return;
+
+        if (typeof window.wfGetRuntimePerformanceSnapshot !== 'function') {
+            meta.textContent = 'Coleta indisponível neste navegador.';
+            kpis.innerHTML = '<div class="admin-mini-kpi"><h5>Status</h5><div class="val">Indisponível</div></div>';
+            return;
+        }
+
+        const snapshot = window.wfGetRuntimePerformanceSnapshot() || {};
+        const vitals = snapshot.vitals || {};
+        const api = snapshot.api || {};
+        const connection = snapshot.connection || {};
+
+        meta.innerHTML = `
+            Rede: <b>${esc((connection.effective_type || 'desconhecida').toUpperCase())}</b>${connection.save_data ? ' · save-data: <b>on</b>' : ''} ·
+            Requisições: <b>${numberFmt(api.calls)}</b> ·
+            Cache hit: <b>${pct(api.cache_hit_rate_percent || 0)}</b>
+        `;
+
+        kpis.innerHTML = [
+            governanceKpiCard('LCP', ms(vitals.lcp_ms)),
+            governanceKpiCard('INP', ms(vitals.inp_ms)),
+            governanceKpiCard('CLS', Number(vitals.cls || 0).toFixed(3)),
+            governanceKpiCard('FCP', ms(vitals.fcp_ms)),
+            governanceKpiCard('TTFB', ms(vitals.ttfb_ms)),
+            governanceKpiCard('Req rede', numberFmt(api.network_success)),
+            governanceKpiCard('Hits memória', numberFmt(api.memory_hits)),
+            governanceKpiCard('Hits persistidos', numberFmt(api.persistent_hits)),
+            governanceKpiCard('Fallback stale', numberFmt(api.stale_fallbacks)),
+            governanceKpiCard('Erros req', numberFmt(api.errors)),
+        ].join('');
+    }
 
     async function loadAdmin() {
         const me = await apiRequest('/auth/me');
@@ -369,6 +422,12 @@
             loadAiExecutiveCockpit(),
             loadAiBusinessOsMarketingFunnel(),
         ]);
+
+        loadRuntimePerformancePanel();
+        if (runtimePerfTimer) {
+            window.clearInterval(runtimePerfTimer);
+        }
+        runtimePerfTimer = window.setInterval(loadRuntimePerformancePanel, 2800);
 
         const products = data.top_products || [];
         if (!products.length) {
@@ -873,6 +932,10 @@
         loadSubscriptionAbMetrics();
     });
 
+    document.getElementById('refreshRuntimePerfBtn').addEventListener('click', () => {
+        loadRuntimePerformancePanel();
+    });
+
     document.getElementById('refreshAiGovernanceBtn').addEventListener('click', () => {
         loadAiGovernanceOps();
     });
@@ -931,6 +994,17 @@
             loadAdmin();
         } catch (err) {
             alert(err.message || 'Falha ao limpar dados.');
+        }
+    });
+
+    window.addEventListener('pagehide', (event) => {
+        if (event && event.persisted) {
+            return;
+        }
+
+        if (runtimePerfTimer) {
+            window.clearInterval(runtimePerfTimer);
+            runtimePerfTimer = null;
         }
     });
 </script>

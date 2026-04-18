@@ -1,4 +1,4 @@
-const SW_VERSION = 'v4';
+const SW_VERSION = 'v5';
 const STATIC_CACHE = `wallfruits-static-${SW_VERSION}`;
 const PAGE_CACHE = `wallfruits-pages-${SW_VERSION}`;
 const API_CACHE = `wallfruits-api-${SW_VERSION}`;
@@ -53,13 +53,28 @@ async function putInCache(cacheName, request, response, maxItems) {
   await trimCache(cacheName, maxItems);
 }
 
-async function networkFirst(request, cacheName, timeoutMs = 2200, maxItems = 120) {
+async function networkFirst(request, cacheName, timeoutMs = 2200, maxItems = 120, preloadResponsePromise = null) {
   const timeoutPromise = new Promise((_, reject) => {
     setTimeout(() => reject(new Error('timeout')), timeoutMs);
   });
 
   try {
-    const networkResponse = await Promise.race([fetch(request), timeoutPromise]);
+    const networkCandidatePromise = (async () => {
+      if (preloadResponsePromise) {
+        try {
+          const preloadResponse = await preloadResponsePromise;
+          if (preloadResponse) {
+            return preloadResponse;
+          }
+        } catch (_error) {
+          // ignore preload failures and fallback to network fetch
+        }
+      }
+
+      return fetch(request);
+    })();
+
+    const networkResponse = await Promise.race([networkCandidatePromise, timeoutPromise]);
     if (networkResponse && networkResponse.ok) {
       await putInCache(cacheName, request, networkResponse, maxItems);
     }
@@ -147,7 +162,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   if (isNavigationRequest(request)) {
-    event.respondWith(networkFirst(request, PAGE_CACHE, 2400, MAX_PAGE_ITEMS));
+    event.respondWith(networkFirst(request, PAGE_CACHE, 2400, MAX_PAGE_ITEMS, event.preloadResponse));
     return;
   }
 
