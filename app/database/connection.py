@@ -108,6 +108,95 @@ def _table_exists(conn, table_name: str) -> bool:
     return result is not None
 
 
+def _is_transient_schema_error(exc: Exception) -> bool:
+    message = str(exc).lower()
+    return (
+        "statement timeout" in message
+        or "canceling statement due to statement timeout" in message
+        or "lock timeout" in message
+        or "canceling statement due to lock timeout" in message
+        or "deadlock detected" in message
+    )
+
+
+def _set_local_schema_timeouts(conn) -> None:
+    # Evita bloquear o boot quando há lock transitório durante migrações incrementais.
+    conn.execute(text("SET LOCAL lock_timeout = '1200ms'"))
+    conn.execute(text("SET LOCAL statement_timeout = '4000ms'"))
+
+
+def _get_postgres_columns(conn, table_name: str) -> set[str]:
+    return {
+        row[0]
+        for row in conn.execute(
+            text(
+                "SELECT column_name "
+                "FROM information_schema.columns "
+                "WHERE table_schema = current_schema() AND table_name = :table_name"
+            ),
+            {"table_name": table_name},
+        )
+    }
+
+
+def _get_postgres_indexes(conn, table_name: str) -> set[str]:
+    return {
+        row[0]
+        for row in conn.execute(
+            text(
+                "SELECT indexname "
+                "FROM pg_indexes "
+                "WHERE schemaname = current_schema() AND tablename = :table_name"
+            ),
+            {"table_name": table_name},
+        )
+    }
+
+
+def _ensure_postgres_columns(conn, table_name: str, column_statements: dict[str, str]) -> None:
+    existing_columns = _get_postgres_columns(conn, table_name)
+    _set_local_schema_timeouts(conn)
+
+    for column_name, statement in column_statements.items():
+        if column_name in existing_columns:
+            continue
+
+        try:
+            conn.execute(text(statement))
+        except Exception as exc:
+            if _is_transient_schema_error(exc):
+                logger.warning(
+                    "Schema compat: timeout transitório em %s.%s: %s",
+                    table_name,
+                    column_name,
+                    exc,
+                )
+                continue
+            raise
+
+
+def _ensure_postgres_indexes(conn, table_name: str, index_statements: dict[str, str]) -> None:
+    existing_indexes = _get_postgres_indexes(conn, table_name)
+    _set_local_schema_timeouts(conn)
+
+    for index_name, statement in index_statements.items():
+        if index_name in existing_indexes:
+            continue
+
+        try:
+            conn.execute(text(statement))
+        except Exception as exc:
+            if _is_transient_schema_error(exc):
+                logger.warning(
+                    "Schema compat: timeout transitório ao criar índice %s em %s: %s",
+                    index_name,
+                    table_name,
+                    exc,
+                )
+                continue
+            raise
+
+
 def _ensure_users_schema_compatibility() -> None:
     """Garante colunas necessárias para autenticação na tabela users."""
     if IS_SQLITE:
@@ -221,77 +310,12 @@ def _ensure_users_schema_compatibility() -> None:
         "ix_users_account_scope_id": "CREATE INDEX IF NOT EXISTS ix_users_account_scope_id ON users (account_scope_id)",
     }
 
-    def _is_transient_schema_error(exc: Exception) -> bool:
-        message = str(exc).lower()
-        return (
-            "statement timeout" in message
-            or "canceling statement due to statement timeout" in message
-            or "lock timeout" in message
-            or "canceling statement due to lock timeout" in message
-            or "deadlock detected" in message
-        )
-
     with engine.begin() as conn:
         if not _table_exists(conn, "users"):
             return
 
-        existing_columns = {
-            row[0]
-            for row in conn.execute(
-                text(
-                    "SELECT column_name "
-                    "FROM information_schema.columns "
-                    "WHERE table_schema = current_schema() AND table_name = 'users'"
-                )
-            )
-        }
-
-        existing_indexes = {
-            row[0]
-            for row in conn.execute(
-                text(
-                    "SELECT indexname "
-                    "FROM pg_indexes "
-                    "WHERE schemaname = current_schema() AND tablename = 'users'"
-                )
-            )
-        }
-
-        # Evita bloquear o boot quando há lock transitório na tabela users.
-        conn.execute(text("SET LOCAL lock_timeout = '1200ms'"))
-        conn.execute(text("SET LOCAL statement_timeout = '4000ms'"))
-
-        for column_name, statement in postgres_columns.items():
-            if column_name in existing_columns:
-                continue
-
-            try:
-                conn.execute(text(statement))
-            except Exception as exc:
-                if _is_transient_schema_error(exc):
-                    logger.warning(
-                        "Schema auth: timeout transitório ao criar coluna '%s': %s",
-                        column_name,
-                        exc,
-                    )
-                    continue
-                raise
-
-        for index_name, statement in postgres_indexes.items():
-            if index_name in existing_indexes:
-                continue
-
-            try:
-                conn.execute(text(statement))
-            except Exception as exc:
-                if _is_transient_schema_error(exc):
-                    logger.warning(
-                        "Schema auth: timeout transitório ao criar índice '%s': %s",
-                        index_name,
-                        exc,
-                    )
-                    continue
-                raise
+        _ensure_postgres_columns(conn, "users", postgres_columns)
+        _ensure_postgres_indexes(conn, "users", postgres_indexes)
 
 
 def ensure_auth_schema_compatibility() -> None:
@@ -396,41 +420,40 @@ def _ensure_offers_schema_compatibility() -> None:
 
         return
 
-    offer_statements = [
-        "ALTER TABLE offers ADD COLUMN IF NOT EXISTS owner_profile_id UUID",
-        "ALTER TABLE offers ADD COLUMN IF NOT EXISTS public_price NUMERIC(10,2)",
-        "ALTER TABLE offers ADD COLUMN IF NOT EXISTS private_price NUMERIC(10,2)",
-        "ALTER TABLE offers ADD COLUMN IF NOT EXISTS visibility VARCHAR(30) DEFAULT 'public'",
-        "ALTER TABLE offers ADD COLUMN IF NOT EXISTS is_featured BOOLEAN DEFAULT FALSE",
-        "ALTER TABLE offers ADD COLUMN IF NOT EXISTS variety VARCHAR(100)",
-        "ALTER TABLE offers ADD COLUMN IF NOT EXISTS quality_class VARCHAR(50)",
-        "ALTER TABLE offers ADD COLUMN IF NOT EXISTS certification VARCHAR(100)",
-        "ALTER TABLE offers ADD COLUMN IF NOT EXISTS box_weight_kg NUMERIC(10,2)",
-        "ALTER TABLE offers ADD COLUMN IF NOT EXISTS price_per_kg NUMERIC(10,2)",
-        "ALTER TABLE offers ADD COLUMN IF NOT EXISTS price_min_kg NUMERIC(10,2)",
-        "ALTER TABLE offers ADD COLUMN IF NOT EXISTS price_avg_kg NUMERIC(10,2)",
-        "ALTER TABLE offers ADD COLUMN IF NOT EXISTS price_max_kg NUMERIC(10,2)",
-        "ALTER TABLE offers ADD COLUMN IF NOT EXISTS available_quantity NUMERIC(10,2)",
-        "ALTER TABLE offers ADD COLUMN IF NOT EXISTS origin VARCHAR(100)",
-        "ALTER TABLE offers ADD COLUMN IF NOT EXISTS target_market VARCHAR(100)",
-        "ALTER TABLE offers ADD COLUMN IF NOT EXISTS maturation VARCHAR(50)",
-        "ALTER TABLE offers ADD COLUMN IF NOT EXISTS shelf_life VARCHAR(50)",
-        "ALTER TABLE offers ADD COLUMN IF NOT EXISTS harvest_date_actual DATE",
-        "ALTER TABLE offers ADD COLUMN IF NOT EXISTS reservation_start DATE",
-        "ALTER TABLE offers ADD COLUMN IF NOT EXISTS reservation_end DATE",
-        "ALTER TABLE offers ADD COLUMN IF NOT EXISTS property_name VARCHAR(200)",
-        "ALTER TABLE offers ADD COLUMN IF NOT EXISTS property_address VARCHAR(300)",
-        "ALTER TABLE offers ADD COLUMN IF NOT EXISTS ad_duration_days INTEGER DEFAULT 30",
-        "ALTER TABLE offers ADD COLUMN IF NOT EXISTS min_boxes_to_negotiate INTEGER DEFAULT 1",
-        "ALTER TABLE offers ADD COLUMN IF NOT EXISTS platform_fee NUMERIC(10,4) DEFAULT 0.03",
-    ]
+    offer_statements = {
+        "owner_profile_id": "ALTER TABLE offers ADD COLUMN IF NOT EXISTS owner_profile_id UUID",
+        "public_price": "ALTER TABLE offers ADD COLUMN IF NOT EXISTS public_price NUMERIC(10,2)",
+        "private_price": "ALTER TABLE offers ADD COLUMN IF NOT EXISTS private_price NUMERIC(10,2)",
+        "visibility": "ALTER TABLE offers ADD COLUMN IF NOT EXISTS visibility VARCHAR(30) DEFAULT 'public'",
+        "is_featured": "ALTER TABLE offers ADD COLUMN IF NOT EXISTS is_featured BOOLEAN DEFAULT FALSE",
+        "variety": "ALTER TABLE offers ADD COLUMN IF NOT EXISTS variety VARCHAR(100)",
+        "quality_class": "ALTER TABLE offers ADD COLUMN IF NOT EXISTS quality_class VARCHAR(50)",
+        "certification": "ALTER TABLE offers ADD COLUMN IF NOT EXISTS certification VARCHAR(100)",
+        "box_weight_kg": "ALTER TABLE offers ADD COLUMN IF NOT EXISTS box_weight_kg NUMERIC(10,2)",
+        "price_per_kg": "ALTER TABLE offers ADD COLUMN IF NOT EXISTS price_per_kg NUMERIC(10,2)",
+        "price_min_kg": "ALTER TABLE offers ADD COLUMN IF NOT EXISTS price_min_kg NUMERIC(10,2)",
+        "price_avg_kg": "ALTER TABLE offers ADD COLUMN IF NOT EXISTS price_avg_kg NUMERIC(10,2)",
+        "price_max_kg": "ALTER TABLE offers ADD COLUMN IF NOT EXISTS price_max_kg NUMERIC(10,2)",
+        "available_quantity": "ALTER TABLE offers ADD COLUMN IF NOT EXISTS available_quantity NUMERIC(10,2)",
+        "origin": "ALTER TABLE offers ADD COLUMN IF NOT EXISTS origin VARCHAR(100)",
+        "target_market": "ALTER TABLE offers ADD COLUMN IF NOT EXISTS target_market VARCHAR(100)",
+        "maturation": "ALTER TABLE offers ADD COLUMN IF NOT EXISTS maturation VARCHAR(50)",
+        "shelf_life": "ALTER TABLE offers ADD COLUMN IF NOT EXISTS shelf_life VARCHAR(50)",
+        "harvest_date_actual": "ALTER TABLE offers ADD COLUMN IF NOT EXISTS harvest_date_actual DATE",
+        "reservation_start": "ALTER TABLE offers ADD COLUMN IF NOT EXISTS reservation_start DATE",
+        "reservation_end": "ALTER TABLE offers ADD COLUMN IF NOT EXISTS reservation_end DATE",
+        "property_name": "ALTER TABLE offers ADD COLUMN IF NOT EXISTS property_name VARCHAR(200)",
+        "property_address": "ALTER TABLE offers ADD COLUMN IF NOT EXISTS property_address VARCHAR(300)",
+        "ad_duration_days": "ALTER TABLE offers ADD COLUMN IF NOT EXISTS ad_duration_days INTEGER DEFAULT 30",
+        "min_boxes_to_negotiate": "ALTER TABLE offers ADD COLUMN IF NOT EXISTS min_boxes_to_negotiate INTEGER DEFAULT 1",
+        "platform_fee": "ALTER TABLE offers ADD COLUMN IF NOT EXISTS platform_fee NUMERIC(10,4) DEFAULT 0.03",
+    }
 
     with engine.begin() as conn:
         if not _table_exists(conn, "offers"):
             return
 
-        for statement in offer_statements:
-            conn.execute(text(statement))
+        _ensure_postgres_columns(conn, "offers", offer_statements)
 
 
 def _backfill_offer_owner_profiles() -> None:
@@ -487,6 +510,13 @@ def _enforce_offer_owner_profile_required() -> None:
         if not _table_exists(conn, "offers"):
             return
 
+        existing_columns = _get_postgres_columns(conn, "offers")
+        if "owner_profile_id" not in existing_columns:
+            logger.warning(
+                "owner_profile_id ainda não existe em offers; NOT NULL será tentado em próximo ciclo",
+            )
+            return
+
         null_count = conn.execute(
             text("SELECT COUNT(*) FROM offers WHERE owner_profile_id IS NULL")
         ).scalar() or 0
@@ -498,7 +528,17 @@ def _enforce_offer_owner_profile_required() -> None:
             )
             return
 
-        conn.execute(text("ALTER TABLE offers ALTER COLUMN owner_profile_id SET NOT NULL"))
+        _set_local_schema_timeouts(conn)
+        try:
+            conn.execute(text("ALTER TABLE offers ALTER COLUMN owner_profile_id SET NOT NULL"))
+        except Exception as exc:
+            if _is_transient_schema_error(exc):
+                logger.warning(
+                    "Não foi possível aplicar NOT NULL em offers.owner_profile_id por lock transitório: %s",
+                    exc,
+                )
+                return
+            raise
 
 
 def _ensure_profiles_schema_compatibility() -> None:
@@ -530,24 +570,23 @@ def _ensure_profiles_schema_compatibility() -> None:
 
         return
 
-    profile_statements = [
-        "ALTER TABLE profiles ADD COLUMN IF NOT EXISTS document_type VARCHAR(30)",
-        "ALTER TABLE profiles ADD COLUMN IF NOT EXISTS document_front_url VARCHAR(500)",
-        "ALTER TABLE profiles ADD COLUMN IF NOT EXISTS document_back_url VARCHAR(500)",
-        "ALTER TABLE profiles ADD COLUMN IF NOT EXISTS document_selfie_url VARCHAR(500)",
-        "ALTER TABLE profiles ADD COLUMN IF NOT EXISTS proof_of_address_url VARCHAR(500)",
-        "ALTER TABLE profiles ADD COLUMN IF NOT EXISTS submitted_at TIMESTAMPTZ",
-        "ALTER TABLE profiles ADD COLUMN IF NOT EXISTS validated_at TIMESTAMPTZ",
-        "ALTER TABLE profiles ADD COLUMN IF NOT EXISTS validated_by_user_id INTEGER",
-        "ALTER TABLE profiles ADD COLUMN IF NOT EXISTS validation_notes VARCHAR(1000)",
-    ]
+    profile_statements = {
+        "document_type": "ALTER TABLE profiles ADD COLUMN IF NOT EXISTS document_type VARCHAR(30)",
+        "document_front_url": "ALTER TABLE profiles ADD COLUMN IF NOT EXISTS document_front_url VARCHAR(500)",
+        "document_back_url": "ALTER TABLE profiles ADD COLUMN IF NOT EXISTS document_back_url VARCHAR(500)",
+        "document_selfie_url": "ALTER TABLE profiles ADD COLUMN IF NOT EXISTS document_selfie_url VARCHAR(500)",
+        "proof_of_address_url": "ALTER TABLE profiles ADD COLUMN IF NOT EXISTS proof_of_address_url VARCHAR(500)",
+        "submitted_at": "ALTER TABLE profiles ADD COLUMN IF NOT EXISTS submitted_at TIMESTAMPTZ",
+        "validated_at": "ALTER TABLE profiles ADD COLUMN IF NOT EXISTS validated_at TIMESTAMPTZ",
+        "validated_by_user_id": "ALTER TABLE profiles ADD COLUMN IF NOT EXISTS validated_by_user_id INTEGER",
+        "validation_notes": "ALTER TABLE profiles ADD COLUMN IF NOT EXISTS validation_notes VARCHAR(1000)",
+    }
 
     with engine.begin() as conn:
         if not _table_exists(conn, "profiles"):
             return
 
-        for statement in profile_statements:
-            conn.execute(text(statement))
+        _ensure_postgres_columns(conn, "profiles", profile_statements)
 
 
 def _ensure_intermediation_schema_compatibility() -> None:
@@ -573,18 +612,17 @@ def _ensure_intermediation_schema_compatibility() -> None:
 
         return
 
-    intermediation_statements = [
-        "ALTER TABLE intermediation_requests ADD COLUMN IF NOT EXISTS reviewed_by_user_id INTEGER",
-        "ALTER TABLE intermediation_requests ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMPTZ",
-        "ALTER TABLE intermediation_requests ADD COLUMN IF NOT EXISTS review_notes VARCHAR(1000)",
-    ]
+    intermediation_statements = {
+        "reviewed_by_user_id": "ALTER TABLE intermediation_requests ADD COLUMN IF NOT EXISTS reviewed_by_user_id INTEGER",
+        "reviewed_at": "ALTER TABLE intermediation_requests ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMPTZ",
+        "review_notes": "ALTER TABLE intermediation_requests ADD COLUMN IF NOT EXISTS review_notes VARCHAR(1000)",
+    }
 
     with engine.begin() as conn:
         if not _table_exists(conn, "intermediation_requests"):
             return
 
-        for statement in intermediation_statements:
-            conn.execute(text(statement))
+        _ensure_postgres_columns(conn, "intermediation_requests", intermediation_statements)
 
 
 def _ensure_reports_schema_compatibility() -> None:
@@ -610,18 +648,17 @@ def _ensure_reports_schema_compatibility() -> None:
 
         return
 
-    report_statements = [
-        "ALTER TABLE reports ADD COLUMN IF NOT EXISTS reviewed_by_user_id INTEGER",
-        "ALTER TABLE reports ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMPTZ",
-        "ALTER TABLE reports ADD COLUMN IF NOT EXISTS resolution_notes VARCHAR(1000)",
-    ]
+    report_statements = {
+        "reviewed_by_user_id": "ALTER TABLE reports ADD COLUMN IF NOT EXISTS reviewed_by_user_id INTEGER",
+        "reviewed_at": "ALTER TABLE reports ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMPTZ",
+        "resolution_notes": "ALTER TABLE reports ADD COLUMN IF NOT EXISTS resolution_notes VARCHAR(1000)",
+    }
 
     with engine.begin() as conn:
         if not _table_exists(conn, "reports"):
             return
 
-        for statement in report_statements:
-            conn.execute(text(statement))
+        _ensure_postgres_columns(conn, "reports", report_statements)
 
 
 def _ensure_services_schema_compatibility() -> None:
@@ -645,16 +682,15 @@ def _ensure_services_schema_compatibility() -> None:
 
         return
 
-    service_statements = [
-        "ALTER TABLE services ADD COLUMN IF NOT EXISTS ficha_tecnica JSONB DEFAULT '{}'::jsonb",
-    ]
+    service_statements = {
+        "ficha_tecnica": "ALTER TABLE services ADD COLUMN IF NOT EXISTS ficha_tecnica JSONB DEFAULT '{}'::jsonb",
+    }
 
     with engine.begin() as conn:
         if not _table_exists(conn, "services"):
             return
 
-        for statement in service_statements:
-            conn.execute(text(statement))
+        _ensure_postgres_columns(conn, "services", service_statements)
 
 
 def _ensure_transactions_schema_compatibility() -> None:
@@ -686,24 +722,23 @@ def _ensure_transactions_schema_compatibility() -> None:
 
         return
 
-    transaction_statements = [
-        "ALTER TABLE transactions ADD COLUMN IF NOT EXISTS reservation_date TIMESTAMPTZ",
-        "ALTER TABLE transactions ADD COLUMN IF NOT EXISTS pricing_mode VARCHAR(20) DEFAULT 'market'",
-        "ALTER TABLE transactions ADD COLUMN IF NOT EXISTS negotiated_unit_price NUMERIC(10,2)",
-        "ALTER TABLE transactions ADD COLUMN IF NOT EXISTS reservation_fee_per_kg NUMERIC(10,4) DEFAULT 0.005",
-        "ALTER TABLE transactions ADD COLUMN IF NOT EXISTS reservation_fee_total NUMERIC(10,2)",
-        "ALTER TABLE transactions ADD COLUMN IF NOT EXISTS contact_name VARCHAR(120)",
-        "ALTER TABLE transactions ADD COLUMN IF NOT EXISTS contact_phone VARCHAR(40)",
-        "ALTER TABLE transactions ADD COLUMN IF NOT EXISTS contact_address TEXT",
-        "ALTER TABLE transactions ADD COLUMN IF NOT EXISTS reservation_metadata JSONB",
-    ]
+    transaction_statements = {
+        "reservation_date": "ALTER TABLE transactions ADD COLUMN IF NOT EXISTS reservation_date TIMESTAMPTZ",
+        "pricing_mode": "ALTER TABLE transactions ADD COLUMN IF NOT EXISTS pricing_mode VARCHAR(20) DEFAULT 'market'",
+        "negotiated_unit_price": "ALTER TABLE transactions ADD COLUMN IF NOT EXISTS negotiated_unit_price NUMERIC(10,2)",
+        "reservation_fee_per_kg": "ALTER TABLE transactions ADD COLUMN IF NOT EXISTS reservation_fee_per_kg NUMERIC(10,4) DEFAULT 0.005",
+        "reservation_fee_total": "ALTER TABLE transactions ADD COLUMN IF NOT EXISTS reservation_fee_total NUMERIC(10,2)",
+        "contact_name": "ALTER TABLE transactions ADD COLUMN IF NOT EXISTS contact_name VARCHAR(120)",
+        "contact_phone": "ALTER TABLE transactions ADD COLUMN IF NOT EXISTS contact_phone VARCHAR(40)",
+        "contact_address": "ALTER TABLE transactions ADD COLUMN IF NOT EXISTS contact_address TEXT",
+        "reservation_metadata": "ALTER TABLE transactions ADD COLUMN IF NOT EXISTS reservation_metadata JSONB",
+    }
 
     with engine.begin() as conn:
         if not _table_exists(conn, "transactions"):
             return
 
-        for statement in transaction_statements:
-            conn.execute(text(statement))
+        _ensure_postgres_columns(conn, "transactions", transaction_statements)
 
 
 def _ensure_postgres_schema_compatibility() -> None:
