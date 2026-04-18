@@ -162,6 +162,8 @@ def _profile_payload(*, main_goal: str) -> dict[str, Any]:
         "main_goal": main_goal,
         "decision_style": "equilibrado",
         "preferred_contact_period": "manha",
+        "auto_negotiation_enabled": False,
+        "auto_flash_auction_enabled": False,
         "guardrail_max_discount_pct": 8,
         "guardrail_min_net_margin_pct": 7,
         "guardrail_max_response_hours": 12,
