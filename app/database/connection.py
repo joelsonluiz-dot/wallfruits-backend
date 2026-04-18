@@ -175,55 +175,123 @@ def _ensure_users_schema_compatibility() -> None:
 
         return
 
-    user_statements = [
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(50) DEFAULT 'buyer'",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS platform_role VARCHAR(30) DEFAULT 'none'",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS account_role VARCHAR(30) DEFAULT 'account_owner'",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS account_scope_id VARCHAR(64)",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS supabase_user_id VARCHAR(64)",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(20)",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS location VARCHAR(150)",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_image VARCHAR(500)",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_superuser BOOLEAN DEFAULT FALSE",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT FALSE",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS rating INTEGER DEFAULT 0",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS total_reviews INTEGER DEFAULT 0",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_billing_name VARCHAR(150)",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_billing_phone VARCHAR(30)",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_billing_address_line1 VARCHAR(255)",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_billing_address_line2 VARCHAR(255)",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_billing_city VARCHAR(120)",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_billing_state VARCHAR(10)",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_billing_zip VARCHAR(20)",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_billing_country VARCHAR(60)",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_pix_key_type VARCHAR(20)",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_pix_key VARCHAR(160)",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_pix_holder_name VARCHAR(150)",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_card_holder_name VARCHAR(150)",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_card_last4 VARCHAR(4)",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_card_brand VARCHAR(30)",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_card_exp_month INTEGER",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_card_exp_year INTEGER",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_default_method VARCHAR(20) DEFAULT 'card'",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_use_for_subscriptions BOOLEAN DEFAULT TRUE",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_updated_at TIMESTAMPTZ",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW()",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login TIMESTAMPTZ",
-        "CREATE UNIQUE INDEX IF NOT EXISTS ix_users_supabase_user_id ON users (supabase_user_id)",
-        "CREATE INDEX IF NOT EXISTS ix_users_platform_role ON users (platform_role)",
-        "CREATE INDEX IF NOT EXISTS ix_users_account_role ON users (account_role)",
-        "CREATE INDEX IF NOT EXISTS ix_users_account_scope_id ON users (account_scope_id)",
-    ]
+    postgres_columns = {
+        "role": "ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(50) DEFAULT 'buyer'",
+        "platform_role": "ALTER TABLE users ADD COLUMN IF NOT EXISTS platform_role VARCHAR(30) DEFAULT 'none'",
+        "account_role": "ALTER TABLE users ADD COLUMN IF NOT EXISTS account_role VARCHAR(30) DEFAULT 'account_owner'",
+        "account_scope_id": "ALTER TABLE users ADD COLUMN IF NOT EXISTS account_scope_id VARCHAR(64)",
+        "supabase_user_id": "ALTER TABLE users ADD COLUMN IF NOT EXISTS supabase_user_id VARCHAR(64)",
+        "phone": "ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(20)",
+        "location": "ALTER TABLE users ADD COLUMN IF NOT EXISTS location VARCHAR(150)",
+        "bio": "ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT",
+        "profile_image": "ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_image VARCHAR(500)",
+        "is_active": "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE",
+        "is_superuser": "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_superuser BOOLEAN DEFAULT FALSE",
+        "is_verified": "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT FALSE",
+        "rating": "ALTER TABLE users ADD COLUMN IF NOT EXISTS rating INTEGER DEFAULT 0",
+        "total_reviews": "ALTER TABLE users ADD COLUMN IF NOT EXISTS total_reviews INTEGER DEFAULT 0",
+        "payment_billing_name": "ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_billing_name VARCHAR(150)",
+        "payment_billing_phone": "ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_billing_phone VARCHAR(30)",
+        "payment_billing_address_line1": "ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_billing_address_line1 VARCHAR(255)",
+        "payment_billing_address_line2": "ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_billing_address_line2 VARCHAR(255)",
+        "payment_billing_city": "ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_billing_city VARCHAR(120)",
+        "payment_billing_state": "ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_billing_state VARCHAR(10)",
+        "payment_billing_zip": "ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_billing_zip VARCHAR(20)",
+        "payment_billing_country": "ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_billing_country VARCHAR(60)",
+        "payment_pix_key_type": "ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_pix_key_type VARCHAR(20)",
+        "payment_pix_key": "ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_pix_key VARCHAR(160)",
+        "payment_pix_holder_name": "ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_pix_holder_name VARCHAR(150)",
+        "payment_card_holder_name": "ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_card_holder_name VARCHAR(150)",
+        "payment_card_last4": "ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_card_last4 VARCHAR(4)",
+        "payment_card_brand": "ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_card_brand VARCHAR(30)",
+        "payment_card_exp_month": "ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_card_exp_month INTEGER",
+        "payment_card_exp_year": "ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_card_exp_year INTEGER",
+        "payment_default_method": "ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_default_method VARCHAR(20) DEFAULT 'card'",
+        "payment_use_for_subscriptions": "ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_use_for_subscriptions BOOLEAN DEFAULT TRUE",
+        "payment_updated_at": "ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_updated_at TIMESTAMPTZ",
+        "created_at": "ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW()",
+        "updated_at": "ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ",
+        "last_login": "ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login TIMESTAMPTZ",
+    }
+
+    postgres_indexes = {
+        "ix_users_supabase_user_id": "CREATE UNIQUE INDEX IF NOT EXISTS ix_users_supabase_user_id ON users (supabase_user_id)",
+        "ix_users_platform_role": "CREATE INDEX IF NOT EXISTS ix_users_platform_role ON users (platform_role)",
+        "ix_users_account_role": "CREATE INDEX IF NOT EXISTS ix_users_account_role ON users (account_role)",
+        "ix_users_account_scope_id": "CREATE INDEX IF NOT EXISTS ix_users_account_scope_id ON users (account_scope_id)",
+    }
+
+    def _is_transient_schema_error(exc: Exception) -> bool:
+        message = str(exc).lower()
+        return (
+            "statement timeout" in message
+            or "canceling statement due to statement timeout" in message
+            or "lock timeout" in message
+            or "canceling statement due to lock timeout" in message
+            or "deadlock detected" in message
+        )
 
     with engine.begin() as conn:
         if not _table_exists(conn, "users"):
             return
 
-        for statement in user_statements:
-            conn.execute(text(statement))
+        existing_columns = {
+            row[0]
+            for row in conn.execute(
+                text(
+                    "SELECT column_name "
+                    "FROM information_schema.columns "
+                    "WHERE table_schema = current_schema() AND table_name = 'users'"
+                )
+            )
+        }
+
+        existing_indexes = {
+            row[0]
+            for row in conn.execute(
+                text(
+                    "SELECT indexname "
+                    "FROM pg_indexes "
+                    "WHERE schemaname = current_schema() AND tablename = 'users'"
+                )
+            )
+        }
+
+        # Evita bloquear o boot quando há lock transitório na tabela users.
+        conn.execute(text("SET LOCAL lock_timeout = '1200ms'"))
+        conn.execute(text("SET LOCAL statement_timeout = '4000ms'"))
+
+        for column_name, statement in postgres_columns.items():
+            if column_name in existing_columns:
+                continue
+
+            try:
+                conn.execute(text(statement))
+            except Exception as exc:
+                if _is_transient_schema_error(exc):
+                    logger.warning(
+                        "Schema auth: timeout transitório ao criar coluna '%s': %s",
+                        column_name,
+                        exc,
+                    )
+                    continue
+                raise
+
+        for index_name, statement in postgres_indexes.items():
+            if index_name in existing_indexes:
+                continue
+
+            try:
+                conn.execute(text(statement))
+            except Exception as exc:
+                if _is_transient_schema_error(exc):
+                    logger.warning(
+                        "Schema auth: timeout transitório ao criar índice '%s': %s",
+                        index_name,
+                        exc,
+                    )
+                    continue
+                raise
 
 
 def ensure_auth_schema_compatibility() -> None:
