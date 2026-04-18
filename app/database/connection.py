@@ -113,6 +113,9 @@ def _ensure_users_schema_compatibility() -> None:
     if IS_SQLITE:
         sqlite_statements = {
             "role": "ALTER TABLE users ADD COLUMN role VARCHAR(50) DEFAULT 'buyer'",
+            "platform_role": "ALTER TABLE users ADD COLUMN platform_role VARCHAR(30) DEFAULT 'none'",
+            "account_role": "ALTER TABLE users ADD COLUMN account_role VARCHAR(30) DEFAULT 'account_owner'",
+            "account_scope_id": "ALTER TABLE users ADD COLUMN account_scope_id VARCHAR(64)",
             "supabase_user_id": "ALTER TABLE users ADD COLUMN supabase_user_id VARCHAR(64)",
             "phone": "ALTER TABLE users ADD COLUMN phone VARCHAR(20)",
             "location": "ALTER TABLE users ADD COLUMN location VARCHAR(150)",
@@ -166,11 +169,17 @@ def _ensure_users_schema_compatibility() -> None:
                     "ON users (supabase_user_id)"
                 )
             )
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_users_platform_role ON users (platform_role)"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_users_account_role ON users (account_role)"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_users_account_scope_id ON users (account_scope_id)"))
 
         return
 
     user_statements = [
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(50) DEFAULT 'buyer'",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS platform_role VARCHAR(30) DEFAULT 'none'",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS account_role VARCHAR(30) DEFAULT 'account_owner'",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS account_scope_id VARCHAR(64)",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS supabase_user_id VARCHAR(64)",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(20)",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS location VARCHAR(150)",
@@ -204,6 +213,9 @@ def _ensure_users_schema_compatibility() -> None:
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login TIMESTAMPTZ",
         "CREATE UNIQUE INDEX IF NOT EXISTS ix_users_supabase_user_id ON users (supabase_user_id)",
+        "CREATE INDEX IF NOT EXISTS ix_users_platform_role ON users (platform_role)",
+        "CREATE INDEX IF NOT EXISTS ix_users_account_role ON users (account_role)",
+        "CREATE INDEX IF NOT EXISTS ix_users_account_scope_id ON users (account_scope_id)",
     ]
 
     with engine.begin() as conn:
