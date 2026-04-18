@@ -105,7 +105,7 @@ Esperado:
 ### 4.1 Leitura operacional permitida para support
 
 ```powershell
-curl -H "Authorization: Bearer $TOKEN_PLATFORM_SUPPORT" "$BASE/ai/ops/governance-summary?days=7"
+curl -H "Authorization: Bearer $TOKEN_PLATFORM_SUPPORT" "$BASE/api/ai/ops/governance-summary?days=7"
 ```
 
 Esperado:
@@ -115,7 +115,7 @@ Esperado:
 ### 4.2 Escrita operacional bloqueada para support
 
 ```powershell
-curl -H "Authorization: Bearer $TOKEN_PLATFORM_SUPPORT" "$BASE/ai/ops/business-os/marketing-funnel?days=7&min_segment_signals=3&persist=true"
+curl -H "Authorization: Bearer $TOKEN_PLATFORM_SUPPORT" "$BASE/api/ai/ops/business-os/marketing-funnel?days=7&min_segment_signals=3&persist=true"
 ```
 
 Esperado:
@@ -125,7 +125,7 @@ Esperado:
 ### 4.3 Escrita operacional permitida para ops
 
 ```powershell
-curl -H "Authorization: Bearer $TOKEN_PLATFORM_OPS" "$BASE/ai/ops/business-os/marketing-funnel?days=7&min_segment_signals=3&persist=true"
+curl -H "Authorization: Bearer $TOKEN_PLATFORM_OPS" "$BASE/api/ai/ops/business-os/marketing-funnel?days=7&min_segment_signals=3&persist=true"
 ```
 
 Esperado:
@@ -137,7 +137,7 @@ Esperado:
 ### 5.1 Viewer pode ler perfil de agenda
 
 ```powershell
-curl -H "Authorization: Bearer $TOKEN_ACCOUNT_VIEWER" "$BASE/ai/agenda/profile"
+curl -H "Authorization: Bearer $TOKEN_ACCOUNT_VIEWER" "$BASE/api/ai/agenda/profile"
 ```
 
 Esperado:
@@ -162,7 +162,7 @@ $bodyViewer = @{
   auto_execute_limit_per_day = 0
 } | ConvertTo-Json
 
-curl -Method Post -ContentType "application/json" -Body $bodyViewer -H "Authorization: Bearer $TOKEN_ACCOUNT_VIEWER" "$BASE/ai/agenda/profile"
+curl -Method Post -ContentType "application/json" -Body $bodyViewer -H "Authorization: Bearer $TOKEN_ACCOUNT_VIEWER" "$BASE/api/ai/agenda/profile"
 ```
 
 Esperado:
@@ -186,7 +186,7 @@ $bodyManager = @{
   auto_execute_limit_per_day = 0
 } | ConvertTo-Json
 
-curl -Method Post -ContentType "application/json" -Body $bodyManager -H "Authorization: Bearer $TOKEN_ACCOUNT_MANAGER" "$BASE/ai/agenda/profile"
+curl -Method Post -ContentType "application/json" -Body $bodyManager -H "Authorization: Bearer $TOKEN_ACCOUNT_MANAGER" "$BASE/api/ai/agenda/profile"
 ```
 
 Esperado:
@@ -196,7 +196,7 @@ Esperado:
 ### 5.4 Analyst acessa plano autonomo conforme assinatura
 
 ```powershell
-curl -H "Authorization: Bearer $TOKEN_ACCOUNT_ANALYST" "$BASE/ai/agenda/autonomous-commerce"
+curl -H "Authorization: Bearer $TOKEN_ACCOUNT_ANALYST" "$BASE/api/ai/agenda/autonomous-commerce"
 ```
 
 Esperado:

@@ -188,9 +188,23 @@ def _token_arg(parser: argparse.ArgumentParser, arg_name: str, env_name: str, he
     )
 
 
+def _normalize_api_prefix(value: str) -> str:
+    raw = str(value or "").strip()
+    if not raw:
+        return ""
+
+    normalized = "/" + raw.strip("/")
+    return "" if normalized == "/" else normalized
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Smoke test RBAC + IA")
     parser.add_argument("--base-url", required=True, help="URL base da API")
+    parser.add_argument(
+        "--api-prefix",
+        default="/api",
+        help="prefixo da API (default: /api). Use vazio para ambiente sem prefixo.",
+    )
     parser.add_argument("--timeout", type=float, default=12.0, help="timeout por request em segundos")
     parser.add_argument(
         "--strict-ready",
@@ -201,7 +215,7 @@ def main() -> int:
         "--analyst-expected-status",
         choices=["200", "403", "200_or_403"],
         default="200_or_403",
-        help="status esperado para /ai/agenda/autonomous-commerce com token analyst",
+        help="status esperado para /api/ai/agenda/autonomous-commerce com token analyst",
     )
 
     _token_arg(parser, "--token-platform-support", "WF_TOKEN_PLATFORM_SUPPORT", "token staff_support")
@@ -211,6 +225,15 @@ def main() -> int:
     _token_arg(parser, "--token-account-analyst", "WF_TOKEN_ACCOUNT_ANALYST", "token account_analyst")
 
     args = parser.parse_args()
+    api_prefix = _normalize_api_prefix(args.api_prefix)
+
+    def api_path(path: str) -> str:
+        value = str(path or "").strip()
+        if not value:
+            return api_prefix or "/"
+        if not value.startswith("/"):
+            value = "/" + value
+        return f"{api_prefix}{value}" if api_prefix else value
 
     checks: list[CheckResult] = []
 
@@ -221,13 +244,13 @@ def main() -> int:
     ready = _request(base_url=args.base_url, path="/health/ready", method="GET", timeout=args.timeout)
     checks.append(_ok_check(name="health ready", result=ready, expected_statuses=ready_expected))
 
-    metrics = _request(base_url=args.base_url, path="/api/metrics", method="GET", timeout=args.timeout)
+    metrics = _request(base_url=args.base_url, path=api_path("/metrics"), method="GET", timeout=args.timeout)
     checks.append(_ok_check(name="api metrics", result=metrics, expected_statuses={200}))
 
     if args.token_platform_support:
         gov = _request(
             base_url=args.base_url,
-            path="/ai/ops/governance-summary?days=7",
+            path=api_path("/ai/ops/governance-summary?days=7"),
             method="GET",
             timeout=args.timeout,
             token=args.token_platform_support,
@@ -236,7 +259,7 @@ def main() -> int:
 
         support_write = _request(
             base_url=args.base_url,
-            path="/ai/ops/business-os/marketing-funnel?days=7&min_segment_signals=3&persist=true",
+            path=api_path("/ai/ops/business-os/marketing-funnel?days=7&min_segment_signals=3&persist=true"),
             method="GET",
             timeout=args.timeout,
             token=args.token_platform_support,
@@ -249,7 +272,7 @@ def main() -> int:
     if args.token_platform_ops:
         ops_write = _request(
             base_url=args.base_url,
-            path="/ai/ops/business-os/marketing-funnel?days=7&min_segment_signals=3&persist=true",
+            path=api_path("/ai/ops/business-os/marketing-funnel?days=7&min_segment_signals=3&persist=true"),
             method="GET",
             timeout=args.timeout,
             token=args.token_platform_ops,
@@ -261,7 +284,7 @@ def main() -> int:
     if args.token_account_viewer:
         viewer_profile = _request(
             base_url=args.base_url,
-            path="/ai/agenda/profile",
+            path=api_path("/ai/agenda/profile"),
             method="GET",
             timeout=args.timeout,
             token=args.token_account_viewer,
@@ -277,7 +300,7 @@ def main() -> int:
 
         viewer_write = _request(
             base_url=args.base_url,
-            path="/ai/agenda/profile",
+            path=api_path("/ai/agenda/profile"),
             method="POST",
             timeout=args.timeout,
             token=args.token_account_viewer,
@@ -291,7 +314,7 @@ def main() -> int:
     if args.token_account_manager:
         manager_write = _request(
             base_url=args.base_url,
-            path="/ai/agenda/profile",
+            path=api_path("/ai/agenda/profile"),
             method="POST",
             timeout=args.timeout,
             token=args.token_account_manager,
@@ -305,7 +328,7 @@ def main() -> int:
         analyst_expected = _analyst_expected_statuses(args.analyst_expected_status)
         analyst_auto = _request(
             base_url=args.base_url,
-            path="/ai/agenda/autonomous-commerce",
+            path=api_path("/ai/agenda/autonomous-commerce"),
             method="GET",
             timeout=args.timeout,
             token=args.token_account_analyst,
