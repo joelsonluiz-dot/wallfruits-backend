@@ -5,18 +5,34 @@ services:
     region: oregon
     plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    startCommand: alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips=* --workers ${WEB_CONCURRENCY:-1}
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.0
+      - key: APP_ENV
+        value: production
       - key: DEBUG
         value: false
-      - key: REDIS_ENABLED
+      - key: SECURITY_ENFORCE_PRODUCTION_HARDENING
         value: true
+      - key: RATE_LIMIT_ENABLED
+        value: true
+      - key: JWT_ISSUER
+        value: wallfruits-api
+      - key: JWT_AUDIENCE
+        value: wallfruits-clients
+      - key: JWT_REQUIRE_ISSUER
+        value: true
+      - key: JWT_REQUIRE_AUDIENCE
+        value: true
+      - key: AI_ENFORCE_SUBSCRIPTION_GUARDRAILS
+        value: true
+      - key: REDIS_ENABLED
+        value: false
       - key: REDIS_URL
         sync: false
       - key: DATABASE_URL
-        value: __SET_SUPABASE_DATABASE_URL__
+        sync: false
       - key: SECRET_KEY
         generateValue: true
       - key: ALGORITHM
@@ -30,11 +46,22 @@ services:
       - key: SUPABASE_AUTH_ENABLED
         value: true
       - key: SUPABASE_URL
-        value: __SET_SUPABASE_URL__
+        sync: false
       - key: SUPABASE_ANON_KEY
-        value: __SET_SUPABASE_ANON_KEY__
+        sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
-        value: __SET_SUPABASE_SERVICE_ROLE_KEY__
+        sync: false
+
+      # Supabase Storage (media/CDN)
+      - key: SUPABASE_STORAGE_ENABLED
+        value: true
+      - key: SUPABASE_STORAGE_BUCKET
+        sync: false
+      # Opcional: base pública (ex.: https://cdn.seudominio.com). Se vazio, usa SUPABASE_URL.
+      - key: SUPABASE_STORAGE_PUBLIC_BASE_URL
+        value: ""
+      - key: SUPABASE_STORAGE_TIMEOUT_SECONDS
+        value: 20
       - key: LLM_PROVIDER
         value: openai
       - key: OPENAI_API_KEY
@@ -50,6 +77,31 @@ services:
       - key: ALLOWED_HOSTS
         value: '["wallfruits-backend.onrender.com","wallfruits-api.onrender.com"]'
 
+      # Performance (opcional): ajuste para 2 em planos com mais CPU/RAM.
+      - key: WEB_CONCURRENCY
+        value: "1"
+      # Pagamentos — Stripe (preencha no painel do Render)
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_PUBLISHABLE_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: STRIPE_PRICE_BASIC
+        sync: false
+      - key: STRIPE_PRICE_PRO
+        sync: false
+      - key: STRIPE_PRICE_PRO_YEARLY
+        sync: false
+      - key: STRIPE_PRICE_PREMIUM
+        sync: false
+      - key: STRIPE_PRICE_PREMIUM_YEARLY
+        sync: false
+      - key: STRIPE_PRICE_ENTERPRISE
+        sync: false
+      - key: STRIPE_PRICE_ENTERPRISE_YEARLY
+        sync: false
+
   - type: worker
     name: wallfruits-ai-worker
     env: python
@@ -60,14 +112,30 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.0
+      - key: APP_ENV
+        value: production
       - key: DEBUG
         value: false
-      - key: REDIS_ENABLED
+      - key: SECURITY_ENFORCE_PRODUCTION_HARDENING
         value: true
+      - key: RATE_LIMIT_ENABLED
+        value: true
+      - key: JWT_ISSUER
+        value: wallfruits-api
+      - key: JWT_AUDIENCE
+        value: wallfruits-clients
+      - key: JWT_REQUIRE_ISSUER
+        value: true
+      - key: JWT_REQUIRE_AUDIENCE
+        value: true
+      - key: AI_ENFORCE_SUBSCRIPTION_GUARDRAILS
+        value: true
+      - key: REDIS_ENABLED
+        value: false
       - key: REDIS_URL
         sync: false
       - key: DATABASE_URL
-        value: __SET_SUPABASE_DATABASE_URL__
+        sync: false
       - key: SECRET_KEY
         sync: false
       - key: LLM_PROVIDER

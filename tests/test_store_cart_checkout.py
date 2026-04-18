@@ -2,6 +2,8 @@ import os
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 # Force local SQLite for deterministic and fast automated tests.
 os.environ["DATABASE_URL"] = "sqlite:///./test_store_cart_checkout.db"
@@ -9,7 +11,7 @@ os.environ["DATABASE_URL"] = "sqlite:///./test_store_cart_checkout.db"
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from app.database.connection import Base, SessionLocal, engine
+from app.database.connection import Base
 from app.models.user import User
 from app.models.store_models import (
     Product,
@@ -22,6 +24,14 @@ from app.models.store_models import (
 import app.routers.store_routes as store_routes
 
 
+TEST_DB_URL = "sqlite:///./test_store_cart_checkout.db"
+test_engine = create_engine(
+    TEST_DB_URL,
+    connect_args={"check_same_thread": False},
+)
+TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
+
+
 class StoreCartCheckoutTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -30,7 +40,7 @@ class StoreCartCheckoutTests(unittest.TestCase):
         cls.current_user = None
 
         def override_get_db():
-            db = SessionLocal()
+            db = TestingSessionLocal()
             try:
                 yield db
             finally:
@@ -46,14 +56,15 @@ class StoreCartCheckoutTests(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.app.dependency_overrides.clear()
+        test_engine.dispose()
         try:
             Path("test_store_cart_checkout.db").unlink(missing_ok=True)
         except Exception:
             pass
 
     def setUp(self):
-        Base.metadata.create_all(bind=engine)
-        self.db = SessionLocal()
+        Base.metadata.create_all(bind=test_engine)
+        self.db = TestingSessionLocal()
 
         # Cleanup order matters due to FKs.
         self.db.query(OrderItem).delete()

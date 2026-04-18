@@ -3,7 +3,7 @@ from decimal import Decimal
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class NegotiationCreate(BaseModel):
@@ -43,8 +43,7 @@ class NegotiationMessageResponse(BaseModel):
     created_at: datetime
     sender_profile: Optional[dict] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
     @field_validator("sender_profile", mode="before")
     @classmethod
@@ -77,8 +76,7 @@ class NegotiationResponse(BaseModel):
     buyer_profile: Optional[dict] = None
     seller_profile: Optional[dict] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
     @field_validator("offer", mode="before")
     @classmethod
@@ -136,8 +134,7 @@ class IntermediationContractResponse(BaseModel):
     updated_at: Optional[datetime]
     uploaded_by_user: Optional[dict] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
     @field_validator("uploaded_by_user", mode="before")
     @classmethod
@@ -164,8 +161,7 @@ class IntermediationContractVersionResponse(BaseModel):
     created_at: datetime
     uploaded_by_user: Optional[dict] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
     @field_validator("uploaded_by_user", mode="before")
     @classmethod
@@ -196,8 +192,7 @@ class IntermediationRequestResponse(BaseModel):
     reviewed_by_user: Optional[dict] = None
     contract: Optional[IntermediationContractResponse] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
     @field_validator("requester_profile", mode="before")
     @classmethod

@@ -27,6 +27,7 @@ _PLAN_NAMES = {
     "basic": "Básico",
     "pro": "Pro",
     "premium": "Premium",
+    "enterprise": "Enterprise",
 }
 
 _PLAN_PRICES = {
@@ -41,6 +42,10 @@ _PLAN_PRICES = {
     "premium": {
         "monthly": settings.STRIPE_PRICE_PREMIUM,
         "yearly": settings.STRIPE_PRICE_PREMIUM_YEARLY,
+    },
+    "enterprise": {
+        "monthly": settings.STRIPE_PRICE_ENTERPRISE,
+        "yearly": settings.STRIPE_PRICE_ENTERPRISE_YEARLY,
     },
 }
 
@@ -72,7 +77,7 @@ def create_checkout_session(
         raise ValueError("Stripe não configurado. Defina STRIPE_SECRET_KEY no .env")
 
     if plan not in _PLAN_PRICES:
-        raise ValueError(f"Plano inválido: '{plan}'. Use 'basic', 'pro' ou 'premium'")
+        raise ValueError(f"Plano inválido: '{plan}'. Use 'basic', 'pro', 'premium' ou 'enterprise'")
 
     normalized_cycle = str(billing_cycle or "monthly").strip().lower()
     if normalized_cycle not in _VALID_BILLING_CYCLES:

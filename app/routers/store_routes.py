@@ -7,6 +7,7 @@ from app.database.connection import get_db
 from app.core.auth_middleware import get_current_user
 from app.models.user import User
 from app.models.store_models import Product, ProductStatus, Order, OrderItem, OrderStatus, QuoteRequest, QuoteRequestStatus
+from app.services.ai_telemetry_service import AITelemetryService
 from app.services.payment_service import create_store_order_checkout_session, is_stripe_configured
 import logging
 import re
@@ -279,6 +280,9 @@ async def create_store_checkout_session(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    telemetry = AITelemetryService(db)
+    request_id = getattr(request.state, "request_id", None)
+
     cart = (
         db.query(Order)
         .filter(
@@ -288,6 +292,22 @@ async def create_store_checkout_session(
         )
         .first()
     )
+
+    telemetry.log_event(
+        user_id=current_user.id,
+        event_type="store_checkout_session_requested",
+        entity_type="store_order",
+        entity_id=str(cart.id) if cart else None,
+        metadata={
+            "payment_method": payload.payment_method,
+            "has_open_cart": bool(cart),
+        },
+        event_domain="store_checkout",
+        event_source="/api/store/checkout/session",
+        request_id=request_id,
+        commit=False,
+    )
+
     if not cart:
         raise HTTPException(status_code=400, detail="Carrinho nao encontrado")
 
@@ -343,6 +363,23 @@ async def create_store_checkout_session(
 
     db.commit()
     db.refresh(cart)
+
+    telemetry.log_event(
+        user_id=current_user.id,
+        event_type="store_checkout_session_created",
+        entity_type="store_order",
+        entity_id=str(cart.id),
+        metadata={
+            "checkout_mode": "stripe_session",
+            "session_id": checkout["session_id"],
+            "payment_method": payload.payment_method,
+            "total_amount": float(cart.total_amount or 0),
+        },
+        event_domain="store_checkout",
+        event_source="/api/store/checkout/session",
+        request_id=request_id,
+        commit=True,
+    )
 
     return {
         "mode": "checkout",
@@ -529,7 +566,15 @@ async def my_quote_requests(db: Session = Depends(get_db), current_user: User = 
 
 
 @router.post("/checkout/complete")
-async def complete_checkout(payload: CheckoutIn, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+async def complete_checkout(
+    payload: CheckoutIn,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    telemetry = AITelemetryService(db)
+    request_id = getattr(request.state, "request_id", None)
+
     cart = (
         db.query(Order)
         .filter(
@@ -539,6 +584,22 @@ async def complete_checkout(payload: CheckoutIn, db: Session = Depends(get_db), 
         )
         .first()
     )
+
+    telemetry.log_event(
+        user_id=current_user.id,
+        event_type="store_checkout_complete_requested",
+        entity_type="store_order",
+        entity_id=str(cart.id) if cart else None,
+        metadata={
+            "payment_method": payload.payment_method,
+            "has_open_cart": bool(cart),
+        },
+        event_domain="store_checkout",
+        event_source="/api/store/checkout/complete",
+        request_id=request_id,
+        commit=False,
+    )
+
     if not cart:
         raise HTTPException(status_code=400, detail="Carrinho nao encontrado")
 
@@ -566,6 +627,22 @@ async def complete_checkout(payload: CheckoutIn, db: Session = Depends(get_db), 
 
     db.commit()
     db.refresh(cart)
+
+    telemetry.log_event(
+        user_id=current_user.id,
+        event_type="store_checkout_completed",
+        entity_type="store_order",
+        entity_id=str(cart.id),
+        metadata={
+            "payment_method": payload.payment_method,
+            "status": _order_status_value(cart.status),
+            "total_amount": float(cart.total_amount or 0),
+        },
+        event_domain="store_checkout",
+        event_source="/api/store/checkout/complete",
+        request_id=request_id,
+        commit=True,
+    )
 
     return {
         "order_id": cart.id,

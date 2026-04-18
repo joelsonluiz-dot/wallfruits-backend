@@ -1,0 +1,61 @@
+name: Build Android Release (AAB)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-aab:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.7'
+
+      - name: Decode keystore & write keystore.properties
+        env:
+          WF_KEYSTORE_BASE64: ${{ secrets.WF_KEYSTORE_BASE64 }}
+          WF_KEYSTORE_PASSWORD: ${{ secrets.WF_KEYSTORE_PASSWORD }}
+          WF_KEY_ALIAS: ${{ secrets.WF_KEY_ALIAS }}
+          WF_KEY_PASSWORD: ${{ secrets.WF_KEY_PASSWORD }}
+        run: |
+          if [ -z "$WF_KEYSTORE_BASE64" ]; then
+            echo "Missing secret WF_KEYSTORE_BASE64" >&2
+            exit 1
+          fi
+          if [ -z "$WF_KEYSTORE_PASSWORD" ] || [ -z "$WF_KEY_ALIAS" ] || [ -z "$WF_KEY_PASSWORD" ]; then
+            echo "Missing signing secrets (WF_KEYSTORE_PASSWORD/WF_KEY_ALIAS/WF_KEY_PASSWORD)" >&2
+            exit 1
+          fi
+
+          echo "$WF_KEYSTORE_BASE64" | base64 --decode > android/release.keystore
+
+          cat > android/keystore.properties <<EOF
+          storeFile=release.keystore
+          storePassword=$WF_KEYSTORE_PASSWORD
+          keyAlias=$WF_KEY_ALIAS
+          keyPassword=$WF_KEY_PASSWORD
+          EOF
+
+      - name: Build release AAB
+        run: |
+          gradle -p android bundleRelease --stacktrace
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wallfruits-android-aab
+          path: android/app/build/outputs/bundle/release/app-release.aab

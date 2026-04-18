@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib
 from pathlib import Path
+from threading import Lock
 from typing import Any
 
 ML_LIBS_AVAILABLE = True
@@ -13,21 +14,41 @@ from app.models.ai_models import UserBehaviorLog
 MODEL_DIR = Path("models")
 MODEL_DIR.mkdir(exist_ok=True)
 
+_ml_libs_lock = Lock()
+_ml_libs_cache: dict[str, Any] | None = None
+
+_model_cache_lock = Lock()
+_model_cache: dict[str, tuple[float, Any]] = {}
+
 
 def _load_ml_libs() -> dict[str, Any] | None:
     global ML_LIBS_AVAILABLE
 
+    global _ml_libs_cache
+    if _ml_libs_cache is not None:
+        return _ml_libs_cache
+
     try:
-        libs = {
-            "joblib": importlib.import_module("joblib"),
-            "pd": importlib.import_module("pandas"),
-            "RandomForestClassifier": getattr(importlib.import_module("sklearn.ensemble"), "RandomForestClassifier"),
-            "RandomForestRegressor": getattr(importlib.import_module("sklearn.ensemble"), "RandomForestRegressor"),
-            "train_test_split": getattr(importlib.import_module("sklearn.model_selection"), "train_test_split"),
-            "Pipeline": getattr(importlib.import_module("sklearn.pipeline"), "Pipeline"),
-            "StandardScaler": getattr(importlib.import_module("sklearn.preprocessing"), "StandardScaler"),
-        }
-        return libs
+        with _ml_libs_lock:
+            if _ml_libs_cache is not None:
+                return _ml_libs_cache
+
+            ensemble = importlib.import_module("sklearn.ensemble")
+            model_selection = importlib.import_module("sklearn.model_selection")
+            pipeline = importlib.import_module("sklearn.pipeline")
+            preprocessing = importlib.import_module("sklearn.preprocessing")
+
+            _ml_libs_cache = {
+                "joblib": importlib.import_module("joblib"),
+                "pd": importlib.import_module("pandas"),
+                "RandomForestClassifier": getattr(ensemble, "RandomForestClassifier"),
+                "RandomForestRegressor": getattr(ensemble, "RandomForestRegressor"),
+                "train_test_split": getattr(model_selection, "train_test_split"),
+                "Pipeline": getattr(pipeline, "Pipeline"),
+                "StandardScaler": getattr(preprocessing, "StandardScaler"),
+            }
+
+            return _ml_libs_cache
     except Exception:
         ML_LIBS_AVAILABLE = False
         return None
@@ -158,7 +179,23 @@ def _load_model(filename: str):
     path = MODEL_DIR / filename
     if not path.exists():
         return None
-    return libs["joblib"].load(path)
+
+    try:
+        mtime = path.stat().st_mtime
+    except OSError:
+        return None
+
+    with _model_cache_lock:
+        cached = _model_cache.get(filename)
+        if cached and cached[0] == mtime:
+            return cached[1]
+
+    model = libs["joblib"].load(path)
+
+    with _model_cache_lock:
+        _model_cache[filename] = (mtime, model)
+
+    return model
 
 
 def predict_with_fallback(module: str, payload: dict[str, Any]) -> tuple[dict[str, Any], float]:

@@ -11,6 +11,115 @@ from app.auth.jwt_handler import decode_token
 security = HTTPBearer(auto_error=False)
 AUTH_COOKIE_NAME = "wf_auth_token"
 
+PLATFORM_ROLE_NONE = "none"
+PLATFORM_ROLE_STAFF_SUPPORT = "staff_support"
+PLATFORM_ROLE_STAFF_OPS = "staff_ops"
+PLATFORM_ROLE_STAFF_ADMIN = "staff_admin"
+
+ACCOUNT_ROLE_VIEWER = "account_viewer"
+ACCOUNT_ROLE_ANALYST = "account_analyst"
+ACCOUNT_ROLE_MANAGER = "account_manager"
+ACCOUNT_ROLE_OWNER = "account_owner"
+
+VALID_PLATFORM_ROLES = {
+    PLATFORM_ROLE_NONE,
+    PLATFORM_ROLE_STAFF_SUPPORT,
+    PLATFORM_ROLE_STAFF_OPS,
+    PLATFORM_ROLE_STAFF_ADMIN,
+}
+
+VALID_ACCOUNT_ROLES = {
+    ACCOUNT_ROLE_VIEWER,
+    ACCOUNT_ROLE_ANALYST,
+    ACCOUNT_ROLE_MANAGER,
+    ACCOUNT_ROLE_OWNER,
+}
+
+
+def resolve_platform_role(user: User) -> str:
+    raw = str(getattr(user, "platform_role", "") or "").strip().lower()
+    if raw in VALID_PLATFORM_ROLES and raw != PLATFORM_ROLE_NONE:
+        return raw
+
+    # Compatibilidade com contas antigas que ainda usam role=admin/is_superuser.
+    if bool(getattr(user, "is_superuser", False)):
+        return PLATFORM_ROLE_STAFF_ADMIN
+    if str(getattr(user, "role", "") or "").strip().lower() == "admin":
+        return PLATFORM_ROLE_STAFF_ADMIN
+
+    return PLATFORM_ROLE_NONE
+
+
+def resolve_account_role(user: User) -> str:
+    raw = str(getattr(user, "account_role", "") or "").strip().lower()
+    if raw in VALID_ACCOUNT_ROLES:
+        return raw
+
+    # Contas legadas de operação comercial caem em account_owner por padrão.
+    legacy_role = str(getattr(user, "role", "") or "").strip().lower()
+    if legacy_role in {"buyer", "producer", "supplier"}:
+        return ACCOUNT_ROLE_OWNER
+    return ACCOUNT_ROLE_VIEWER
+
+
+def resolve_account_scope_id(user: User) -> str:
+    raw = str(getattr(user, "account_scope_id", "") or "").strip()
+    if raw:
+        return raw
+    return f"user:{int(getattr(user, 'id', 0) or 0)}"
+
+
+def is_platform_staff(user: User, allowed_roles: set[str] | None = None) -> bool:
+    platform_role = resolve_platform_role(user)
+    if allowed_roles is None:
+        return platform_role != PLATFORM_ROLE_NONE
+    return platform_role in set(allowed_roles)
+
+
+def require_platform_roles(
+    user: User,
+    *,
+    allowed_roles: set[str],
+    detail: str = "Acesso restrito à equipe da plataforma",
+) -> None:
+    if not is_platform_staff(user, allowed_roles=allowed_roles):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=detail,
+        )
+
+
+def is_account_member(user: User, allowed_roles: set[str] | None = None) -> bool:
+    account_role = resolve_account_role(user)
+    if allowed_roles is None:
+        return account_role in VALID_ACCOUNT_ROLES
+    return account_role in set(allowed_roles)
+
+
+def require_account_roles(
+    user: User,
+    *,
+    allowed_roles: set[str],
+    detail: str = "Acesso restrito à gestão da conta",
+) -> None:
+    if not is_account_member(user, allowed_roles=allowed_roles):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=detail,
+        )
+
+
+def enforce_account_scope(user: User, target_account_scope_id: str) -> None:
+    if resolve_platform_role(user) == PLATFORM_ROLE_STAFF_ADMIN:
+        return
+
+    if resolve_account_scope_id(user) != str(target_account_scope_id or "").strip():
+        # 404 evita enumeração de recursos fora do escopo.
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Recurso não encontrado",
+        )
+
 
 def _resolve_token_from_request(
     credentials: Optional[HTTPAuthorizationCredentials],
@@ -123,7 +232,7 @@ def require_role(required_role: str):
     Decorator para verificar roles do usuário
     """
     def role_checker(current_user: User = Depends(get_current_user)):
-        if current_user.role not in [required_role, "admin"]:
+        if current_user.role not in [required_role, "admin"] and resolve_platform_role(current_user) != PLATFORM_ROLE_STAFF_ADMIN:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=f"Acesso negado. Role '{required_role}' necessário"
@@ -136,7 +245,7 @@ def require_producer_or_admin(current_user: User = Depends(get_current_user)):
     """
     Verifica se usuário é produtor ou admin
     """
-    if current_user.role not in ["producer", "admin"]:
+    if current_user.role not in ["producer", "admin"] and resolve_platform_role(current_user) != PLATFORM_ROLE_STAFF_ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Apenas produtores podem criar ofertas"

@@ -33,7 +33,7 @@ rsa==4.9.1
 six==1.17.0
 sqlalchemy==2.0.48
 typing-extensions>=4.14.1
-uvicorn==0.34.0
+uvicorn[standard]==0.34.0
 websockets==14.1
 resend==2.23.0
 stripe==14.4.1

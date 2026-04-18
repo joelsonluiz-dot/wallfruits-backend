@@ -26,6 +26,8 @@ from app.core.config import settings
 from app.database.connection import get_db
 from app.models.subscription import Subscription
 from app.models.user import User
+from app.services.ai_telemetry_service import AITelemetryService
+from app.services.subscription_policy_service import capabilities_for_plan
 from app.services.payment_service import (
     create_checkout_session,
     create_payment_intent,
@@ -36,7 +38,7 @@ from app.services.payment_service import (
 router = APIRouter(prefix="/payment", tags=["payment"])
 logger = logging.getLogger("payment_routes")
 
-_VALID_PLANS = {"basic", "pro", "premium"}
+_VALID_PLANS = {"basic", "pro", "premium", "enterprise"}
 _VALID_PIX_KEY_TYPES = {"cpf", "cnpj", "email", "phone", "random"}
 _VALID_PAYMENT_METHODS = {"card", "pix"}
 _SUBSCRIPTION_CTA_VARIANTS = {"a", "b"}
@@ -511,6 +513,7 @@ def track_subscription_cta_event(
     payload: SubscriptionCtaEventIn,
     request: Request,
     current_user: User | None = Depends(get_current_user_optional),
+    db: Session = Depends(get_db),
 ):
     """Registra evento de conversão A/B de assinatura (best effort)."""
     event_name = payload.event
@@ -559,6 +562,29 @@ def track_subscription_cta_event(
 
         event_count = _counter_value(counters, f"variant_event:{variant}:{event_name}")
 
+    if current_user is not None:
+        request_id = getattr(request.state, "request_id", None)
+        telemetry = AITelemetryService(db)
+        telemetry.log_event(
+            user_id=current_user.id,
+            event_type="payment_subscription_cta_event",
+            entity_type="subscription_cta",
+            entity_id=str(plan_id),
+            metadata={
+                "event": event_name,
+                "variant": variant,
+                "plan_id": plan_id,
+                "billing_cycle": billing_cycle,
+                "source": source,
+                "page": page,
+            },
+            event_domain="payment",
+            event_source="/api/payment/subscription-cta/event",
+            request_id=request_id,
+            idempotency_key=f"payment-cta:{variant}:{event_name}:{plan_id}:{billing_cycle}:{source}:{page}",
+            commit=True,
+        )
+
     return {
         "accepted": True,
         "variant": variant,
@@ -593,6 +619,7 @@ def get_subscription_cta_summary(
 @router.post("/checkout/{plan}", status_code=status.HTTP_200_OK)
 def start_checkout(
     plan: str,
+    request: Request,
     success_url: Optional[str] = Body(None, embed=True),
     cancel_url: Optional[str] = Body(None, embed=True),
     billing_cycle: str = Body("monthly", embed=True),
@@ -601,14 +628,31 @@ def start_checkout(
 ):
     """
     Gera uma URL de checkout do Stripe para assinar o plano escolhido.
-    Planos disponíveis: **basic** | **pro** | **premium**
+    Planos disponíveis: **basic** | **pro** | **premium** | **enterprise**
     """
     if plan not in _VALID_PLANS:
-        raise HTTPException(400, f"Plano inválido: '{plan}'. Use 'basic', 'pro' ou 'premium'.")
+        raise HTTPException(400, f"Plano inválido: '{plan}'. Use 'basic', 'pro', 'premium' ou 'enterprise'.")
 
     from app.core.config import settings
     s_url = success_url or f"{settings.FRONTEND_URL}/pagamento/sucesso"
     c_url = cancel_url or f"{settings.FRONTEND_URL}/pagamento/cancelado"
+    request_id = getattr(request.state, "request_id", None) if request else None
+    telemetry = AITelemetryService(db)
+
+    telemetry.log_event(
+        user_id=current_user.id,
+        event_type="payment_checkout_requested",
+        entity_type="subscription_plan",
+        entity_id=plan,
+        metadata={
+            "plan": plan,
+            "billing_cycle": billing_cycle,
+        },
+        event_domain="payment",
+        event_source="/api/payment/checkout",
+        request_id=request_id,
+        commit=True,
+    )
 
     try:
         result = create_checkout_session(
@@ -619,10 +663,60 @@ def start_checkout(
             cancel_url=c_url,
         )
     except ValueError as exc:
+        telemetry.log_event(
+            user_id=current_user.id,
+            event_type="payment_checkout_failed",
+            entity_type="subscription_plan",
+            entity_id=plan,
+            metadata={
+                "plan": plan,
+                "billing_cycle": billing_cycle,
+                "reason": str(exc),
+            },
+            event_domain="payment",
+            event_source="/api/payment/checkout",
+            request_id=request_id,
+            idempotency_key=f"payment-checkout-failed:{plan}:{billing_cycle}:{str(exc)}",
+            commit=True,
+        )
         raise HTTPException(400, str(exc))
     except Exception as exc:
         logger.error("Erro ao criar checkout: %s", exc, exc_info=True)
+        telemetry.log_event(
+            user_id=current_user.id,
+            event_type="payment_checkout_failed",
+            entity_type="subscription_plan",
+            entity_id=plan,
+            metadata={
+                "plan": plan,
+                "billing_cycle": billing_cycle,
+                "reason": "internal_error",
+            },
+            event_domain="payment",
+            event_source="/api/payment/checkout",
+            request_id=request_id,
+            idempotency_key=f"payment-checkout-failed:{plan}:{billing_cycle}:internal_error",
+            commit=True,
+        )
         raise HTTPException(500, "Erro ao processar pagamento.")
+
+    telemetry.log_event(
+        user_id=current_user.id,
+        event_type="payment_checkout_created",
+        entity_type="subscription_plan",
+        entity_id=plan,
+        metadata={
+            "plan": plan,
+            "billing_cycle": billing_cycle,
+            "session_id": result.get("session_id"),
+            "has_checkout_url": bool(result.get("checkout_url")),
+        },
+        event_domain="payment",
+        event_source="/api/payment/checkout",
+        request_id=request_id,
+        idempotency_key=f"payment-checkout-created:{plan}:{billing_cycle}:{result.get('session_id') or 'none'}",
+        commit=True,
+    )
 
     return result
 
@@ -692,13 +786,18 @@ def get_my_subscription(
     """Retorna o plano de assinatura atual do usuário."""
     sub = db.query(Subscription).filter(Subscription.user_id == current_user.id).first()
     if not sub:
-        return {"plan_type": "none", "status": "inactive"}
+        return {
+            "plan_type": "none",
+            "status": "inactive",
+            "capabilities": capabilities_for_plan("none"),
+        }
     return {
         "plan_type": sub.plan_type,
         "status": sub.status,
         "auto_renew": sub.auto_renew,
         "start_date": sub.start_date,
         "end_date": sub.end_date,
+        "capabilities": capabilities_for_plan(str(sub.plan_type or "none")),
     }
 
 
@@ -722,6 +821,11 @@ def cancel_my_subscription(
 @router.get("/plans", status_code=status.HTTP_200_OK)
 def list_plans():
     """Lista os planos disponíveis e se o Stripe está configurado."""
+    basic_capabilities = capabilities_for_plan("basic")
+    pro_capabilities = capabilities_for_plan("pro")
+    premium_capabilities = capabilities_for_plan("premium")
+    enterprise_capabilities = capabilities_for_plan("enterprise")
+
     return {
         "stripe_configured": is_stripe_configured(),
         "plans": [
@@ -739,7 +843,9 @@ def list_plans():
                     "Ofertas e negociações no marketplace",
                     "Perfil público e reputação",
                     "Fluxos essenciais da plataforma",
+                    "IA apenas assistida (sem execução autônoma)",
                 ],
+                "capabilities": basic_capabilities,
                 "cta": {
                     "label": "Começar agora",
                     "checkout_plan_id": "basic",
@@ -759,8 +865,10 @@ def list_plans():
                     "Tudo do Básico",
                     "Agenda Inteligente sem janela limitada",
                     "Gestão de carteira com mais capacidade",
+                    "Automação IA em modo semi-autônomo",
                     "Suporte prioritário para operação",
                 ],
+                "capabilities": pro_capabilities,
                 "cta": {
                     "label": "Assinar Pro",
                     "checkout_plan_id": "pro",
@@ -781,17 +889,41 @@ def list_plans():
                     "Intermediação com contrato",
                     "Participação em sorteios",
                     "Gamificação avançada",
+                    "Automação IA completa com persistência do loop",
                     "Prioridade máxima no suporte",
                 ],
+                "capabilities": premium_capabilities,
                 "cta": {
                     "label": "Assinar Premium",
                     "checkout_plan_id": "premium",
+                },
+            },
+            {
+                "id": "enterprise",
+                "name": "Enterprise",
+                "description": "Operação multi-equipe com governança reforçada e automação em escala.",
+                "monthly_price_brl": 499,
+                "yearly_price_brl": 4990,
+                "yearly_savings_percent": 17,
+                "yearly_checkout_enabled": bool(settings.STRIPE_PRICE_ENTERPRISE_YEARLY),
+                "recommended": False,
+                "target": "Empresas com alto volume e equipes distribuídas",
+                "features": [
+                    "Tudo do Premium",
+                    "Limites ampliados de automação diária",
+                    "Governança avançada por equipe",
+                    "Prioridade máxima de suporte e operação",
+                ],
+                "capabilities": enterprise_capabilities,
+                "cta": {
+                    "label": "Assinar Enterprise",
+                    "checkout_plan_id": "enterprise",
                 },
             },
         ],
         "conversion": {
             "risk_reversal": "Sem fidelidade. Cancele quando quiser.",
             "checkout_security": "Pagamento processado via Stripe com fluxo seguro.",
-            "positioning": "Recomendado manter 3 planos para maximizar conversão sem aumentar fricção.",
+            "positioning": "Escada de valor em 4 planos para maturidade de operação e automação IA.",
         },
     }

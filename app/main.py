@@ -272,10 +272,63 @@ async def lifespan(app_obj: FastAPI):
 
             await asyncio.sleep(interval)
 
+    async def _business_os_marketing_worker() -> None:
+        interval = max(60, int(settings.BUSINESS_OS_MARKETING_WORKER_INTERVAL_SECONDS))
+        logger.info("Business OS marketing worker iniciado (intervalo=%ss)", interval)
+
+        while True:
+            try:
+                db = SessionLocal()
+                try:
+                    admin_actor = (
+                        db.query(User)
+                        .filter(User.is_active.is_(True), (User.role == "admin") | (User.is_superuser.is_(True)))
+                        .order_by(User.is_superuser.desc(), User.id.asc())
+                        .first()
+                    )
+
+                    if admin_actor is None:
+                        logger.info("Business OS marketing worker sem admin ativo para atuar")
+                    else:
+                        payload = ai_routes._build_business_os_marketing_funnel_payload(
+                            db=db,
+                            days=int(settings.BUSINESS_OS_MARKETING_WORKER_WINDOW_DAYS),
+                            min_segment_signals=int(settings.BUSINESS_OS_MARKETING_WORKER_MIN_SEGMENT_SIGNALS),
+                        )
+                        signals = list(payload.get("signals") or [])
+
+                        if signals:
+                            processed = ai_routes._persist_business_os_marketing_signals(
+                                db=db,
+                                actor_user_id=int(admin_actor.id),
+                                signals=signals,
+                                window_start=str(payload.get("window_start") or ""),
+                                window_end=str(payload.get("window_end") or ""),
+                                request_id=None,
+                                event_source="worker:business-os-marketing-funnel",
+                            )
+                            db.commit()
+                            logger.info(
+                                "Business OS marketing worker: signals=%s events=%s window=%sd",
+                                len(signals),
+                                processed,
+                                int(payload.get("window_days") or settings.BUSINESS_OS_MARKETING_WORKER_WINDOW_DAYS),
+                            )
+                finally:
+                    db.close()
+            except Exception as exc:
+                logger.error("Falha no business os marketing worker: %s", exc, exc_info=True)
+
+            await asyncio.sleep(interval)
+
     worker_task: asyncio.Task | None = None
+    business_os_worker_task: asyncio.Task | None = None
     if app_obj.state.startup_ok and settings.AGENDA_PREDICTIVE_WORKER_ENABLED:
         worker_task = asyncio.create_task(_agenda_predictive_worker())
         app_obj.state.agenda_predictive_worker_task = worker_task
+    if app_obj.state.startup_ok and settings.BUSINESS_OS_MARKETING_WORKER_ENABLED:
+        business_os_worker_task = asyncio.create_task(_business_os_marketing_worker())
+        app_obj.state.business_os_marketing_worker_task = business_os_worker_task
 
     try:
         yield
@@ -286,6 +339,12 @@ async def lifespan(app_obj: FastAPI):
                 await worker_task
             except asyncio.CancelledError:
                 logger.info("Agenda predictive worker encerrado")
+        if business_os_worker_task and not business_os_worker_task.done():
+            business_os_worker_task.cancel()
+            try:
+                await business_os_worker_task
+            except asyncio.CancelledError:
+                logger.info("Business OS marketing worker encerrado")
 
 
 app = FastAPI(

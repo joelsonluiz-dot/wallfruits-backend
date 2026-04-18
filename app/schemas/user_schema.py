@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from typing import Optional
 from datetime import datetime
 
@@ -38,6 +38,9 @@ class ChangePasswordRequest(BaseModel):
 class UserResponse(UserBase):
     id: int
     role: str
+    platform_role: str = "none"
+    account_role: str = "account_owner"
+    account_scope_id: Optional[str] = None
     is_active: bool
     is_verified: bool
     rating: int
@@ -45,8 +48,7 @@ class UserResponse(UserBase):
     created_at: datetime
     updated_at: Optional[datetime]
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserProfile(UserResponse):
@@ -57,5 +59,4 @@ class UserProfile(UserResponse):
     favorite_count: int = 0
     unread_messages: int = 0
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

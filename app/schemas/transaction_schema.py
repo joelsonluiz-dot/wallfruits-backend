@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from pydantic import field_validator, model_validator
 from typing import Optional, Dict
 from uuid import UUID
@@ -72,8 +72,7 @@ class TransactionResponse(BaseModel):
     buyer: Optional[Dict] = None
     offer: Optional[Dict] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
     @field_validator("buyer", mode="before")
     @classmethod

@@ -43,6 +43,7 @@
             --uib-speed: 2.5s;
             --wf-floating-gap: 12px;
             --wf-floating-bottom-offset: calc(78px + env(safe-area-inset-bottom));
+            --wf-mobile-dock-shift: 0px;
             --wf-focus-ring: 0 0 0 3px rgba(46, 125, 50, 0.22);
             --wf-motion-fast: 0.16s;
             --wf-motion-normal: 0.22s;
@@ -525,10 +526,13 @@
             position: fixed;
             left: 0;
             right: 0;
-            bottom: 0;
+            bottom: var(--wf-mobile-dock-shift);
             z-index: 132;
             padding: 0;
             pointer-events: none;
+            will-change: transform;
+            transform: translateZ(0);
+            backface-visibility: hidden;
         }
 
         .wf-mobile-wrap,
@@ -596,6 +600,11 @@
             text-align: center;
         }
 
+        .wf-mobile-nav-item.is-loading {
+            opacity: 0.72;
+            pointer-events: none;
+        }
+
         .wf-mobile-nav-item:hover,
         .wf-mobile-nav-item:active,
         .wf-mobile-nav-item.active {
@@ -647,7 +656,7 @@
         .wf-mobile-floating-add {
             position: fixed;
             right: 1rem;
-            bottom: var(--wf-floating-bottom-offset);
+            bottom: calc(var(--wf-floating-bottom-offset) + var(--wf-mobile-dock-shift));
             z-index: 151;
             display: none;
             border: none;
@@ -1648,7 +1657,7 @@
                 width: 52px;
                 height: 52px;
                 right: 0.72rem;
-                bottom: calc(72px + env(safe-area-inset-bottom));
+                bottom: calc(72px + env(safe-area-inset-bottom) + var(--wf-mobile-dock-shift));
             }
 
             .wf-mobile-notif-badge {
@@ -1698,14 +1707,14 @@
 
             .wf-ai-fab {
                 right: 0.72rem;
-                bottom: calc(72px + env(safe-area-inset-bottom) + 64px + var(--wf-floating-gap));
+                bottom: calc(72px + env(safe-area-inset-bottom) + 64px + var(--wf-floating-gap) + var(--wf-mobile-dock-shift));
                 width: 54px;
                 height: 54px;
             }
 
             .wf-cart-fab {
                 right: 0.72rem;
-                bottom: calc(72px + env(safe-area-inset-bottom) + 124px + var(--wf-floating-gap));
+                bottom: calc(72px + env(safe-area-inset-bottom) + 124px + var(--wf-floating-gap) + var(--wf-mobile-dock-shift));
                 width: 52px;
                 height: 52px;
             }
@@ -1793,7 +1802,7 @@
         .wf-ai-fab {
             position: fixed;
             right: 1rem;
-            bottom: calc(var(--wf-floating-bottom-offset) + 74px + var(--wf-floating-gap));
+            bottom: calc(var(--wf-floating-bottom-offset) + 74px + var(--wf-floating-gap) + var(--wf-mobile-dock-shift));
             z-index: 2550;
             width: 58px;
             height: 58px;
@@ -1820,7 +1829,7 @@
         .wf-cart-fab {
             position: fixed;
             right: 1rem;
-            bottom: calc(var(--wf-floating-bottom-offset) + 146px + (var(--wf-floating-gap) * 2));
+            bottom: calc(var(--wf-floating-bottom-offset) + 146px + (var(--wf-floating-gap) * 2) + var(--wf-mobile-dock-shift));
             z-index: 2551;
             width: 58px;
             height: 58px;
@@ -2324,27 +2333,6 @@
         <span>+</span>
         <span class="wf-publish-label">Publicar Produto</span>
     </a>
-
-
-    <!-- Botão flutuante de ações rápidas (mobile/tablet) -->
-    <button type="button" class="wf-mobile-floating-add" id="wfQuickActionsBtn" title="Ações rápidas" aria-label="Ações rápidas">
-        <span class="material-icons">add</span>
-    </button>
-
-    <!-- Popup de ações rápidas (mobile/tablet) -->
-    <div class="wf-popup-overlay" id="wfQuickActionsPopup">
-        <div class="wf-popup-content">
-            <div class="wf-popup-drag-handle"></div>
-            <div class="wf-popup-items">
-                <a class="wf-popup-item" href="/ai-agent?entry=nav" data-agenda-link="1">
-                    <span class="material-icons">event</span>
-                    <span>Agenda Comercial</span>
-                </a>
-                <!-- ...outros itens do popup, se houver... -->
-            </div>
-            <button class="wf-popup-close" onclick="document.getElementById('wfQuickActionsPopup').classList.remove('show')">Fechar</button>
-        </div>
-    </div>
 
     <a
         href="/store/cart"
@@ -4273,10 +4261,11 @@
         function getNavigationPrefetchPlan() {
             const path = normalizeAdsPath(window.location.pathname);
             const isLogged = Boolean(localStorage.getItem('token'));
+            const compactViewport = isFastNavMode();
             const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
             const saveData = Boolean(connection?.saveData);
             const effectiveType = String(connection?.effectiveType || '').toLowerCase();
-            const lowBandwidth = saveData || effectiveType.includes('2g') || effectiveType.includes('3g');
+            const lowBandwidth = compactViewport || saveData || effectiveType.includes('2g') || effectiveType.includes('3g');
 
             const baseRoutes = ['/', '/offers', '/services', '/community', '/store', '/ai-agent'];
             const contextRoutes = {
@@ -4325,6 +4314,16 @@
 
             const routeList = Array.from(routes);
             const apiList = Array.from(apis);
+
+            if (compactViewport) {
+                return {
+                    lowBandwidth: true,
+                    routes: routeList.slice(0, 2),
+                    apis: [],
+                    timeoutMs: 2600,
+                    fallbackDelayMs: 560,
+                };
+            }
 
             return {
                 lowBandwidth,
@@ -4597,11 +4596,6 @@
                 actionBar.classList.toggle('mobile-visible', mobileVisible);
             }
 
-            const quickActionsFabLegacy = document.getElementById('wfQuickActionsBtn');
-            if (quickActionsFabLegacy) {
-                quickActionsFabLegacy.style.display = isHomePath ? '' : 'none';
-            }
-
             const quickActionsFab = document.getElementById('actionFloatingButton');
             if (quickActionsFab) {
                 quickActionsFab.style.display = isHomePath ? '' : 'none';
@@ -4802,6 +4796,7 @@
             if (!overlay) return;
             overlay.classList.add('show');
             overlay.setAttribute('aria-hidden', 'false');
+            ensureSupportIframeLoaded(overlay);
         }
 
         function openAiAgentModal() {
@@ -4809,6 +4804,7 @@
             if (!overlay) return;
             overlay.classList.add('show');
             overlay.setAttribute('aria-hidden', 'false');
+            ensureSupportIframeLoaded(overlay);
         }
 
         function closeAiAgentModal() {
@@ -4940,6 +4936,19 @@
             }, 500);
         }
 
+        function ensureSupportIframeLoaded(container) {
+            if (!container) return;
+
+            const frame = container.querySelector('iframe[data-src]');
+            if (!frame || frame.dataset.loaded === '1') return;
+
+            const target = String(frame.dataset.src || '').trim();
+            if (!target) return;
+
+            frame.src = target;
+            frame.dataset.loaded = '1';
+        }
+
         function closeProfileMenu() {
             const profileMenu = document.getElementById('navProfileMenu');
             const profileTrigger = document.getElementById('wfProfileTrigger');
@@ -5022,6 +5031,65 @@
                 window.visualViewport.addEventListener('scroll', refreshKeyboardState);
                 refreshKeyboardState();
             }
+        }
+
+        function initMobileDockStability() {
+            const root = document.documentElement;
+            if (!root) return;
+
+            const applyDockShift = () => {
+                if (!window.visualViewport || !isMobileOrTabletViewport()) {
+                    root.style.setProperty('--wf-mobile-dock-shift', '0px');
+                    return;
+                }
+
+                const viewport = window.visualViewport;
+                const keyboardOpen = (window.innerHeight - viewport.height) > 140;
+                if (keyboardOpen) {
+                    root.style.setProperty('--wf-mobile-dock-shift', '0px');
+                    return;
+                }
+
+                const shift = Math.max(0, window.innerHeight - (viewport.height + viewport.offsetTop));
+                root.style.setProperty('--wf-mobile-dock-shift', `${Math.min(shift, 72)}px`);
+            };
+
+            applyDockShift();
+
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', applyDockShift);
+                window.visualViewport.addEventListener('scroll', applyDockShift);
+            }
+
+            window.addEventListener('scroll', applyDockShift, { passive: true });
+            window.addEventListener('orientationchange', applyDockShift);
+        }
+
+        function setupMobileNavTapGuard() {
+            const navLinks = document.querySelectorAll('.wf-bottom-menu .wf-mobile-nav-item[href]');
+            if (!navLinks.length) return;
+
+            let navigating = false;
+
+            navLinks.forEach((link) => {
+                link.addEventListener('click', (event) => {
+                    const href = String(link.getAttribute('href') || '').trim();
+                    if (!href || href.startsWith('#')) return;
+
+                    if (navigating) {
+                        event.preventDefault();
+                        return;
+                    }
+
+                    navigating = true;
+                    link.classList.add('is-loading');
+
+                    window.setTimeout(() => {
+                        navigating = false;
+                        link.classList.remove('is-loading');
+                    }, 2200);
+                }, { passive: false });
+            });
         }
 
         function initConnectionIndicator() {
@@ -5254,6 +5322,8 @@
             setupProfileMenu();
             initHiddenSettingsPanel();
             initKeyboardMenuGuard();
+            initMobileDockStability();
+            setupMobileNavTapGuard();
             setupCrossTabSync();
             fixInputStability();
 
@@ -5649,7 +5719,7 @@
                         <span>Suporte IA WallFruits</span>
                         <button class="wf-help-popup-close" id="helpPopupClose" type="button">Fechar</button>
                     </div>
-                    <iframe src="/ai-agent" loading="lazy" title="Suporte IA WallFruits"></iframe>
+                    <iframe data-src="/ai-agent?entry=nav" src="about:blank" loading="lazy" title="Suporte IA WallFruits"></iframe>
                 </div>
             </div>
 
@@ -5659,7 +5729,7 @@
                         <span>Suporte IA WallFruits</span>
                         <button class="wf-ai-modal-close" id="wfAiModalClose" type="button">Fechar</button>
                     </div>
-                    <iframe src="/ai-agent" loading="lazy" title="Suporte IA WallFruits"></iframe>
+                    <iframe data-src="/ai-agent?entry=nav" src="about:blank" loading="lazy" title="Suporte IA WallFruits"></iframe>
                 </div>
             </div>
 

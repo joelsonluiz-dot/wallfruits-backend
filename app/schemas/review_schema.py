@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional, Dict
 from uuid import UUID
 from datetime import datetime
@@ -46,8 +46,7 @@ class ReviewResponse(BaseModel):
     reviewed_user: Optional[Dict] = None
     offer: Optional[Dict] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ReviewStats(BaseModel):

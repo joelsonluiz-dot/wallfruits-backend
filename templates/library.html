@@ -740,6 +740,45 @@
             searchTerm: '',
         };
 
+        const FALLBACK_PUBLIC_CATALOG = [
+            {
+                id: 'mercado-citros-2026',
+                title: 'Mercado de citros em 2026: demanda, preco e janela de venda',
+                author: 'Equipe WallFruits',
+                category: 'Mercado',
+                read_time: '6 min',
+                cover: '',
+                text: 'Panorama pratico do mercado de citros para tomada de decisao comercial. O material resume variacao de demanda por canal, comportamento de preco em picos sazonais e sinais de risco para contratos curtos. Inclui checklist para planejar lote, janela de entrega e estrategia de margem com foco em previsibilidade operacional.',
+            },
+            {
+                id: 'pos-colheita-frutas-frescas',
+                title: 'Pos-colheita inteligente para reduzir perdas em frutas frescas',
+                author: 'Time Tecnico WallFruits',
+                category: 'Producao',
+                read_time: '7 min',
+                cover: '',
+                text: 'Guia objetivo com praticas de selecao, acondicionamento e transporte para reduzir quebra de qualidade no percurso ate o comprador. O conteudo organiza rotina de classificacao por lote, padrao minimo de embalagem e controle de temperatura por etapa, com indicadores simples para medir resultado e agir rapido em desvios.',
+            },
+            {
+                id: 'gestao-fluxo-caixa-safra',
+                title: 'Gestao de fluxo de caixa na safra: como evitar ruptura de operacao',
+                author: 'Nucleo de Gestao Agro',
+                category: 'Gestao',
+                read_time: '5 min',
+                cover: '',
+                text: 'Leitura de apoio para organizar caixa em ciclos de compra, colheita e distribuicao. Traz um modelo de prioridades financeiras, gatilhos de renegociacao com fornecedores e rotina semanal de monitoramento de custos variaveis. O objetivo e proteger capital de giro sem perder velocidade comercial.',
+            },
+            {
+                id: 'ia-aplicada-negociacao-agro',
+                title: 'IA aplicada a negociacao agro: prompts e rotinas de produtividade',
+                author: 'Laboratorio Digital WallFruits',
+                category: 'Tecnologia',
+                read_time: '8 min',
+                cover: '',
+                text: 'Material pratico para usar IA na preparacao de propostas, respostas comerciais e analise de risco de venda. O guia inclui estrutura de prompt para negociaçao, padrao de resumo de pedidos e checklist de consistencia de dados antes do fechamento. Ideal para equipes que querem escalar atendimento com qualidade.',
+            },
+        ];
+
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text == null ? '' : String(text);
@@ -1175,13 +1214,18 @@
                 const data = await apiRequest('/api/library/catalog', 'GET');
                 const items = Array.isArray(data?.items) ? data.items : [];
                 state.catalog = items.map(normalizeBook);
+
+                if (!state.catalog.length && !IS_ADMIN) {
+                    state.catalog = FALLBACK_PUBLIC_CATALOG.map(normalizeBook);
+                }
+
                 renderFilters();
                 applyFilters();
             } catch {
-                state.catalog = [];
+                state.catalog = !IS_ADMIN ? FALLBACK_PUBLIC_CATALOG.map(normalizeBook) : [];
                 state.filtered = [];
                 renderFilters();
-                renderGrid();
+                applyFilters();
             }
         }
 

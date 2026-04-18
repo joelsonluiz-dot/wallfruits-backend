@@ -1,4 +1,4 @@
-const SW_VERSION = 'v3';
+const SW_VERSION = 'v4';
 const STATIC_CACHE = `wallfruits-static-${SW_VERSION}`;
 const PAGE_CACHE = `wallfruits-pages-${SW_VERSION}`;
 const API_CACHE = `wallfruits-api-${SW_VERSION}`;
@@ -152,7 +152,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   if (isApiRequest(request)) {
-    event.respondWith(networkFirst(request, API_CACHE, 1800, MAX_API_ITEMS));
+    event.respondWith(networkFirst(request, API_CACHE, 4200, MAX_API_ITEMS));
     return;
   }
 

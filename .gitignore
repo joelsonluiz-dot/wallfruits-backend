@@ -69,3 +69,10 @@ Dockerfile
 *.tmp
 *.bak
 *.cache
+
+# Android signing (NUNCA commitar)
+android/keystore.properties
+android/*.jks
+android/*.keystore
+android/*.p12
+android/release.keystore

@@ -7,7 +7,15 @@ from datetime import datetime, timedelta
 from app.database.connection import get_db
 from app.database.connection import Base
 from app.models import User, Offer, Transaction, Review, Favorite, Message, Negotiation
-from app.core.auth_middleware import get_current_user
+from app.core.auth_middleware import (
+    PLATFORM_ROLE_STAFF_ADMIN,
+    PLATFORM_ROLE_STAFF_OPS,
+    PLATFORM_ROLE_STAFF_SUPPORT,
+    VALID_ACCOUNT_ROLES,
+    VALID_PLATFORM_ROLES,
+    get_current_user,
+    require_platform_roles,
+)
 from app.services.profile_service import ProfileService
 
 router = APIRouter(
@@ -174,9 +182,15 @@ def get_admin_dashboard(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-
-    if current_user.role != "admin":
-        raise HTTPException(403, "Acesso negado")
+    require_platform_roles(
+        current_user,
+        allowed_roles={
+            PLATFORM_ROLE_STAFF_ADMIN,
+            PLATFORM_ROLE_STAFF_OPS,
+            PLATFORM_ROLE_STAFF_SUPPORT,
+        },
+        detail="Acesso restrito ao staff da plataforma",
+    )
 
     # Estatísticas gerais
     total_users = db.query(func.count(User.id)).scalar()
@@ -252,8 +266,11 @@ def purge_platform_data(
     db: Session = Depends(get_db),
 ):
     """Apaga dados da plataforma de forma irreversível (somente admin)."""
-    if current_user.role != "admin":
-        raise HTTPException(403, "Acesso negado")
+    require_platform_roles(
+        current_user,
+        allowed_roles={PLATFORM_ROLE_STAFF_ADMIN},
+        detail="Acesso restrito ao administrador da plataforma",
+    )
 
     if confirmation.strip().upper() != "APAGAR TUDO":
         raise HTTPException(400, "Confirmação inválida. Digite exatamente: APAGAR TUDO")
@@ -287,8 +304,15 @@ def list_users_for_admin(
     db: Session = Depends(get_db),
 ):
     """Lista usuários para gestão administrativa."""
-    if current_user.role != "admin" and not current_user.is_superuser:
-        raise HTTPException(403, "Acesso negado")
+    require_platform_roles(
+        current_user,
+        allowed_roles={
+            PLATFORM_ROLE_STAFF_ADMIN,
+            PLATFORM_ROLE_STAFF_OPS,
+            PLATFORM_ROLE_STAFF_SUPPORT,
+        },
+        detail="Acesso restrito ao staff da plataforma",
+    )
 
     query = db.query(User)
     if search:
@@ -303,6 +327,9 @@ def list_users_for_admin(
                 "name": user.name,
                 "email": user.email,
                 "role": user.role,
+                "platform_role": user.platform_role,
+                "account_role": user.account_role,
+                "account_scope_id": user.account_scope_id,
                 "is_active": bool(user.is_active),
                 "is_verified": bool(user.is_verified),
                 "is_superuser": bool(user.is_superuser),
@@ -322,14 +349,19 @@ def update_user_by_admin(
     db: Session = Depends(get_db),
 ):
     """Permite ao admin ajustar role e status de contas."""
-    if current_user.role != "admin" and not current_user.is_superuser:
-        raise HTTPException(403, "Acesso negado")
+    require_platform_roles(
+        current_user,
+        allowed_roles={PLATFORM_ROLE_STAFF_ADMIN},
+        detail="Acesso restrito ao administrador da plataforma",
+    )
 
     target_user = db.query(User).filter(User.id == user_id).first()
     if not target_user:
         raise HTTPException(404, "Usuário não encontrado")
 
     allowed_roles = {"buyer", "producer", "supplier", "admin"}
+    allowed_platform_roles = set(VALID_PLATFORM_ROLES) - {"none"}
+    allowed_account_roles = set(VALID_ACCOUNT_ROLES)
 
     if "role" in payload and payload["role"] is not None:
         next_role = str(payload["role"]).strip().lower()
@@ -338,6 +370,30 @@ def update_user_by_admin(
         target_user.role = next_role
         if next_role == "admin":
             target_user.is_superuser = True
+            target_user.platform_role = PLATFORM_ROLE_STAFF_ADMIN
+
+    if "platform_role" in payload and payload["platform_role"] is not None:
+        next_platform_role = str(payload["platform_role"]).strip().lower()
+        if next_platform_role not in allowed_platform_roles:
+            raise HTTPException(400, "Platform role inválida")
+        target_user.platform_role = next_platform_role
+        if next_platform_role == PLATFORM_ROLE_STAFF_ADMIN:
+            target_user.role = "admin"
+            target_user.is_superuser = True
+
+    if "account_role" in payload and payload["account_role"] is not None:
+        next_account_role = str(payload["account_role"]).strip().lower()
+        if next_account_role not in allowed_account_roles:
+            raise HTTPException(400, "Account role inválida")
+        target_user.account_role = next_account_role
+
+    if "account_scope_id" in payload and payload["account_scope_id"] is not None:
+        next_scope = str(payload["account_scope_id"]).strip()
+        if not next_scope:
+            raise HTTPException(400, "account_scope_id inválido")
+        if len(next_scope) > 64:
+            raise HTTPException(400, "account_scope_id excede limite de 64 caracteres")
+        target_user.account_scope_id = next_scope
 
     if "is_active" in payload and payload["is_active"] is not None:
         next_is_active = bool(payload["is_active"])
@@ -352,6 +408,7 @@ def update_user_by_admin(
         target_user.is_superuser = bool(payload["is_superuser"])
         if target_user.is_superuser:
             target_user.role = "admin"
+            target_user.platform_role = PLATFORM_ROLE_STAFF_ADMIN
 
     db.commit()
     db.refresh(target_user)

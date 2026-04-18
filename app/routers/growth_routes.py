@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.core.auth_middleware import get_current_user
 from app.database.connection import get_db
+from app.models.ai_models import UserBehaviorLog
 from app.models import Message, Negotiation, Notification, Offer, Transaction, User
 from app.services.notification_service import create_notification
 
@@ -52,6 +53,25 @@ def get_growth_ops(
         Notification.is_read.is_(False),
     ).scalar() or 0
 
+    ai_decision_rows = (
+        db.query(UserBehaviorLog)
+        .filter(
+            UserBehaviorLog.created_at >= since,
+            UserBehaviorLog.event_type == "ai_decision_recorded",
+        )
+        .all()
+    )
+    ai_decisions_total = len(ai_decision_rows)
+    ai_requires_review = 0
+    ai_approved_autonomous = 0
+    for row in ai_decision_rows:
+        meta = row.meta_json if isinstance(row.meta_json, dict) else {}
+        decision = meta.get("decision") if isinstance(meta.get("decision"), dict) else {}
+        if bool(decision.get("requires_human_review")):
+            ai_requires_review += 1
+        if str(decision.get("decision_outcome") or "") == "approved_autonomous":
+            ai_approved_autonomous += 1
+
     def _pct(num: int, den: int) -> float:
         if den <= 0:
             return 0.0
@@ -61,6 +81,8 @@ def get_growth_ops(
     cancel_rate = _pct(cancelled, transactions_total)
     dispute_rate = _pct(disputed, transactions_total)
     negotiation_rate = _pct(negotiations, max(messages, 1))
+    ai_review_rate = _pct(ai_requires_review, max(ai_decisions_total, 1))
+    ai_autonomous_rate = _pct(ai_approved_autonomous, max(ai_decisions_total, 1))
 
     confidence_score = max(
         0.0,
@@ -88,6 +110,8 @@ def get_growth_ops(
         alerts.append("Base de ofertas ativas ainda limitada para escala.")
     if negotiation_rate < 25:
         alerts.append("Conversa com baixa progressão para negociação.")
+    if ai_decisions_total > 20 and ai_review_rate > 65:
+        alerts.append("Alta taxa de revisão humana nas decisões IA.")
 
     actions = []
     if completed_rate < 35:
@@ -98,6 +122,8 @@ def get_growth_ops(
         actions.append("Rodar campanha de ativação de produtores com incentivo inicial.")
     if negotiation_rate < 25:
         actions.append("Inserir playbook de abordagem comercial para primeiros contatos.")
+    if ai_decisions_total > 20 and ai_review_rate > 65:
+        actions.append("Recalibrar guardrails e risco para elevar autonomia com segurança.")
     if not actions:
         actions.append("Operação saudável: priorizar expansão geográfica e canais B2B.")
 
@@ -115,6 +141,11 @@ def get_growth_ops(
             "negotiation_progress_rate": negotiation_rate,
             "confidence_score": confidence_score,
             "admin_alerts_open": int(unresolved_reports),
+            "ai_decisions_total": int(ai_decisions_total),
+            "ai_requires_review": int(ai_requires_review),
+            "ai_review_rate": ai_review_rate,
+            "ai_approved_autonomous": int(ai_approved_autonomous),
+            "ai_autonomous_rate": ai_autonomous_rate,
         },
         "alerts": alerts,
         "actions": actions,

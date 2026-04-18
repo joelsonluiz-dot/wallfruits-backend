@@ -70,6 +70,9 @@ def _login_response(db_user: User, access_token: str) -> dict:
             "name": db_user.name,
             "email": db_user.email,
             "role": db_user.role,
+            "platform_role": db_user.platform_role,
+            "account_role": db_user.account_role,
+            "account_scope_id": db_user.account_scope_id,
             "profile_image": db_user.profile_image,
         }
     }
@@ -106,6 +109,15 @@ def _get_or_create_local_user_from_supabase(
         if not db_user.supabase_user_id:
             db_user.supabase_user_id = supabase_user_id
             changed = True
+        if not str(db_user.platform_role or "").strip():
+            db_user.platform_role = "none"
+            changed = True
+        if not str(db_user.account_role or "").strip():
+            db_user.account_role = "account_owner"
+            changed = True
+        if not str(db_user.account_scope_id or "").strip() and db_user.id:
+            db_user.account_scope_id = f"user:{db_user.id}"
+            changed = True
         if changed:
             db.commit()
             db.refresh(db_user)
@@ -116,11 +128,19 @@ def _get_or_create_local_user_from_supabase(
         email=email,
         password=hash_password(plaintext_password),
         role=_normalize_role(fallback_role),
+        platform_role="none",
+        account_role="account_owner",
         supabase_user_id=supabase_user_id,
     )
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
+
+    if not str(db_user.account_scope_id or "").strip() and db_user.id:
+        db_user.account_scope_id = f"user:{db_user.id}"
+        db.commit()
+        db.refresh(db_user)
+
     return db_user
 
 
@@ -149,6 +169,7 @@ def bootstrap_first_admin(
         raise HTTPException(403, "Já existe administrador cadastrado. Operação bloqueada.")
 
     current_user.role = "admin"
+    current_user.platform_role = "staff_admin"
     current_user.is_superuser = True
     db.commit()
     db.refresh(current_user)
@@ -160,6 +181,7 @@ def bootstrap_first_admin(
             "name": current_user.name,
             "email": current_user.email,
             "role": current_user.role,
+            "platform_role": current_user.platform_role,
             "is_superuser": current_user.is_superuser,
         },
     }
@@ -279,6 +301,8 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
         password=hashed_password,
         supabase_user_id=supabase_user_id,
         role=user.role,
+        platform_role="none",
+        account_role="account_owner",
         phone=user.phone,
         location=user.location,
         bio=user.bio,
@@ -289,6 +313,11 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
         db.add(new_user)
         db.commit()
         db.refresh(new_user)
+
+        if not str(new_user.account_scope_id or "").strip():
+            new_user.account_scope_id = f"user:{new_user.id}"
+            db.commit()
+            db.refresh(new_user)
 
         # Fundação V1: toda conta nasce com um perfil ativo.
         try:
@@ -477,6 +506,8 @@ def update_user_profile(
 ):
 
     for field, value in user_update.dict(exclude_unset=True).items():
+        if field == "profile_image":
+            continue
         setattr(current_user, field, value)
 
     db.commit()

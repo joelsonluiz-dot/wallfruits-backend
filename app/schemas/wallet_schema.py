@@ -3,7 +3,7 @@ from decimal import Decimal
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class WalletResponse(BaseModel):
@@ -12,8 +12,7 @@ class WalletResponse(BaseModel):
     balance: Decimal
     updated_at: Optional[datetime]
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class WalletTransactionResponse(BaseModel):
@@ -25,8 +24,7 @@ class WalletTransactionResponse(BaseModel):
     reference_id: Optional[str]
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class WalletManualAdjustment(BaseModel):

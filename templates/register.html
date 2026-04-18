@@ -310,12 +310,15 @@
         msgDiv.style.display = 'none';
 
         try {
-            let profileImageFilename = null;
+            let profileImageUrl = null;
 
             if (profileImageFile) {
                 btn.innerHTML = '<span style="display:inline-block;width:1rem;height:1rem;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:0.5rem;"></span> Enviando imagem...';
                 const uploaded = await uploadPublicProfileImage(profileImageFile);
-                profileImageFilename = uploaded.filename || null;
+                profileImageUrl = uploaded.url || null;
+                if (!profileImageUrl && uploaded.filename) {
+                    profileImageUrl = `/api/uploads/profiles/${uploaded.filename}`;
+                }
                 btn.innerHTML = '<span style="display:inline-block;width:1rem;height:1rem;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:0.5rem;"></span> Criando conta...';
             }
 
@@ -325,7 +328,7 @@
                 password,
                 phone: phone || null,
                 location: location || null,
-                profile_image: profileImageFilename,
+                profile_image: profileImageUrl,
                 role: roleEl.value
             });
 

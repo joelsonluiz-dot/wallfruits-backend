@@ -46,7 +46,7 @@ class PaymentPlansTests(unittest.TestCase):
         except Exception:
             pass
 
-    def test_list_plans_includes_basic_pro_premium(self):
+    def test_list_plans_includes_basic_pro_premium_enterprise(self):
         response = self.client.get("/payment/plans")
         self.assertEqual(response.status_code, 200)
 
@@ -54,7 +54,7 @@ class PaymentPlansTests(unittest.TestCase):
         plans = payload.get("plans", [])
         ids = {item.get("id") for item in plans}
 
-        self.assertEqual(ids, {"basic", "pro", "premium"})
+        self.assertEqual(ids, {"basic", "pro", "premium", "enterprise"})
 
         pro_plan = next((item for item in plans if item.get("id") == "pro"), None)
         self.assertIsNotNone(pro_plan)

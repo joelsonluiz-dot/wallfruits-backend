@@ -46,6 +46,11 @@ def create_access_token(data: dict, expires_delta: int | None = None) -> str:
                 "token_type": "access",
             }
         )
+
+        if settings.JWT_ISSUER.strip():
+            to_encode["iss"] = settings.JWT_ISSUER.strip()
+        if settings.JWT_AUDIENCE.strip():
+            to_encode["aud"] = settings.JWT_AUDIENCE.strip()
         
         # Codificar token
         encoded_jwt = jwt.encode(
@@ -79,10 +84,22 @@ def decode_token(token: str) -> dict:
         HTTPException: Se token inválido/expirado
     """
     try:
+        decode_kwargs = {
+            "algorithms": [settings.ALGORITHM],
+            "options": {
+                "verify_aud": bool(settings.JWT_REQUIRE_AUDIENCE),
+                "verify_iss": bool(settings.JWT_REQUIRE_ISSUER),
+            },
+        }
+        if settings.JWT_REQUIRE_AUDIENCE:
+            decode_kwargs["audience"] = settings.JWT_AUDIENCE.strip()
+        if settings.JWT_REQUIRE_ISSUER:
+            decode_kwargs["issuer"] = settings.JWT_ISSUER.strip()
+
         payload = jwt.decode(
             token,
             settings.SECRET_KEY,
-            algorithms=[settings.ALGORITHM]
+            **decode_kwargs,
         )
 
         user_id: str = payload.get("user_id")

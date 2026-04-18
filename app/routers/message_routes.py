@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, status, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, HTTPException, Depends, Request, status, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import List, Optional
@@ -9,6 +9,7 @@ from app.database.connection import get_db, SessionLocal
 from app.models import Message, User, Offer
 from app.schemas import MessageCreate, MessageResponse, ConversationResponse
 from app.core.auth_middleware import get_current_user, get_user_from_token
+from app.services.ai_telemetry_service import AITelemetryService
 from app.services.notification_service import create_notification
 from app.services.profile_service import ProfileService
 
@@ -52,11 +53,15 @@ chat_manager = ChatManager()
 @router.post("/", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
 async def send_message(
     message: MessageCreate,
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Enviar mensagem para outro usuário"""
     try:
+        telemetry = AITelemetryService(db)
+        request_id = getattr(request.state, "request_id", None)
+
         # Verificar se o destinatário existe
         receiver = db.query(User).filter(User.id == message.receiver_id).first()
         if not receiver:
@@ -84,6 +89,25 @@ async def send_message(
                 )
 
                 if monthly_requests >= 1:
+                    telemetry.log_event(
+                        user_id=current_user.id,
+                        event_type="message_send_denied",
+                        entity_type="message_thread",
+                        entity_id=str(message.thread_id) if message.thread_id else None,
+                        metadata={
+                            "reason": "service_inquiry_monthly_limit",
+                            "receiver_id": message.receiver_id,
+                            "message_type": message.message_type,
+                        },
+                        event_domain="customer_service",
+                        event_source="/api/messages",
+                        request_id=request_id,
+                        idempotency_key=(
+                            f"message-denied:{current_user.id}:{message.receiver_id}:"
+                            f"{message.message_type}:monthly_limit"
+                        ),
+                        commit=True,
+                    )
                     raise HTTPException(
                         status_code=403,
                         detail="Seus créditos de solicitação de serviço acabaram neste mês. Faça upgrade para assinatura para continuar.",
@@ -140,6 +164,24 @@ async def send_message(
 
         db.commit()
         db.refresh(new_message)
+
+        telemetry.log_event(
+            user_id=current_user.id,
+            event_type="message_sent",
+            entity_type="message_thread",
+            entity_id=str(new_message.thread_id),
+            metadata={
+                "message_id": str(new_message.id),
+                "receiver_id": new_message.receiver_id,
+                "message_type": new_message.message_type,
+                "offer_id": str(new_message.offer_id) if new_message.offer_id else None,
+            },
+            event_domain="customer_service",
+            event_source="/api/messages",
+            request_id=request_id,
+            idempotency_key=f"message-sent:{new_message.id}",
+            commit=True,
+        )
 
         await chat_manager.send_message(
             message.receiver_id,

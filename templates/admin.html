@@ -8,6 +8,28 @@
     .admin-kpi { background: rgba(255,255,255,0.04); border: 1px solid var(--wf-border); border-radius: 12px; padding: 1rem; }
     .admin-kpi h4 { margin: 0; font-size: 0.8rem; color: var(--wf-text-secondary); }
     .admin-kpi .val { margin-top: 0.5rem; font-size: 1.35rem; font-weight: 800; }
+    .admin-mini-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.65rem; margin-top: 0.75rem; }
+    .admin-mini-kpi { background: rgba(255,255,255,0.03); border: 1px solid var(--wf-border); border-radius: 10px; padding: 0.75rem; }
+    .admin-mini-kpi h5 { margin: 0; font-size: 0.72rem; color: var(--wf-text-secondary); }
+    .admin-mini-kpi .val { margin-top: 0.35rem; font-size: 1.04rem; font-weight: 800; }
+    .queue-action-group { display: flex; gap: 0.35rem; justify-content: flex-end; flex-wrap: wrap; }
+    .queue-badge { display: inline-flex; align-items: center; border-radius: 999px; padding: 0.2rem 0.5rem; font-size: 0.72rem; font-weight: 700; }
+    .queue-badge.pending-review { background: rgba(203, 153, 0, 0.2); color: #f6cd67; }
+    .queue-badge.approved { background: rgba(47, 158, 68, 0.2); color: #69db7c; }
+    .queue-badge.rejected { background: rgba(176, 0, 32, 0.2); color: #ff8fa3; }
+    .queue-badge.unknown { background: rgba(120, 120, 120, 0.2); color: #ced4da; }
+    .risk-badge.high { background: rgba(176, 0, 32, 0.2); color: #ff8fa3; }
+    .risk-badge.medium { background: rgba(203, 153, 0, 0.2); color: #f6cd67; }
+    .risk-badge.low { background: rgba(47, 158, 68, 0.2); color: #69db7c; }
+    .admin-lists-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.65rem; margin-top: 0.85rem; }
+    .admin-list-card { background: rgba(255,255,255,0.03); border: 1px solid var(--wf-border); border-radius: 10px; padding: 0.75rem; }
+    .admin-list-card h5 { margin: 0 0 0.5rem 0; font-size: 0.76rem; color: var(--wf-text-secondary); }
+    .admin-bullet-list { margin: 0; padding-left: 1.1rem; color: var(--wf-text-secondary); display: grid; gap: 0.35rem; }
+    .admin-bullet-list li { line-height: 1.38; }
+    @media (max-width: 1180px) { .admin-mini-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    @media (max-width: 1180px) { .admin-lists-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 760px) { .admin-mini-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 760px) { .admin-lists-grid { grid-template-columns: 1fr; } }
     @media (max-width: 900px) { .admin-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
     @media (max-width: 520px) { .admin-grid { grid-template-columns: 1fr; } }
 </style>
@@ -60,6 +82,142 @@
                 </thead>
                 <tbody id="abMetricsPlanRows">
                     <tr><td colspan="6" style="padding:0.8rem;color:var(--wf-text-secondary);">Sem dados ainda.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="wf-card mt-3">
+    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;gap:0.6rem;flex-wrap:wrap;">
+        <span>Governanca IA (Operacao)</span>
+        <div style="display:flex;gap:0.45rem;flex-wrap:wrap;">
+            <label style="display:flex;align-items:center;gap:0.35rem;color:var(--wf-text-secondary);font-size:0.84rem;">
+                Janela
+                <select id="aiGovWindowDays" class="wf-select" style="padding:0.32rem 0.45rem;min-width:84px;">
+                    <option value="7">7 dias</option>
+                    <option value="14">14 dias</option>
+                    <option value="30" selected>30 dias</option>
+                    <option value="90">90 dias</option>
+                </select>
+            </label>
+            <button id="refreshAiGovernanceBtn" class="btn btn-wf-secondary">Atualizar governanca</button>
+            <button id="exportAiGovernanceCsvBtn" class="btn btn-wf-primary">Exportar CSV</button>
+            <button id="exportAiGovernanceCsvWeeklyBtn" class="btn btn-wf-secondary">Exportar CSV semanal</button>
+        </div>
+    </div>
+    <div class="card-body">
+        <div id="aiGovSummaryMeta" style="color:var(--wf-text-secondary);margin-bottom:0.2rem;">Carregando governanca IA...</div>
+        <div class="admin-mini-grid" id="aiGovKpisGrid"></div>
+
+        <div style="overflow-x:auto;margin-top:0.95rem;">
+            <table class="table table-sm align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Ação</th>
+                        <th>Risco</th>
+                        <th>Status</th>
+                        <th>Criado em</th>
+                        <th style="text-align:right;">Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="aiReviewQueueRows">
+                    <tr><td colspan="6" style="padding:0.8rem;color:var(--wf-text-secondary);">Sem itens pendentes.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="wf-card mt-3">
+    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;gap:0.6rem;flex-wrap:wrap;">
+        <span>Cockpit Executivo IA-Nativo</span>
+        <div style="display:flex;gap:0.45rem;flex-wrap:wrap;">
+            <button id="refreshAiExecutiveBtn" class="btn btn-wf-secondary">Atualizar cockpit</button>
+            <button id="applyAiAutonomyBtn" class="btn btn-wf-secondary">Aplicar autonomia</button>
+            <button id="generateAiWeeklyReportBtn" class="btn btn-wf-primary">Gerar relatório semanal</button>
+        </div>
+    </div>
+    <div class="card-body">
+        <div id="aiExecMeta" style="color:var(--wf-text-secondary);margin-bottom:0.2rem;">Carregando cockpit executivo...</div>
+        <div class="admin-mini-grid" id="aiExecKpisGrid"></div>
+
+        <div class="admin-lists-grid">
+            <div class="admin-list-card">
+                <h5>Riscos Prioritarios</h5>
+                <ul id="aiExecRisks" class="admin-bullet-list">
+                    <li>Carregando riscos...</li>
+                </ul>
+            </div>
+            <div class="admin-list-card">
+                <h5>Oportunidades</h5>
+                <ul id="aiExecOpportunities" class="admin-bullet-list">
+                    <li>Carregando oportunidades...</li>
+                </ul>
+            </div>
+            <div class="admin-list-card">
+                <h5>Ações Recomendadas</h5>
+                <ul id="aiExecActions" class="admin-bullet-list">
+                    <li>Carregando ações...</li>
+                </ul>
+            </div>
+        </div>
+
+        <div style="overflow-x:auto;margin-top:0.95rem;">
+            <table class="table table-sm align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Segmento</th>
+                        <th>Pedidos</th>
+                        <th>Conversão</th>
+                        <th>Receita</th>
+                        <th>Ticket médio</th>
+                        <th>Cancelamento</th>
+                    </tr>
+                </thead>
+                <tbody id="aiExecSegmentsRows">
+                    <tr><td colspan="6" style="padding:0.8rem;color:var(--wf-text-secondary);">Sem dados por segmento.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="wf-card mt-3">
+    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;gap:0.6rem;flex-wrap:wrap;">
+        <span>Business OS - Marketing Funnel</span>
+        <div style="display:flex;gap:0.45rem;flex-wrap:wrap;">
+            <label style="display:flex;align-items:center;gap:0.35rem;color:var(--wf-text-secondary);font-size:0.84rem;">
+                Min sinais/segmento
+                <select id="aiBoMinSignals" class="wf-select" style="padding:0.32rem 0.45rem;min-width:84px;">
+                    <option value="2">2</option>
+                    <option value="3" selected>3</option>
+                    <option value="5">5</option>
+                    <option value="8">8</option>
+                </select>
+            </label>
+            <button id="refreshAiBoMarketingBtn" class="btn btn-wf-secondary">Atualizar loop</button>
+            <button id="persistAiBoMarketingBtn" class="btn btn-wf-primary">Executar e persistir</button>
+        </div>
+    </div>
+    <div class="card-body">
+        <div id="aiBoMarketingMeta" style="color:var(--wf-text-secondary);margin-bottom:0.2rem;">Carregando loop de marketing/funil...</div>
+        <div class="admin-mini-grid" id="aiBoMarketingKpisGrid"></div>
+
+        <div style="overflow-x:auto;margin-top:0.95rem;">
+            <table class="table table-sm align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Segmento</th>
+                        <th>Sinal</th>
+                        <th>Risco</th>
+                        <th>Agente</th>
+                        <th>Ação recomendada</th>
+                    </tr>
+                </thead>
+                <tbody id="aiBoMarketingSignalsRows">
+                    <tr><td colspan="5" style="padding:0.8rem;color:var(--wf-text-secondary);">Sem sinais no momento.</td></tr>
                 </tbody>
             </table>
         </div>
@@ -132,6 +290,61 @@
         }[char]));
     }
 
+    function isoDate(v) {
+        if (!v) return '-';
+        const dt = new Date(v);
+        if (Number.isNaN(dt.getTime())) return '-';
+        return dt.toLocaleString('pt-BR');
+    }
+
+    function queueStatusLabel(status) {
+        const normalized = String(status || '').toLowerCase();
+        if (normalized === 'pending_review') return 'Pendente';
+        if (normalized === 'approved') return 'Aprovado';
+        if (normalized === 'rejected') return 'Rejeitado';
+        return 'Desconhecido';
+    }
+
+    function queueStatusClass(status) {
+        const normalized = String(status || '').toLowerCase();
+        if (normalized === 'pending_review') return 'pending-review';
+        if (normalized === 'approved') return 'approved';
+        if (normalized === 'rejected') return 'rejected';
+        return 'unknown';
+    }
+
+    function riskClass(level) {
+        const normalized = String(level || '').toLowerCase();
+        if (normalized === 'high') return 'high';
+        if (normalized === 'medium') return 'medium';
+        return 'low';
+    }
+
+    function segmentLabel(segment) {
+        const value = String(segment || '').trim();
+        if (!value) return 'unknown';
+        return value.replace(/\|/g, ' / ');
+    }
+
+    function governanceKpiCard(title, value) {
+        return `<div class="admin-mini-kpi"><h5>${esc(title)}</h5><div class="val">${esc(value)}</div></div>`;
+    }
+
+    function renderTextList(targetId, items, emptyMessage) {
+        const el = document.getElementById(targetId);
+        if (!el) return;
+
+        if (!Array.isArray(items) || !items.length) {
+            el.innerHTML = `<li>${esc(emptyMessage)}</li>`;
+            return;
+        }
+
+        el.innerHTML = items.map((item) => `<li>${esc(item)}</li>`).join('');
+    }
+
+    let aiGovernanceWindowDays = 30;
+    let aiBusinessOsMinSignals = 3;
+
     async function loadAdmin() {
         const me = await apiRequest('/auth/me');
         if (!me || me.role !== 'admin') {
@@ -150,7 +363,12 @@
             <div class="admin-kpi"><h4>Receita</h4><div class="val">${money(ov.total_revenue)}</div></div>
         `;
 
-        await loadSubscriptionAbMetrics();
+        await Promise.all([
+            loadSubscriptionAbMetrics(),
+            loadAiGovernanceOps(),
+            loadAiExecutiveCockpit(),
+            loadAiBusinessOsMarketingFunnel(),
+        ]);
 
         const products = data.top_products || [];
         if (!products.length) {
@@ -224,9 +442,371 @@
         }
     }
 
+    async function resolveAiReviewItem(reviewId, decision) {
+        const decisionLabel = decision === 'approve' ? 'aprovar' : 'rejeitar';
+        const notes = prompt(`Notas para ${decisionLabel} o item #${reviewId} (opcional):`, '');
+        if (notes === null) return;
+
+        try {
+            await apiRequest(`/ai/ops/review-queue/${reviewId}/resolve`, 'POST', {
+                decision,
+                notes: notes || null,
+            });
+            await Promise.all([loadAiGovernanceOps(), loadAiExecutiveCockpit()]);
+        } catch (err) {
+            alert(err.message || 'Erro ao resolver item da fila IA');
+        }
+    }
+
+    async function exportAiGovernanceCsv(granularity = 'flat') {
+        const isWeekly = granularity === 'week';
+        const exportBtn = document.getElementById(isWeekly ? 'exportAiGovernanceCsvWeeklyBtn' : 'exportAiGovernanceCsvBtn');
+        const originalLabel = exportBtn ? exportBtn.textContent : 'Exportar CSV';
+
+        if (exportBtn) {
+            exportBtn.disabled = true;
+            exportBtn.textContent = 'Gerando CSV...';
+        }
+
+        try {
+            const windowSelect = document.getElementById('aiGovWindowDays');
+            const selectedDays = Number(windowSelect?.value || aiGovernanceWindowDays || 30);
+            const days = Number.isFinite(selectedDays) && selectedDays > 0 ? selectedDays : 30;
+            const token = localStorage.getItem('token');
+            const headers = {};
+            if (token) {
+                headers.Authorization = `Bearer ${token}`;
+            }
+
+            const response = await fetch(
+                `/api/ai/ops/governance-summary.csv?days=${encodeURIComponent(days)}&include_recent=true&granularity=${encodeURIComponent(granularity)}`,
+                {
+                method: 'GET',
+                headers,
+                }
+            });
+
+            if (!response.ok) {
+                const text = await response.text();
+                let detail = `Erro HTTP ${response.status}`;
+                if (text) {
+                    try {
+                        const parsed = JSON.parse(text);
+                        detail = parsed?.detail || parsed?.message || detail;
+                    } catch {
+                        detail = text;
+                    }
+                }
+                throw new Error(detail);
+            }
+
+            const blob = await response.blob();
+            let filename = isWeekly ? `ai_governance_summary_weekly_${days}d.csv` : `ai_governance_summary_${days}d.csv`;
+            const contentDisposition = response.headers.get('content-disposition') || '';
+            const filenameMatch = contentDisposition.match(/filename="?([^";]+)"?/i);
+            if (filenameMatch && filenameMatch[1]) {
+                filename = filenameMatch[1];
+            }
+
+            const blobUrl = window.URL.createObjectURL(blob);
+            const anchor = document.createElement('a');
+            anchor.href = blobUrl;
+            anchor.download = filename;
+            document.body.appendChild(anchor);
+            anchor.click();
+            anchor.remove();
+            window.URL.revokeObjectURL(blobUrl);
+        } catch (err) {
+            alert(err.message || 'Erro ao exportar CSV de governanca IA');
+        } finally {
+            if (exportBtn) {
+                exportBtn.disabled = false;
+                exportBtn.textContent = originalLabel;
+            }
+        }
+    }
+
+    async function loadAiGovernanceOps() {
+        const meta = document.getElementById('aiGovSummaryMeta');
+        const kpis = document.getElementById('aiGovKpisGrid');
+        const queueRows = document.getElementById('aiReviewQueueRows');
+        const windowSelect = document.getElementById('aiGovWindowDays');
+        const selectedDays = Number(windowSelect?.value || aiGovernanceWindowDays || 30);
+        const days = Number.isFinite(selectedDays) && selectedDays > 0 ? selectedDays : 30;
+
+        try {
+            const [summary, queue] = await Promise.all([
+                apiRequest(`/ai/ops/governance-summary?days=${encodeURIComponent(days)}&include_recent=true`),
+                apiRequest('/ai/ops/review-queue?status_filter=pending_review&limit=30'),
+            ]);
+
+            const totals = summary.totals || {};
+            const queueStats = summary.review_queue || {};
+            aiGovernanceWindowDays = Number(summary.window_days || 30);
+            if (windowSelect) {
+                windowSelect.value = String(aiGovernanceWindowDays);
+            }
+
+            meta.innerHTML = `
+                Janela: <b>${numberFmt(summary.window_days || 0)} dias</b> ·
+                Decisoes IA: <b>${numberFmt(totals.decisions)}</b> ·
+                Em revisao: <b>${numberFmt(totals.requires_human_review)}</b> ·
+                Taxa de revisao: <b>${pct(totals.review_rate)}</b>
+            `;
+
+            kpis.innerHTML = [
+                governanceKpiCard('Autonomia aprovada', `${numberFmt(totals.approved_autonomous)} (${pct(totals.autonomous_rate)})`),
+                governanceKpiCard('Fila total', numberFmt(queueStats.total)),
+                governanceKpiCard('Fila pendente', numberFmt(queueStats.pending)),
+                governanceKpiCard('Fila aprovada', numberFmt(queueStats.approved)),
+                governanceKpiCard('Fila rejeitada', numberFmt(queueStats.rejected)),
+            ].join('');
+
+            const items = Array.isArray(queue.items) ? queue.items : [];
+            if (!items.length) {
+                queueRows.innerHTML = '<tr><td colspan="6" style="padding:0.8rem;color:var(--wf-text-secondary);">Sem itens pendentes na fila L1.</td></tr>';
+                return;
+            }
+
+            queueRows.innerHTML = items.map((item) => {
+                const decision = item.decision || {};
+                const actionType = decision.action_type || '-';
+                const risk = decision.risk_level || '-';
+                const status = item.status || 'unknown';
+                const statusClass = queueStatusClass(status);
+                const statusLabel = queueStatusLabel(status);
+
+                return `
+                    <tr>
+                        <td>#${numberFmt(item.id)}</td>
+                        <td>${esc(actionType)}</td>
+                        <td>${esc(String(risk).toUpperCase())}</td>
+                        <td><span class="queue-badge ${statusClass}">${esc(statusLabel)}</span></td>
+                        <td>${esc(isoDate(item.created_at))}</td>
+                        <td style="text-align:right;">
+                            <div class="queue-action-group">
+                                <button class="btn btn-sm btn-success" onclick="resolveAiReviewItem(${Number(item.id)}, 'approve')">Aprovar</button>
+                                <button class="btn btn-sm btn-danger" onclick="resolveAiReviewItem(${Number(item.id)}, 'reject')">Rejeitar</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        } catch (err) {
+            meta.textContent = err.message || 'Falha ao carregar governanca IA';
+            kpis.innerHTML = '';
+            queueRows.innerHTML = '<tr><td colspan="6" style="padding:0.8rem;color:#b4493f;">Falha ao carregar fila de revisao IA.</td></tr>';
+        }
+    }
+
+    async function loadAiExecutiveCockpit() {
+        const meta = document.getElementById('aiExecMeta');
+        const kpis = document.getElementById('aiExecKpisGrid');
+        const segmentsRows = document.getElementById('aiExecSegmentsRows');
+        const windowSelect = document.getElementById('aiGovWindowDays');
+        const selectedDays = Number(windowSelect?.value || aiGovernanceWindowDays || 30);
+        const days = Number.isFinite(selectedDays) && selectedDays > 0 ? selectedDays : 30;
+
+        try {
+            const data = await apiRequest(`/ai/ops/executive-cockpit?days=${encodeURIComponent(days)}`);
+            const loops = data.loops || {};
+            const acquisition = loops.acquisition || {};
+            const conversion = loops.conversion || {};
+            const retention = loops.retention_expansion || {};
+            const efficiency = loops.efficiency_risk || {};
+
+            meta.innerHTML = `
+                Janela: <b>${numberFmt(data.window_days || days)} dias</b> ·
+                Checkouts: <b>${numberFmt(conversion.checkouts_requested)}</b> ·
+                Conversão pedidos: <b>${pct(conversion.order_conversion_rate)}</b> ·
+                Custo/decisão IA: <b>${money(efficiency.estimated_cost_per_decision)}</b> ·
+                Alertas admin abertos: <b>${numberFmt(efficiency.admin_alerts_open)}</b>
+            `;
+
+            kpis.innerHTML = [
+                governanceKpiCard('Novos usuários', numberFmt(acquisition.new_users)),
+                governanceKpiCard('Receita confirmada', money(conversion.gross_revenue)),
+                governanceKpiCard('Clientes recorrentes', `${numberFmt(retention.recurring_customers)} (${pct(retention.recurring_customers_rate)})`),
+                governanceKpiCard('Autonomia IA', pct(efficiency.ai_autonomous_rate)),
+                governanceKpiCard('Custo IA total', money(efficiency.estimated_ai_cost_total)),
+                governanceKpiCard('Fila L1 pendente', numberFmt(efficiency.review_queue_pending)),
+            ].join('');
+
+            const segments = Array.isArray(data.profitability_by_segment) ? data.profitability_by_segment : [];
+            if (!segments.length) {
+                segmentsRows.innerHTML = '<tr><td colspan="6" style="padding:0.8rem;color:var(--wf-text-secondary);">Sem dados suficientes por segmento.</td></tr>';
+            } else {
+                segmentsRows.innerHTML = segments.map((item) => `
+                    <tr>
+                        <td><b>${esc(String(item.segment || 'unknown').toUpperCase())}</b></td>
+                        <td>${numberFmt(item.total_orders)}</td>
+                        <td>${pct(item.order_conversion_rate)}</td>
+                        <td>${money(item.gross_revenue)}</td>
+                        <td>${money(item.avg_ticket)}</td>
+                        <td>${pct(item.cancel_rate)}</td>
+                    </tr>
+                `).join('');
+            }
+
+            renderTextList('aiExecRisks', data.alerts || [], 'Sem riscos críticos no momento.');
+            renderTextList('aiExecOpportunities', data.opportunities || [], 'Sem oportunidades priorizadas na janela atual.');
+            renderTextList('aiExecActions', data.recommended_actions || [], 'Nenhuma ação recomendada no momento.');
+        } catch (err) {
+            meta.textContent = err.message || 'Falha ao carregar cockpit executivo IA';
+            kpis.innerHTML = '';
+            segmentsRows.innerHTML = '<tr><td colspan="6" style="padding:0.8rem;color:#b4493f;">Falha ao carregar segmentos do cockpit.</td></tr>';
+            renderTextList('aiExecRisks', [], 'Falha ao carregar riscos.');
+            renderTextList('aiExecOpportunities', [], 'Falha ao carregar oportunidades.');
+            renderTextList('aiExecActions', [], 'Falha ao carregar ações recomendadas.');
+        }
+    }
+
+    async function loadAiBusinessOsMarketingFunnel(options = {}) {
+        const { persist = false } = options;
+        const meta = document.getElementById('aiBoMarketingMeta');
+        const kpis = document.getElementById('aiBoMarketingKpisGrid');
+        const rows = document.getElementById('aiBoMarketingSignalsRows');
+        const minSignalsSelect = document.getElementById('aiBoMinSignals');
+        const selectedMinSignals = Number(minSignalsSelect?.value || aiBusinessOsMinSignals || 3);
+        const minSignals = Number.isFinite(selectedMinSignals) && selectedMinSignals > 0 ? selectedMinSignals : 3;
+
+        const windowSelect = document.getElementById('aiGovWindowDays');
+        const selectedDays = Number(windowSelect?.value || aiGovernanceWindowDays || 30);
+        const days = Number.isFinite(selectedDays) && selectedDays > 0 ? selectedDays : 30;
+
+        aiBusinessOsMinSignals = minSignals;
+
+        try {
+            const data = await apiRequest(
+                `/ai/ops/business-os/marketing-funnel?days=${encodeURIComponent(days)}&min_segment_signals=${encodeURIComponent(minSignals)}&persist=${persist ? 'true' : 'false'}`
+            );
+
+            const totals = data.funnel_totals || {};
+            const signals = Array.isArray(data.signals) ? data.signals : [];
+            const experiments = Array.isArray(data.experiments) ? data.experiments : [];
+
+            meta.innerHTML = `
+                Janela: <b>${numberFmt(data.window_days || days)} dias</b> ·
+                Segmentos: <b>${numberFmt((data.segments || []).length)}</b> ·
+                Sinais: <b>${numberFmt(signals.length)}</b> ·
+                Experimentos sugeridos: <b>${numberFmt(experiments.length)}</b> ·
+                Persistência: <b>${data.persist_performed ? `sim (${numberFmt(data.persisted_events)})` : 'não'}</b>
+            `;
+
+            kpis.innerHTML = [
+                governanceKpiCard('Eventos no funil', numberFmt(totals.events_total)),
+                governanceKpiCard('Entradas', numberFmt(totals.entries)),
+                governanceKpiCard('Sucessos', numberFmt(totals.success)),
+                governanceKpiCard('Falhas', numberFmt(totals.failure)),
+                governanceKpiCard('Min sinais/segmento', numberFmt(data.min_segment_signals || minSignals)),
+            ].join('');
+
+            if (!signals.length) {
+                rows.innerHTML = '<tr><td colspan="5" style="padding:0.8rem;color:var(--wf-text-secondary);">Sem sinais priorizados na janela atual.</td></tr>';
+            } else {
+                rows.innerHTML = signals.map((item) => {
+                    const level = String(item.risk_level || 'low').toLowerCase();
+                    const decision = item.decision || {};
+                    const playbook = item.playbook || {};
+
+                    return `
+                        <tr>
+                            <td><b>${esc(segmentLabel(item.segment))}</b></td>
+                            <td>${esc(item.signal_type || '-')}</td>
+                            <td><span class="queue-badge risk-badge ${riskClass(level)}">${esc(level.toUpperCase())}</span></td>
+                            <td>${esc(decision.selected_agent || '-')}</td>
+                            <td>${esc(playbook.action || '-')}</td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+            return data;
+        } catch (err) {
+            meta.textContent = err.message || 'Falha ao carregar Business OS Marketing Funnel';
+            kpis.innerHTML = '';
+            rows.innerHTML = '<tr><td colspan="5" style="padding:0.8rem;color:#b4493f;">Falha ao carregar sinais do loop.</td></tr>';
+            throw err;
+        }
+    }
+
+    async function persistAiBusinessOsMarketingFunnel() {
+        const button = document.getElementById('persistAiBoMarketingBtn');
+        const original = button ? button.textContent : 'Executar e persistir';
+
+        if (button) {
+            button.disabled = true;
+            button.textContent = 'Executando...';
+        }
+
+        try {
+            const payload = await loadAiBusinessOsMarketingFunnel({ persist: true });
+            alert(`Loop executado com persistência. Eventos processados: ${numberFmt(payload.persisted_events || 0)}.`);
+        } catch (err) {
+            alert(err.message || 'Falha ao executar persistência do loop.');
+        } finally {
+            if (button) {
+                button.disabled = false;
+                button.textContent = original;
+            }
+        }
+    }
+
+    async function applyAiAutonomyPolicy() {
+        const button = document.getElementById('applyAiAutonomyBtn');
+        const original = button ? button.textContent : 'Aplicar autonomia';
+        if (button) {
+            button.disabled = true;
+            button.textContent = 'Aplicando...';
+        }
+
+        try {
+            const windowSelect = document.getElementById('aiGovWindowDays');
+            const selectedDays = Number(windowSelect?.value || aiGovernanceWindowDays || 30);
+            const days = Number.isFinite(selectedDays) && selectedDays > 0 ? selectedDays : 30;
+
+            const payload = await apiRequest(`/ai/ops/autonomy-policy?days=${encodeURIComponent(days)}&apply=true`);
+            const summary = payload.summary || {};
+            alert(`Política aplicada com sucesso. Upgrades: ${numberFmt(summary.upgrade_candidates)} · Downgrades: ${numberFmt(summary.downgrade_candidates)}.`);
+            await loadAiExecutiveCockpit();
+        } catch (err) {
+            alert(err.message || 'Falha ao aplicar política de autonomia.');
+        } finally {
+            if (button) {
+                button.disabled = false;
+                button.textContent = original;
+            }
+        }
+    }
+
+    async function generateAiWeeklyLearningReport() {
+        const button = document.getElementById('generateAiWeeklyReportBtn');
+        const original = button ? button.textContent : 'Gerar relatório semanal';
+        if (button) {
+            button.disabled = true;
+            button.textContent = 'Gerando...';
+        }
+
+        try {
+            const payload = await apiRequest('/ai/ops/weekly-learning-report?week_offset=0&regenerate=true');
+            const weekIso = payload.week_iso || payload.report?.week_iso || '-';
+            alert(`Relatório semanal ${weekIso} gerado com sucesso.`);
+            await loadAiExecutiveCockpit();
+        } catch (err) {
+            alert(err.message || 'Falha ao gerar relatório semanal.');
+        } finally {
+            if (button) {
+                button.disabled = false;
+                button.textContent = original;
+            }
+        }
+    }
+
     loadAdmin().catch((err) => {
         alert(err.message || 'Erro ao carregar painel admin');
     });
+
+    window.resolveAiReviewItem = resolveAiReviewItem;
 
     async function loadAdminUsers(search = '') {
         const body = document.getElementById('adminUsersBody');
@@ -291,6 +871,48 @@
 
     document.getElementById('refreshAbMetricsBtn').addEventListener('click', () => {
         loadSubscriptionAbMetrics();
+    });
+
+    document.getElementById('refreshAiGovernanceBtn').addEventListener('click', () => {
+        loadAiGovernanceOps();
+    });
+
+    document.getElementById('refreshAiExecutiveBtn').addEventListener('click', () => {
+        loadAiExecutiveCockpit();
+    });
+
+    document.getElementById('refreshAiBoMarketingBtn').addEventListener('click', () => {
+        loadAiBusinessOsMarketingFunnel().catch(() => {});
+    });
+
+    document.getElementById('persistAiBoMarketingBtn').addEventListener('click', () => {
+        persistAiBusinessOsMarketingFunnel();
+    });
+
+    document.getElementById('applyAiAutonomyBtn').addEventListener('click', () => {
+        applyAiAutonomyPolicy();
+    });
+
+    document.getElementById('generateAiWeeklyReportBtn').addEventListener('click', () => {
+        generateAiWeeklyLearningReport();
+    });
+
+    document.getElementById('exportAiGovernanceCsvBtn').addEventListener('click', () => {
+        exportAiGovernanceCsv('flat');
+    });
+
+    document.getElementById('exportAiGovernanceCsvWeeklyBtn').addEventListener('click', () => {
+        exportAiGovernanceCsv('week');
+    });
+
+    document.getElementById('aiGovWindowDays').addEventListener('change', () => {
+        loadAiGovernanceOps();
+        loadAiExecutiveCockpit();
+        loadAiBusinessOsMarketingFunnel().catch(() => {});
+    });
+
+    document.getElementById('aiBoMinSignals').addEventListener('change', () => {
+        loadAiBusinessOsMarketingFunnel().catch(() => {});
     });
 
     loadAdminUsers();

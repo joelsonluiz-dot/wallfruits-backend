@@ -155,7 +155,7 @@ class AIAgendaSmokeTests(unittest.TestCase):
             name="Agenda Smoke",
             email="agenda-smoke@test.com",
             password="hash",
-            role="buyer",
+            role="producer",
             is_active=True,
         )
         self.db.add(self.user)

@@ -3,6 +3,12 @@ plugins {
     id 'org.jetbrains.kotlin.android'
 }
 
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file('keystore.properties')
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 android {
     namespace 'com.wallfruits.webapp'
     compileSdk 34
@@ -15,10 +21,29 @@ android {
         versionName "1.0.1"
     }
 
+    signingConfigs {
+        release {
+            def storeFilePath = keystoreProperties['storeFile'] ?: System.getenv('WF_KEYSTORE_FILE')
+            def storePasswordValue = keystoreProperties['storePassword'] ?: System.getenv('WF_KEYSTORE_PASSWORD')
+            def keyAliasValue = keystoreProperties['keyAlias'] ?: System.getenv('WF_KEY_ALIAS')
+            def keyPasswordValue = keystoreProperties['keyPassword'] ?: System.getenv('WF_KEY_PASSWORD')
+
+            if (storeFilePath) {
+                storeFile file(storeFilePath)
+            }
+            storePassword storePasswordValue
+            keyAlias keyAliasValue
+            keyPassword keyPasswordValue
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+
+            // Para Play Store, o release precisa estar assinado.
+            signingConfig signingConfigs.release
         }
     }
 

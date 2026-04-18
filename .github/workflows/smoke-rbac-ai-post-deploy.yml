@@ -1,0 +1,98 @@
+name: Smoke RBAC IA Post Deploy
+
+on:
+  deployment_status:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "URL base da API para o smoke (ex.: https://wallfruits-api.onrender.com)"
+        required: false
+        type: string
+      strict_ready:
+        description: "Exigir /health/ready=200"
+        required: false
+        default: true
+        type: boolean
+      analyst_expected_status:
+        description: "Status esperado para account analyst em /ai/agenda/autonomous-commerce"
+        required: false
+        default: 200_or_403
+        type: choice
+        options:
+          - 200
+          - 403
+          - 200_or_403
+
+permissions:
+  contents: read
+
+concurrency:
+  group: smoke-rbac-ai-post-deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    name: Smoke RBAC IA
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: github.event_name != 'deployment_status' || github.event.deployment_status.state == 'success'
+    env:
+      WF_SMOKE_BASE_URL_VAR: ${{ vars.WF_SMOKE_BASE_URL }}
+      WF_SMOKE_BASE_URL_SECRET: ${{ secrets.WF_SMOKE_BASE_URL }}
+      WF_TOKEN_PLATFORM_SUPPORT: ${{ secrets.WF_TOKEN_PLATFORM_SUPPORT }}
+      WF_TOKEN_PLATFORM_OPS: ${{ secrets.WF_TOKEN_PLATFORM_OPS }}
+      WF_TOKEN_ACCOUNT_VIEWER: ${{ secrets.WF_TOKEN_ACCOUNT_VIEWER }}
+      WF_TOKEN_ACCOUNT_MANAGER: ${{ secrets.WF_TOKEN_ACCOUNT_MANAGER }}
+      WF_TOKEN_ACCOUNT_ANALYST: ${{ secrets.WF_TOKEN_ACCOUNT_ANALYST }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Resolver URL base
+        id: resolve-base-url
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          BASE_URL=""
+
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && -n "${{ inputs.base_url }}" ]]; then
+            BASE_URL="${{ inputs.base_url }}"
+          elif [[ "${{ github.event_name }}" == "deployment_status" && -n "${{ github.event.deployment_status.environment_url || '' }}" ]]; then
+            BASE_URL="${{ github.event.deployment_status.environment_url }}"
+          elif [[ -n "${WF_SMOKE_BASE_URL_VAR}" ]]; then
+            BASE_URL="${WF_SMOKE_BASE_URL_VAR}"
+          elif [[ -n "${WF_SMOKE_BASE_URL_SECRET}" ]]; then
+            BASE_URL="${WF_SMOKE_BASE_URL_SECRET}"
+          fi
+
+          if [[ -z "${BASE_URL}" ]]; then
+            echo "Nao foi possivel resolver base_url."
+            echo "Defina workflow_dispatch input base_url, deployment_status.environment_url, vars.WF_SMOKE_BASE_URL ou secrets.WF_SMOKE_BASE_URL."
+            exit 1
+          fi
+
+          echo "base_url=${BASE_URL}" >> "$GITHUB_OUTPUT"
+          echo "Base URL resolvida: ${BASE_URL}"
+
+      - name: Executar smoke RBAC IA
+        shell: bash
+        env:
+          BASE_URL: ${{ steps.resolve-base-url.outputs.base_url }}
+          STRICT_READY: ${{ github.event_name == 'workflow_dispatch' && inputs.strict_ready || 'true' }}
+          ANALYST_EXPECTED_STATUS: ${{ github.event_name == 'workflow_dispatch' && inputs.analyst_expected_status || '200_or_403' }}
+        run: |
+          set -euo pipefail
+
+          ARGS=(--base-url "$BASE_URL" --analyst-expected-status "$ANALYST_EXPECTED_STATUS")
+          if [[ "$STRICT_READY" == "true" ]]; then
+            ARGS+=(--strict-ready)
+          fi
+
+          python scripts/06_smoke_rbac_ai.py "${ARGS[@]}"

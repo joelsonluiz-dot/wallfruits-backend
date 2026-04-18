@@ -16,7 +16,20 @@ class User(Base):
     supabase_user_id = Column(String(64), unique=True, index=True, nullable=True)
 
     # Novos campos para marketplace
-    role = Column(String(50), default="buyer", nullable=False)  # buyer, producer, admin
+    role = Column(String(50), default="buyer", nullable=False)  # buyer, producer, admin (legado)
+    platform_role = Column(
+        String(30),
+        default="none",
+        nullable=False,
+        index=True,
+    )  # none, staff_support, staff_ops, staff_admin
+    account_role = Column(
+        String(30),
+        default="account_owner",
+        nullable=False,
+        index=True,
+    )  # account_viewer, account_analyst, account_manager, account_owner
+    account_scope_id = Column(String(64), nullable=True, index=True)  # tenant/logical account scope
     phone = Column(String(20))
     location = Column(String(150))
     bio = Column(Text)

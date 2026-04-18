@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from typing import Optional, Dict
 from uuid import UUID
 from datetime import datetime
@@ -34,8 +34,7 @@ class MessageResponse(BaseModel):
     receiver: Optional[Dict] = None
     offer: Optional[Dict] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
     @field_validator("sender", mode="before")
     @classmethod

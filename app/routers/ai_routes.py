@@ -1,11 +1,15 @@
+import csv
 from datetime import date, datetime, time, timedelta, timezone
+from io import StringIO
 import json
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from pydantic import BaseModel, Field
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.ai.conversational_ai import ConversationalAI
+from app.ai.business_os import build_business_os_blueprint, build_orchestration_decision
 from app.ai.autonomous_commerce import AutonomousCommerceAI
 from app.ai.market_intelligence import MarketIntelligenceAI
 from app.ai.ml_pipeline import train_models, predict_with_fallback
@@ -14,14 +18,28 @@ from app.ai.risk_alert import RiskAlertAI
 from app.ai.service_recommendation import ServiceRecommendationAI
 from app.ai.smart_scheduling import SmartSchedulingAI
 from app.cache.redis_client import get_cache, set_cache
-from app.core.auth_middleware import get_current_user
+from app.core.auth_middleware import (
+    ACCOUNT_ROLE_ANALYST,
+    ACCOUNT_ROLE_MANAGER,
+    ACCOUNT_ROLE_OWNER,
+    ACCOUNT_ROLE_VIEWER,
+    PLATFORM_ROLE_STAFF_ADMIN,
+    PLATFORM_ROLE_STAFF_OPS,
+    PLATFORM_ROLE_STAFF_SUPPORT,
+    get_current_user,
+    require_account_roles,
+    require_platform_roles,
+    resolve_account_scope_id,
+)
 from app.core.config import settings
 from app.database.connection import get_db
 from app.models.user import User
-from app.models.ai_models import UserBehaviorLog
+from app.models.ai_models import AISuggestion, UserBehaviorLog
+from app.models.message import Message
 from app.models.notification import Notification
 from app.models.offer import Offer
 from app.models.service import Service
+from app.models.subscription import Subscription
 from app.models.store_models import Order, QuoteRequest, QuoteRequestStatus
 from app.models.transaction import Transaction
 from app.models.agenda_event import AgendaEvent
@@ -30,7 +48,11 @@ from app.services.agenda_proactive_service import (
     event_rule_hints,
     maybe_create_rule_notifications,
 )
+from app.services.ai_decision_review_service import AIDecisionReviewService
+from app.services.ai_governance_service import AIGovernanceService
 from app.services.ai_telemetry_service import AITelemetryService
+from app.services.profile_service import ProfileService
+from app.services.subscription_policy_service import capabilities_for_plan, capabilities_for_user, require_minimum_plan
 from app.schemas.ai_schema import (
     AISuggestionsResponse,
     ChatRequest,
@@ -105,6 +127,21 @@ class AgendaAutonomousExecuteIn(BaseModel):
     buyer_user_id: int | None = Field(default=None, ge=1)
 
 
+class GovernanceReviewResolveIn(BaseModel):
+    decision: str = Field(pattern="^(approve|reject)$")
+    notes: str | None = Field(default=None, max_length=1000)
+
+
+class BusinessOSOrchestrateEventIn(BaseModel):
+    event_type: str = Field(min_length=3, max_length=120)
+    event_domain: str | None = Field(default=None, max_length=80)
+    entity_type: str | None = Field(default=None, max_length=80)
+    entity_id: str | None = Field(default=None, max_length=120)
+    metadata: dict = Field(default_factory=dict)
+    risk_level: str | None = Field(default=None, pattern="^(low|medium|high)$")
+    risk_score: float | None = Field(default=None, ge=0, le=1)
+
+
 def _default_agenda_profile() -> dict:
     return {
         "onboarding_complete": False,
@@ -171,6 +208,1577 @@ def _priority_from_score(score: float) -> str:
     if score >= 40:
         return "media"
     return "baixa"
+
+
+def _require_admin_user(user: User) -> None:
+    require_platform_roles(
+        user,
+        allowed_roles={
+            PLATFORM_ROLE_STAFF_ADMIN,
+            PLATFORM_ROLE_STAFF_OPS,
+            PLATFORM_ROLE_STAFF_SUPPORT,
+        },
+        detail="Acesso restrito ao staff da plataforma",
+    )
+
+
+def _require_platform_write_user(user: User) -> None:
+    require_platform_roles(
+        user,
+        allowed_roles={
+            PLATFORM_ROLE_STAFF_ADMIN,
+            PLATFORM_ROLE_STAFF_OPS,
+        },
+        detail="Ação restrita a operadores da plataforma",
+    )
+
+
+def _resolve_account_user_ids(db: Session, current_user: User) -> list[int]:
+    account_scope_id = resolve_account_scope_id(current_user)
+    rows = (
+        db.query(User.id)
+        .filter(
+            User.account_scope_id == account_scope_id,
+            User.is_active.is_(True),
+        )
+        .all()
+    )
+    ids = sorted({int(item[0]) for item in rows if item and item[0] is not None})
+    if ids:
+        return ids
+    return [int(current_user.id)]
+
+
+def _require_account_ai_operator(
+    *,
+    db: Session,
+    user: User,
+    minimum_plan: str = "pro",
+) -> dict:
+    require_account_roles(
+        user,
+        allowed_roles={
+            ACCOUNT_ROLE_OWNER,
+            ACCOUNT_ROLE_MANAGER,
+            ACCOUNT_ROLE_ANALYST,
+        },
+        detail="Acesso restrito ao gestor da conta",
+    )
+    if settings.AI_ENFORCE_SUBSCRIPTION_GUARDRAILS:
+        return require_minimum_plan(
+            db=db,
+            user_id=int(user.id),
+            minimum_plan=minimum_plan,
+            detail=f"Recurso disponível para plano {minimum_plan} ou superior.",
+        )
+
+    return capabilities_for_plan("enterprise")
+
+
+def _resolve_user_ai_capabilities(db: Session, user: User) -> dict:
+    if settings.AI_ENFORCE_SUBSCRIPTION_GUARDRAILS:
+        return capabilities_for_user(db, int(user.id))
+    return capabilities_for_plan("enterprise")
+
+
+def _count_today_ai_decisions(db: Session, user_id: int) -> int:
+    now = datetime.now(timezone.utc)
+    day_start = datetime(now.year, now.month, now.day, tzinfo=timezone.utc)
+    day_end = day_start + timedelta(days=1)
+    return int(
+        db.query(func.count(UserBehaviorLog.id))
+        .filter(
+            UserBehaviorLog.user_id == int(user_id),
+            UserBehaviorLog.event_type == "ai_decision_recorded",
+            UserBehaviorLog.created_at >= day_start,
+            UserBehaviorLog.created_at < day_end,
+        )
+        .scalar()
+        or 0
+    )
+
+
+def _coerce_utc(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)
+
+
+def _resolve_window(
+    *,
+    days: int,
+    since: datetime | None = None,
+    until: datetime | None = None,
+) -> tuple[datetime, datetime, int]:
+    window_end = _coerce_utc(until) if isinstance(until, datetime) else datetime.now(timezone.utc)
+    if isinstance(since, datetime):
+        window_start = _coerce_utc(since)
+    else:
+        window_start = window_end - timedelta(days=max(1, int(days)))
+
+    if window_start >= window_end:
+        window_start = window_end - timedelta(days=max(1, int(days)))
+
+    total_seconds = max(1.0, (window_end - window_start).total_seconds())
+    window_days = max(1, int(round(total_seconds / 86400.0)))
+    return window_start, window_end, window_days
+
+
+def _build_ai_governance_summary_payload(
+    *,
+    db: Session,
+    days: int,
+    include_recent: bool,
+    since: datetime | None = None,
+    until: datetime | None = None,
+    user_ids: list[int] | None = None,
+) -> dict:
+    window_start, window_end, window_days = _resolve_window(
+        days=days,
+        since=since,
+        until=until,
+    )
+    query = (
+        db.query(UserBehaviorLog)
+        .filter(
+            UserBehaviorLog.event_type == "ai_decision_recorded",
+            UserBehaviorLog.created_at >= window_start,
+            UserBehaviorLog.created_at < window_end,
+        )
+    )
+    if user_ids:
+        query = query.filter(UserBehaviorLog.user_id.in_(list(user_ids)))
+
+    rows = query.order_by(UserBehaviorLog.created_at.desc()).all()
+
+    total = len(rows)
+    requires_review = 0
+    by_action = {
+        "auto_negotiation": 0,
+        "flash_auction": 0,
+        "unknown": 0,
+    }
+    by_outcome: dict[str, int] = {}
+    by_risk = {
+        "low": 0,
+        "medium": 0,
+        "high": 0,
+        "unknown": 0,
+    }
+
+    recent: list[dict] = []
+
+    for row in rows:
+        meta = row.meta_json if isinstance(row.meta_json, dict) else {}
+        decision = meta.get("decision") if isinstance(meta.get("decision"), dict) else {}
+
+        action = str(decision.get("action_type") or "unknown")
+        outcome = str(decision.get("decision_outcome") or "unknown")
+        risk_level = str(decision.get("risk_level") or "unknown")
+
+        if action not in by_action:
+            by_action["unknown"] += 1
+        else:
+            by_action[action] += 1
+
+        by_outcome[outcome] = int(by_outcome.get(outcome, 0)) + 1
+
+        if risk_level not in by_risk:
+            by_risk["unknown"] += 1
+        else:
+            by_risk[risk_level] += 1
+
+        if bool(decision.get("requires_human_review")):
+            requires_review += 1
+
+        if include_recent and len(recent) < 25:
+            recent.append(
+                {
+                    "event_id": row.id,
+                    "user_id": row.user_id,
+                    "created_at": row.created_at.isoformat() if row.created_at else None,
+                    "action_type": action,
+                    "decision_outcome": outcome,
+                    "risk_level": risk_level,
+                    "requires_human_review": bool(decision.get("requires_human_review")),
+                }
+            )
+
+    review_rate = round((requires_review / total) * 100, 2) if total > 0 else 0.0
+    autonomous_approved = int(by_outcome.get("approved_autonomous", 0))
+    autonomous_rate = round((autonomous_approved / total) * 100, 2) if total > 0 else 0.0
+
+    review_queue_query = (
+        db.query(AISuggestion)
+        .filter(
+            AISuggestion.module == AIDecisionReviewService.MODULE,
+            AISuggestion.suggestion_type == AIDecisionReviewService.SUGGESTION_TYPE,
+            AISuggestion.created_at >= window_start,
+            AISuggestion.created_at < window_end,
+        )
+    )
+    if user_ids:
+        review_queue_query = review_queue_query.filter(AISuggestion.user_id.in_(list(user_ids)))
+
+    review_queue_rows = review_queue_query.all()
+    queue_total = len(review_queue_rows)
+    queue_pending = 0
+    queue_approved = 0
+    queue_rejected = 0
+    for row in review_queue_rows:
+        status = str(row.status or "").strip().lower()
+        if status == AIDecisionReviewService.STATUS_PENDING:
+            queue_pending += 1
+        elif status == AIDecisionReviewService.STATUS_APPROVED:
+            queue_approved += 1
+        elif status == AIDecisionReviewService.STATUS_REJECTED:
+            queue_rejected += 1
+
+    return {
+        "window_days": window_days,
+        "window_start": window_start.isoformat(),
+        "window_end": window_end.isoformat(),
+        "totals": {
+            "decisions": total,
+            "requires_human_review": requires_review,
+            "review_rate": review_rate,
+            "approved_autonomous": autonomous_approved,
+            "autonomous_rate": autonomous_rate,
+        },
+        "review_queue": {
+            "total": queue_total,
+            "pending": queue_pending,
+            "approved": queue_approved,
+            "rejected": queue_rejected,
+        },
+        "by_action": by_action,
+        "by_outcome": by_outcome,
+        "by_risk_level": by_risk,
+        "recent": recent if include_recent else [],
+    }
+
+
+def _build_governance_summary_csv(summary_payload: dict) -> str:
+    buffer = StringIO()
+    writer = csv.writer(buffer)
+    writer.writerow(
+        [
+            "section",
+            "key",
+            "value",
+            "event_id",
+            "user_id",
+            "created_at",
+            "action_type",
+            "decision_outcome",
+            "risk_level",
+            "requires_human_review",
+        ]
+    )
+
+    writer.writerow(["meta", "window_days", summary_payload.get("window_days", 0), "", "", "", "", "", "", ""])
+
+    totals = summary_payload.get("totals", {}) if isinstance(summary_payload.get("totals"), dict) else {}
+    for key in [
+        "decisions",
+        "requires_human_review",
+        "review_rate",
+        "approved_autonomous",
+        "autonomous_rate",
+    ]:
+        writer.writerow(["totals", key, totals.get(key, 0), "", "", "", "", "", "", ""])
+
+    review_queue = summary_payload.get("review_queue", {}) if isinstance(summary_payload.get("review_queue"), dict) else {}
+    for key in ["total", "pending", "approved", "rejected"]:
+        writer.writerow(["review_queue", key, review_queue.get(key, 0), "", "", "", "", "", "", ""])
+
+    by_action = summary_payload.get("by_action", {}) if isinstance(summary_payload.get("by_action"), dict) else {}
+    for key in sorted(by_action.keys()):
+        writer.writerow(["by_action", key, by_action.get(key, 0), "", "", "", "", "", "", ""])
+
+    by_outcome = summary_payload.get("by_outcome", {}) if isinstance(summary_payload.get("by_outcome"), dict) else {}
+    for key in sorted(by_outcome.keys()):
+        writer.writerow(["by_outcome", key, by_outcome.get(key, 0), "", "", "", "", "", "", ""])
+
+    by_risk_level = summary_payload.get("by_risk_level", {}) if isinstance(summary_payload.get("by_risk_level"), dict) else {}
+    for key in sorted(by_risk_level.keys()):
+        writer.writerow(["by_risk_level", key, by_risk_level.get(key, 0), "", "", "", "", "", "", ""])
+
+    recent = summary_payload.get("recent", []) if isinstance(summary_payload.get("recent"), list) else []
+    for item in recent:
+        row = item if isinstance(item, dict) else {}
+        writer.writerow(
+            [
+                "recent",
+                "",
+                "",
+                row.get("event_id", ""),
+                row.get("user_id", ""),
+                row.get("created_at", ""),
+                row.get("action_type", ""),
+                row.get("decision_outcome", ""),
+                row.get("risk_level", ""),
+                row.get("requires_human_review", ""),
+            ]
+        )
+
+    return buffer.getvalue()
+
+
+def _build_governance_summary_weekly_csv(*, db: Session, days: int) -> str:
+    since = datetime.now(timezone.utc) - timedelta(days=days)
+
+    decision_rows = (
+        db.query(UserBehaviorLog)
+        .filter(
+            UserBehaviorLog.event_type == "ai_decision_recorded",
+            UserBehaviorLog.created_at >= since,
+        )
+        .all()
+    )
+
+    review_queue_rows = (
+        db.query(AISuggestion)
+        .filter(
+            AISuggestion.module == AIDecisionReviewService.MODULE,
+            AISuggestion.suggestion_type == AIDecisionReviewService.SUGGESTION_TYPE,
+            AISuggestion.created_at >= since,
+        )
+        .all()
+    )
+
+    weekly: dict[tuple[int, int], dict] = {}
+
+    def ensure_bucket(timestamp: datetime | None) -> dict | None:
+        if timestamp is None:
+            return None
+
+        safe_ts = timestamp if timestamp.tzinfo is not None else timestamp.replace(tzinfo=timezone.utc)
+        iso = safe_ts.isocalendar()
+        key = (int(iso.year), int(iso.week))
+
+        if key not in weekly:
+            week_start = date.fromisocalendar(key[0], key[1], 1)
+            weekly[key] = {
+                "week_start": week_start.isoformat(),
+                "week_iso": f"{key[0]}-W{key[1]:02d}",
+                "decisions": 0,
+                "requires_human_review": 0,
+                "approved_autonomous": 0,
+                "queue_total": 0,
+                "queue_pending": 0,
+                "queue_approved": 0,
+                "queue_rejected": 0,
+                "auto_negotiation": 0,
+                "flash_auction": 0,
+                "unknown_action": 0,
+                "low_risk": 0,
+                "medium_risk": 0,
+                "high_risk": 0,
+                "unknown_risk": 0,
+            }
+
+        return weekly[key]
+
+    for row in decision_rows:
+        bucket = ensure_bucket(row.created_at)
+        if bucket is None:
+            continue
+
+        meta = row.meta_json if isinstance(row.meta_json, dict) else {}
+        decision = meta.get("decision") if isinstance(meta.get("decision"), dict) else {}
+
+        action = str(decision.get("action_type") or "unknown")
+        outcome = str(decision.get("decision_outcome") or "unknown")
+        risk_level = str(decision.get("risk_level") or "unknown")
+
+        bucket["decisions"] += 1
+        if bool(decision.get("requires_human_review")):
+            bucket["requires_human_review"] += 1
+
+        if outcome == "approved_autonomous":
+            bucket["approved_autonomous"] += 1
+
+        if action == "auto_negotiation":
+            bucket["auto_negotiation"] += 1
+        elif action == "flash_auction":
+            bucket["flash_auction"] += 1
+        else:
+            bucket["unknown_action"] += 1
+
+        if risk_level == "low":
+            bucket["low_risk"] += 1
+        elif risk_level == "medium":
+            bucket["medium_risk"] += 1
+        elif risk_level == "high":
+            bucket["high_risk"] += 1
+        else:
+            bucket["unknown_risk"] += 1
+
+    for row in review_queue_rows:
+        bucket = ensure_bucket(row.created_at)
+        if bucket is None:
+            continue
+
+        status = str(row.status or "").strip().lower()
+        bucket["queue_total"] += 1
+        if status == AIDecisionReviewService.STATUS_PENDING:
+            bucket["queue_pending"] += 1
+        elif status == AIDecisionReviewService.STATUS_APPROVED:
+            bucket["queue_approved"] += 1
+        elif status == AIDecisionReviewService.STATUS_REJECTED:
+            bucket["queue_rejected"] += 1
+
+    buffer = StringIO()
+    writer = csv.writer(buffer)
+    writer.writerow(
+        [
+            "week_start",
+            "week_iso",
+            "decisions",
+            "requires_human_review",
+            "review_rate",
+            "approved_autonomous",
+            "autonomous_rate",
+            "queue_total",
+            "queue_pending",
+            "queue_approved",
+            "queue_rejected",
+            "auto_negotiation",
+            "flash_auction",
+            "unknown_action",
+            "low_risk",
+            "medium_risk",
+            "high_risk",
+            "unknown_risk",
+        ]
+    )
+
+    for key in sorted(weekly.keys(), reverse=True):
+        bucket = weekly[key]
+        decisions = int(bucket["decisions"])
+        requires_human_review = int(bucket["requires_human_review"])
+        approved_autonomous = int(bucket["approved_autonomous"])
+
+        review_rate = round((requires_human_review / decisions) * 100, 2) if decisions > 0 else 0.0
+        autonomous_rate = round((approved_autonomous / decisions) * 100, 2) if decisions > 0 else 0.0
+
+        writer.writerow(
+            [
+                bucket["week_start"],
+                bucket["week_iso"],
+                decisions,
+                requires_human_review,
+                review_rate,
+                approved_autonomous,
+                autonomous_rate,
+                int(bucket["queue_total"]),
+                int(bucket["queue_pending"]),
+                int(bucket["queue_approved"]),
+                int(bucket["queue_rejected"]),
+                int(bucket["auto_negotiation"]),
+                int(bucket["flash_auction"]),
+                int(bucket["unknown_action"]),
+                int(bucket["low_risk"]),
+                int(bucket["medium_risk"]),
+                int(bucket["high_risk"]),
+                int(bucket["unknown_risk"]),
+            ]
+        )
+
+    return buffer.getvalue()
+
+
+def _pct(num: int | float, den: int | float) -> float:
+    denominator = float(den or 0)
+    if denominator <= 0:
+        return 0.0
+    return round((float(num or 0) / denominator) * 100, 2)
+
+
+_DECISION_COST_MODEL = {
+    "base_by_action": {
+        "auto_negotiation": 0.12,
+        "flash_auction": 0.10,
+        "unknown": 0.08,
+    },
+    "review_surcharge": 0.05,
+    "rollback_surcharge": 0.07,
+    "blocked_surcharge": 0.02,
+}
+
+_AUTONOMY_LEVELS = ["L0", "L1", "L2", "L3"]
+_DEFAULT_AUTONOMY_LEVELS = {
+    "auto_negotiation": "L1",
+    "flash_auction": "L1",
+    "unknown": "L1",
+}
+_AUTONOMY_RULES = {
+    "min_samples": 6,
+    "upgrade": {
+        "autonomous_rate_min": 72.0,
+        "review_rate_max": 35.0,
+        "rollback_rate_max": 5.0,
+        "blocked_rate_max": 20.0,
+    },
+    "downgrade": {
+        "review_rate_min": 70.0,
+        "rollback_rate_min": 12.0,
+        "blocked_rate_min": 35.0,
+    },
+}
+
+
+def _estimate_decision_cost(
+    *,
+    action_type: str,
+    requires_human_review: bool,
+    rolled_back: bool,
+    committed: bool,
+) -> float:
+    normalized_action = str(action_type or "unknown").strip().lower()
+    base_by_action = _DECISION_COST_MODEL["base_by_action"]
+    base_cost = float(base_by_action.get(normalized_action, base_by_action["unknown"]))
+
+    cost = base_cost
+    if requires_human_review:
+        cost += float(_DECISION_COST_MODEL["review_surcharge"])
+    if rolled_back:
+        cost += float(_DECISION_COST_MODEL["rollback_surcharge"])
+    if not committed:
+        cost += float(_DECISION_COST_MODEL["blocked_surcharge"])
+
+    return round(cost, 4)
+
+
+def _build_ai_decision_cost_payload(
+    *,
+    db: Session,
+    days: int,
+    since: datetime | None = None,
+    until: datetime | None = None,
+    user_ids: list[int] | None = None,
+) -> dict:
+    window_start, window_end, window_days = _resolve_window(
+        days=days,
+        since=since,
+        until=until,
+    )
+
+    query = (
+        db.query(UserBehaviorLog)
+        .filter(
+            UserBehaviorLog.event_type == "ai_decision_recorded",
+            UserBehaviorLog.created_at >= window_start,
+            UserBehaviorLog.created_at < window_end,
+        )
+    )
+    if user_ids:
+        query = query.filter(UserBehaviorLog.user_id.in_(list(user_ids)))
+
+    rows = query.all()
+
+    total_cost = 0.0
+    autonomous_approved = 0
+    requires_review_total = 0
+    rolled_back_total = 0
+    blocked_total = 0
+
+    by_action: dict[str, dict[str, float | int]] = {}
+
+    for row in rows:
+        meta = row.meta_json if isinstance(row.meta_json, dict) else {}
+        decision = meta.get("decision") if isinstance(meta.get("decision"), dict) else {}
+        result = meta.get("result") if isinstance(meta.get("result"), dict) else {}
+
+        action = str(decision.get("action_type") or "unknown").strip().lower() or "unknown"
+        outcome = str(decision.get("decision_outcome") or "unknown").strip().lower()
+        requires_review = bool(decision.get("requires_human_review"))
+        rolled_back = bool(result.get("rolled_back"))
+        committed = bool(result.get("committed", outcome != "blocked"))
+
+        estimated_cost = _estimate_decision_cost(
+            action_type=action,
+            requires_human_review=requires_review,
+            rolled_back=rolled_back,
+            committed=committed,
+        )
+
+        total_cost += estimated_cost
+        if outcome == "approved_autonomous":
+            autonomous_approved += 1
+        if requires_review:
+            requires_review_total += 1
+        if rolled_back:
+            rolled_back_total += 1
+        if not committed or outcome == "blocked":
+            blocked_total += 1
+
+        action_bucket = by_action.setdefault(
+            action,
+            {
+                "decisions": 0,
+                "estimated_total_cost": 0.0,
+                "autonomous_approved": 0,
+                "requires_human_review": 0,
+                "rolled_back": 0,
+                "blocked": 0,
+            },
+        )
+        action_bucket["decisions"] = int(action_bucket["decisions"]) + 1
+        action_bucket["estimated_total_cost"] = float(action_bucket["estimated_total_cost"]) + estimated_cost
+        if outcome == "approved_autonomous":
+            action_bucket["autonomous_approved"] = int(action_bucket["autonomous_approved"]) + 1
+        if requires_review:
+            action_bucket["requires_human_review"] = int(action_bucket["requires_human_review"]) + 1
+        if rolled_back:
+            action_bucket["rolled_back"] = int(action_bucket["rolled_back"]) + 1
+        if not committed or outcome == "blocked":
+            action_bucket["blocked"] = int(action_bucket["blocked"]) + 1
+
+    total_decisions = len(rows)
+    avg_cost = round((total_cost / total_decisions), 4) if total_decisions > 0 else 0.0
+    cost_per_autonomous = round((total_cost / autonomous_approved), 4) if autonomous_approved > 0 else 0.0
+
+    by_action_items: list[dict] = []
+    for action, item in by_action.items():
+        action_decisions = int(item.get("decisions", 0) or 0)
+        action_total_cost = float(item.get("estimated_total_cost", 0.0) or 0.0)
+        by_action_items.append(
+            {
+                "action_type": action,
+                "decisions": action_decisions,
+                "estimated_total_cost": round(action_total_cost, 4),
+                "estimated_avg_cost": round((action_total_cost / action_decisions), 4) if action_decisions > 0 else 0.0,
+                "autonomous_approved": int(item.get("autonomous_approved", 0) or 0),
+                "requires_human_review": int(item.get("requires_human_review", 0) or 0),
+                "rolled_back": int(item.get("rolled_back", 0) or 0),
+                "blocked": int(item.get("blocked", 0) or 0),
+            }
+        )
+
+    by_action_items.sort(
+        key=lambda item: (
+            float(item.get("estimated_total_cost", 0.0) or 0.0),
+            int(item.get("decisions", 0) or 0),
+        ),
+        reverse=True,
+    )
+
+    return {
+        "window_days": window_days,
+        "window_start": window_start.isoformat(),
+        "window_end": window_end.isoformat(),
+        "totals": {
+            "decisions": total_decisions,
+            "estimated_total_cost": round(total_cost, 4),
+            "estimated_avg_cost": avg_cost,
+            "autonomous_approved": autonomous_approved,
+            "cost_per_autonomous_approved": cost_per_autonomous,
+            "requires_human_review": requires_review_total,
+            "rolled_back": rolled_back_total,
+            "blocked": blocked_total,
+        },
+        "by_action": by_action_items,
+        "cost_model": _DECISION_COST_MODEL,
+    }
+
+
+def _normalize_agent_level(value: str | None) -> str:
+    normalized = str(value or "").strip().upper()
+    if normalized in _AUTONOMY_LEVELS:
+        return normalized
+    return "L1"
+
+
+def _shift_agent_level(current_level: str, delta: int) -> str:
+    current = _normalize_agent_level(current_level)
+    index = _AUTONOMY_LEVELS.index(current)
+    target = max(0, min(len(_AUTONOMY_LEVELS) - 1, index + int(delta)))
+    return _AUTONOMY_LEVELS[target]
+
+
+def _load_current_autonomy_levels(db: Session) -> dict[str, str]:
+    latest = (
+        db.query(UserBehaviorLog)
+        .filter(
+            UserBehaviorLog.event_type == "ai_autonomy_policy_applied",
+            UserBehaviorLog.entity_type == "ai_autonomy_policy",
+            UserBehaviorLog.entity_id == "global",
+        )
+        .order_by(UserBehaviorLog.created_at.desc())
+        .first()
+    )
+
+    levels = dict(_DEFAULT_AUTONOMY_LEVELS)
+    if latest and isinstance(latest.meta_json, dict):
+        raw_levels = latest.meta_json.get("levels_applied")
+        if not isinstance(raw_levels, dict):
+            raw_levels = latest.meta_json.get("levels_proposed")
+        if not isinstance(raw_levels, dict):
+            raw_levels = latest.meta_json.get("levels")
+
+        if isinstance(raw_levels, dict):
+            for key, value in raw_levels.items():
+                levels[str(key).strip().lower() or "unknown"] = _normalize_agent_level(str(value))
+
+    return levels
+
+
+def _build_ai_autonomy_policy_payload(
+    *,
+    db: Session,
+    days: int,
+    since: datetime | None = None,
+    until: datetime | None = None,
+    current_levels: dict[str, str] | None = None,
+) -> dict:
+    window_start, window_end, window_days = _resolve_window(
+        days=days,
+        since=since,
+        until=until,
+    )
+
+    levels_current = dict(current_levels or _load_current_autonomy_levels(db))
+    for action, default_level in _DEFAULT_AUTONOMY_LEVELS.items():
+        levels_current.setdefault(action, default_level)
+
+    rows = (
+        db.query(UserBehaviorLog)
+        .filter(
+            UserBehaviorLog.event_type == "ai_decision_recorded",
+            UserBehaviorLog.created_at >= window_start,
+            UserBehaviorLog.created_at < window_end,
+        )
+        .all()
+    )
+
+    stats_by_agent: dict[str, dict[str, int]] = {}
+    for row in rows:
+        meta = row.meta_json if isinstance(row.meta_json, dict) else {}
+        decision = meta.get("decision") if isinstance(meta.get("decision"), dict) else {}
+        result = meta.get("result") if isinstance(meta.get("result"), dict) else {}
+
+        action = str(decision.get("action_type") or "unknown").strip().lower() or "unknown"
+        outcome = str(decision.get("decision_outcome") or "unknown").strip().lower()
+        requires_review = bool(decision.get("requires_human_review"))
+        rolled_back = bool(result.get("rolled_back"))
+        committed = bool(result.get("committed", outcome != "blocked"))
+        blocked = (not committed) or outcome == "blocked"
+
+        bucket = stats_by_agent.setdefault(
+            action,
+            {
+                "decisions": 0,
+                "autonomous_approved": 0,
+                "requires_human_review": 0,
+                "rolled_back": 0,
+                "blocked": 0,
+            },
+        )
+        bucket["decisions"] += 1
+        if outcome == "approved_autonomous":
+            bucket["autonomous_approved"] += 1
+        if requires_review:
+            bucket["requires_human_review"] += 1
+        if rolled_back:
+            bucket["rolled_back"] += 1
+        if blocked:
+            bucket["blocked"] += 1
+
+    levels_proposed = dict(levels_current)
+    actions = sorted(set(levels_current.keys()) | set(stats_by_agent.keys()))
+    agents_payload: list[dict] = []
+
+    min_samples = int(_AUTONOMY_RULES["min_samples"])
+    up_rules = _AUTONOMY_RULES["upgrade"]
+    down_rules = _AUTONOMY_RULES["downgrade"]
+
+    for action in actions:
+        stats = stats_by_agent.get(
+            action,
+            {
+                "decisions": 0,
+                "autonomous_approved": 0,
+                "requires_human_review": 0,
+                "rolled_back": 0,
+                "blocked": 0,
+            },
+        )
+        decisions = int(stats.get("decisions", 0) or 0)
+        autonomous_rate = _pct(int(stats.get("autonomous_approved", 0) or 0), decisions)
+        review_rate = _pct(int(stats.get("requires_human_review", 0) or 0), decisions)
+        rollback_rate = _pct(int(stats.get("rolled_back", 0) or 0), decisions)
+        blocked_rate = _pct(int(stats.get("blocked", 0) or 0), decisions)
+
+        current_level = _normalize_agent_level(levels_current.get(action, "L1"))
+        recommendation = "hold"
+        reason = "performance_within_expected_range"
+
+        if decisions < min_samples:
+            reason = "insufficient_sample"
+            proposed_level = current_level
+        elif (
+            review_rate >= float(down_rules["review_rate_min"])
+            or rollback_rate >= float(down_rules["rollback_rate_min"])
+            or blocked_rate >= float(down_rules["blocked_rate_min"])
+        ):
+            recommendation = "downgrade"
+            reason = "risk_or_quality_breach"
+            proposed_level = _shift_agent_level(current_level, -1)
+        elif (
+            autonomous_rate >= float(up_rules["autonomous_rate_min"])
+            and review_rate <= float(up_rules["review_rate_max"])
+            and rollback_rate <= float(up_rules["rollback_rate_max"])
+            and blocked_rate <= float(up_rules["blocked_rate_max"])
+        ):
+            recommendation = "upgrade"
+            reason = "high_stability_and_autonomy"
+            proposed_level = _shift_agent_level(current_level, 1)
+        else:
+            proposed_level = current_level
+
+        levels_proposed[action] = proposed_level
+        agents_payload.append(
+            {
+                "agent": action,
+                "current_level": current_level,
+                "proposed_level": proposed_level,
+                "recommendation": recommendation,
+                "reason": reason,
+                "metrics": {
+                    "decisions": decisions,
+                    "autonomous_rate": autonomous_rate,
+                    "review_rate": review_rate,
+                    "rollback_rate": rollback_rate,
+                    "blocked_rate": blocked_rate,
+                },
+            }
+        )
+
+    upgrades = sum(1 for item in agents_payload if item["recommendation"] == "upgrade" and item["proposed_level"] != item["current_level"])
+    downgrades = sum(1 for item in agents_payload if item["recommendation"] == "downgrade" and item["proposed_level"] != item["current_level"])
+
+    return {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "window_days": window_days,
+        "window_start": window_start.isoformat(),
+        "window_end": window_end.isoformat(),
+        "rules": _AUTONOMY_RULES,
+        "levels_current": levels_current,
+        "levels_proposed": levels_proposed,
+        "summary": {
+            "upgrade_candidates": upgrades,
+            "downgrade_candidates": downgrades,
+            "hold": max(0, len(agents_payload) - upgrades - downgrades),
+        },
+        "agents": agents_payload,
+    }
+
+
+def _week_window_bounds(week_offset: int = 0) -> tuple[str, datetime, datetime]:
+    safe_offset = max(0, int(week_offset))
+    reference_day = (datetime.now(timezone.utc) - timedelta(days=safe_offset * 7)).date()
+    week_start = reference_day - timedelta(days=reference_day.weekday())
+    week_end = week_start + timedelta(days=7)
+
+    iso = week_start.isocalendar()
+    week_iso = f"{int(iso.year)}-W{int(iso.week):02d}"
+    window_start = datetime.combine(week_start, time.min, tzinfo=timezone.utc)
+    window_end = datetime.combine(week_end, time.min, tzinfo=timezone.utc)
+    return week_iso, window_start, window_end
+
+
+def _build_ai_executive_cockpit_payload(
+    *,
+    db: Session,
+    days: int,
+    since: datetime | None = None,
+    until: datetime | None = None,
+) -> dict:
+    window_start, window_end, window_days = _resolve_window(
+        days=days,
+        since=since,
+        until=until,
+    )
+
+    total_users = int(db.query(func.count(User.id)).scalar() or 0)
+    new_users = int(
+        db.query(func.count(User.id))
+        .filter(User.created_at >= window_start, User.created_at < window_end)
+        .scalar()
+        or 0
+    )
+    active_offers = int(
+        db.query(func.count(Offer.id))
+        .filter(Offer.status == "active")
+        .scalar()
+        or 0
+    )
+    inbound_messages = int(
+        db.query(func.count(Message.id))
+        .filter(Message.created_at >= window_start, Message.created_at < window_end)
+        .scalar()
+        or 0
+    )
+
+    orders_rows = (
+        db.query(Order)
+        .filter(Order.created_at >= window_start, Order.created_at < window_end)
+        .all()
+    )
+    total_orders = len(orders_rows)
+    paid_or_delivered_orders = 0
+    delivered_orders = 0
+    cancelled_orders = 0
+    gross_revenue = 0.0
+
+    customers_window: dict[int, int] = {}
+    by_payment_segment: dict[str, dict[str, float | int]] = {}
+
+    for row in orders_rows:
+        status = (
+            row.status.value
+            if hasattr(row.status, "value")
+            else str(row.status or "").strip().lower()
+        )
+        payment_method = str(row.payment_method or "unknown").strip().lower() or "unknown"
+
+        bucket = by_payment_segment.setdefault(
+            payment_method,
+            {
+                "total_orders": 0,
+                "paid_or_delivered_orders": 0,
+                "delivered_orders": 0,
+                "cancelled_orders": 0,
+                "gross_revenue": 0.0,
+            },
+        )
+
+        bucket["total_orders"] = int(bucket["total_orders"]) + 1
+
+        if row.customer_id is not None:
+            customer_id = int(row.customer_id)
+            customers_window[customer_id] = int(customers_window.get(customer_id, 0)) + 1
+
+        if status in {"paid", "delivered"}:
+            paid_or_delivered_orders += 1
+            amount = float(row.total_amount or 0.0)
+            gross_revenue += amount
+            bucket["paid_or_delivered_orders"] = int(bucket["paid_or_delivered_orders"]) + 1
+            bucket["gross_revenue"] = float(bucket["gross_revenue"]) + amount
+
+        if status == "delivered":
+            delivered_orders += 1
+            bucket["delivered_orders"] = int(bucket["delivered_orders"]) + 1
+
+        if status == "cancelled":
+            cancelled_orders += 1
+            bucket["cancelled_orders"] = int(bucket["cancelled_orders"]) + 1
+
+    total_customers_window = len(customers_window)
+    recurring_customers = sum(1 for count in customers_window.values() if int(count) >= 2)
+
+    active_subscriptions = int(
+        db.query(func.count(Subscription.id))
+        .filter(Subscription.status == "active")
+        .scalar()
+        or 0
+    )
+    new_active_subscriptions = int(
+        db.query(func.count(Subscription.id))
+        .filter(
+            Subscription.created_at >= window_start,
+            Subscription.created_at < window_end,
+            Subscription.status == "active",
+        )
+        .scalar()
+        or 0
+    )
+
+    checkouts_requested = int(
+        db.query(func.count(UserBehaviorLog.id))
+        .filter(
+            UserBehaviorLog.created_at >= window_start,
+            UserBehaviorLog.created_at < window_end,
+            UserBehaviorLog.event_type.in_(
+                [
+                    "payment_checkout_requested",
+                    "store_checkout_session_requested",
+                    "payment_subscription_cta_event",
+                ]
+            ),
+        )
+        .scalar()
+        or 0
+    )
+
+    unresolved_admin_alerts = int(
+        db.query(func.count(Notification.id))
+        .filter(
+            Notification.notification_type == "admin_alert",
+            Notification.is_read.is_(False),
+        )
+        .scalar()
+        or 0
+    )
+
+    governance = _build_ai_governance_summary_payload(
+        db=db,
+        days=window_days,
+        include_recent=False,
+        since=window_start,
+        until=window_end,
+    )
+    governance_totals = governance.get("totals", {}) if isinstance(governance.get("totals"), dict) else {}
+    governance_queue = governance.get("review_queue", {}) if isinstance(governance.get("review_queue"), dict) else {}
+
+    cost_monitor = _build_ai_decision_cost_payload(
+        db=db,
+        days=window_days,
+        since=window_start,
+        until=window_end,
+    )
+    autonomy_preview = _build_ai_autonomy_policy_payload(
+        db=db,
+        days=window_days,
+        since=window_start,
+        until=window_end,
+    )
+
+    ai_decisions_total = int(governance_totals.get("decisions", 0) or 0)
+    ai_review_rate = float(governance_totals.get("review_rate", 0.0) or 0.0)
+    ai_autonomous_rate = float(governance_totals.get("autonomous_rate", 0.0) or 0.0)
+
+    order_conversion_rate = _pct(paid_or_delivered_orders, total_orders)
+    order_cancel_rate = _pct(cancelled_orders, total_orders)
+    recurring_customers_rate = _pct(recurring_customers, total_customers_window)
+
+    profitability_by_segment: list[dict] = []
+    for segment, stats in by_payment_segment.items():
+        segment_total_orders = int(stats.get("total_orders", 0) or 0)
+        segment_converted = int(stats.get("paid_or_delivered_orders", 0) or 0)
+        segment_cancelled = int(stats.get("cancelled_orders", 0) or 0)
+        segment_revenue = float(stats.get("gross_revenue", 0.0) or 0.0)
+
+        profitability_by_segment.append(
+            {
+                "segment": segment,
+                "total_orders": segment_total_orders,
+                "paid_or_delivered_orders": segment_converted,
+                "delivered_orders": int(stats.get("delivered_orders", 0) or 0),
+                "cancelled_orders": segment_cancelled,
+                "order_conversion_rate": _pct(segment_converted, segment_total_orders),
+                "cancel_rate": _pct(segment_cancelled, segment_total_orders),
+                "gross_revenue": round(segment_revenue, 2),
+                "avg_ticket": round((segment_revenue / segment_converted), 2) if segment_converted > 0 else 0.0,
+            }
+        )
+
+    profitability_by_segment.sort(
+        key=lambda item: (
+            float(item.get("gross_revenue", 0.0) or 0.0),
+            float(item.get("order_conversion_rate", 0.0) or 0.0),
+        ),
+        reverse=True,
+    )
+
+    targets = {
+        "order_conversion_rate": 55.0,
+        "order_cancel_rate_max": 15.0,
+        "ai_autonomous_rate": 65.0,
+        "ai_review_rate_max": 45.0,
+        "recurring_customers_rate": 25.0,
+    }
+
+    goal_gaps = [
+        {
+            "metric": "order_conversion_rate",
+            "current": order_conversion_rate,
+            "target": float(targets["order_conversion_rate"]),
+            "gap": round(order_conversion_rate - float(targets["order_conversion_rate"]), 2),
+            "status": "below_target" if order_conversion_rate < float(targets["order_conversion_rate"]) else "on_track",
+        },
+        {
+            "metric": "ai_autonomous_rate",
+            "current": ai_autonomous_rate,
+            "target": float(targets["ai_autonomous_rate"]),
+            "gap": round(ai_autonomous_rate - float(targets["ai_autonomous_rate"]), 2),
+            "status": "below_target" if ai_autonomous_rate < float(targets["ai_autonomous_rate"]) else "on_track",
+        },
+        {
+            "metric": "ai_review_rate",
+            "current": ai_review_rate,
+            "target": float(targets["ai_review_rate_max"]),
+            "gap": round(float(targets["ai_review_rate_max"]) - ai_review_rate, 2),
+            "status": "above_limit" if ai_review_rate > float(targets["ai_review_rate_max"]) else "within_limit",
+        },
+        {
+            "metric": "order_cancel_rate",
+            "current": order_cancel_rate,
+            "target": float(targets["order_cancel_rate_max"]),
+            "gap": round(float(targets["order_cancel_rate_max"]) - order_cancel_rate, 2),
+            "status": "above_limit" if order_cancel_rate > float(targets["order_cancel_rate_max"]) else "within_limit",
+        },
+        {
+            "metric": "recurring_customers_rate",
+            "current": recurring_customers_rate,
+            "target": float(targets["recurring_customers_rate"]),
+            "gap": round(recurring_customers_rate - float(targets["recurring_customers_rate"]), 2),
+            "status": "below_target" if recurring_customers_rate < float(targets["recurring_customers_rate"]) else "on_track",
+        },
+    ]
+
+    alerts: list[str] = []
+    recommended_actions: list[str] = []
+
+    if total_orders > 0 and order_conversion_rate < float(targets["order_conversion_rate"]):
+        alerts.append("Conversão de pedidos abaixo da meta operacional.")
+        recommended_actions.append("Revisar funil de checkout e reduzir etapas de fricção no pagamento.")
+
+    if total_orders > 0 and order_cancel_rate > float(targets["order_cancel_rate_max"]):
+        alerts.append("Taxa de cancelamento de pedidos acima do limite saudável.")
+        recommended_actions.append("Ativar rotina de prevenção de cancelamento com confirmação proativa e SLA de atendimento.")
+
+    if ai_decisions_total > 0 and ai_review_rate > float(targets["ai_review_rate_max"]):
+        alerts.append("Fila de revisão humana elevada nas decisões IA.")
+        recommended_actions.append("Recalibrar guardrails de risco para elevar autonomia com segurança.")
+
+    if ai_decisions_total > 0 and ai_autonomous_rate < float(targets["ai_autonomous_rate"]):
+        alerts.append("Autonomia IA abaixo da meta para a janela selecionada.")
+        recommended_actions.append("Revisar políticas por risco e promover ações de baixo risco para execução automática.")
+
+    if total_customers_window > 0 and recurring_customers_rate < float(targets["recurring_customers_rate"]):
+        alerts.append("Recorrência de clientes abaixo da meta de retenção.")
+        recommended_actions.append("Rodar campanha de retenção por segmento com oferta de recompra contextual.")
+
+    if int(governance_queue.get("pending", 0) or 0) > 0:
+        alerts.append("Existem itens pendentes na fila L1 de governança.")
+        recommended_actions.append("Aplicar rotina diária de resolução da fila L1 com prioridade por risco alto.")
+
+    if unresolved_admin_alerts > 0:
+        alerts.append("Há alertas administrativos não lidos afetando a operação.")
+        recommended_actions.append("Definir dono por alerta crítico e acompanhar fechamento em até 24h.")
+
+    if not alerts:
+        alerts.append("Operação IA estável na janela monitorada.")
+
+    opportunities: list[str] = []
+    for segment in profitability_by_segment[:3]:
+        if float(segment.get("gross_revenue", 0.0) or 0.0) <= 0:
+            continue
+        if float(segment.get("cancel_rate", 0.0) or 0.0) <= float(targets["order_cancel_rate_max"]):
+            opportunities.append(
+                (
+                    f"Expandir segmento {segment.get('segment', 'unknown')} "
+                    f"(receita {segment.get('gross_revenue', 0.0):.2f} e cancelamento {segment.get('cancel_rate', 0.0):.2f}%)."
+                )
+            )
+
+    if ai_decisions_total > 0 and ai_autonomous_rate >= float(targets["ai_autonomous_rate"]):
+        opportunities.append("Escalar autonomia IA em fluxos de baixo risco mantendo auditoria contínua.")
+
+    if total_customers_window > 0 and recurring_customers_rate >= float(targets["recurring_customers_rate"]):
+        opportunities.append("Aproveitar base recorrente para estratégias de expansão de ticket e upsell.")
+
+    if not opportunities:
+        opportunities.append("Consolidar mais sinais de operação para ampliar oportunidades orientadas por segmento.")
+
+    return {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "window_days": window_days,
+        "window_start": window_start.isoformat(),
+        "window_end": window_end.isoformat(),
+        "loops": {
+            "acquisition": {
+                "total_users": total_users,
+                "new_users": new_users,
+                "active_offers": active_offers,
+                "inbound_messages": inbound_messages,
+            },
+            "conversion": {
+                "checkouts_requested": checkouts_requested,
+                "orders_total": total_orders,
+                "paid_or_delivered_orders": paid_or_delivered_orders,
+                "order_conversion_rate": order_conversion_rate,
+                "gross_revenue": round(gross_revenue, 2),
+            },
+            "retention_expansion": {
+                "active_subscriptions": active_subscriptions,
+                "new_active_subscriptions": new_active_subscriptions,
+                "delivered_orders": delivered_orders,
+                "total_customers_window": total_customers_window,
+                "recurring_customers": recurring_customers,
+                "recurring_customers_rate": recurring_customers_rate,
+            },
+            "efficiency_risk": {
+                "ai_decisions_total": ai_decisions_total,
+                "ai_review_rate": ai_review_rate,
+                "ai_autonomous_rate": ai_autonomous_rate,
+                "review_queue_pending": int(governance_queue.get("pending", 0) or 0),
+                "order_cancel_rate": order_cancel_rate,
+                "admin_alerts_open": unresolved_admin_alerts,
+                "estimated_ai_cost_total": float(cost_monitor.get("totals", {}).get("estimated_total_cost", 0.0) or 0.0),
+                "estimated_cost_per_decision": float(cost_monitor.get("totals", {}).get("estimated_avg_cost", 0.0) or 0.0),
+                "autonomy_upgrade_candidates": int(autonomy_preview.get("summary", {}).get("upgrade_candidates", 0) or 0),
+                "autonomy_downgrade_candidates": int(autonomy_preview.get("summary", {}).get("downgrade_candidates", 0) or 0),
+            },
+        },
+        "targets": targets,
+        "goal_gaps": goal_gaps,
+        "profitability_by_segment": profitability_by_segment,
+        "cost_monitor": cost_monitor,
+        "autonomy_policy_preview": autonomy_preview,
+        "alerts": alerts,
+        "opportunities": opportunities,
+        "recommended_actions": list(dict.fromkeys(recommended_actions)) or [
+            "Manter rotina semanal de revisão de métricas e governança IA.",
+        ],
+    }
+
+
+def _build_ai_weekly_learning_report(
+    *,
+    db: Session,
+    week_iso: str,
+    window_start: datetime,
+    window_end: datetime,
+) -> dict:
+    executive = _build_ai_executive_cockpit_payload(
+        db=db,
+        days=7,
+        since=window_start,
+        until=window_end,
+    )
+
+    cost_monitor = executive.get("cost_monitor")
+    if not isinstance(cost_monitor, dict):
+        cost_monitor = _build_ai_decision_cost_payload(
+            db=db,
+            days=7,
+            since=window_start,
+            until=window_end,
+        )
+
+    autonomy_preview = executive.get("autonomy_policy_preview")
+    if not isinstance(autonomy_preview, dict):
+        autonomy_preview = _build_ai_autonomy_policy_payload(
+            db=db,
+            days=7,
+            since=window_start,
+            until=window_end,
+        )
+
+    return {
+        "week_iso": week_iso,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "window_start": window_start.isoformat(),
+        "window_end": window_end.isoformat(),
+        "highlights": {
+            "key_risks": list((executive.get("alerts") or [])[:5]),
+            "key_opportunities": list((executive.get("opportunities") or [])[:5]),
+            "priority_actions": list((executive.get("recommended_actions") or [])[:5]),
+        },
+        "executive": executive,
+        "cost_monitor": cost_monitor,
+        "autonomy_policy_preview": autonomy_preview,
+    }
+
+
+_GROWTH_FUNNEL_ENTRY_EVENTS = {
+    "payment_checkout_requested",
+    "store_checkout_session_requested",
+    "payment_subscription_cta_event",
+}
+_GROWTH_FUNNEL_SUCCESS_EVENTS = {
+    "payment_checkout_created",
+    "store_checkout_completed",
+}
+_GROWTH_FUNNEL_FAILURE_EVENTS = {
+    "payment_checkout_failed",
+    "message_send_denied",
+}
+_GROWTH_FUNNEL_TRACKED_EVENTS = (
+    _GROWTH_FUNNEL_ENTRY_EVENTS
+    | _GROWTH_FUNNEL_SUCCESS_EVENTS
+    | _GROWTH_FUNNEL_FAILURE_EVENTS
+)
+
+
+def _growth_segment_key(*, event_type: str, metadata: dict) -> str:
+    source = str(
+        metadata.get("source")
+        or metadata.get("variant")
+        or metadata.get("payment_method")
+        or "direct"
+    ).strip().lower() or "direct"
+    plan = str(metadata.get("plan") or metadata.get("plan_id") or "none").strip().lower() or "none"
+    billing_cycle = str(metadata.get("billing_cycle") or "na").strip().lower() or "na"
+    page = str(metadata.get("page") or event_type).strip().lower() or "unknown"
+    return f"{source}|{plan}|{billing_cycle}|{page}"
+
+
+def _marketing_signal_playbook(signal_type: str) -> dict:
+    normalized = str(signal_type or "").strip().lower()
+    if normalized == "conversion_drop":
+        return {
+            "action": "revisar copy e simplificar jornada de checkout",
+            "experiment": "ab_checkout_copy",
+            "owner_agent": "agente_growth_marketing",
+        }
+    if normalized == "checkout_friction":
+        return {
+            "action": "reduzir friccao do checkout e ajustar etapa de pagamento",
+            "experiment": "ab_checkout_flow",
+            "owner_agent": "agente_growth_marketing",
+        }
+    if normalized == "high_intent_segment":
+        return {
+            "action": "escalar investimento e volume de ofertas para segmento quente",
+            "experiment": "bandit_budget_allocation",
+            "owner_agent": "agente_growth_marketing",
+        }
+    return {
+        "action": "monitorar segmento e coletar mais sinais",
+        "experiment": "no_experiment",
+        "owner_agent": "orquestrador_central",
+    }
+
+
+def _build_business_os_marketing_funnel_payload(
+    *,
+    db: Session,
+    days: int,
+    min_segment_signals: int,
+    user_ids: list[int] | None = None,
+) -> dict:
+    window_start, window_end, window_days = _resolve_window(days=days)
+
+    query = (
+        db.query(UserBehaviorLog)
+        .filter(
+            UserBehaviorLog.event_type.in_(list(_GROWTH_FUNNEL_TRACKED_EVENTS)),
+            UserBehaviorLog.created_at >= window_start,
+            UserBehaviorLog.created_at < window_end,
+        )
+    )
+    if user_ids:
+        query = query.filter(UserBehaviorLog.user_id.in_(list(user_ids)))
+
+    rows = query.order_by(UserBehaviorLog.created_at.desc()).all()
+
+    totals = {
+        "events_total": len(rows),
+        "entries": 0,
+        "success": 0,
+        "failure": 0,
+    }
+
+    by_segment: dict[str, dict] = {}
+    for row in rows:
+        event_type = str(row.event_type or "").strip().lower()
+        metadata = row.meta_json if isinstance(row.meta_json, dict) else {}
+        segment = _growth_segment_key(event_type=event_type, metadata=metadata)
+
+        bucket = by_segment.setdefault(
+            segment,
+            {
+                "segment": segment,
+                "entries": 0,
+                "success": 0,
+                "failure": 0,
+                "event_mix": {},
+                "latest_event_at": row.created_at.isoformat() if row.created_at else None,
+            },
+        )
+        bucket["event_mix"][event_type] = int(bucket["event_mix"].get(event_type, 0)) + 1
+
+        if event_type in _GROWTH_FUNNEL_ENTRY_EVENTS:
+            bucket["entries"] += 1
+            totals["entries"] += 1
+        elif event_type in _GROWTH_FUNNEL_SUCCESS_EVENTS:
+            bucket["success"] += 1
+            totals["success"] += 1
+        elif event_type in _GROWTH_FUNNEL_FAILURE_EVENTS:
+            bucket["failure"] += 1
+            totals["failure"] += 1
+
+    segments: list[dict] = []
+    signals: list[dict] = []
+
+    for segment_key, bucket in by_segment.items():
+        entries = int(bucket.get("entries", 0) or 0)
+        success = int(bucket.get("success", 0) or 0)
+        failure = int(bucket.get("failure", 0) or 0)
+        base = max(1, entries)
+
+        conversion_rate = _pct(success, base)
+        failure_rate = _pct(failure, base)
+
+        segment_payload = {
+            "segment": segment_key,
+            "entries": entries,
+            "success": success,
+            "failure": failure,
+            "conversion_rate": conversion_rate,
+            "failure_rate": failure_rate,
+            "event_mix": bucket.get("event_mix", {}),
+            "latest_event_at": bucket.get("latest_event_at"),
+        }
+        segments.append(segment_payload)
+
+        if entries < int(min_segment_signals):
+            continue
+
+        segment_signals: list[tuple[str, str, str]] = []
+        if conversion_rate < 35.0:
+            risk = "high" if conversion_rate < 20.0 else "medium"
+            segment_signals.append(("conversion_drop", risk, "Conversão abaixo da meta operacional"))
+        if failure_rate >= 20.0:
+            risk = "high" if failure_rate >= 40.0 else "medium"
+            segment_signals.append(("checkout_friction", risk, "Taxa de falha do checkout acima do esperado"))
+        if conversion_rate >= 60.0:
+            segment_signals.append(("high_intent_segment", "low", "Segmento com alta intenção de compra"))
+
+        for signal_type, risk_level, reason in segment_signals:
+            metadata = {
+                "signal_type": signal_type,
+                "segment": segment_key,
+                "reason": reason,
+                "entries": entries,
+                "success": success,
+                "failure": failure,
+                "conversion_rate": conversion_rate,
+                "failure_rate": failure_rate,
+            }
+            decision = build_orchestration_decision(
+                event_type="growth_signal_detected",
+                event_domain="marketing",
+                metadata=metadata,
+                risk_level=risk_level,
+                risk_score=None,
+            )
+            signals.append(
+                {
+                    **metadata,
+                    "risk_level": risk_level,
+                    "decision": decision,
+                    "playbook": _marketing_signal_playbook(signal_type),
+                }
+            )
+
+    segments.sort(
+        key=lambda item: (
+            int(item.get("entries", 0) or 0),
+            float(item.get("conversion_rate", 0.0) or 0.0),
+        ),
+        reverse=True,
+    )
+    signals.sort(
+        key=lambda item: (
+            {"high": 3, "medium": 2, "low": 1}.get(str(item.get("risk_level") or "low"), 0),
+            float(item.get("conversion_rate", 0.0) or 0.0),
+        ),
+        reverse=True,
+    )
+
+    experiments = [
+        {
+            "segment": item.get("segment"),
+            "signal_type": item.get("signal_type"),
+            "experiment": item.get("playbook", {}).get("experiment"),
+            "action": item.get("playbook", {}).get("action"),
+            "owner_agent": item.get("playbook", {}).get("owner_agent"),
+        }
+        for item in signals
+    ]
+
+    return {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "window_days": window_days,
+        "window_start": window_start.isoformat(),
+        "window_end": window_end.isoformat(),
+        "funnel_totals": totals,
+        "segments": segments,
+        "signals": signals,
+        "experiments": experiments,
+        "min_segment_signals": int(min_segment_signals),
+    }
+
+
+def _persist_business_os_marketing_signals(
+    *,
+    db: Session,
+    actor_user_id: int,
+    signals: list[dict],
+    window_start: str,
+    window_end: str,
+    request_id: str | None,
+    event_source: str,
+) -> int:
+    telemetry = AITelemetryService(db)
+    processed_events = 0
+
+    for signal in signals:
+        signal_type = str(signal.get("signal_type") or "growth_signal_detected")
+        segment = str(signal.get("segment") or "unknown_segment")
+        signal_meta = {
+            "signal_type": signal_type,
+            "segment": segment,
+            "reason": signal.get("reason"),
+            "entries": signal.get("entries"),
+            "success": signal.get("success"),
+            "failure": signal.get("failure"),
+            "conversion_rate": signal.get("conversion_rate"),
+            "failure_rate": signal.get("failure_rate"),
+            "playbook": signal.get("playbook", {}),
+        }
+
+        signal_row = telemetry.log_event(
+            user_id=actor_user_id,
+            event_type="growth_signal_detected",
+            entity_type="growth_segment",
+            entity_id=segment,
+            metadata=signal_meta,
+            event_domain="marketing",
+            event_source=event_source,
+            request_id=request_id,
+            idempotency_key=(
+                f"growth-signal:{window_start}:{window_end}:{segment}:{signal_type}"
+            ),
+            commit=False,
+        )
+        if signal_row is not None:
+            processed_events += 1
+
+        orchestration_row = telemetry.log_event(
+            user_id=actor_user_id,
+            event_type="ai_business_os_orchestrated",
+            entity_type="growth_segment",
+            entity_id=segment,
+            metadata={
+                "input": {
+                    "event_type": "growth_signal_detected",
+                    "event_domain": "marketing",
+                    "risk_level": signal.get("risk_level"),
+                    "metadata": signal_meta,
+                },
+                "decision": signal.get("decision", {}),
+                "accepted": True,
+                "missing_required_fields": [],
+            },
+            event_domain="business_os",
+            event_source=event_source,
+            request_id=request_id,
+            idempotency_key=(
+                f"growth-orchestration:{window_start}:{window_end}:{segment}:{signal_type}"
+            ),
+            commit=False,
+        )
+        if orchestration_row is not None:
+            processed_events += 1
+
+    return processed_events
 
 
 def _event_payload(item: AgendaEvent) -> dict:
@@ -353,12 +1961,373 @@ def get_agenda_market_intelligence(
     return snapshot
 
 
+@router.get("/ops/governance-summary")
+def get_ai_governance_summary(
+    days: int = Query(30, ge=1, le=365),
+    include_recent: bool = Query(False),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    _require_admin_user(current_user)
+    return _build_ai_governance_summary_payload(
+        db=db,
+        days=days,
+        include_recent=include_recent,
+    )
+
+
+@router.get("/ops/executive-cockpit")
+def get_ai_executive_cockpit(
+    days: int = Query(30, ge=1, le=365),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    _require_admin_user(current_user)
+    return _build_ai_executive_cockpit_payload(db=db, days=days)
+
+
+@router.get("/ops/business-os/blueprint")
+def get_ai_business_os_blueprint(
+    days: int = Query(30, ge=1, le=365),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    _require_admin_user(current_user)
+
+    business_os = build_business_os_blueprint()
+    governance = _build_ai_governance_summary_payload(
+        db=db,
+        days=days,
+        include_recent=False,
+    )
+    cockpit = _build_ai_executive_cockpit_payload(db=db, days=days)
+
+    return {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "window_days": days,
+        "business_os": business_os,
+        "runtime_snapshot": {
+            "governance_totals": governance.get("totals", {}),
+            "review_queue": governance.get("review_queue", {}),
+            "loops": cockpit.get("loops", {}),
+            "goal_gaps": cockpit.get("goal_gaps", []),
+        },
+    }
+
+
+@router.get("/ops/business-os/marketing-funnel")
+def get_ai_business_os_marketing_funnel(
+    request: Request,
+    days: int = Query(30, ge=1, le=365),
+    min_segment_signals: int = Query(3, ge=1, le=20),
+    persist: bool = Query(False),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    _require_admin_user(current_user)
+    if persist:
+        _require_platform_write_user(current_user)
+
+    payload = _build_business_os_marketing_funnel_payload(
+        db=db,
+        days=days,
+        min_segment_signals=min_segment_signals,
+    )
+    payload["persist_performed"] = False
+    payload["persisted_events"] = 0
+
+    if persist and payload.get("signals"):
+        processed_events = _persist_business_os_marketing_signals(
+            db=db,
+            actor_user_id=current_user.id,
+            signals=list(payload.get("signals") or []),
+            window_start=str(payload.get("window_start") or ""),
+            window_end=str(payload.get("window_end") or ""),
+            request_id=getattr(request.state, "request_id", None),
+            event_source="/api/ai/ops/business-os/marketing-funnel",
+        )
+
+        db.commit()
+        payload["persist_performed"] = True
+        payload["persisted_events"] = processed_events
+
+    return payload
+
+
+@router.post("/ops/business-os/orchestrate-event")
+def orchestrate_ai_business_os_event(
+    payload: BusinessOSOrchestrateEventIn,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    _require_platform_write_user(current_user)
+
+    decision = build_orchestration_decision(
+        event_type=payload.event_type,
+        event_domain=payload.event_domain,
+        metadata=payload.metadata,
+        risk_level=payload.risk_level,
+        risk_score=payload.risk_score,
+    )
+
+    missing_fields = list(decision.get("contract_validation", {}).get("missing_fields", []))
+    accepted = len(missing_fields) == 0
+
+    request_id = getattr(request.state, "request_id", None)
+    telemetry = AITelemetryService(db)
+    telemetry.log_event(
+        user_id=current_user.id,
+        event_type="ai_business_os_orchestrated",
+        entity_type=payload.entity_type or "business_event",
+        entity_id=payload.entity_id or str(payload.event_type),
+        metadata={
+            "input": {
+                "event_type": payload.event_type,
+                "event_domain": payload.event_domain,
+                "risk_level": payload.risk_level,
+                "risk_score": payload.risk_score,
+                "metadata": payload.metadata,
+            },
+            "decision": decision,
+            "accepted": accepted,
+            "missing_required_fields": missing_fields,
+        },
+        event_domain="business_os",
+        event_source="/api/ai/ops/business-os/orchestrate-event",
+        request_id=request_id,
+        idempotency_key=(
+            f"business-os:{payload.event_type}:{payload.event_domain or 'unknown'}:"
+            f"{payload.entity_type or 'business_event'}:{payload.entity_id or 'none'}"
+        ),
+        commit=True,
+    )
+
+    return {
+        "accepted": accepted,
+        "missing_required_fields": missing_fields,
+        "requires_human_gate": bool(decision.get("autonomy_policy", {}).get("human_gate")),
+        "decision": decision,
+    }
+
+
+@router.get("/ops/decision-cost-monitor")
+def get_ai_decision_cost_monitor(
+    days: int = Query(30, ge=1, le=365),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    _require_admin_user(current_user)
+    return _build_ai_decision_cost_payload(db=db, days=days)
+
+
+@router.get("/ops/autonomy-policy")
+def get_ai_autonomy_policy(
+    days: int = Query(30, ge=1, le=365),
+    apply: bool = Query(False),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    _require_admin_user(current_user)
+    if apply:
+        _require_platform_write_user(current_user)
+
+    payload = _build_ai_autonomy_policy_payload(db=db, days=days)
+    payload["apply_performed"] = False
+
+    if apply:
+        levels_applied = payload.get("levels_proposed", {}) if isinstance(payload.get("levels_proposed"), dict) else {}
+        db.add(
+            UserBehaviorLog(
+                user_id=current_user.id,
+                event_type="ai_autonomy_policy_applied",
+                entity_type="ai_autonomy_policy",
+                entity_id="global",
+                meta_json={
+                    "generated_at": payload.get("generated_at"),
+                    "window_days": payload.get("window_days"),
+                    "window_start": payload.get("window_start"),
+                    "window_end": payload.get("window_end"),
+                    "levels_applied": levels_applied,
+                    "summary": payload.get("summary", {}),
+                    "agents": payload.get("agents", []),
+                    "rules": payload.get("rules", {}),
+                },
+            )
+        )
+        db.commit()
+        payload["apply_performed"] = True
+        payload["levels_applied"] = levels_applied
+
+    return payload
+
+
+@router.get("/ops/weekly-learning-report")
+def get_ai_weekly_learning_report(
+    week_offset: int = Query(0, ge=0, le=26),
+    regenerate: bool = Query(False),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    _require_admin_user(current_user)
+    if regenerate:
+        _require_platform_write_user(current_user)
+
+    week_iso, window_start, window_end = _week_window_bounds(week_offset)
+
+    if not regenerate:
+        cached = (
+            db.query(UserBehaviorLog)
+            .filter(
+                UserBehaviorLog.event_type == "ai_weekly_learning_report_generated",
+                UserBehaviorLog.entity_type == "ai_weekly_report",
+                UserBehaviorLog.entity_id == week_iso,
+            )
+            .order_by(UserBehaviorLog.created_at.desc())
+            .first()
+        )
+        if cached and isinstance(cached.meta_json, dict):
+            return {
+                "from_cache": True,
+                "week_iso": week_iso,
+                "report": cached.meta_json,
+            }
+
+    report = _build_ai_weekly_learning_report(
+        db=db,
+        week_iso=week_iso,
+        window_start=window_start,
+        window_end=window_end,
+    )
+
+    db.add(
+        UserBehaviorLog(
+            user_id=current_user.id,
+            event_type="ai_weekly_learning_report_generated",
+            entity_type="ai_weekly_report",
+            entity_id=week_iso,
+            meta_json=report,
+        )
+    )
+    db.commit()
+
+    return {
+        "from_cache": False,
+        "week_iso": week_iso,
+        "report": report,
+    }
+
+
+@router.get("/ops/governance-summary.csv")
+def export_ai_governance_summary_csv(
+    days: int = Query(30, ge=1, le=365),
+    include_recent: bool = Query(True),
+    granularity: str = Query(default="flat", pattern="^(flat|week)$"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    _require_admin_user(current_user)
+
+    if granularity == "week":
+        csv_payload = _build_governance_summary_weekly_csv(db=db, days=days)
+    else:
+        summary_payload = _build_ai_governance_summary_payload(
+            db=db,
+            days=days,
+            include_recent=include_recent,
+        )
+        csv_payload = _build_governance_summary_csv(summary_payload)
+
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d")
+    if granularity == "week":
+        filename = f"ai_governance_summary_weekly_{timestamp}_{days}d.csv"
+    else:
+        filename = f"ai_governance_summary_{timestamp}_{days}d.csv"
+
+    return Response(
+        content="\ufeff" + csv_payload,
+        media_type="text/csv; charset=utf-8",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Cache-Control": "no-store",
+        },
+    )
+
+
+@router.get("/ops/review-queue")
+def get_ai_review_queue(
+    status_filter: str = Query(default="pending_review", pattern="^(pending_review|approved|rejected|all)$"),
+    limit: int = Query(default=50, ge=1, le=200),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    _require_admin_user(current_user)
+
+    service = AIDecisionReviewService(db)
+    rows = service.list_queue(status=status_filter, limit=limit)
+    return {
+        "status_filter": status_filter,
+        "total": len(rows),
+        "items": [service.to_payload(row) for row in rows],
+    }
+
+
+@router.post("/ops/review-queue/{review_id}/resolve")
+def resolve_ai_review_queue_item(
+    review_id: int,
+    payload: GovernanceReviewResolveIn,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    _require_platform_write_user(current_user)
+
+    request_id = getattr(request.state, "request_id", None)
+    service = AIDecisionReviewService(db)
+    telemetry = AITelemetryService(db)
+
+    try:
+        row = service.resolve_review(
+            review_id=review_id,
+            decision=payload.decision,
+            reviewer=current_user,
+            notes=payload.notes,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+
+    telemetry.log_event(
+        user_id=current_user.id,
+        event_type="ai_review_queue_resolved",
+        entity_type="ai_review_queue",
+        entity_id=str(review_id),
+        metadata={
+            "decision": payload.decision,
+            "notes": payload.notes,
+            "resolved_status": row.status,
+        },
+        event_domain="governance_review",
+        event_source="/api/ai/ops/review-queue/resolve",
+        request_id=request_id,
+        idempotency_key=f"review-resolve:{review_id}:{payload.decision}",
+        commit=False,
+    )
+
+    db.commit()
+    return {
+        "ok": True,
+        "item": service.to_payload(row),
+    }
+
+
 @router.get("/agenda/autonomous-commerce")
 def get_agenda_autonomous_commerce(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     profile = _load_agenda_profile(db, current_user.id)
+    capabilities = _require_account_ai_operator(db=db, user=current_user, minimum_plan="pro")
+
     market_ai = MarketIntelligenceAI(db)
     market_snapshot = market_ai.build_market_snapshot(user_id=current_user.id, profile=profile)
     autonomous_ai = AutonomousCommerceAI(db)
@@ -367,23 +2336,128 @@ def get_agenda_autonomous_commerce(
         profile=profile,
         market_snapshot=market_snapshot,
     )
+
+    if not bool(capabilities.get("allow_auto_negotiation")):
+        plan["recommended_deals"] = []
+    if not bool(capabilities.get("allow_auto_flash_auction")):
+        plan["flash_auction_candidates"] = []
+
+    plan["subscription_capabilities"] = {
+        "plan": capabilities.get("plan"),
+        "allowed_autonomy_modes": list(capabilities.get("allowed_autonomy_modes") or ["assistida"]),
+        "max_auto_execute_per_day": int(capabilities.get("max_auto_execute_per_day", 0) or 0),
+        "allow_auto_negotiation": bool(capabilities.get("allow_auto_negotiation")),
+        "allow_auto_flash_auction": bool(capabilities.get("allow_auto_flash_auction")),
+    }
     return plan
 
 
 @router.post("/agenda/autonomous-commerce/execute")
 def execute_agenda_autonomous_commerce(
     payload: AgendaAutonomousExecuteIn,
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    profile = _load_agenda_profile(db, current_user.id)
+    agenda_profile = _load_agenda_profile(db, current_user.id)
+    capabilities = _require_account_ai_operator(db=db, user=current_user, minimum_plan="pro")
+    allowed_modes = set(capabilities.get("allowed_autonomy_modes") or ["assistida"])
+
+    current_mode = str(agenda_profile.get("autonomy_mode") or "assistida").strip().lower()
+    if current_mode not in allowed_modes:
+        raise HTTPException(
+            status_code=403,
+            detail="Modo de autonomia atual não permitido para o plano de assinatura.",
+        )
+
+    if payload.action_type == "auto_negotiation" and not bool(capabilities.get("allow_auto_negotiation")):
+        raise HTTPException(
+            status_code=403,
+            detail="Auto negociação indisponível para o plano atual.",
+        )
+
+    if payload.action_type == "flash_auction" and not bool(capabilities.get("allow_auto_flash_auction")):
+        raise HTTPException(
+            status_code=403,
+            detail="Leilão relâmpago indisponível para o plano atual.",
+        )
+
+    requested_mode = str(payload.mode or "commit").strip().lower()
+    if requested_mode == "commit":
+        max_auto_exec_per_day = int(capabilities.get("max_auto_execute_per_day", 0) or 0)
+        if max_auto_exec_per_day <= 0:
+            raise HTTPException(
+                status_code=403,
+                detail="Seu plano não permite execução autônoma em modo commit.",
+            )
+
+        today_auto_exec = _count_today_ai_decisions(db, int(current_user.id))
+        if today_auto_exec >= max_auto_exec_per_day:
+            raise HTTPException(
+                status_code=429,
+                detail="Limite diário de execuções autônomas atingido para o plano atual.",
+            )
+
+    governance = AIGovernanceService()
+    review_queue_service = AIDecisionReviewService(db)
+    telemetry = AITelemetryService(db)
+    request_id = getattr(request.state, "request_id", None)
+
+    precheck = governance.precheck_action(
+        profile=agenda_profile,
+        action_type=payload.action_type,
+        mode=payload.mode,
+    )
+    if not bool(precheck.get("allowed")):
+        telemetry.log_event(
+            user_id=current_user.id,
+            event_type="ai_autonomous_precheck_denied",
+            entity_type="autonomous_commerce",
+            entity_id=str(payload.offer_id),
+            metadata={
+                "action_type": payload.action_type,
+                "mode": payload.mode,
+                "reason": precheck.get("reason"),
+            },
+            event_domain="autonomous_commerce",
+            event_source="/api/ai/agenda/autonomous-commerce/execute",
+            request_id=request_id,
+            idempotency_key=f"precheck:{payload.action_type}:{payload.mode}:{payload.offer_id}",
+            commit=True,
+        )
+        raise HTTPException(status_code=403, detail=str(precheck.get("reason") or "Execucao bloqueada pelas politicas de governanca."))
+
+    if str(payload.mode or "commit").strip().lower() == "commit":
+        if current_user.role != "admin" and not bool(current_user.is_superuser):
+            profile_service = ProfileService(db)
+            domain_profile = profile_service.get_or_create_profile(current_user)
+            can_publish, reason = profile_service.can_publish_offer(domain_profile)
+            if not can_publish:
+                telemetry.log_event(
+                    user_id=current_user.id,
+                    event_type="ai_autonomous_permission_denied",
+                    entity_type="autonomous_commerce",
+                    entity_id=str(payload.offer_id),
+                    metadata={
+                        "action_type": payload.action_type,
+                        "mode": payload.mode,
+                        "reason": reason,
+                    },
+                    event_domain="autonomous_commerce",
+                    event_source="/api/ai/agenda/autonomous-commerce/execute",
+                    request_id=request_id,
+                    idempotency_key=f"permission:{payload.action_type}:{payload.mode}:{payload.offer_id}",
+                    commit=True,
+                )
+                raise HTTPException(status_code=403, detail=reason or "Perfil nao autorizado para executar automacao comercial.")
+
     market_ai = MarketIntelligenceAI(db)
-    market_snapshot = market_ai.build_market_snapshot(user_id=current_user.id, profile=profile)
+    market_snapshot = market_ai.build_market_snapshot(user_id=current_user.id, profile=agenda_profile)
     autonomous_ai = AutonomousCommerceAI(db)
 
     result = autonomous_ai.execute_transactional_action(
         user_id=current_user.id,
-        profile=profile,
+        profile=agenda_profile,
         market_snapshot=market_snapshot,
         action_type=payload.action_type,
         offer_id=payload.offer_id,
@@ -391,11 +2465,71 @@ def execute_agenda_autonomous_commerce(
         buyer_user_id=payload.buyer_user_id,
     )
 
+    decision = governance.evaluate_transaction_result(
+        profile=agenda_profile,
+        action_type=payload.action_type,
+        mode=payload.mode,
+        result=result,
+    )
+
+    telemetry.log_decision(
+        user_id=current_user.id,
+        action_type=str(payload.action_type),
+        entity_type="autonomous_commerce",
+        entity_id=str(payload.offer_id),
+        decision_payload=decision,
+        metadata={
+            "result": {
+                "committed": bool(result.get("committed")),
+                "event_id": result.get("event_id"),
+                "already_executed": bool(result.get("already_executed")),
+                "rolled_back": bool(result.get("rolled_back")),
+            },
+            "requested_mode": payload.mode,
+            "action_type": payload.action_type,
+            "buyer_user_id": payload.buyer_user_id,
+            "subscription_plan": capabilities.get("plan"),
+            "governance_snapshot": result.get("governance_snapshot", {}),
+        },
+        request_id=request_id,
+        idempotency_key=(
+            f"decision:{payload.action_type}:{payload.mode}:{payload.offer_id}:"
+            f"{result.get('event_id') or 'none'}:{int(bool(result.get('committed')))}"
+        ),
+        commit=False,
+    )
+
+    review_item_payload: dict | None = None
+    if bool(decision.get("requires_human_review")):
+        review_row, created = review_queue_service.enqueue_review(
+            user_id=current_user.id,
+            action_type=str(payload.action_type),
+            entity_id=str(payload.offer_id),
+            decision=decision,
+            context={
+                "result": {
+                    "committed": bool(result.get("committed")),
+                    "event_id": result.get("event_id"),
+                    "message": result.get("message"),
+                },
+                "buyer_user_id": payload.buyer_user_id,
+                "mode": payload.mode,
+            },
+        )
+        review_item_payload = {
+            "created": bool(created),
+            "item": review_queue_service.to_payload(review_row),
+        }
+
     if not bool(result.get("committed")):
+        db.commit()
         raise HTTPException(status_code=409, detail=str(result.get("message") or "Falha na execução transacional."))
 
     db.commit()
-    return result
+    response = dict(result)
+    response["governance"] = decision
+    response["review_queue"] = review_item_payload
+    return response
 
 
 @router.get("/agenda/profile")
@@ -403,8 +2537,29 @@ def get_agenda_profile(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    require_account_roles(
+        current_user,
+        allowed_roles={
+            ACCOUNT_ROLE_OWNER,
+            ACCOUNT_ROLE_MANAGER,
+            ACCOUNT_ROLE_ANALYST,
+            ACCOUNT_ROLE_VIEWER,
+        },
+        detail="Acesso restrito a membros da conta",
+    )
+
     profile = _load_agenda_profile(db, current_user.id)
-    return {"profile": profile}
+    capabilities = _resolve_user_ai_capabilities(db, current_user)
+    return {
+        "profile": profile,
+        "subscription_capabilities": {
+            "plan": capabilities.get("plan"),
+            "allowed_autonomy_modes": list(capabilities.get("allowed_autonomy_modes") or ["assistida"]),
+            "max_auto_execute_per_day": int(capabilities.get("max_auto_execute_per_day", 0) or 0),
+            "allow_auto_negotiation": bool(capabilities.get("allow_auto_negotiation")),
+            "allow_auto_flash_auction": bool(capabilities.get("allow_auto_flash_auction")),
+        },
+    }
 
 
 @router.post("/agenda/profile")
@@ -413,8 +2568,50 @@ def save_agenda_profile(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    require_account_roles(
+        current_user,
+        allowed_roles={
+            ACCOUNT_ROLE_OWNER,
+            ACCOUNT_ROLE_MANAGER,
+        },
+        detail="Acesso restrito para alteração de perfil de autonomia da conta",
+    )
+
     profile = payload.model_dump()
+    capabilities = _resolve_user_ai_capabilities(db, current_user)
+    allowed_modes = set(capabilities.get("allowed_autonomy_modes") or ["assistida"])
+
+    if profile.get("autonomy_mode") not in allowed_modes:
+        raise HTTPException(
+            status_code=403,
+            detail="Modo de autonomia não permitido para o plano atual.",
+        )
+
+    max_auto_exec = int(capabilities.get("max_auto_execute_per_day", 0) or 0)
+    if int(profile.get("auto_execute_limit_per_day", 0) or 0) > max_auto_exec:
+        raise HTTPException(
+            status_code=403,
+            detail=f"auto_execute_limit_per_day excede o limite do plano ({max_auto_exec}/dia).",
+        )
+
+    if bool(profile.get("auto_negotiation_enabled")) and not bool(capabilities.get("allow_auto_negotiation")):
+        raise HTTPException(
+            status_code=403,
+            detail="Auto negociação não disponível para o plano atual.",
+        )
+
+    if bool(profile.get("auto_flash_auction_enabled")) and not bool(capabilities.get("allow_auto_flash_auction")):
+        raise HTTPException(
+            status_code=403,
+            detail="Leilão relâmpago não disponível para o plano atual.",
+        )
+
     profile["onboarding_complete"] = True
+    profile["plan_capabilities"] = {
+        "plan": capabilities.get("plan"),
+        "max_auto_execute_per_day": max_auto_exec,
+        "allowed_autonomy_modes": list(allowed_modes),
+    }
 
     telemetry = AITelemetryService(db)
     telemetry.log_event(

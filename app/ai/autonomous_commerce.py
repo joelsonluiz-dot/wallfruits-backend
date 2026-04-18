@@ -473,6 +473,12 @@ class AutonomousCommerceAI:
                 "offer_id": offer_id,
                 "buyer_user_id": buyer_id,
                 "event_id": int(existing.id),
+                "governance_snapshot": {
+                    "risk_index": float(selected.get("risk_index", 0.45)),
+                    "expected_margin_pct": float(selected.get("expected_margin_pct", 0.0)),
+                    "actual_discount_pct": float(selected.get("actual_discount_pct", 0.0)),
+                    "guardrails_ok": True,
+                },
                 "message": "Negociação autônoma já estava em execução para esta oferta.",
             }
 
@@ -537,6 +543,12 @@ class AutonomousCommerceAI:
                 "buyer_user_id": buyer_id,
                 "event_id": int(event.id),
                 "deadline": deadline.isoformat(),
+                "governance_snapshot": {
+                    "risk_index": float(selected.get("risk_index", 0.45)),
+                    "expected_margin_pct": float(selected.get("expected_margin_pct", 0.0)),
+                    "actual_discount_pct": float(selected.get("actual_discount_pct", 0.0)),
+                    "guardrails_ok": bool(selected.get("guardrails_ok", True)),
+                },
                 "message": "Negociação autônoma executada com transação e checkpoints de rollback.",
             }
         except Exception as exc:
@@ -586,6 +598,12 @@ class AutonomousCommerceAI:
                 "action_type": "flash_auction",
                 "offer_id": offer_id,
                 "event_id": int(existing.id),
+                "governance_snapshot": {
+                    "spoilage_risk_index": float(candidate.get("spoilage_risk_index", 0.0)),
+                    "urgency_score": float(candidate.get("urgency_score", 0.0)),
+                    "discount_pct": 0.0,
+                    "guardrails_ok": True,
+                },
                 "message": "Leilão relâmpago já estava em execução para esta oferta.",
             }
 
@@ -662,6 +680,12 @@ class AutonomousCommerceAI:
                 "offer_id": offer_id,
                 "event_id": int(event.id),
                 "auction_start_price": round(auction_start_price, 4),
+                "governance_snapshot": {
+                    "spoilage_risk_index": float(candidate.get("spoilage_risk_index", 0.0)),
+                    "urgency_score": float(candidate.get("urgency_score", 0.0)),
+                    "discount_pct": round(discount_pct, 4),
+                    "guardrails_ok": True,
+                },
                 "message": "Leilão relâmpago executado com transação e checkpoint para rollback.",
             }
         except Exception as exc:

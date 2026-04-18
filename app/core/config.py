@@ -36,11 +36,21 @@ class Settings(BaseSettings):
     SUPABASE_URL: str = ""
     SUPABASE_ANON_KEY: str = ""
     SUPABASE_SERVICE_ROLE_KEY: str = ""
+
+    # Supabase Storage (media)
+    SUPABASE_STORAGE_ENABLED: bool = False
+    SUPABASE_STORAGE_BUCKET: str = ""
+    SUPABASE_STORAGE_PUBLIC_BASE_URL: str = ""  # opcional (ex: CDN/custom domain)
+    SUPABASE_STORAGE_TIMEOUT_SECONDS: float = 20.0
     
     # JWT
     SECRET_KEY: str = "wallfruits_super_secret_key_change_in_production"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    JWT_ISSUER: str = "wallfruits-api"
+    JWT_AUDIENCE: str = "wallfruits-clients"
+    JWT_REQUIRE_ISSUER: bool = False
+    JWT_REQUIRE_AUDIENCE: bool = False
     
     # API
     API_TITLE: str = "WallFruits API"
@@ -66,8 +76,13 @@ class Settings(BaseSettings):
     OPENAI_MODEL: str = "gpt-4o-mini"
     AI_CACHE_TTL_SECONDS: int = 120
     AI_LOW_LATENCY_MODE: bool = True
+    AI_ENFORCE_SUBSCRIPTION_GUARDRAILS: bool = False
     AGENDA_PREDICTIVE_WORKER_ENABLED: bool = True
     AGENDA_PREDICTIVE_WORKER_INTERVAL_SECONDS: int = 120
+    BUSINESS_OS_MARKETING_WORKER_ENABLED: bool = True
+    BUSINESS_OS_MARKETING_WORKER_INTERVAL_SECONDS: int = 600
+    BUSINESS_OS_MARKETING_WORKER_WINDOW_DAYS: int = 7
+    BUSINESS_OS_MARKETING_WORKER_MIN_SEGMENT_SIGNALS: int = 3
 
     # Webhooks de dominio
     INTERMEDIATION_WEBHOOK_URL: str = ""
@@ -90,6 +105,8 @@ class Settings(BaseSettings):
     STRIPE_PRICE_PRO_YEARLY: str = ""     # price_xxxx anual do plano Pro no Stripe
     STRIPE_PRICE_PREMIUM: str = "" # price_xxxx do plano premium no Stripe
     STRIPE_PRICE_PREMIUM_YEARLY: str = "" # price_xxxx anual do plano premium no Stripe
+    STRIPE_PRICE_ENTERPRISE: str = "" # price_xxxx do plano enterprise no Stripe
+    STRIPE_PRICE_ENTERPRISE_YEARLY: str = "" # price_xxxx anual do plano enterprise no Stripe
 
     # Monetizacao (Ads)
     WF_ADS_ENABLED: bool = True
@@ -121,6 +138,7 @@ class Settings(BaseSettings):
     # Security
     DEBUG: bool = False
     APP_ENV: str = "development"
+    SECURITY_ENFORCE_PRODUCTION_HARDENING: bool = True
 
     # Rate limit (camada de proteção básica por IP)
     RATE_LIMIT_ENABLED: bool = True
@@ -215,6 +233,18 @@ def get_settings() -> Settings:
     if settings.AGENDA_PREDICTIVE_WORKER_INTERVAL_SECONDS < 30:
         raise RuntimeError("AGENDA_PREDICTIVE_WORKER_INTERVAL_SECONDS deve ser >= 30")
 
+    if settings.BUSINESS_OS_MARKETING_WORKER_INTERVAL_SECONDS < 60:
+        raise RuntimeError("BUSINESS_OS_MARKETING_WORKER_INTERVAL_SECONDS deve ser >= 60")
+
+    if settings.BUSINESS_OS_MARKETING_WORKER_WINDOW_DAYS < 1:
+        raise RuntimeError("BUSINESS_OS_MARKETING_WORKER_WINDOW_DAYS deve ser >= 1")
+
+    if settings.BUSINESS_OS_MARKETING_WORKER_WINDOW_DAYS > 365:
+        raise RuntimeError("BUSINESS_OS_MARKETING_WORKER_WINDOW_DAYS deve ser <= 365")
+
+    if settings.BUSINESS_OS_MARKETING_WORKER_MIN_SEGMENT_SIGNALS < 1:
+        raise RuntimeError("BUSINESS_OS_MARKETING_WORKER_MIN_SEGMENT_SIGNALS deve ser >= 1")
+
     if settings.INTERMEDIATION_WEBHOOK_TIMEOUT_SECONDS <= 0:
         raise RuntimeError("INTERMEDIATION_WEBHOOK_TIMEOUT_SECONDS deve ser > 0")
 
@@ -241,9 +271,31 @@ def get_settings() -> Settings:
                 file=sys.stderr,
             )
 
+    if settings.SUPABASE_STORAGE_ENABLED:
+        if not settings.SUPABASE_URL.strip():
+            raise RuntimeError("Supabase Storage habilitado, mas falta SUPABASE_URL")
+        if not settings.SUPABASE_SERVICE_ROLE_KEY.strip():
+            raise RuntimeError("Supabase Storage habilitado, mas falta SUPABASE_SERVICE_ROLE_KEY")
+        if not settings.SUPABASE_STORAGE_BUCKET.strip():
+            raise RuntimeError("Supabase Storage habilitado, mas falta SUPABASE_STORAGE_BUCKET")
+        if settings.SUPABASE_STORAGE_TIMEOUT_SECONDS <= 0:
+            raise RuntimeError("SUPABASE_STORAGE_TIMEOUT_SECONDS deve ser > 0")
+
     env_lower = settings.APP_ENV.strip().lower()
     if env_lower in {"prod", "production", "staging"} and settings.SECRET_KEY == "wallfruits_super_secret_key_change_in_production":
         raise RuntimeError("SECRET_KEY padrão não pode ser usada em produção")
+
+    if env_lower in {"prod", "production"} and settings.SECURITY_ENFORCE_PRODUCTION_HARDENING:
+        if settings.DEBUG:
+            raise RuntimeError("DEBUG deve estar desabilitado em produção")
+        if not settings.RATE_LIMIT_ENABLED:
+            raise RuntimeError("RATE_LIMIT_ENABLED deve estar habilitado em produção")
+        if not settings.JWT_REQUIRE_ISSUER:
+            raise RuntimeError("JWT_REQUIRE_ISSUER deve estar habilitado em produção")
+        if not settings.JWT_REQUIRE_AUDIENCE:
+            raise RuntimeError("JWT_REQUIRE_AUDIENCE deve estar habilitado em produção")
+        if not settings.AI_ENFORCE_SUBSCRIPTION_GUARDRAILS:
+            raise RuntimeError("AI_ENFORCE_SUBSCRIPTION_GUARDRAILS deve estar habilitado em produção")
     
     # Validações adicionais
     if settings.SECRET_KEY == "wallfruits_super_secret_key_change_in_production":

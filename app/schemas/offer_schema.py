@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, validator, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 from typing import Optional, List, Dict
 from uuid import UUID
 from decimal import Decimal
@@ -67,51 +67,59 @@ class OfferCreate(BaseModel):
     ad_duration_days: Optional[int] = Field(None, gt=0)
     min_boxes_to_negotiate: Optional[int] = Field(None, gt=0)
 
-    @validator('images')
+    @field_validator("images")
+    @classmethod
     def validate_images(cls, v):
         if v and len(v) > 10:
             raise ValueError('Máximo de 10 imagens por oferta')
         return v
 
-    @validator('quality_class')
+    @field_validator("quality_class")
+    @classmethod
     def validate_quality_class(cls, v):
         if v and v not in QUALITY_CLASSES:
             raise ValueError(f'Qualidade deve ser uma de: {", ".join(QUALITY_CLASSES)}')
         return v
 
-    @validator('certification')
+    @field_validator("certification")
+    @classmethod
     def validate_certification(cls, v):
         if v and v not in CERTIFICATIONS:
             raise ValueError(f'Certificação deve ser uma de: {", ".join(CERTIFICATIONS)}')
         return v
 
-    @validator('origin')
+    @field_validator("origin")
+    @classmethod
     def validate_origin(cls, v):
         if v and v not in ORIGINS:
             raise ValueError(f'Origem deve ser uma de: {", ".join(ORIGINS)}')
         return v
 
-    @validator('target_market')
+    @field_validator("target_market")
+    @classmethod
     def validate_target_market(cls, v):
         if v and v not in TARGET_MARKETS:
             raise ValueError(f'Mercado deve ser um de: {", ".join(TARGET_MARKETS)}')
         return v
 
-    @validator('maturation')
+    @field_validator("maturation")
+    @classmethod
     def validate_maturation(cls, v):
         if v and v not in MATURATION_LEVELS:
             raise ValueError(f'Maturação deve ser uma de: {", ".join(MATURATION_LEVELS)}')
         return v
 
-    @validator('shelf_life')
+    @field_validator("shelf_life")
+    @classmethod
     def validate_shelf_life(cls, v):
         if v and v not in SHELF_LIFE_OPTIONS:
             raise ValueError(f'Prazo de validade deve ser um de: {", ".join(SHELF_LIFE_OPTIONS)}')
         return v
 
-    @validator('reservation_end')
-    def validate_reservation_range(cls, v, values):
-        if v and values.get('reservation_start') and v < values['reservation_start']:
+    @field_validator("reservation_end")
+    @classmethod
+    def validate_reservation_range(cls, v, info: ValidationInfo):
+        if v and info.data.get('reservation_start') and v < info.data['reservation_start']:
             raise ValueError('Data final da reserva deve ser posterior à data inicial')
         return v
 
@@ -236,8 +244,7 @@ class OfferResponse(BaseModel):
     private_address_locked: bool = False
     restriction_message: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
     @field_validator("images", mode="before")
     @classmethod
@@ -285,8 +292,7 @@ class PaginatedOfferResponse(BaseModel):
     offers: List[OfferResponse]
     stats: Dict
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class OfferSearchFilters(BaseModel):
@@ -301,7 +307,6 @@ class OfferSearchFilters(BaseModel):
     latitude: Optional[Decimal] = None
     longitude: Optional[Decimal] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
