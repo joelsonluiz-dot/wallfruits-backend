@@ -48,11 +48,15 @@
 		text-size-adjust: 100%;
 	}
 
-	/* Evita sobreposicao de botoes globais da base sobre o layout da Loja. */
-	body.wf-store-page .wf-ai-fab,
-	body.wf-store-page .wf-cart-fab,
-	body.wf-store-page .wf-mobile-floating-add,
-	body.wf-store-page .wf-publish-global-btn {
+	/* Evita sobreposicao de controles globais da base sobre o layout da Loja.
+	   Regra propositalmente direta para nao depender de classe via JS. */
+	.wf-ai-fab,
+	.wf-cart-fab,
+	.wf-mobile-floating-add,
+	.wf-publish-global-btn,
+	.wf-menu-toggle,
+	.wf-community-toggle,
+	.wf-messages-toggle {
 		display: none !important;
 	}
 
