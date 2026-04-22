@@ -104,6 +104,7 @@ _non_cacheable_paths = (
     "/api/store/cart",
     "/api/store/orders",
     "/api/store/quote",
+    "/store",
     "/api/messages/conversations",
     "/api/messages/thread/",
     "/api/social/users/search",
