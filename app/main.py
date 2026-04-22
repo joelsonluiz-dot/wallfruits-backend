@@ -394,7 +394,11 @@ async def request_context_middleware(request: Request, call_next):
         body = await _read_response_body(response)
         etag = hashlib.sha256(body).hexdigest()
         if request.headers.get("if-none-match") == f'"{etag}"':
-            not_modified_headers = dict(response.headers)
+            not_modified_headers = {
+                key: value
+                for key, value in dict(response.headers).items()
+                if key.lower() not in {"content-length", "content-type", "content-encoding", "transfer-encoding"}
+            }
             not_modified_headers["ETag"] = f'"{etag}"'
             not_modified_headers["Cache-Control"] = _build_cache_control_header(request)
             not_modified_headers["Vary"] = _merge_vary(response.headers.get("vary"), ["Accept-Encoding", "Authorization", "Cookie"])
