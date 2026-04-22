@@ -1,4 +1,4 @@
-const SW_VERSION = 'v5';
+const SW_VERSION = 'v6';
 const STATIC_CACHE = `wallfruits-static-${SW_VERSION}`;
 const PAGE_CACHE = `wallfruits-pages-${SW_VERSION}`;
 const API_CACHE = `wallfruits-api-${SW_VERSION}`;
@@ -32,6 +32,7 @@ function isApiRequest(request) {
 function shouldBypassCache(request) {
   if (request.headers && request.headers.has('authorization')) return true;
   const url = new URL(request.url);
+  if (request.mode === 'navigate' && url.pathname.startsWith('/store')) return true;
   if (url.searchParams.has('nocache')) return true;
   return false;
 }
