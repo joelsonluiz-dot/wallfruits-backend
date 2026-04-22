@@ -1,4 +1,4 @@
-const SW_VERSION = 'v6';
+const SW_VERSION = 'v7';
 const STATIC_CACHE = `wallfruits-static-${SW_VERSION}`;
 const PAGE_CACHE = `wallfruits-pages-${SW_VERSION}`;
 const API_CACHE = `wallfruits-api-${SW_VERSION}`;

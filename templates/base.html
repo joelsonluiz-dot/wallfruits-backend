@@ -6221,7 +6221,14 @@
 
         if ('serviceWorker' in navigator) {
             const registerServiceWorker = () => {
-                navigator.serviceWorker.register('/static/sw.js').catch(() => {
+                navigator.serviceWorker.register('/static/sw.js', {
+                    scope: '/',
+                    updateViaCache: 'none',
+                }).then((registration) => {
+                    if (registration && typeof registration.update === 'function') {
+                        registration.update().catch(() => {});
+                    }
+                }).catch(() => {
                     // fallback silencioso: app continua funcional mesmo sem SW
                 });
             };
