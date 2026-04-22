@@ -15,6 +15,7 @@
     var revealObserver = null;
     var revealObserverConfigKey = "";
     var revealSet = new WeakSet();
+    var revealSafetyTimers = new WeakMap();
     var rippleBound = false;
     var autoRefreshObserver = null;
     var autoRefreshTimer = 0;
@@ -465,10 +466,42 @@
             return;
         }
 
+        if (node.classList.contains("is-visible")) {
+            if (revealSafetyTimers.has(node)) {
+                window.clearTimeout(revealSafetyTimers.get(node));
+                revealSafetyTimers.delete(node);
+            }
+            return;
+        }
+
+        if (revealSafetyTimers.has(node)) {
+            window.clearTimeout(revealSafetyTimers.get(node));
+            revealSafetyTimers.delete(node);
+        }
+
         node.classList.add("is-visible");
         if (revealObserver) {
             revealObserver.unobserve(node);
         }
+    }
+
+    function scheduleRevealSafety(node, fallbackDelayMs) {
+        if (!(node instanceof HTMLElement)) {
+            return;
+        }
+
+        if (revealSafetyTimers.has(node)) {
+            window.clearTimeout(revealSafetyTimers.get(node));
+            revealSafetyTimers.delete(node);
+        }
+
+        var delay = Math.max(700, numberOrFallback(fallbackDelayMs, 1500));
+        var timerId = window.setTimeout(function forceReveal() {
+            revealSafetyTimers.delete(node);
+            revealElement(node);
+        }, delay);
+
+        revealSafetyTimers.set(node, timerId);
     }
 
     function observeRevealTargets(root, selectors, motionConfig) {
@@ -508,12 +541,17 @@
 
             revealSet.add(node);
             node.classList.add("wf-reveal");
-            node.style.setProperty("--wf-reveal-delay", String(Math.min(index * delayStep, maxDelay)) + "ms");
+            var revealDelay = Math.min(index * delayStep, maxDelay);
+            node.style.setProperty("--wf-reveal-delay", String(revealDelay) + "ms");
 
             if (reducedMotion || !("IntersectionObserver" in window)) {
                 node.classList.add("is-visible");
                 return;
             }
+
+            // Fallback de seguranca: evita cards presos em opacidade zero quando
+            // o observer nao dispara em cenarios especificos de viewport/renderizacao.
+            scheduleRevealSafety(node, revealDelay + 1700);
 
             if (!revealObserver) {
                 revealObserver = new IntersectionObserver(function onIntersect(entries) {
@@ -740,4 +778,8 @@
         refresh(document);
         bindGlobalRipple();
     }
+
+    window.addEventListener("pageshow", function onPageShow() {
+        refresh(document);
+    });
 })(window, document);
