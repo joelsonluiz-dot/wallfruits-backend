@@ -1,0 +1,631 @@
+{% extends "base.html" %}
+
+{% block title %}Documentação WallFruits | Benefícios, Usabilidade e IA{% endblock %}
+
+{% block content %}
+<style>
+    .docs-page {
+        position: relative;
+        min-height: 84vh;
+        border-radius: 24px;
+        overflow: hidden;
+        padding: 1rem;
+        background:
+            radial-gradient(circle at 12% 10%, rgba(85, 211, 181, 0.24), transparent 30%),
+            radial-gradient(circle at 88% 8%, rgba(255, 187, 104, 0.20), transparent 26%),
+            radial-gradient(circle at 70% 92%, rgba(94, 127, 44, 0.16), transparent 28%),
+            linear-gradient(145deg, #08141f 0%, #0f2534 48%, #123b3c 100%);
+        color: #eff7f7;
+        font-family: "Trebuchet MS", "Century Gothic", sans-serif;
+    }
+
+    .docs-shell {
+        max-width: 1260px;
+        margin: 0 auto;
+        position: relative;
+        z-index: 1;
+        display: grid;
+        gap: 0.95rem;
+    }
+
+    .docs-hero {
+        border-radius: 22px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.06));
+        backdrop-filter: blur(14px);
+        box-shadow: 0 18px 38px rgba(0, 0, 0, 0.28);
+        padding: 1rem;
+        display: grid;
+        gap: 0.7rem;
+    }
+
+    .docs-eyebrow {
+        width: fit-content;
+        border-radius: 999px;
+        padding: 0.18rem 0.7rem;
+        border: 1px solid rgba(255, 255, 255, 0.24);
+        background: rgba(8, 19, 28, 0.42);
+        color: #d6fff1;
+        font-size: 0.69rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .docs-title {
+        margin: 0;
+        font-size: clamp(1.45rem, 2.8vw, 2.35rem);
+        line-height: 1.05;
+        letter-spacing: -0.04em;
+        font-weight: 900;
+    }
+
+    .docs-subtitle {
+        margin: 0;
+        max-width: 1000px;
+        color: rgba(235, 247, 247, 0.84);
+        line-height: 1.55;
+        font-size: 0.92rem;
+    }
+
+    .docs-pills {
+        display: flex;
+        gap: 0.45rem;
+        flex-wrap: wrap;
+    }
+
+    .docs-pill {
+        border-radius: 999px;
+        padding: 0.36rem 0.72rem;
+        font-size: 0.76rem;
+        font-weight: 700;
+        color: #f4fbfa;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        background: rgba(8, 19, 28, 0.32);
+    }
+
+    .docs-metrics {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.75rem;
+    }
+
+    .docs-metric {
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        background: rgba(4, 14, 20, 0.34);
+        backdrop-filter: blur(12px);
+        padding: 0.85rem;
+        box-shadow: 0 14px 28px rgba(0, 0, 0, 0.18);
+    }
+
+    .docs-metric-label {
+        margin: 0;
+        font-size: 0.71rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: rgba(227, 241, 241, 0.72);
+    }
+
+    .docs-metric-value {
+        margin: 0.25rem 0 0;
+        font-size: 1.14rem;
+        font-weight: 900;
+        color: #ffffff;
+    }
+
+    .docs-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1.65fr) minmax(320px, 0.95fr);
+        gap: 0.9rem;
+        align-items: start;
+    }
+
+    .docs-stack {
+        display: grid;
+        gap: 0.82rem;
+    }
+
+    .docs-card {
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        background: rgba(6, 16, 23, 0.36);
+        backdrop-filter: blur(12px);
+        box-shadow: 0 16px 32px rgba(0, 0, 0, 0.22);
+        overflow: hidden;
+    }
+
+    .docs-card-header {
+        padding: 0.8rem 0.95rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.6rem;
+    }
+
+    .docs-card-title {
+        margin: 0;
+        font-size: 0.92rem;
+        font-weight: 900;
+        letter-spacing: -0.01em;
+    }
+
+    .docs-card-tag {
+        border-radius: 999px;
+        padding: 0.22rem 0.56rem;
+        font-size: 0.68rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-weight: 800;
+        color: #d9fff2;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        background: rgba(94, 127, 44, 0.14);
+    }
+
+    .docs-card-body {
+        padding: 0.95rem;
+    }
+
+    .docs-section {
+        display: grid;
+        gap: 0.55rem;
+        margin-top: 1rem;
+    }
+
+    .docs-section:first-child {
+        margin-top: 0;
+    }
+
+    .docs-section h3 {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 900;
+    }
+
+    .docs-section p,
+    .docs-section li {
+        color: rgba(233, 246, 246, 0.84);
+        line-height: 1.6;
+        font-size: 0.9rem;
+    }
+
+    .docs-grid-2 {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.7rem;
+    }
+
+    .docs-bullet {
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.04);
+        padding: 0.78rem;
+        height: 100%;
+    }
+
+    .docs-bullet strong {
+        display: block;
+        margin-bottom: 0.25rem;
+        font-size: 0.88rem;
+        color: #ffffff;
+    }
+
+    .docs-list {
+        margin: 0;
+        padding-left: 1.1rem;
+        display: grid;
+        gap: 0.42rem;
+    }
+
+    .docs-roadmap {
+        display: grid;
+        gap: 0.58rem;
+    }
+
+    .docs-roadmap-step {
+        display: grid;
+        grid-template-columns: 52px minmax(0, 1fr);
+        gap: 0.65rem;
+        align-items: start;
+        padding: 0.72rem;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.03);
+    }
+
+    .docs-roadmap-index {
+        width: 52px;
+        height: 52px;
+        border-radius: 16px;
+        display: grid;
+        place-items: center;
+        font-weight: 900;
+        font-size: 1rem;
+        color: #08141f;
+        background: linear-gradient(135deg, #f8d18a, #7ff0d1);
+    }
+
+    .docs-roadmap h4 {
+        margin: 0 0 0.2rem;
+        font-size: 0.92rem;
+        font-weight: 900;
+    }
+
+    .docs-roadmap p {
+        margin: 0;
+        font-size: 0.84rem;
+        color: rgba(231, 244, 244, 0.8);
+        line-height: 1.5;
+    }
+
+    .docs-note {
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        background: linear-gradient(135deg, rgba(94, 127, 44, 0.18), rgba(8, 19, 28, 0.26));
+        padding: 0.9rem;
+        display: grid;
+        gap: 0.35rem;
+    }
+
+    .docs-note small {
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-weight: 800;
+        color: #dffce9;
+    }
+
+    .docs-note strong {
+        font-size: 0.98rem;
+    }
+
+    .docs-mini-grid {
+        display: grid;
+        gap: 0.7rem;
+    }
+
+    .docs-mini-row {
+        display: grid;
+        gap: 0.25rem;
+        padding: 0.68rem 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .docs-mini-row:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+    .docs-mini-row strong {
+        font-size: 0.86rem;
+    }
+
+    .docs-mini-row span {
+        font-size: 0.82rem;
+        color: rgba(233, 246, 246, 0.78);
+        line-height: 1.45;
+    }
+
+    .docs-footer {
+        display: grid;
+        gap: 0.5rem;
+        padding: 0.95rem;
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(4, 14, 20, 0.38);
+    }
+
+    .docs-footer p {
+        margin: 0;
+        color: rgba(233, 246, 246, 0.8);
+        font-size: 0.88rem;
+        line-height: 1.55;
+    }
+
+    @media (max-width: 1080px) {
+        .docs-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .docs-metrics {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 640px) {
+        .docs-page {
+            padding: 0.7rem;
+        }
+
+        .docs-metrics,
+        .docs-grid-2 {
+            grid-template-columns: 1fr;
+        }
+
+        .docs-roadmap-step {
+            grid-template-columns: 1fr;
+        }
+
+        .docs-roadmap-index {
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+        }
+    }
+</style>
+
+<div class="docs-page">
+    <div class="docs-shell">
+        <section class="docs-hero">
+            <span class="docs-eyebrow">Documentação geral do produto</span>
+            <h1 class="docs-title">WallFruits IA no núcleo: benefícios, usabilidade e valor premium em uma leitura única</h1>
+            <p class="docs-subtitle">
+                Esta documentação explica como a IA melhora a experiência do usuário, cria valor para assinantes e sustenta uma plataforma simples de usar, visualmente moderna e orientada a resultado.
+            </p>
+            <div class="docs-pills">
+                <span class="docs-pill">Leitura rápida</span>
+                <span class="docs-pill">Guia de produto</span>
+                <span class="docs-pill">Free vs Premium</span>
+                <span class="docs-pill">Experiência inteligente</span>
+            </div>
+        </section>
+
+        <section class="docs-metrics">
+            <div class="docs-metric">
+                <p class="docs-metric-label">Valor para o usuário</p>
+                <p class="docs-metric-value">Menos atrito, mais autonomia</p>
+            </div>
+            <div class="docs-metric">
+                <p class="docs-metric-label">Valor para o assinante</p>
+                <p class="docs-metric-value">Automação e ganho mensurável</p>
+            </div>
+            <div class="docs-metric">
+                <p class="docs-metric-label">Núcleo da IA</p>
+                <p class="docs-metric-value">Copiloto operacional</p>
+            </div>
+            <div class="docs-metric">
+                <p class="docs-metric-label">Usabilidade</p>
+                <p class="docs-metric-value">Simples, guiada e previsível</p>
+            </div>
+        </section>
+
+        <section class="docs-layout">
+            <div class="docs-stack">
+                <article class="docs-card">
+                    <div class="docs-card-header">
+                        <h2 class="docs-card-title">1. O que a IA entrega no núcleo</h2>
+                        <span class="docs-card-tag">benefício central</span>
+                    </div>
+                    <div class="docs-card-body">
+                        <div class="docs-grid-2">
+                            <div class="docs-bullet">
+                                <strong>Descoberta inteligente</strong>
+                                Ajuda o usuário a encontrar ofertas, serviços e caminhos de ação com menos esforço e menos cliques.
+                            </div>
+                            <div class="docs-bullet">
+                                <strong>Recomendação contextual</strong>
+                                Sugere o próximo passo com base no comportamento, no histórico e no objetivo do momento.
+                            </div>
+                            <div class="docs-bullet">
+                                <strong>Assistente operacional</strong>
+                                Responde dúvidas, organiza tarefas e reduz a dependência de suporte humano para rotinas recorrentes.
+                            </div>
+                            <div class="docs-bullet">
+                                <strong>Aprendizado contínuo</strong>
+                                Compara o plano executado com o resultado real para melhorar o ciclo seguinte.
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="docs-card">
+                    <div class="docs-card-header">
+                        <h2 class="docs-card-title">2. Benefícios para usuários</h2>
+                        <span class="docs-card-tag">experiência livre</span>
+                    </div>
+                    <div class="docs-card-body docs-section">
+                        <p>
+                            No plano livre, a IA resolve o essencial: orientar a jornada, acelerar a descoberta e simplificar decisões. O objetivo é o usuário sentir valor logo na primeira interação.
+                        </p>
+                        <ul class="docs-list">
+                            <li>Busca guiada com resposta rápida e contexto suficiente para decidir.</li>
+                            <li>Atalhos visuais para navegar sem esforço entre as áreas principais do produto.</li>
+                            <li>Alertas essenciais que evitam perda de tempo e de informação.</li>
+                            <li>Interface leve, previsível e responsiva em desktop e mobile.</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <article class="docs-card">
+                    <div class="docs-card-header">
+                        <h2 class="docs-card-title">3. Benefícios para assinantes</h2>
+                        <span class="docs-card-tag">valor premium</span>
+                    </div>
+                    <div class="docs-card-body docs-section">
+                        <p>
+                            No plano premium, a IA deixa de ser apenas apoio e passa a gerar produtividade mensurável. É onde a assinatura precisa pagar a conta com ganho real de tempo, precisão, priorização e resultado.
+                        </p>
+                        <div class="docs-grid-2">
+                            <div class="docs-bullet">
+                                <strong>Copiloto operacional</strong>
+                                Monta, executa e acompanha ações com trilha de status.
+                            </div>
+                            <div class="docs-bullet">
+                                <strong>Automação recorrente</strong>
+                                Agenda ciclos diários ou semanais para manter o produto vivo sem esforço manual.
+                            </div>
+                            <div class="docs-bullet">
+                                <strong>Score por agente</strong>
+                                Mostra acerto, custo e impacto por loop para otimização contínua.
+                            </div>
+                            <div class="docs-bullet">
+                                <strong>Prioridade de resultado</strong>
+                                Destaca o que gera mais impacto agora, em vez de apenas listar opções.
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="docs-card">
+                    <div class="docs-card-header">
+                        <h2 class="docs-card-title">4. Usabilidade: como a experiência deve parecer</h2>
+                        <span class="docs-card-tag">design e fluxo</span>
+                    </div>
+                    <div class="docs-card-body docs-section">
+                        <p>
+                            A usabilidade precisa ser tecnológica, mas não complexa. A interface deve conduzir o usuário com hierarquia visual clara, linguagem direta, estados previsíveis e ações bem sinalizadas.
+                        </p>
+                        <div class="docs-grid-2">
+                            <div class="docs-bullet">
+                                <strong>Leitura escaneável</strong>
+                                Títulos fortes, cartões curtos e blocos com propósito definido.
+                            </div>
+                            <div class="docs-bullet">
+                                <strong>Interação guiada</strong>
+                                O sistema indica o próximo passo em vez de exigir descoberta manual.
+                            </div>
+                            <div class="docs-bullet">
+                                <strong>Visual com hierarquia</strong>
+                                Elementos premium, card de destaque e métricas fáceis de comparar.
+                            </div>
+                            <div class="docs-bullet">
+                                <strong>Responsividade real</strong>
+                                A leitura continua boa em telas pequenas, sem perder densidade de informação.
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="docs-card">
+                    <div class="docs-card-header">
+                        <h2 class="docs-card-title">5. Free vs Premium</h2>
+                        <span class="docs-card-tag">posicionamento</span>
+                    </div>
+                    <div class="docs-card-body docs-section">
+                        <div class="docs-grid-2">
+                            <div class="docs-bullet">
+                                <strong>Free</strong>
+                                Resolve descoberta, navegação e suporte básico. É o ponto de entrada da experiência.
+                            </div>
+                            <div class="docs-bullet">
+                                <strong>Premium</strong>
+                                Resolve execução, automação, priorização e inteligência aplicada. É o plano de resultado.
+                            </div>
+                        </div>
+                        <ul class="docs-list">
+                            <li>Free mostra o caminho.</li>
+                            <li>Premium executa o caminho.</li>
+                            <li>Free ajuda a começar.</li>
+                            <li>Premium ajuda a escalar.</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <article class="docs-card">
+                    <div class="docs-card-header">
+                        <h2 class="docs-card-title">6. Como o produto deve ser lido pelo usuário</h2>
+                        <span class="docs-card-tag">narrativa</span>
+                    </div>
+                    <div class="docs-card-body docs-section">
+                        <p>
+                            A leitura do produto deve sempre responder a três perguntas: o que isso faz por mim, por que isso é melhor e o que ganho ao assinar. Essa é a base da narrativa comercial e da retenção do produto.
+                        </p>
+                        <div class="docs-roadmap">
+                            <div class="docs-roadmap-step">
+                                <div class="docs-roadmap-index">1</div>
+                                <div>
+                                    <h4>Entender</h4>
+                                    <p>A interface explica rapidamente o contexto e o próximo passo.</p>
+                                </div>
+                            </div>
+                            <div class="docs-roadmap-step">
+                                <div class="docs-roadmap-index">2</div>
+                                <div>
+                                    <h4>Agir</h4>
+                                    <p>A IA sugere, organiza e executa rotas de ação com baixa fricção.</p>
+                                </div>
+                            </div>
+                            <div class="docs-roadmap-step">
+                                <div class="docs-roadmap-index">3</div>
+                                <div>
+                                    <h4>Medir</h4>
+                                    <p>O usuário vê o impacto em métricas, histórico e evolução real.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            </div>
+
+            <div class="docs-stack">
+                <aside class="docs-note">
+                    <small>Mensagem de produto</small>
+                    <strong>WallFruits transforma informação em ação e assinatura em ganho operacional.</strong>
+                    <p style="margin:0;color:rgba(234,247,247,0.82);line-height:1.5;font-size:0.86rem;">
+                        O núcleo da IA precisa ser percebido como um copiloto que guia, automatiza e melhora a tomada de decisão. Esse é o argumento principal para retenção, upgrade e diferenciação frente a concorrentes.
+                    </p>
+                </aside>
+
+                <article class="docs-card">
+                    <div class="docs-card-header">
+                        <h2 class="docs-card-title">Mapa de valor</h2>
+                        <span class="docs-card-tag">resumo</span>
+                    </div>
+                    <div class="docs-card-body docs-mini-grid">
+                        <div class="docs-mini-row">
+                            <strong>Usuário casual</strong>
+                            <span>Quer entender rápido, navegar sem ruído e perceber utilidade imediata.</span>
+                        </div>
+                        <div class="docs-mini-row">
+                            <strong>Assinante ativo</strong>
+                            <span>Quer economia de tempo, automação e previsibilidade de resultado.</span>
+                        </div>
+                        <div class="docs-mini-row">
+                            <strong>Operador avançado</strong>
+                            <span>Quer métricas, score de performance, custo por ação e aprendizado semanal.</span>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="docs-card">
+                    <div class="docs-card-header">
+                        <h2 class="docs-card-title">Princípios de usabilidade</h2>
+                        <span class="docs-card-tag">UX</span>
+                    </div>
+                    <div class="docs-card-body docs-mini-grid">
+                        <div class="docs-mini-row">
+                            <strong>Clareza antes de densidade</strong>
+                            <span>O conteúdo deve ser rico, mas sempre fácil de ler e comparar.</span>
+                        </div>
+                        <div class="docs-mini-row">
+                            <strong>Ação antes de explicação</strong>
+                            <span>Os botões e atalhos precisam levar o usuário ao próximo movimento.</span>
+                        </div>
+                        <div class="docs-mini-row">
+                            <strong>Valor antes de complexidade</strong>
+                            <span>Cada tela deve justificar o que entrega em benefício prático.</span>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="docs-card">
+                    <div class="docs-card-header">
+                        <h2 class="docs-card-title">Arquivo base</h2>
+                        <span class="docs-card-tag">fonte</span>
+                    </div>
+                    <div class="docs-card-body">
+                        <p style="margin:0;color:rgba(233,246,246,0.82);line-height:1.55;font-size:0.88rem;">
+                            A versão textual desta documentação está salva no repositório como um arquivo de leitura para manutenção, revisão e evolução futura do produto.
+                        </p>
+                    </div>
+                </article>
+
+                <div class="docs-footer">
+                    <p><strong>Conclusão:</strong> o maior valor para o usuário é simplicidade com inteligência; o maior valor para o assinante é automação com ganho mensurável.</p>
+                    <p>Essa página funciona como referência rápida para produto, marketing, onboarding, vendas e evolução da IA no núcleo.</p>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,10 @@
+{
+  "name": "WallFruits AI",
+  "short_name": "WallFruits AI",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0B8F6A",
+  "theme_color": "#0B8F6A",
+  "description": "WallFruits cross-platform AI experience for mobile and web.",
+  "orientation": "portrait-primary"
+}

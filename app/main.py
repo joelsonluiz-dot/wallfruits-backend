@@ -945,6 +945,12 @@ async def strategy_page(request: Request, current_user: User = Depends(get_curre
     return _render_template("strategy.html", request, current_user=current_user)
 
 
+@app.get("/documentacao")
+async def documentation_page(request: Request, current_user: User = Depends(get_current_user_optional)):
+    """Documentação geral do produto com benefícios, usabilidade e visão de planos."""
+    return _render_template("documentation.html", request, current_user=current_user)
+
+
 # === STORE ROUTES ===
 @app.get("/store")
 async def store_home(request: Request, category: str | None = None, q: str | None = None, db: Session = Depends(get_db), current_user: User = Depends(get_current_user_optional)):
