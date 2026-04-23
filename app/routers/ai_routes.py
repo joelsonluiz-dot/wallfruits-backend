@@ -9,7 +9,12 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.ai.conversational_ai import ConversationalAI
-from app.ai.business_os import build_business_os_blueprint, build_orchestration_decision
+from app.ai.business_os import (
+    build_business_os_blueprint,
+    build_business_os_implementation_plan,
+    build_business_os_readiness,
+    build_orchestration_decision,
+)
 from app.ai.autonomous_commerce import AutonomousCommerceAI
 from app.ai.market_intelligence import MarketIntelligenceAI
 from app.ai.ml_pipeline import train_models, predict_with_fallback
@@ -140,6 +145,22 @@ class BusinessOSOrchestrateEventIn(BaseModel):
     metadata: dict = Field(default_factory=dict)
     risk_level: str | None = Field(default=None, pattern="^(low|medium|high)$")
     risk_score: float | None = Field(default=None, ge=0, le=1)
+
+
+class BusinessOSSignalEventIn(BaseModel):
+    event_type: str = Field(min_length=3, max_length=120)
+    event_domain: str | None = Field(default=None, max_length=80)
+    entity_type: str | None = Field(default=None, max_length=80)
+    entity_id: str | None = Field(default=None, max_length=120)
+    metadata: dict = Field(default_factory=dict)
+    risk_level: str | None = Field(default=None, pattern="^(low|medium|high)$")
+    risk_score: float | None = Field(default=None, ge=0, le=1)
+
+
+class BusinessOSSignalPipelineIn(BaseModel):
+    source: str = Field(default="business_os_pipeline", min_length=3, max_length=120)
+    persist_only_accepted: bool = True
+    events: list[BusinessOSSignalEventIn] = Field(default_factory=list, min_length=1, max_length=200)
 
 
 def _default_agenda_profile() -> dict:
@@ -2015,6 +2036,113 @@ def get_ai_business_os_blueprint(
     }
 
 
+@router.get("/ops/business-os/readiness")
+def get_ai_business_os_readiness(
+    days: int = Query(30, ge=1, le=365),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    _require_admin_user(current_user)
+
+    governance = _build_ai_governance_summary_payload(
+        db=db,
+        days=days,
+        include_recent=False,
+    )
+    cockpit = _build_ai_executive_cockpit_payload(db=db, days=days)
+
+    readiness = build_business_os_readiness(
+        governance_totals=governance.get("totals", {}),
+        loops_snapshot=cockpit.get("loops", {}),
+        goal_gaps=cockpit.get("goal_gaps", []),
+    )
+
+    return {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "window_days": days,
+        "readiness": readiness,
+        "implementation_plan": build_business_os_implementation_plan(),
+    }
+
+
+@router.get("/ops/business-os/transformation-roadmap")
+def get_ai_business_os_transformation_roadmap(
+    days: int = Query(30, ge=1, le=365),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    _require_admin_user(current_user)
+
+    governance = _build_ai_governance_summary_payload(
+        db=db,
+        days=days,
+        include_recent=False,
+    )
+    cockpit = _build_ai_executive_cockpit_payload(db=db, days=days)
+
+    readiness = build_business_os_readiness(
+        governance_totals=governance.get("totals", {}),
+        loops_snapshot=cockpit.get("loops", {}),
+        goal_gaps=cockpit.get("goal_gaps", []),
+    )
+
+    return {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "window_days": days,
+        "vision": {
+            "operating_cycle": [
+                "captar_sinais",
+                "decidir_com_ia",
+                "executar_por_agentes",
+                "aprender_em_tempo_real",
+            ],
+            "loop_model": [
+                "aquisicao",
+                "conversao",
+                "retencao_expansao",
+                "eficiencia_risco",
+            ],
+        },
+        "human_roles": [
+            "dono_de_agente",
+            "arquiteto_de_decisao",
+            "gestor_de_risco_algoritmico",
+        ],
+        "autonomy_policy": {
+            "low_risk": "ia_executa_automaticamente",
+            "medium_risk": "ia_propoe_humano_aprova",
+            "high_risk": "humano_decide_com_recomendacao_ia",
+        },
+        "kpis_nucleus": [
+            "tempo_resposta_e_resolucao",
+            "conversao_por_segmento_e_canal",
+            "retencao_e_expansao_receita",
+            "margem_por_jornada",
+            "custo_por_decisao_automatizada",
+            "taxa_de_acerto_das_recomendacoes",
+            "percentual_de_decisoes_com_intervencao_humana",
+        ],
+        "readiness": readiness,
+        "implementation_plan": build_business_os_implementation_plan(),
+        "runtime_snapshot": {
+            "alerts": cockpit.get("alerts", []),
+            "opportunities": cockpit.get("opportunities", []),
+            "recommended_actions": cockpit.get("recommended_actions", []),
+            "goal_gaps": cockpit.get("goal_gaps", []),
+        },
+        "weekly_learning_ritual": {
+            "frequency": "weekly",
+            "agenda": [
+                "revisar_riscos_e_guardrails",
+                "avaliar_kpis_por_loop",
+                "aprovar_experimentos_da_semana",
+                "promover_ou_restringir_autonomia_por_risco",
+                "fechar_aprendizados_em_playbooks",
+            ],
+        },
+    }
+
+
 @router.get("/ops/business-os/marketing-funnel")
 def get_ai_business_os_marketing_funnel(
     request: Request,
@@ -2108,6 +2236,167 @@ def orchestrate_ai_business_os_event(
         "missing_required_fields": missing_fields,
         "requires_human_gate": bool(decision.get("autonomy_policy", {}).get("human_gate")),
         "decision": decision,
+    }
+
+
+@router.post("/ops/business-os/signal-pipeline")
+def run_ai_business_os_signal_pipeline(
+    payload: BusinessOSSignalPipelineIn,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Processa sinais em lote para o Business OS com governança e trilha auditável."""
+    _require_platform_write_user(current_user)
+
+    request_id = getattr(request.state, "request_id", None)
+    telemetry = AITelemetryService(db)
+
+    source = str(payload.source or "business_os_pipeline").strip() or "business_os_pipeline"
+    persist_only_accepted = bool(payload.persist_only_accepted)
+
+    processed: list[dict] = []
+    persisted_events = 0
+
+    by_risk = {"low": 0, "medium": 0, "high": 0}
+    by_policy: dict[str, int] = {}
+    by_agent: dict[str, int] = {}
+
+    for index, event in enumerate(payload.events):
+        decision = build_orchestration_decision(
+            event_type=event.event_type,
+            event_domain=event.event_domain,
+            metadata=event.metadata,
+            risk_level=event.risk_level,
+            risk_score=event.risk_score,
+        )
+
+        missing_fields = list(decision.get("contract_validation", {}).get("missing_fields", []))
+        accepted = len(missing_fields) == 0
+
+        risk_level = str(decision.get("risk_level") or "medium").strip().lower()
+        if risk_level in by_risk:
+            by_risk[risk_level] += 1
+
+        autonomy_policy = str((decision.get("autonomy_policy") or {}).get("policy") or "unknown")
+        by_policy[autonomy_policy] = int(by_policy.get(autonomy_policy, 0)) + 1
+
+        selected_agent = str(decision.get("selected_agent") or "orquestrador_central")
+        by_agent[selected_agent] = int(by_agent.get(selected_agent, 0)) + 1
+
+        persisted = False
+        if (not persist_only_accepted) or accepted:
+            signal_row = telemetry.log_event(
+                user_id=current_user.id,
+                event_type=event.event_type,
+                entity_type=event.entity_type or "business_event",
+                entity_id=event.entity_id or f"{source}:{index}",
+                metadata={
+                    "signal": {
+                        "event_type": event.event_type,
+                        "event_domain": event.event_domain,
+                        "risk_level": event.risk_level,
+                        "risk_score": event.risk_score,
+                        "metadata": event.metadata,
+                    },
+                    "pipeline": {
+                        "source": source,
+                        "batch_index": index,
+                    },
+                },
+                event_domain=event.event_domain or "business_os",
+                event_source=f"/api/ai/ops/business-os/signal-pipeline:{source}",
+                request_id=request_id,
+                idempotency_key=(
+                    f"business-os-signal:{source}:{index}:{event.event_type}:"
+                    f"{event.entity_type or 'business_event'}:{event.entity_id or 'none'}"
+                ),
+                commit=False,
+            )
+
+            orchestration_row = telemetry.log_event(
+                user_id=current_user.id,
+                event_type="ai_business_os_orchestrated",
+                entity_type=event.entity_type or "business_event",
+                entity_id=event.entity_id or f"{source}:{index}",
+                metadata={
+                    "input": {
+                        "event_type": event.event_type,
+                        "event_domain": event.event_domain,
+                        "risk_level": event.risk_level,
+                        "risk_score": event.risk_score,
+                        "metadata": event.metadata,
+                    },
+                    "decision": decision,
+                    "accepted": accepted,
+                    "missing_required_fields": missing_fields,
+                    "pipeline": {
+                        "source": source,
+                        "batch_index": index,
+                    },
+                },
+                event_domain="business_os",
+                event_source=f"/api/ai/ops/business-os/signal-pipeline:{source}",
+                request_id=request_id,
+                idempotency_key=(
+                    f"business-os-orchestration:{source}:{index}:{event.event_type}:"
+                    f"{event.entity_type or 'business_event'}:{event.entity_id or 'none'}"
+                ),
+                commit=False,
+            )
+
+            persisted = bool(signal_row is not None and orchestration_row is not None)
+            if persisted:
+                persisted_events += 2
+
+        processed.append(
+            {
+                "index": index,
+                "event_type": event.event_type,
+                "event_domain": decision.get("event_domain"),
+                "selected_agent": selected_agent,
+                "risk_level": risk_level,
+                "autonomy_policy": autonomy_policy,
+                "accepted": accepted,
+                "missing_required_fields": missing_fields,
+                "persisted": persisted,
+                "requires_human_gate": bool((decision.get("autonomy_policy") or {}).get("human_gate")),
+                "recommended_next_step": decision.get("recommended_next_step"),
+            }
+        )
+
+    db.commit()
+
+    accepted_total = sum(1 for item in processed if bool(item.get("accepted")))
+    rejected_total = max(0, len(processed) - accepted_total)
+    human_gate_total = sum(1 for item in processed if bool(item.get("requires_human_gate")))
+
+    priority_recommendations: list[str] = []
+    if rejected_total > 0:
+        priority_recommendations.append("Corrigir contratos de evento com campos obrigatórios ausentes antes da execução automática.")
+    if human_gate_total > 0:
+        priority_recommendations.append("Priorizar fila de aprovação humana para eventos de médio/alto risco.")
+    if by_risk.get("high", 0) > 0:
+        priority_recommendations.append("Aplicar reforço de guardrails e trilha de auditoria para sinais de risco alto.")
+    if not priority_recommendations:
+        priority_recommendations.append("Pipeline íntegro: ampliar volume de sinais e aumentar cobertura por domínio.")
+
+    return {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "source": source,
+        "persist_only_accepted": persist_only_accepted,
+        "summary": {
+            "events_total": len(processed),
+            "accepted": accepted_total,
+            "rejected": rejected_total,
+            "requires_human_gate": human_gate_total,
+            "persisted_rows": persisted_events,
+            "by_risk": by_risk,
+            "by_policy": by_policy,
+            "by_agent": by_agent,
+        },
+        "priority_recommendations": priority_recommendations,
+        "events": processed,
     }
 
 

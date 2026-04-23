@@ -26,6 +26,22 @@
     .admin-list-card h5 { margin: 0 0 0.5rem 0; font-size: 0.76rem; color: var(--wf-text-secondary); }
     .admin-bullet-list { margin: 0; padding-left: 1.1rem; color: var(--wf-text-secondary); display: grid; gap: 0.35rem; }
     .admin-bullet-list li { line-height: 1.38; }
+    .admin-form-inline { display: flex; gap: 0.45rem; flex-wrap: wrap; align-items: center; }
+    .admin-json-input {
+        width: 100%;
+        min-height: 170px;
+        border-radius: 10px;
+        border: 1px solid var(--wf-border);
+        background: rgba(10, 18, 32, 0.65);
+        color: var(--wf-text);
+        padding: 0.7rem;
+        font-family: Consolas, Menlo, Monaco, monospace;
+        font-size: 0.78rem;
+        line-height: 1.4;
+        resize: vertical;
+    }
+    .bool-badge.yes { background: rgba(47, 158, 68, 0.2); color: #69db7c; }
+    .bool-badge.no { background: rgba(176, 0, 32, 0.2); color: #ff8fa3; }
     @media (max-width: 1180px) { .admin-mini-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
     @media (max-width: 1180px) { .admin-lists-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
     @media (max-width: 760px) { .admin-mini-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
@@ -236,6 +252,93 @@
 </div>
 
 <div class="wf-card mt-3">
+    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;gap:0.6rem;flex-wrap:wrap;">
+        <span>Business OS - Readiness e Pipeline IA</span>
+        <div style="display:flex;gap:0.45rem;flex-wrap:wrap;">
+            <button id="refreshAiBoReadinessBtn" class="btn btn-wf-secondary">Atualizar readiness</button>
+            <button id="refreshAiBoRoadmapBtn" class="btn btn-wf-secondary">Atualizar roadmap</button>
+            <button id="runAiBoSignalPipelineBtn" class="btn btn-wf-primary">Executar pipeline</button>
+        </div>
+    </div>
+    <div class="card-body">
+        <div id="aiBoReadinessMeta" style="color:var(--wf-text-secondary);margin-bottom:0.2rem;">Carregando maturidade e roadmap IA...</div>
+        <div class="admin-mini-grid" id="aiBoReadinessKpisGrid"></div>
+
+        <div class="admin-lists-grid" style="margin-top:0.9rem;">
+            <div class="admin-list-card">
+                <h5>Capacidades em Lacuna</h5>
+                <ul id="aiBoMissingCapabilities" class="admin-bullet-list">
+                    <li>Carregando capacidades...</li>
+                </ul>
+            </div>
+            <div class="admin-list-card">
+                <h5>Recomendacoes Prioritarias</h5>
+                <ul id="aiBoPriorityRecommendations" class="admin-bullet-list">
+                    <li>Carregando recomendacoes...</li>
+                </ul>
+            </div>
+            <div class="admin-list-card">
+                <h5>Ritual Semanal IA</h5>
+                <ul id="aiBoWeeklyRitual" class="admin-bullet-list">
+                    <li>Carregando ritual...</li>
+                </ul>
+            </div>
+        </div>
+
+        <div style="overflow-x:auto;margin-top:0.95rem;">
+            <table class="table table-sm align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Onda</th>
+                        <th>Foco</th>
+                        <th>Acoes</th>
+                    </tr>
+                </thead>
+                <tbody id="aiBoImplementationPlanRows">
+                    <tr><td colspan="3" style="padding:0.8rem;color:var(--wf-text-secondary);">Carregando plano de implementacao...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div style="margin-top:1rem;border-top:1px solid var(--wf-border);padding-top:0.95rem;">
+            <div class="admin-form-inline" style="margin-bottom:0.55rem;">
+                <label style="display:flex;align-items:center;gap:0.35rem;color:var(--wf-text-secondary);font-size:0.84rem;">
+                    Fonte
+                    <input id="aiBoPipelineSource" class="wf-input" value="admin_panel" style="min-width:150px;" />
+                </label>
+                <label style="display:flex;align-items:center;gap:0.35rem;color:var(--wf-text-secondary);font-size:0.84rem;">
+                    <input id="aiBoPersistOnlyAccepted" type="checkbox" checked>
+                    Persistir apenas aceitos
+                </label>
+            </div>
+            <textarea id="aiBoSignalPipelineInput" class="admin-json-input" spellcheck="false"></textarea>
+            <div id="aiBoSignalPipelineMeta" style="color:var(--wf-text-secondary);margin-top:0.6rem;">Pipeline ainda nao executado nesta sessao.</div>
+            <div class="admin-mini-grid" id="aiBoSignalPipelineKpisGrid" style="margin-top:0.65rem;"></div>
+
+            <div style="overflow-x:auto;margin-top:0.95rem;">
+                <table class="table table-sm align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Evento</th>
+                            <th>Risco</th>
+                            <th>Agente</th>
+                            <th>Politica</th>
+                            <th>Aceito</th>
+                            <th>Gate humano</th>
+                            <th>Proxima acao</th>
+                        </tr>
+                    </thead>
+                    <tbody id="aiBoSignalPipelineRows">
+                        <tr><td colspan="8" style="padding:0.8rem;color:var(--wf-text-secondary);">Sem execucoes de pipeline ainda.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="wf-card mt-3">
     <div class="card-header">Top Produtos</div>
     <div class="card-body">
         <div id="topProducts"></div>
@@ -346,6 +449,13 @@
         return `<div class="admin-mini-kpi"><h5>${esc(title)}</h5><div class="val">${esc(value)}</div></div>`;
     }
 
+    function normalizePercent01(value) {
+        const num = Number(value || 0);
+        if (!Number.isFinite(num)) return 0;
+        if (num > 1) return Math.max(0, Math.min(1, num / 100));
+        return Math.max(0, Math.min(1, num));
+    }
+
     function renderTextList(targetId, items, emptyMessage) {
         const el = document.getElementById(targetId);
         if (!el) return;
@@ -356,6 +466,108 @@
         }
 
         el.innerHTML = items.map((item) => `<li>${esc(item)}</li>`).join('');
+    }
+
+    function defaultBusinessOsSignalEvents() {
+        return [
+            {
+                event_type: 'checkout_started',
+                event_domain: 'conversion',
+                entity_type: 'order',
+                entity_id: 'sandbox-order-001',
+                risk_level: 'low',
+                risk_score: 0.32,
+                metadata: {
+                    channel: 'web',
+                    segment: 'hortifruti|varejo',
+                    amount: 129.9,
+                },
+            },
+            {
+                event_type: 'order_cancelled',
+                event_domain: 'retention',
+                entity_type: 'order',
+                entity_id: 'sandbox-order-002',
+                risk_level: 'medium',
+                risk_score: 0.58,
+                metadata: {
+                    reason: 'delivery_delay',
+                    segment: 'hortifruti|atacado',
+                    amount: 411.4,
+                },
+            },
+            {
+                event_type: 'support_escalation',
+                event_domain: 'efficiency_risk',
+                entity_type: 'ticket',
+                entity_id: 'sandbox-ticket-003',
+                risk_level: 'high',
+                risk_score: 0.87,
+                metadata: {
+                    category: 'payment_dispute',
+                    segment: 'insumos|varejo',
+                    sla_hours: 4,
+                },
+            },
+        ];
+    }
+
+    function ensureAiBusinessOsPipelineSeed() {
+        const input = document.getElementById('aiBoSignalPipelineInput');
+        if (!input) return;
+        if (String(input.value || '').trim()) return;
+        input.value = JSON.stringify(defaultBusinessOsSignalEvents(), null, 2);
+    }
+
+    function renderAiBusinessOsPipelineResult(data) {
+        const meta = document.getElementById('aiBoSignalPipelineMeta');
+        const kpis = document.getElementById('aiBoSignalPipelineKpisGrid');
+        const rows = document.getElementById('aiBoSignalPipelineRows');
+
+        if (!meta || !kpis || !rows) return;
+
+        const summary = data.summary || {};
+        const byRisk = summary.by_risk || {};
+
+        meta.innerHTML = `
+            Fonte: <b>${esc(data.source || '-')}</b> ·
+            Eventos: <b>${numberFmt(summary.events_total || 0)}</b> ·
+            Aceitos: <b>${numberFmt(summary.accepted || 0)}</b> ·
+            Rejeitados: <b>${numberFmt(summary.rejected || 0)}</b> ·
+            Gate humano: <b>${numberFmt(summary.requires_human_gate || 0)}</b> ·
+            Linhas persistidas: <b>${numberFmt(summary.persisted_rows || 0)}</b>
+        `;
+
+        kpis.innerHTML = [
+            governanceKpiCard('Risco alto', numberFmt(byRisk.high || 0)),
+            governanceKpiCard('Risco medio', numberFmt(byRisk.medium || 0)),
+            governanceKpiCard('Risco baixo', numberFmt(byRisk.low || 0)),
+            governanceKpiCard('Somente aceitos', data.persist_only_accepted ? 'Sim' : 'Nao'),
+            governanceKpiCard('Recomendacoes', numberFmt((data.priority_recommendations || []).length)),
+        ].join('');
+
+        const events = Array.isArray(data.events) ? data.events : [];
+        if (!events.length) {
+            rows.innerHTML = '<tr><td colspan="8" style="padding:0.8rem;color:var(--wf-text-secondary);">Execucao concluida sem eventos processados.</td></tr>';
+            return;
+        }
+
+        rows.innerHTML = events.map((item) => {
+            const accepted = Boolean(item.accepted);
+            const humanGate = Boolean(item.requires_human_gate);
+            return `
+                <tr>
+                    <td>${numberFmt((item.index || 0) + 1)}</td>
+                    <td>${esc(item.event_type || '-')}</td>
+                    <td><span class="queue-badge risk-badge ${riskClass(item.risk_level || 'low')}">${esc(String(item.risk_level || 'low').toUpperCase())}</span></td>
+                    <td>${esc(item.selected_agent || '-')}</td>
+                    <td>${esc(item.autonomy_policy || '-')}</td>
+                    <td><span class="queue-badge bool-badge ${accepted ? 'yes' : 'no'}">${accepted ? 'sim' : 'nao'}</span></td>
+                    <td><span class="queue-badge bool-badge ${humanGate ? 'yes' : 'no'}">${humanGate ? 'sim' : 'nao'}</span></td>
+                    <td>${esc(item.recommended_next_step || '-')}</td>
+                </tr>
+            `;
+        }).join('');
     }
 
     let aiGovernanceWindowDays = 30;
@@ -421,7 +633,10 @@
             loadAiGovernanceOps(),
             loadAiExecutiveCockpit(),
             loadAiBusinessOsMarketingFunnel(),
+            loadAiBusinessOsReadinessRoadmap(),
         ]);
+
+        ensureAiBusinessOsPipelineSeed();
 
         loadRuntimePerformancePanel();
         if (runtimePerfTimer) {
@@ -789,6 +1004,126 @@
         }
     }
 
+    async function loadAiBusinessOsReadinessRoadmap() {
+        const meta = document.getElementById('aiBoReadinessMeta');
+        const kpis = document.getElementById('aiBoReadinessKpisGrid');
+        const rows = document.getElementById('aiBoImplementationPlanRows');
+        const windowSelect = document.getElementById('aiGovWindowDays');
+        const selectedDays = Number(windowSelect?.value || aiGovernanceWindowDays || 30);
+        const days = Number.isFinite(selectedDays) && selectedDays > 0 ? selectedDays : 30;
+
+        try {
+            const [readinessPayload, roadmapPayload] = await Promise.all([
+                apiRequest(`/ai/ops/business-os/readiness?days=${encodeURIComponent(days)}`),
+                apiRequest(`/ai/ops/business-os/transformation-roadmap?days=${encodeURIComponent(days)}`),
+            ]);
+
+            const readiness = readinessPayload.readiness || {};
+            const normalizedScore = normalizePercent01(readiness.score || 0);
+            const scorePercent = normalizedScore * 100;
+
+            meta.innerHTML = `
+                Janela: <b>${numberFmt(readinessPayload.window_days || days)} dias</b> ·
+                Maturidade: <b>${esc(String(readiness.maturity_level || '-').toUpperCase())}</b> ·
+                Score: <b>${pct(scorePercent)}</b>
+            `;
+
+            kpis.innerHTML = [
+                governanceKpiCard('Score de maturidade', pct(scorePercent)),
+                governanceKpiCard('Capacidades ativas', `${numberFmt(readiness.capabilities_enabled || 0)}/${numberFmt(readiness.capabilities_total || 0)}`),
+                governanceKpiCard('Gaps estrategicos', `${numberFmt(readiness.goal_gaps_count || 0)}`),
+                governanceKpiCard('Alertas ativos', `${numberFmt(readiness.alerts_count || 0)}`),
+                governanceKpiCard('Proxima acao', readiness.next_best_action || '-'),
+            ].join('');
+
+            renderTextList('aiBoMissingCapabilities', readiness.missing_capabilities || [], 'Sem lacunas criticas de capacidade.');
+            renderTextList('aiBoPriorityRecommendations', readiness.priority_recommendations || [], 'Sem recomendacoes prioritarias para a janela.');
+
+            const ritualAgenda = roadmapPayload.weekly_learning_ritual?.agenda || [];
+            renderTextList('aiBoWeeklyRitual', ritualAgenda, 'Ritual semanal ainda nao definido.');
+
+            const waves = Array.isArray(roadmapPayload.implementation_plan?.waves)
+                ? roadmapPayload.implementation_plan.waves
+                : [];
+
+            if (!waves.length) {
+                rows.innerHTML = '<tr><td colspan="3" style="padding:0.8rem;color:var(--wf-text-secondary);">Sem ondas de implementacao para exibir.</td></tr>';
+            } else {
+                rows.innerHTML = waves.map((wave) => {
+                    const actions = Array.isArray(wave.actions) && wave.actions.length
+                        ? wave.actions.join(' • ')
+                        : '-';
+
+                    return `
+                        <tr>
+                            <td><b>${esc(wave.wave || '-')}</b></td>
+                            <td>${esc(wave.focus || '-')}</td>
+                            <td>${esc(actions)}</td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+        } catch (err) {
+            meta.textContent = err.message || 'Falha ao carregar readiness e roadmap do Business OS';
+            kpis.innerHTML = '';
+            rows.innerHTML = '<tr><td colspan="3" style="padding:0.8rem;color:#b4493f;">Falha ao carregar plano de transformacao.</td></tr>';
+            renderTextList('aiBoMissingCapabilities', [], 'Falha ao carregar capacidades em lacuna.');
+            renderTextList('aiBoPriorityRecommendations', [], 'Falha ao carregar recomendacoes prioritarias.');
+            renderTextList('aiBoWeeklyRitual', [], 'Falha ao carregar ritual semanal.');
+        }
+    }
+
+    async function runAiBusinessOsSignalPipeline() {
+        const button = document.getElementById('runAiBoSignalPipelineBtn');
+        const sourceInput = document.getElementById('aiBoPipelineSource');
+        const persistOnlyAccepted = document.getElementById('aiBoPersistOnlyAccepted');
+        const jsonInput = document.getElementById('aiBoSignalPipelineInput');
+
+        const original = button ? button.textContent : 'Executar pipeline';
+        if (button) {
+            button.disabled = true;
+            button.textContent = 'Executando...';
+        }
+
+        try {
+            if (!jsonInput) {
+                throw new Error('Editor JSON do pipeline indisponivel.');
+            }
+
+            const raw = String(jsonInput.value || '').trim();
+            if (!raw) {
+                throw new Error('Informe ao menos um evento no JSON do pipeline.');
+            }
+
+            let events;
+            try {
+                events = JSON.parse(raw);
+            } catch {
+                throw new Error('JSON invalido no pipeline. Verifique o formato dos eventos.');
+            }
+
+            if (!Array.isArray(events) || !events.length) {
+                throw new Error('O pipeline exige um array de eventos com pelo menos 1 item.');
+            }
+
+            const payload = {
+                source: String(sourceInput?.value || 'admin_panel').trim() || 'admin_panel',
+                persist_only_accepted: Boolean(persistOnlyAccepted?.checked),
+                events,
+            };
+
+            const result = await apiRequest('/ai/ops/business-os/signal-pipeline', 'POST', payload);
+            renderAiBusinessOsPipelineResult(result);
+        } catch (err) {
+            alert(err.message || 'Falha ao executar pipeline de sinais IA.');
+        } finally {
+            if (button) {
+                button.disabled = false;
+                button.textContent = original;
+            }
+        }
+    }
+
     async function persistAiBusinessOsMarketingFunnel() {
         const button = document.getElementById('persistAiBoMarketingBtn');
         const original = button ? button.textContent : 'Executar e persistir';
@@ -948,6 +1283,18 @@
         loadAiBusinessOsMarketingFunnel().catch(() => {});
     });
 
+    document.getElementById('refreshAiBoReadinessBtn').addEventListener('click', () => {
+        loadAiBusinessOsReadinessRoadmap();
+    });
+
+    document.getElementById('refreshAiBoRoadmapBtn').addEventListener('click', () => {
+        loadAiBusinessOsReadinessRoadmap();
+    });
+
+    document.getElementById('runAiBoSignalPipelineBtn').addEventListener('click', () => {
+        runAiBusinessOsSignalPipeline();
+    });
+
     document.getElementById('persistAiBoMarketingBtn').addEventListener('click', () => {
         persistAiBusinessOsMarketingFunnel();
     });
@@ -972,6 +1319,7 @@
         loadAiGovernanceOps();
         loadAiExecutiveCockpit();
         loadAiBusinessOsMarketingFunnel().catch(() => {});
+        loadAiBusinessOsReadinessRoadmap();
     });
 
     document.getElementById('aiBoMinSignals').addEventListener('change', () => {

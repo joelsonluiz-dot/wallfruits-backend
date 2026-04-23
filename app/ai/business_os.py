@@ -247,3 +247,130 @@ def build_business_os_blueprint() -> dict[str, Any]:
             "loops": by_loop,
         },
     }
+
+
+def build_business_os_implementation_plan() -> dict[str, Any]:
+    """Plano de evolução por ondas para operação IA-nativa."""
+    return {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "phases": [
+            {
+                "phase": "wave_1_foundation",
+                "window": "0-30_dias",
+                "outcome": "fundacao de sinais, memoria e governanca minima",
+                "actions": [
+                    "definir_taxonomia_eventos_criticos_por_loop",
+                    "padronizar_idempotencia_request_id_e_fonte_evento",
+                    "ativar_memoria_transacional_com_sla_de_ingestao",
+                    "ligar_orquestracao_de_evento_com_politica_de_risco",
+                    "instituir_auditoria_minima_lgpd_com_trilha_de_decisoes",
+                ],
+            },
+            {
+                "phase": "wave_2_growth_and_decisioning",
+                "window": "31-60_dias",
+                "outcome": "decisao em tempo real para aquisicao e conversao",
+                "actions": [
+                    "integrar_funil_marketing_com_sinais_de_intencao",
+                    "ativar_experimentacao_continua_por_segmento_e_canal",
+                    "publicar_painel_executivo_com_alertas_preditivos",
+                    "medir_custo_por_decisao_e_taxa_de_acerto",
+                    "automatizar_backlog_priorizado_por_impacto",
+                ],
+            },
+            {
+                "phase": "wave_3_autonomy_and_finance",
+                "window": "61-90_dias",
+                "outcome": "autonomia operacional segura com aprendizado semanal",
+                "actions": [
+                    "conectar_produto_suporte_e_financeiro_no_mesmo_nucleo",
+                    "formalizar_regra_de_autonomia_por_risco",
+                    "instituir_ritual_semanal_de_aprendizado_e_correcao",
+                    "fechar_loop_de_recomendacao_para_execucao_por_agentes",
+                    "monitorar_intervencao_humana_por_classe_de_risco",
+                ],
+            },
+        ],
+    }
+
+
+def build_business_os_readiness(
+    *,
+    governance_totals: dict[str, Any] | None,
+    loops_snapshot: dict[str, Any] | None,
+    goal_gaps: list[dict[str, Any]] | None,
+) -> dict[str, Any]:
+    """Avalia maturidade do Business OS com base no runtime atual."""
+    totals = governance_totals if isinstance(governance_totals, dict) else {}
+    loops = loops_snapshot if isinstance(loops_snapshot, dict) else {}
+    gaps = goal_gaps if isinstance(goal_gaps, list) else []
+
+    decisions = int(totals.get("decisions_logged", 0) or 0)
+    human_reviews = int(totals.get("requires_human_review", 0) or 0)
+    alerts = int(totals.get("predictive_alerts", 0) or 0)
+    events_total = int(totals.get("events_total", 0) or 0)
+
+    coverage_score = min(25.0, float(events_total) / 40.0)
+    decisioning_score = min(25.0, float(decisions) / 120.0)
+    predictive_score = min(25.0, float(alerts) / 60.0)
+
+    gap_penalty = min(15.0, float(len(gaps)) * 2.0)
+    review_penalty = min(10.0, float(human_reviews) / 60.0)
+
+    maturity_score = max(
+        0.0,
+        min(100.0, coverage_score + decisioning_score + predictive_score + 25.0 - gap_penalty - review_penalty),
+    )
+
+    if maturity_score >= 80:
+        maturity_level = "advanced"
+    elif maturity_score >= 55:
+        maturity_level = "scaling"
+    elif maturity_score >= 35:
+        maturity_level = "emerging"
+    else:
+        maturity_level = "foundational"
+
+    missing_capabilities: list[str] = []
+    if events_total < 100:
+        missing_capabilities.append("cobertura_de_sinais_ainda_baixa")
+    if decisions < 120:
+        missing_capabilities.append("decisao_orquestrada_ainda_limitada")
+    if alerts < 40:
+        missing_capabilities.append("predicao_e_alerta_proativo_subutilizados")
+    if human_reviews > decisions and decisions > 0:
+        missing_capabilities.append("autonomia_por_risco_esta_conservadora_demais")
+    if len(gaps) >= 4:
+        missing_capabilities.append("muitos_kpis_com_desvio_no_cockpit_executivo")
+
+    loops_health = {
+        str(name): {
+            "status": (payload or {}).get("status", "unknown") if isinstance(payload, dict) else "unknown",
+            "sample_size": int((payload or {}).get("sample_size", 0) or 0) if isinstance(payload, dict) else 0,
+        }
+        for name, payload in loops.items()
+    }
+
+    return {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "maturity_score": round(maturity_score, 2),
+        "maturity_level": maturity_level,
+        "signals": {
+            "events_total": events_total,
+            "decisions_logged": decisions,
+            "requires_human_review": human_reviews,
+            "predictive_alerts": alerts,
+        },
+        "loops_health": loops_health,
+        "goal_gaps_count": len(gaps),
+        "missing_capabilities": missing_capabilities,
+        "recommended_next_step": (
+            "ativar_wave_1_foundation"
+            if maturity_level == "foundational"
+            else "escalar_wave_2_growth_and_decisioning"
+            if maturity_level == "emerging"
+            else "acelerar_wave_3_autonomy_and_finance"
+            if maturity_level == "scaling"
+            else "otimizar_com_experimentos_e_reducao_de_custo_por_decisao"
+        ),
+    }
