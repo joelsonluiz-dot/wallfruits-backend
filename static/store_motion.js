@@ -16,6 +16,7 @@
     var revealObserverConfigKey = "";
     var revealSet = new WeakSet();
     var revealSafetyTimers = new WeakMap();
+    var revealSafetyTimeoutMs = 1700;
     var rippleBound = false;
     var autoRefreshObserver = null;
     var autoRefreshTimer = 0;
@@ -474,8 +475,9 @@
             return;
         }
 
-        if (revealSafetyTimers.has(node)) {
-            window.clearTimeout(revealSafetyTimers.get(node));
+        var pendingTimer = revealSafetyTimers.get(node);
+        if (pendingTimer) {
+            window.clearTimeout(pendingTimer);
             revealSafetyTimers.delete(node);
         }
 
@@ -485,8 +487,31 @@
         }
     }
 
-    function scheduleRevealSafety(node, fallbackDelayMs) {
+    function isElementInViewport(node) {
         if (!(node instanceof HTMLElement)) {
+            return false;
+        }
+
+        var rect = node.getBoundingClientRect();
+        var viewportWidth = Number(window.innerWidth || document.documentElement.clientWidth || 0);
+        var viewportHeight = Number(window.innerHeight || document.documentElement.clientHeight || 0);
+
+        if (!viewportWidth || !viewportHeight) {
+            return false;
+        }
+
+        return rect.bottom >= 0
+            && rect.right >= 0
+            && rect.top <= viewportHeight
+            && rect.left <= viewportWidth;
+    }
+
+    function scheduleRevealSafety(node, timeoutMs) {
+        if (!(node instanceof HTMLElement)) {
+            return;
+        }
+
+        if (node.classList.contains("is-visible")) {
             return;
         }
 
@@ -495,13 +520,43 @@
             revealSafetyTimers.delete(node);
         }
 
-        var delay = Math.max(700, numberOrFallback(fallbackDelayMs, 1500));
-        var timerId = window.setTimeout(function forceReveal() {
+        var waitMs = Math.max(620, numberOrFallback(timeoutMs, revealSafetyTimeoutMs));
+        var timer = window.setTimeout(function onSafetyTimeout() {
             revealSafetyTimers.delete(node);
-            revealElement(node);
-        }, delay);
 
-        revealSafetyTimers.set(node, timerId);
+            if (!node.isConnected || node.classList.contains("is-visible")) {
+                return;
+            }
+
+            if (node.hidden || node.closest("[hidden]")) {
+                return;
+            }
+
+            if (isElementInViewport(node)) {
+                revealElement(node);
+                return;
+            }
+
+            var retryTimer = window.setTimeout(function onSafetyRetry() {
+                revealSafetyTimers.delete(node);
+
+                if (!node.isConnected || node.classList.contains("is-visible")) {
+                    return;
+                }
+
+                if (node.hidden || node.closest("[hidden]")) {
+                    return;
+                }
+
+                if (isElementInViewport(node)) {
+                    revealElement(node);
+                }
+            }, 540);
+
+            revealSafetyTimers.set(node, retryTimer);
+        }, waitMs);
+
+        revealSafetyTimers.set(node, timer);
     }
 
     function observeRevealTargets(root, selectors, motionConfig) {
@@ -511,7 +566,12 @@
             return;
         }
 
-        var targets = scope.querySelectorAll(list.join(","));
+        var selectorText = list.join(",");
+        var targets = Array.from(scope.querySelectorAll(selectorText));
+        if (scope instanceof Element && scope.matches(selectorText)) {
+            targets.unshift(scope);
+        }
+
         if (!targets.length) {
             return;
         }
@@ -549,9 +609,7 @@
                 return;
             }
 
-            // Fallback de seguranca: evita cards presos em opacidade zero quando
-            // o observer nao dispara em cenarios especificos de viewport/renderizacao.
-            scheduleRevealSafety(node, revealDelay + 1700);
+            scheduleRevealSafety(node, numberOrFallback(motionConfig && motionConfig.safetyTimeoutMs, revealSafetyTimeoutMs));
 
             if (!revealObserver) {
                 revealObserver = new IntersectionObserver(function onIntersect(entries) {
@@ -692,13 +750,39 @@
         var config = options || {};
         var profile = activeProfile || resolveProfile(activeProfileName, activeProfileOverrides);
         var scope = root && root.nodeType === 1 ? root : document.body;
-        var revealSelectors = config.revealSelectors || profile.revealSelectors || defaultRevealSelectors;
+        var revealSelectors = toSelectorArray(config.revealSelectors || profile.revealSelectors || defaultRevealSelectors);
+        var revealSelectorText = revealSelectors.join(",");
         var throttleMs = Math.max(80, numberOrFallback(config.throttleMs, profile.autoRefreshThrottle));
         var pendingRoot = null;
 
+        function resolveRefreshRoot(nextRoot) {
+            if (!(nextRoot && nextRoot.nodeType === 1)) {
+                return scope;
+            }
+
+            var node = nextRoot;
+            if (!revealSelectorText) {
+                return node.parentElement || node;
+            }
+
+            if (typeof node.matches === "function" && node.matches(revealSelectorText)) {
+                return node;
+            }
+
+            if (typeof node.closest === "function") {
+                var match = node.closest(revealSelectorText);
+                if (match) {
+                    return match;
+                }
+            }
+
+            return node.parentElement || scope;
+        }
+
         function scheduleRefresh(nextRoot) {
-            if (nextRoot && nextRoot.nodeType === 1) {
-                pendingRoot = nextRoot;
+            var resolvedRoot = resolveRefreshRoot(nextRoot);
+            if (resolvedRoot) {
+                pendingRoot = resolvedRoot;
             }
 
             if (autoRefreshTimer) {

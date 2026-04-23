@@ -846,6 +846,49 @@
             if (modeEl) modeEl.textContent = 'Publico';
         }
 
+        function isNodeInViewport(node) {
+            if (!(node instanceof HTMLElement)) return false;
+            const rect = node.getBoundingClientRect();
+            const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+            const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+            if (!viewportHeight || !viewportWidth) return false;
+            return rect.bottom >= 0
+                && rect.right >= 0
+                && rect.top <= viewportHeight
+                && rect.left <= viewportWidth;
+        }
+
+        function forceVisibleRevealNodes(root) {
+            const scope = root instanceof Element ? root : document;
+            const revealNodes = [];
+
+            if (scope instanceof HTMLElement && scope.classList.contains('wf-reveal')) {
+                revealNodes.push(scope);
+            }
+
+            revealNodes.push(...scope.querySelectorAll('.wf-reveal'));
+
+            revealNodes.forEach((node) => {
+                if (!(node instanceof HTMLElement)) return;
+                if (node.classList.contains('is-visible')) return;
+                if (node.hidden || node.closest('[hidden]')) return;
+                if (!node.getClientRects().length) return;
+                if (!isNodeInViewport(node)) return;
+                node.classList.add('is-visible');
+            });
+        }
+
+        function safeRefreshLibraryMotion(root) {
+            const scope = root instanceof Element ? root : document;
+            if (window.WFStoreMotion && typeof window.WFStoreMotion.refresh === 'function') {
+                window.WFStoreMotion.refresh(scope);
+            }
+
+            window.requestAnimationFrame(() => {
+                forceVisibleRevealNodes(scope);
+            });
+        }
+
         function closeDetail() {
             if (!detailEl) return;
             detailEl.hidden = true;
@@ -893,6 +936,7 @@
             `;
 
             detailEl.hidden = false;
+            safeRefreshLibraryMotion(detailEl);
             detailEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
@@ -930,6 +974,7 @@
             `;
 
             featuredEl.hidden = false;
+            safeRefreshLibraryMotion(featuredEl);
         }
 
         function renderFilters() {
@@ -959,6 +1004,7 @@
                         Nenhuma leitura encontrada para o filtro atual.
                     </div>
                 `;
+                safeRefreshLibraryMotion(gridEl);
                 return;
             }
 
@@ -983,6 +1029,8 @@
                     </div>
                 </article>
             `).join('');
+
+            safeRefreshLibraryMotion(gridEl);
         }
 
         function applyFilters() {
@@ -1230,6 +1278,7 @@
         }
 
         bindEvents();
+        safeRefreshLibraryMotion(document.querySelector('.library-premium'));
         loadCatalog();
     })();
 </script>

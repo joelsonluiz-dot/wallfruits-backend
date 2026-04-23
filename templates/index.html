@@ -126,8 +126,10 @@
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
-    .home-offers-section {
+    .home-market-shell {
         margin-top: 3.5rem;
+        display: grid;
+        gap: 0.72rem;
     }
 
     .home-offers-section,
@@ -141,6 +143,95 @@
         -webkit-backdrop-filter: blur(7px);
         padding: 0.9rem 0.88rem;
         box-shadow: 0 14px 28px rgba(24, 81, 123, 0.1);
+    }
+
+    .home-market-shell .home-offers-section,
+    .home-market-shell .home-services-section {
+        margin-top: 0;
+    }
+
+    .home-market-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.55rem;
+    }
+
+    .home-market-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.34rem;
+        border-radius: 999px;
+        border: 1px solid rgba(24, 102, 152, 0.18);
+        background: rgba(255, 255, 255, 0.78);
+        color: #174f7f;
+        font-size: 0.68rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        padding: 0.24rem 0.56rem;
+    }
+
+    .home-market-tabbar {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.28rem;
+        border-radius: 999px;
+        border: 1px solid rgba(23, 95, 143, 0.18);
+        background: rgba(255, 255, 255, 0.82);
+        padding: 0.2rem;
+    }
+
+    .home-market-tab {
+        border: none;
+        border-radius: 999px;
+        background: transparent;
+        color: #356488;
+        font-size: 0.74rem;
+        font-weight: 800;
+        padding: 0.34rem 0.7rem;
+        cursor: pointer;
+        transition: background var(--wf-motion-fast) ease, color var(--wf-motion-fast) ease, transform var(--wf-motion-fast) ease;
+    }
+
+    .home-market-tab:hover {
+        transform: translateY(-1px);
+    }
+
+    .home-market-tab.active {
+        background: linear-gradient(135deg, #0f5f87, #1e7f57);
+        color: #ffffff;
+        box-shadow: 0 10px 20px rgba(16, 86, 120, 0.26);
+    }
+
+    .home-market-viewport {
+        overflow-x: auto;
+        overflow-y: visible;
+        scroll-snap-type: x mandatory;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        touch-action: pan-x;
+        cursor: grab;
+        border-radius: 16px;
+    }
+
+    .home-market-viewport.is-dragging {
+        cursor: grabbing;
+    }
+
+    .home-market-viewport::-webkit-scrollbar {
+        display: none;
+    }
+
+    .home-market-track {
+        display: flex;
+        width: 100%;
+    }
+
+    .home-market-panel {
+        min-width: 100%;
+        scroll-snap-align: start;
     }
 
     .home-section-title {
@@ -160,7 +251,7 @@
     }
 
     .home-services-section {
-        margin-top: 1.34rem;
+        margin-top: 0;
     }
 
     .home-services-row {
@@ -759,13 +850,25 @@
         .stat-card { padding: 1.15rem; }
         .stat-value { font-size: 1.6rem; }
         .stat-label { font-size: 0.7rem; }
-        .home-offers-section { margin-top: 2.5rem; }
+        .home-market-shell { margin-top: 2.5rem; }
         .home-offers-section,
         .home-products-section,
         .home-services-section,
         .home-community-section {
             border-radius: 14px;
             padding: 0.72rem 0.7rem;
+        }
+        .home-market-head {
+            align-items: flex-start;
+        }
+        .home-market-tabbar {
+            width: 100%;
+            justify-content: space-between;
+        }
+        .home-market-tab {
+            flex: 1;
+            min-width: 0;
+            text-align: center;
         }
         .hero-actions { flex-direction: column; align-items: center; }
         .hero-actions .btn { width: 100%; max-width: 300px; }
@@ -1028,25 +1131,67 @@
     </div>
 </section>
 
-<section class="home-offers-section">
-    <div class="home-offers-head">
-        <div>
-            <h2 class="wf-section-title home-section-title">Ofertas em <span class="wf-gradient-text">destaque</span></h2>
-            <p class="home-section-subtitle">Clique no card para abrir os detalhes completos em outra aba.</p>
-            <div class="home-live-controls" aria-label="Controles de atualização da home">
-                <button id="homeRefreshToggle" class="home-live-btn" type="button">
-                    <span class="material-icons">pause_circle</span>
-                    <span id="homeRefreshToggleText">Pausar auto-refresh</span>
-                </button>
-                <button id="homeRefreshInterval" class="home-live-btn" type="button">
-                    <span class="material-icons">schedule</span>
-                    <span id="homeRefreshIntervalText">45s</span>
-                </button>
-            </div>
+<section class="home-market-shell" id="homeMarketShell" aria-label="Início com Ofertas e Serviços">
+    <div class="home-market-head">
+        <span class="home-market-kicker">Início unificado</span>
+        <div class="home-market-tabbar" role="tablist" aria-label="Alternar entre ofertas e serviços">
+            <button
+                type="button"
+                class="home-market-tab active"
+                id="homeMarketTabOffers"
+                data-home-market-target="offers"
+                role="tab"
+                aria-controls="homeMarketOffersPanel"
+                aria-selected="true"
+            >Ofertas</button>
+            <button
+                type="button"
+                class="home-market-tab"
+                id="homeMarketTabServices"
+                data-home-market-target="services"
+                role="tab"
+                aria-controls="homeMarketServicesPanel"
+                aria-selected="false"
+                tabindex="-1"
+            >Serviços</button>
         </div>
-        <a href="/offers" class="btn btn-wf-secondary">Ver todas</a>
     </div>
-    <div id="homeOffersList" class="home-offers-list wf-stagger"></div>
+
+    <div class="home-market-viewport" id="homeMarketViewport" aria-live="polite">
+        <div class="home-market-track">
+            <section class="home-market-panel home-offers-section" id="homeMarketOffersPanel" data-home-market-panel="offers" role="tabpanel" aria-labelledby="homeMarketTabOffers" aria-hidden="false">
+                <div class="home-offers-head">
+                    <div>
+                        <h2 class="wf-section-title home-section-title">Ofertas em <span class="wf-gradient-text">destaque</span></h2>
+                        <p class="home-section-subtitle">Arraste para o lado para alternar sem sair da aba Início.</p>
+                        <div class="home-live-controls" aria-label="Controles de atualização da home">
+                            <button id="homeRefreshToggle" class="home-live-btn" type="button">
+                                <span class="material-icons">pause_circle</span>
+                                <span id="homeRefreshToggleText">Pausar auto-refresh</span>
+                            </button>
+                            <button id="homeRefreshInterval" class="home-live-btn" type="button">
+                                <span class="material-icons">schedule</span>
+                                <span id="homeRefreshIntervalText">45s</span>
+                            </button>
+                        </div>
+                    </div>
+                    <a href="/offers" class="btn btn-wf-secondary">Ver todas</a>
+                </div>
+                <div id="homeOffersList" class="home-offers-list wf-stagger"></div>
+            </section>
+
+            <section class="home-market-panel home-services-section" id="homeMarketServicesPanel" data-home-market-panel="services" role="tabpanel" aria-labelledby="homeMarketTabServices" aria-hidden="true">
+                <div class="home-offers-head">
+                    <div>
+                        <h2 class="wf-section-title home-section-title">Serviços em <span class="wf-gradient-text">destaque</span></h2>
+                        <p class="home-section-subtitle">Profissionais e operações agrícolas em evidência para solicitar orçamento rápido.</p>
+                    </div>
+                    <a href="/services" class="btn btn-wf-secondary">Ver serviços</a>
+                </div>
+                <div id="homeServiceHighlights" class="home-services-row"></div>
+            </section>
+        </div>
+    </div>
 </section>
 
 <section class="home-products-section">
@@ -1058,17 +1203,6 @@
         <a href="/store" class="btn btn-wf-secondary">Ir para loja</a>
     </div>
     <div id="homeFeaturedProducts" class="home-products-row"></div>
-</section>
-
-<section class="home-services-section">
-    <div class="home-offers-head">
-        <div>
-            <h2 class="wf-section-title home-section-title">Serviços em <span class="wf-gradient-text">destaque</span></h2>
-            <p class="home-section-subtitle">Profissionais e operações agrícolas em evidência para solicitar orçamento rápido.</p>
-        </div>
-        <a href="/services" class="btn btn-wf-secondary">Ver serviços</a>
-    </div>
-    <div id="homeServiceHighlights" class="home-services-row"></div>
 </section>
 
 <section class="home-community-section">
@@ -1111,10 +1245,12 @@
     const HOME_AUTO_REFRESH_OPTIONS = [20000, 45000, 90000];
     const HOME_REFRESH_PAUSED_KEY = 'wf_home_refresh_paused';
     const HOME_REFRESH_INTERVAL_KEY = 'wf_home_refresh_interval_ms';
+    const HOME_MARKET_TAB_SEQUENCE = ['offers', 'services'];
 
     let homeRefreshTimer = null;
     let homeRefreshPaused = false;
     let homeRefreshIntervalMs = HOME_AUTO_REFRESH_DEFAULT_MS;
+    let homeMarketActiveTab = 'offers';
     const homeSignatures = {
         offers: '',
         services: '',
@@ -1144,6 +1280,122 @@
         if (intervalText) {
             intervalText.textContent = homeIntervalLabel(homeRefreshIntervalMs);
         }
+    }
+
+    function updateHomeMarketTabsUi(activeTab) {
+        const safeTab = HOME_MARKET_TAB_SEQUENCE.includes(activeTab) ? activeTab : 'offers';
+        homeMarketActiveTab = safeTab;
+
+        document.querySelectorAll('[data-home-market-target]').forEach((button) => {
+            const target = String(button.getAttribute('data-home-market-target') || '');
+            const isActive = target === safeTab;
+            button.classList.toggle('active', isActive);
+            button.setAttribute('aria-selected', isActive ? 'true' : 'false');
+            button.setAttribute('tabindex', isActive ? '0' : '-1');
+        });
+
+        document.querySelectorAll('[data-home-market-panel]').forEach((panel) => {
+            const target = String(panel.getAttribute('data-home-market-panel') || '');
+            panel.setAttribute('aria-hidden', target === safeTab ? 'false' : 'true');
+        });
+    }
+
+    function scrollHomeMarketTo(tab, behavior = 'smooth') {
+        const viewport = document.getElementById('homeMarketViewport');
+        if (!viewport) return;
+
+        const safeTab = HOME_MARKET_TAB_SEQUENCE.includes(tab) ? tab : 'offers';
+        const targetIndex = HOME_MARKET_TAB_SEQUENCE.indexOf(safeTab);
+        const panelWidth = Math.max(1, viewport.clientWidth || viewport.offsetWidth || 1);
+        viewport.scrollTo({
+            left: targetIndex * panelWidth,
+            behavior,
+        });
+        updateHomeMarketTabsUi(safeTab);
+    }
+
+    function syncHomeMarketTabFromScroll() {
+        const viewport = document.getElementById('homeMarketViewport');
+        if (!viewport) return;
+        const panelWidth = Math.max(1, viewport.clientWidth || viewport.offsetWidth || 1);
+        const index = Math.max(0, Math.min(HOME_MARKET_TAB_SEQUENCE.length - 1, Math.round(viewport.scrollLeft / panelWidth)));
+        updateHomeMarketTabsUi(HOME_MARKET_TAB_SEQUENCE[index]);
+    }
+
+    function initHomeMarketTabs() {
+        const viewport = document.getElementById('homeMarketViewport');
+        if (!viewport) return;
+
+        let scrollRaf = 0;
+        let isDragging = false;
+        let dragPointerId = null;
+        let dragStartX = 0;
+        let dragStartLeft = 0;
+
+        document.querySelectorAll('[data-home-market-target]').forEach((button) => {
+            button.addEventListener('click', () => {
+                const target = String(button.getAttribute('data-home-market-target') || 'offers');
+                scrollHomeMarketTo(target, 'smooth');
+            });
+        });
+
+        viewport.addEventListener('scroll', () => {
+            if (scrollRaf) return;
+            scrollRaf = window.requestAnimationFrame(() => {
+                scrollRaf = 0;
+                syncHomeMarketTabFromScroll();
+            });
+        }, { passive: true });
+
+        viewport.addEventListener('pointerdown', (event) => {
+            if (event.pointerType === 'mouse' && event.button !== 0) return;
+            isDragging = true;
+            dragPointerId = event.pointerId;
+            dragStartX = event.clientX;
+            dragStartLeft = viewport.scrollLeft;
+            viewport.classList.add('is-dragging');
+            if (typeof viewport.setPointerCapture === 'function') {
+                viewport.setPointerCapture(event.pointerId);
+            }
+        });
+
+        viewport.addEventListener('pointermove', (event) => {
+            if (!isDragging) return;
+            if (dragPointerId !== null && event.pointerId !== dragPointerId) return;
+            const deltaX = event.clientX - dragStartX;
+            viewport.scrollLeft = dragStartLeft - deltaX;
+        });
+
+        const finishDrag = (event) => {
+            if (!isDragging) return;
+            if (dragPointerId !== null && event.pointerId !== dragPointerId) return;
+            isDragging = false;
+            dragPointerId = null;
+            viewport.classList.remove('is-dragging');
+            syncHomeMarketTabFromScroll();
+            scrollHomeMarketTo(homeMarketActiveTab, 'smooth');
+        };
+
+        viewport.addEventListener('pointerup', finishDrag);
+        viewport.addEventListener('pointercancel', finishDrag);
+
+        window.addEventListener('resize', () => {
+            window.requestAnimationFrame(() => {
+                scrollHomeMarketTo(homeMarketActiveTab, 'auto');
+            });
+        }, { passive: true });
+
+        let initialTab = 'offers';
+        try {
+            const queryTab = String(new URLSearchParams(window.location.search || '').get('home_tab') || '').toLowerCase();
+            if (HOME_MARKET_TAB_SEQUENCE.includes(queryTab)) {
+                initialTab = queryTab;
+            }
+        } catch {
+            initialTab = 'offers';
+        }
+
+        scrollHomeMarketTo(initialTab, 'auto');
     }
 
     function showHomeToast(message) {
@@ -1930,6 +2182,7 @@
     }, { passive: true });
 
     renderHomeRefreshControls();
+    initHomeMarketTabs();
 
     window.addEventListener('wf:advanced-settings-changed', (event) => {
         const settings = event.detail || {};

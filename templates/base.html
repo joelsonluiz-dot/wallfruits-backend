@@ -5293,7 +5293,8 @@
             setElementDisplay('navIntermediation', isLogged);
             setElementDisplay('navStrategy', isAdmin);
 
-            setElementDisplay('actionExplore', true);
+            setElementDisplay('actionCommunity', true);
+            setElementDisplay('actionStore', true);
             setElementDisplay('actionAgenda', true);
             setElementDisplay('actionAgendaPopup', true);
             setElementDisplay('actionNewOffer', isLogged);
@@ -6280,16 +6281,16 @@
                 <nav class="wf-bottom-menu" aria-label="Menu inferior">
                     <ul class="wf-bottom-menu-list">
                         <li class="wf-mobile-nav-slot" id="actionHome">
-                            <a href="/" class="wf-mobile-nav-item" title="Início">
+                            <a href="/" class="wf-mobile-nav-item" title="Início" data-active-paths="/,/offers,/services">
                                 <span class="material-icons wf-mobile-nav-icon">home</span>
                                 <span class="wf-mobile-nav-label">Início</span>
                             </a>
                         </li>
-                        <li class="wf-mobile-nav-slot" id="actionExplore">
-                            <a href="/offers" class="wf-mobile-nav-item" title="Ofertas">
-                                <span class="material-icons wf-mobile-nav-icon">local_offer</span>
+                        <li class="wf-mobile-nav-slot" id="actionCommunity">
+                            <a href="/community" class="wf-mobile-nav-item" title="Comunidade">
+                                <span class="material-icons wf-mobile-nav-icon">groups</span>
                                 <span class="wf-mobile-notif-badge" id="dockNotifBadge">0</span>
-                                <span class="wf-mobile-nav-label">Ofertas</span>
+                                <span class="wf-mobile-nav-label">Comunidade</span>
                             </a>
                         </li>
                         <li class="wf-mobile-nav-slot" id="actionAgenda">
@@ -6298,10 +6299,10 @@
                                 <span class="wf-mobile-nav-label">Agenda IA</span>
                             </a>
                         </li>
-                        <li class="wf-mobile-nav-slot" id="actionServices">
-                            <a href="/services" class="wf-mobile-nav-item" title="Serviços">
-                                <span class="material-icons wf-mobile-nav-icon">engineering</span>
-                                <span class="wf-mobile-nav-label">Serviços</span>
+                        <li class="wf-mobile-nav-slot" id="actionStore">
+                            <a href="/store" class="wf-mobile-nav-item" title="Loja">
+                                <span class="material-icons wf-mobile-nav-icon">shopping_bag</span>
+                                <span class="wf-mobile-nav-label">Loja</span>
                             </a>
                         </li>
                         <li class="wf-mobile-nav-slot" id="actionProfile">
@@ -6718,10 +6719,35 @@
                 return currentNorm === targetNorm || currentNorm.startsWith(`${targetNorm}/`);
             };
 
+            const isCustomActivePathMatch = (item, current) => {
+                const raw = String(item?.getAttribute('data-active-paths') || '').trim();
+                if (!raw) return null;
+
+                const currentNorm = normalizePath(current);
+                const paths = raw
+                    .split(',')
+                    .map((entry) => normalizePath(String(entry || '').trim()))
+                    .filter(Boolean);
+
+                if (!paths.length) return null;
+
+                return paths.some((path) => {
+                    if (path === '/') return currentNorm === '/';
+                    return currentNorm === path || currentNorm.startsWith(`${path}/`);
+                });
+            };
+
             const markActiveBySelector = (selector) => {
                 document.querySelectorAll(selector).forEach((item) => {
                     const href = item.getAttribute('href');
                     if (!href || href.startsWith('#') || href.startsWith('http')) return;
+
+                    const customMatch = isCustomActivePathMatch(item, currentPath);
+                    if (customMatch !== null) {
+                        item.classList.toggle('active', customMatch);
+                        return;
+                    }
+
                     item.classList.toggle('active', isPathMatch(currentPath, href));
                 });
             };
