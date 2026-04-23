@@ -169,6 +169,13 @@ class BusinessOSGovernanceAutopilotIn(BaseModel):
     max_actions: int = Field(default=8, ge=1, le=40)
 
 
+class BusinessOSTurboCycleIn(BaseModel):
+    apply: bool = False
+    source: str = Field(default="business_os_turbo_cycle", min_length=3, max_length=120)
+    max_actions: int = Field(default=10, ge=1, le=50)
+    min_segment_signals: int = Field(default=3, ge=1, le=20)
+
+
 def _default_agenda_profile() -> dict:
     return {
         "onboarding_complete": False,
@@ -2406,33 +2413,12 @@ def run_ai_business_os_signal_pipeline(
     }
 
 
-@router.post("/ops/business-os/governance-autopilot")
-def run_ai_business_os_governance_autopilot(
-    payload: BusinessOSGovernanceAutopilotIn,
-    request: Request,
-    days: int = Query(30, ge=1, le=365),
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    _require_admin_user(current_user)
-    if payload.apply:
-        _require_platform_write_user(current_user)
-
-    governance = _build_ai_governance_summary_payload(
-        db=db,
-        days=days,
-        include_recent=False,
-    )
-    cockpit = _build_ai_executive_cockpit_payload(db=db, days=days)
-    readiness = build_business_os_readiness(
-        governance_totals=governance.get("totals", {}),
-        loops_snapshot=cockpit.get("loops", {}),
-        goal_gaps=cockpit.get("goal_gaps", []),
-    )
-
-    source = str(payload.source or "business_os_autopilot").strip() or "business_os_autopilot"
-    max_actions = max(1, min(int(payload.max_actions or 8), 40))
-
+def _build_business_os_governance_proposed_actions(
+    *,
+    readiness: dict,
+    cockpit: dict,
+    max_actions: int,
+) -> list[dict]:
     recommendations = list(cockpit.get("recommended_actions") or [])
     missing_capabilities = list(readiness.get("missing_capabilities") or [])
     gaps = list(cockpit.get("goal_gaps") or [])
@@ -2499,6 +2485,41 @@ def run_ai_business_os_governance_autopilot(
         deduped.append(item)
         if len(deduped) >= max_actions:
             break
+
+    return deduped
+
+
+@router.post("/ops/business-os/governance-autopilot")
+def run_ai_business_os_governance_autopilot(
+    payload: BusinessOSGovernanceAutopilotIn,
+    request: Request,
+    days: int = Query(30, ge=1, le=365),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    _require_admin_user(current_user)
+    if payload.apply:
+        _require_platform_write_user(current_user)
+
+    governance = _build_ai_governance_summary_payload(
+        db=db,
+        days=days,
+        include_recent=False,
+    )
+    cockpit = _build_ai_executive_cockpit_payload(db=db, days=days)
+    readiness = build_business_os_readiness(
+        governance_totals=governance.get("totals", {}),
+        loops_snapshot=cockpit.get("loops", {}),
+        goal_gaps=cockpit.get("goal_gaps", []),
+    )
+
+    source = str(payload.source or "business_os_autopilot").strip() or "business_os_autopilot"
+    max_actions = max(1, min(int(payload.max_actions or 8), 40))
+    deduped = _build_business_os_governance_proposed_actions(
+        readiness=readiness,
+        cockpit=cockpit,
+        max_actions=max_actions,
+    )
 
     review_queue_service = AIDecisionReviewService(db)
     telemetry = AITelemetryService(db)
@@ -2578,6 +2599,146 @@ def run_ai_business_os_governance_autopilot(
             "reused_review_items": reused_count,
         },
         "actions": deduped,
+        "queue": queued_items,
+    }
+
+
+@router.post("/ops/business-os/turbo-cycle")
+def run_ai_business_os_turbo_cycle(
+    payload: BusinessOSTurboCycleIn,
+    request: Request,
+    days: int = Query(30, ge=1, le=365),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Comando unificado para aceleração tática 24h do Business OS."""
+    _require_admin_user(current_user)
+    if payload.apply:
+        _require_platform_write_user(current_user)
+
+    source = str(payload.source or "business_os_turbo_cycle").strip() or "business_os_turbo_cycle"
+    max_actions = max(1, min(int(payload.max_actions or 10), 50))
+    min_segment_signals = max(1, min(int(payload.min_segment_signals or 3), 20))
+
+    governance = _build_ai_governance_summary_payload(
+        db=db,
+        days=days,
+        include_recent=False,
+    )
+    cockpit = _build_ai_executive_cockpit_payload(db=db, days=days)
+    readiness = build_business_os_readiness(
+        governance_totals=governance.get("totals", {}),
+        loops_snapshot=cockpit.get("loops", {}),
+        goal_gaps=cockpit.get("goal_gaps", []),
+    )
+    marketing_funnel = _build_business_os_marketing_funnel_payload(
+        db=db,
+        days=days,
+        min_segment_signals=min_segment_signals,
+    )
+
+    actions = _build_business_os_governance_proposed_actions(
+        readiness=readiness,
+        cockpit=cockpit,
+        max_actions=max_actions,
+    )
+
+    telemetry = AITelemetryService(db)
+    review_queue_service = AIDecisionReviewService(db)
+    request_id = getattr(request.state, "request_id", None)
+
+    queued_items: list[dict] = []
+    created_count = 0
+    reused_count = 0
+
+    if payload.apply:
+        for index, action in enumerate(actions):
+            decision_payload = {
+                "event_id": f"{source}:{days}:{index}:{action.get('entity_id')}",
+                "risk_level": action.get("risk_level"),
+                "risk_score": action.get("risk_score"),
+                "requires_human_review": True,
+                "policy_reasons": [
+                    "business_os_turbo_cycle",
+                    str(action.get("reason") or "unknown"),
+                ],
+            }
+
+            row, created = review_queue_service.enqueue_review(
+                user_id=current_user.id,
+                action_type="business_os_turbo_task",
+                entity_id=str(action.get("entity_id") or f"turbo:{index}"),
+                decision=decision_payload,
+                context={
+                    "source": source,
+                    "title": action.get("title"),
+                    "summary": action.get("summary"),
+                    "window_days": days,
+                    "command": "turbo_cycle",
+                },
+            )
+
+            telemetry.log_event(
+                user_id=current_user.id,
+                event_type="ai_business_os_turbo_task_queued",
+                entity_type="ai_review_queue",
+                entity_id=str(row.id),
+                metadata={
+                    "source": source,
+                    "created": bool(created),
+                    "action": action,
+                    "window_days": days,
+                },
+                event_domain="business_os",
+                event_source="/api/ai/ops/business-os/turbo-cycle",
+                request_id=request_id,
+                idempotency_key=f"business-os-turbo:{source}:{days}:{index}:{action.get('entity_id')}",
+                commit=False,
+            )
+
+            if created:
+                created_count += 1
+            else:
+                reused_count += 1
+
+            queued_items.append(
+                {
+                    "created": bool(created),
+                    "item": review_queue_service.to_payload(row),
+                }
+            )
+
+        db.commit()
+
+    next_24h_plan = [
+        "Executar rotina de redução de fricção no checkout para segmentos críticos.",
+        "Ativar cobertura de atendimento proativo para sinais de risco alto.",
+        "Aplicar experimento de retenção em segmentos com maior desvio de conversão.",
+        "Revisar fila L1 por prioridade e fechar pendências de alto risco.",
+    ]
+
+    if actions:
+        next_24h_plan.extend([f"Priorizar: {str(item.get('title') or '-')}." for item in actions[:3]])
+
+    return {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "command": "BUSINESS_OS_TURBO_CYCLE_24H",
+        "window_days": days,
+        "source": source,
+        "apply": bool(payload.apply),
+        "readiness": readiness,
+        "marketing_funnel_summary": {
+            "segments": len(marketing_funnel.get("segments", []) or []),
+            "signals": len(marketing_funnel.get("signals", []) or []),
+            "experiments": len(marketing_funnel.get("experiments", []) or []),
+        },
+        "summary": {
+            "proposed_actions": len(actions),
+            "created_review_items": created_count,
+            "reused_review_items": reused_count,
+        },
+        "next_24h_plan": list(dict.fromkeys(next_24h_plan))[:10],
+        "actions": actions,
         "queue": queued_items,
     }
 

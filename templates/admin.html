@@ -257,6 +257,7 @@
         <div style="display:flex;gap:0.45rem;flex-wrap:wrap;">
             <button id="refreshAiBoReadinessBtn" class="btn btn-wf-secondary">Atualizar readiness</button>
             <button id="refreshAiBoRoadmapBtn" class="btn btn-wf-secondary">Atualizar roadmap</button>
+            <button id="runAiBoTurboCycleBtn" class="btn btn-wf-secondary">Turbo Cycle 24h</button>
             <button id="runAiBoGovernanceAutopilotBtn" class="btn btn-wf-secondary">Gerar tarefas governanca</button>
             <button id="runAiBoSignalPipelineBtn" class="btn btn-wf-primary">Executar pipeline</button>
         </div>
@@ -299,6 +300,25 @@
                     <tr><td colspan="3" style="padding:0.8rem;color:var(--wf-text-secondary);">Carregando plano de implementacao...</td></tr>
                 </tbody>
             </table>
+        </div>
+
+        <div style="margin-top:0.95rem; border-top:1px solid var(--wf-border); padding-top:0.85rem;">
+            <div id="aiBoTurboMeta" style="color:var(--wf-text-secondary);margin-bottom:0.2rem;">Comando Turbo Cycle pronto para execução.</div>
+            <div class="admin-mini-grid" id="aiBoTurboKpisGrid"></div>
+            <div class="admin-lists-grid" style="margin-top:0.85rem;">
+                <div class="admin-list-card">
+                    <h5>Plano tático 24h</h5>
+                    <ul id="aiBoTurboPlan" class="admin-bullet-list">
+                        <li>Execute o comando Turbo Cycle para gerar o plano imediato.</li>
+                    </ul>
+                </div>
+                <div class="admin-list-card">
+                    <h5>Tarefas críticas geradas</h5>
+                    <ul id="aiBoTurboTasks" class="admin-bullet-list">
+                        <li>Sem tarefas geradas nesta sessão.</li>
+                    </ul>
+                </div>
+            </div>
         </div>
 
         <div style="margin-top:1rem;border-top:1px solid var(--wf-border);padding-top:0.95rem;">
@@ -1118,6 +1138,81 @@
         }
     }
 
+    async function runAiBusinessOsTurboCycle() {
+        const button = document.getElementById('runAiBoTurboCycleBtn');
+        const meta = document.getElementById('aiBoTurboMeta');
+        const kpis = document.getElementById('aiBoTurboKpisGrid');
+        const original = button ? button.textContent : 'Turbo Cycle 24h';
+
+        const windowSelect = document.getElementById('aiGovWindowDays');
+        const selectedDays = Number(windowSelect?.value || aiGovernanceWindowDays || 30);
+        const days = Number.isFinite(selectedDays) && selectedDays > 0 ? selectedDays : 30;
+
+        if (button) {
+            button.disabled = true;
+            button.textContent = 'Executando...';
+        }
+
+        try {
+            const payload = await apiRequest(`/ai/ops/business-os/turbo-cycle?days=${encodeURIComponent(days)}`, 'POST', {
+                apply: true,
+                source: 'admin_panel',
+                max_actions: 10,
+                min_segment_signals: 3,
+            });
+
+            const summary = payload.summary || {};
+            const funnel = payload.marketing_funnel_summary || {};
+            const readiness = payload.readiness || {};
+
+            if (meta) {
+                meta.innerHTML = `
+                    Comando: <b>${esc(payload.command || 'BUSINESS_OS_TURBO_CYCLE_24H')}</b> ·
+                    Janela: <b>${numberFmt(payload.window_days || days)} dias</b> ·
+                    Maturidade: <b>${esc(String(readiness.maturity_level || '-').toUpperCase())}</b> ·
+                    Apply: <b>${payload.apply ? 'sim' : 'não'}</b>
+                `;
+            }
+
+            if (kpis) {
+                kpis.innerHTML = [
+                    governanceKpiCard('Ações propostas', numberFmt(summary.proposed_actions || 0)),
+                    governanceKpiCard('Fila criada', numberFmt(summary.created_review_items || 0)),
+                    governanceKpiCard('Fila reaproveitada', numberFmt(summary.reused_review_items || 0)),
+                    governanceKpiCard('Segmentos sinalizados', numberFmt(funnel.segments || 0)),
+                    governanceKpiCard('Sinais no funil', numberFmt(funnel.signals || 0)),
+                    governanceKpiCard('Experimentos', numberFmt(funnel.experiments || 0)),
+                ].join('');
+            }
+
+            const plan = Array.isArray(payload.next_24h_plan) ? payload.next_24h_plan : [];
+            const tasks = Array.isArray(payload.actions) ? payload.actions : [];
+
+            renderTextList('aiBoTurboPlan', plan, 'Sem plano tático gerado para a janela atual.');
+            renderTextList(
+                'aiBoTurboTasks',
+                tasks.map((item) => `${String(item.title || '-')}: ${String(item.summary || '-')}`),
+                'Sem tarefas críticas geradas nesta execução.'
+            );
+
+            await Promise.all([
+                loadAiGovernanceOps(),
+                loadAiExecutiveCockpit(),
+                loadAiBusinessOsReadinessRoadmap(),
+            ]);
+        } catch (err) {
+            if (meta) {
+                meta.textContent = err.message || 'Falha ao executar Turbo Cycle.';
+            }
+            alert(err.message || 'Falha ao executar Turbo Cycle 24h.');
+        } finally {
+            if (button) {
+                button.disabled = false;
+                button.textContent = original;
+            }
+        }
+    }
+
     async function runAiBusinessOsSignalPipeline() {
         const button = document.getElementById('runAiBoSignalPipelineBtn');
         const sourceInput = document.getElementById('aiBoPipelineSource');
@@ -1338,6 +1433,10 @@
 
     document.getElementById('runAiBoSignalPipelineBtn').addEventListener('click', () => {
         runAiBusinessOsSignalPipeline();
+    });
+
+    document.getElementById('runAiBoTurboCycleBtn').addEventListener('click', () => {
+        runAiBusinessOsTurboCycle();
     });
 
     document.getElementById('runAiBoGovernanceAutopilotBtn').addEventListener('click', () => {
