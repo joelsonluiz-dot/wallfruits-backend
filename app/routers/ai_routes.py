@@ -163,6 +163,12 @@ class BusinessOSSignalPipelineIn(BaseModel):
     events: list[BusinessOSSignalEventIn] = Field(default_factory=list, min_length=1, max_length=200)
 
 
+class BusinessOSGovernanceAutopilotIn(BaseModel):
+    apply: bool = False
+    source: str = Field(default="business_os_autopilot", min_length=3, max_length=120)
+    max_actions: int = Field(default=8, ge=1, le=40)
+
+
 def _default_agenda_profile() -> dict:
     return {
         "onboarding_complete": False,
@@ -2397,6 +2403,182 @@ def run_ai_business_os_signal_pipeline(
         },
         "priority_recommendations": priority_recommendations,
         "events": processed,
+    }
+
+
+@router.post("/ops/business-os/governance-autopilot")
+def run_ai_business_os_governance_autopilot(
+    payload: BusinessOSGovernanceAutopilotIn,
+    request: Request,
+    days: int = Query(30, ge=1, le=365),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    _require_admin_user(current_user)
+    if payload.apply:
+        _require_platform_write_user(current_user)
+
+    governance = _build_ai_governance_summary_payload(
+        db=db,
+        days=days,
+        include_recent=False,
+    )
+    cockpit = _build_ai_executive_cockpit_payload(db=db, days=days)
+    readiness = build_business_os_readiness(
+        governance_totals=governance.get("totals", {}),
+        loops_snapshot=cockpit.get("loops", {}),
+        goal_gaps=cockpit.get("goal_gaps", []),
+    )
+
+    source = str(payload.source or "business_os_autopilot").strip() or "business_os_autopilot"
+    max_actions = max(1, min(int(payload.max_actions or 8), 40))
+
+    recommendations = list(cockpit.get("recommended_actions") or [])
+    missing_capabilities = list(readiness.get("missing_capabilities") or [])
+    gaps = list(cockpit.get("goal_gaps") or [])
+
+    proposed_actions: list[dict] = []
+
+    for capability in missing_capabilities:
+        label = str(capability or "").strip()
+        if not label:
+            continue
+        proposed_actions.append(
+            {
+                "title": f"Fechar lacuna: {label}",
+                "summary": f"Planejar execução para resolver capacidade ausente {label}.",
+                "risk_level": "medium",
+                "risk_score": 0.58,
+                "reason": "capability_gap",
+                "entity_id": f"capability:{label}",
+            }
+        )
+
+    for action in recommendations:
+        label = str(action or "").strip()
+        if not label:
+            continue
+        risk_level = "high" if "risco" in label.lower() or "fila" in label.lower() else "medium"
+        risk_score = 0.72 if risk_level == "high" else 0.54
+        proposed_actions.append(
+            {
+                "title": f"Ação executiva: {label}",
+                "summary": label,
+                "risk_level": risk_level,
+                "risk_score": risk_score,
+                "reason": "executive_recommendation",
+                "entity_id": f"action:{label[:80]}",
+            }
+        )
+
+    for gap in gaps:
+        if not isinstance(gap, dict):
+            continue
+        loop_name = str(gap.get("loop") or "unknown")
+        kpi_name = str(gap.get("kpi") or "kpi")
+        delta = float(gap.get("delta") or 0.0)
+        gap_title = f"Corrigir gap {loop_name}/{kpi_name}"
+        proposed_actions.append(
+            {
+                "title": gap_title,
+                "summary": f"Reduzir desvio de {delta:.2f} no KPI {kpi_name} do loop {loop_name}.",
+                "risk_level": "high" if abs(delta) >= 5 else "medium",
+                "risk_score": 0.76 if abs(delta) >= 5 else 0.57,
+                "reason": "goal_gap",
+                "entity_id": f"gap:{loop_name}:{kpi_name}",
+            }
+        )
+
+    deduped: list[dict] = []
+    seen_titles: set[str] = set()
+    for item in proposed_actions:
+        normalized = str(item.get("title") or "").strip().lower()
+        if not normalized or normalized in seen_titles:
+            continue
+        seen_titles.add(normalized)
+        deduped.append(item)
+        if len(deduped) >= max_actions:
+            break
+
+    review_queue_service = AIDecisionReviewService(db)
+    telemetry = AITelemetryService(db)
+    request_id = getattr(request.state, "request_id", None)
+
+    queued_items: list[dict] = []
+    created_count = 0
+    reused_count = 0
+
+    if payload.apply:
+        for index, action in enumerate(deduped):
+            decision_payload = {
+                "event_id": f"{source}:{days}:{index}:{action.get('entity_id')}",
+                "risk_level": action.get("risk_level"),
+                "risk_score": action.get("risk_score"),
+                "requires_human_review": True,
+                "policy_reasons": [
+                    "business_os_autopilot",
+                    str(action.get("reason") or "unknown"),
+                ],
+            }
+
+            row, created = review_queue_service.enqueue_review(
+                user_id=current_user.id,
+                action_type="business_os_governance_task",
+                entity_id=str(action.get("entity_id") or f"autopilot:{index}"),
+                decision=decision_payload,
+                context={
+                    "source": source,
+                    "title": action.get("title"),
+                    "summary": action.get("summary"),
+                    "window_days": days,
+                },
+            )
+
+            telemetry.log_event(
+                user_id=current_user.id,
+                event_type="ai_business_os_governance_task_queued",
+                entity_type="ai_review_queue",
+                entity_id=str(row.id),
+                metadata={
+                    "source": source,
+                    "created": bool(created),
+                    "action": action,
+                    "window_days": days,
+                },
+                event_domain="business_os",
+                event_source="/api/ai/ops/business-os/governance-autopilot",
+                request_id=request_id,
+                idempotency_key=f"business-os-autopilot:{source}:{days}:{index}:{action.get('entity_id')}",
+                commit=False,
+            )
+
+            if created:
+                created_count += 1
+            else:
+                reused_count += 1
+
+            queued_items.append(
+                {
+                    "created": bool(created),
+                    "item": review_queue_service.to_payload(row),
+                }
+            )
+
+        db.commit()
+
+    return {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "window_days": days,
+        "source": source,
+        "apply": bool(payload.apply),
+        "readiness": readiness,
+        "summary": {
+            "proposed_actions": len(deduped),
+            "created_review_items": created_count,
+            "reused_review_items": reused_count,
+        },
+        "actions": deduped,
+        "queue": queued_items,
     }
 
 

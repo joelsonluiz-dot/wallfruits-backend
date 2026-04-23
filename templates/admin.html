@@ -257,6 +257,7 @@
         <div style="display:flex;gap:0.45rem;flex-wrap:wrap;">
             <button id="refreshAiBoReadinessBtn" class="btn btn-wf-secondary">Atualizar readiness</button>
             <button id="refreshAiBoRoadmapBtn" class="btn btn-wf-secondary">Atualizar roadmap</button>
+            <button id="runAiBoGovernanceAutopilotBtn" class="btn btn-wf-secondary">Gerar tarefas governanca</button>
             <button id="runAiBoSignalPipelineBtn" class="btn btn-wf-primary">Executar pipeline</button>
         </div>
     </div>
@@ -1019,8 +1020,11 @@
             ]);
 
             const readiness = readinessPayload.readiness || {};
-            const normalizedScore = normalizePercent01(readiness.score || 0);
+            const normalizedScore = normalizePercent01(readiness.maturity_score || 0);
             const scorePercent = normalizedScore * 100;
+            const missingCapabilities = Array.isArray(readiness.missing_capabilities) ? readiness.missing_capabilities : [];
+            const capabilitiesTotal = Number(readiness.capabilities_total || missingCapabilities.length || 0);
+            const capabilitiesEnabled = Math.max(0, capabilitiesTotal - missingCapabilities.length);
 
             meta.innerHTML = `
                 Janela: <b>${numberFmt(readinessPayload.window_days || days)} dias</b> ·
@@ -1030,13 +1034,13 @@
 
             kpis.innerHTML = [
                 governanceKpiCard('Score de maturidade', pct(scorePercent)),
-                governanceKpiCard('Capacidades ativas', `${numberFmt(readiness.capabilities_enabled || 0)}/${numberFmt(readiness.capabilities_total || 0)}`),
+                governanceKpiCard('Capacidades ativas', `${numberFmt(capabilitiesEnabled)}/${numberFmt(capabilitiesTotal)}`),
                 governanceKpiCard('Gaps estrategicos', `${numberFmt(readiness.goal_gaps_count || 0)}`),
                 governanceKpiCard('Alertas ativos', `${numberFmt(readiness.alerts_count || 0)}`),
-                governanceKpiCard('Proxima acao', readiness.next_best_action || '-'),
+                governanceKpiCard('Proxima acao', readiness.recommended_next_step || '-'),
             ].join('');
 
-            renderTextList('aiBoMissingCapabilities', readiness.missing_capabilities || [], 'Sem lacunas criticas de capacidade.');
+            renderTextList('aiBoMissingCapabilities', missingCapabilities, 'Sem lacunas criticas de capacidade.');
             renderTextList('aiBoPriorityRecommendations', readiness.priority_recommendations || [], 'Sem recomendacoes prioritarias para a janela.');
 
             const ritualAgenda = roadmapPayload.weekly_learning_ritual?.agenda || [];
@@ -1070,6 +1074,47 @@
             renderTextList('aiBoMissingCapabilities', [], 'Falha ao carregar capacidades em lacuna.');
             renderTextList('aiBoPriorityRecommendations', [], 'Falha ao carregar recomendacoes prioritarias.');
             renderTextList('aiBoWeeklyRitual', [], 'Falha ao carregar ritual semanal.');
+        }
+    }
+
+    async function runAiBusinessOsGovernanceAutopilot() {
+        const button = document.getElementById('runAiBoGovernanceAutopilotBtn');
+        const original = button ? button.textContent : 'Gerar tarefas governanca';
+        const windowSelect = document.getElementById('aiGovWindowDays');
+        const selectedDays = Number(windowSelect?.value || aiGovernanceWindowDays || 30);
+        const days = Number.isFinite(selectedDays) && selectedDays > 0 ? selectedDays : 30;
+
+        if (button) {
+            button.disabled = true;
+            button.textContent = 'Gerando...';
+        }
+
+        try {
+            const payload = await apiRequest(`/ai/ops/business-os/governance-autopilot?days=${encodeURIComponent(days)}`, 'POST', {
+                apply: true,
+                source: 'admin_panel',
+                max_actions: 8,
+            });
+
+            const summary = payload.summary || {};
+            alert(
+                `Autopilot concluído. Propostas: ${numberFmt(summary.proposed_actions || 0)} · ` +
+                `Criadas: ${numberFmt(summary.created_review_items || 0)} · ` +
+                `Reaproveitadas: ${numberFmt(summary.reused_review_items || 0)}.`
+            );
+
+            await Promise.all([
+                loadAiGovernanceOps(),
+                loadAiExecutiveCockpit(),
+                loadAiBusinessOsReadinessRoadmap(),
+            ]);
+        } catch (err) {
+            alert(err.message || 'Falha ao executar autopilot de governanca.');
+        } finally {
+            if (button) {
+                button.disabled = false;
+                button.textContent = original;
+            }
         }
     }
 
@@ -1293,6 +1338,10 @@
 
     document.getElementById('runAiBoSignalPipelineBtn').addEventListener('click', () => {
         runAiBusinessOsSignalPipeline();
+    });
+
+    document.getElementById('runAiBoGovernanceAutopilotBtn').addEventListener('click', () => {
+        runAiBusinessOsGovernanceAutopilot();
     });
 
     document.getElementById('persistAiBoMarketingBtn').addEventListener('click', () => {
