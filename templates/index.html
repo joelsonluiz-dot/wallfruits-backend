@@ -211,7 +211,8 @@
         scroll-snap-type: x mandatory;
         scrollbar-width: none;
         -ms-overflow-style: none;
-        touch-action: pan-x;
+        touch-action: pan-y pinch-zoom;
+        overscroll-behavior-x: contain;
         cursor: grab;
         border-radius: 16px;
     }
@@ -1348,6 +1349,7 @@
         }, { passive: true });
 
         viewport.addEventListener('pointerdown', (event) => {
+            if (event.pointerType !== 'mouse') return;
             if (event.pointerType === 'mouse' && event.button !== 0) return;
             isDragging = true;
             dragPointerId = event.pointerId;

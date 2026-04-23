@@ -67,6 +67,40 @@
         padding-bottom: 0.12rem;
     }
 
+    .services-showcase-tabs {
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        gap: 0.4rem;
+        padding-bottom: 0.12rem;
+    }
+
+    .services-showcase-tab {
+        border: 1px solid rgba(21, 84, 127, 0.2);
+        border-radius: 999px;
+        background: #ffffff;
+        color: #22537f;
+        font-size: 0.72rem;
+        font-weight: 800;
+        padding: 0.3rem 0.62rem;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: transform var(--wf-motion-fast) ease, box-shadow var(--wf-motion-fast) ease, border-color var(--wf-motion-fast) ease;
+    }
+
+    .services-showcase-tab:hover {
+        transform: translateY(-1px);
+        border-color: rgba(21, 84, 127, 0.36);
+        box-shadow: 0 8px 16px rgba(22, 70, 108, 0.14);
+    }
+
+    .services-showcase-tab.active {
+        border-color: transparent;
+        background: linear-gradient(130deg, #1b4f7f, #2d7fb3);
+        color: #fff;
+        box-shadow: 0 8px 16px rgba(21, 84, 127, 0.24);
+    }
+
     .services-category-chip {
         border: 1px solid rgba(23, 87, 58, 0.24);
         border-radius: 999px;
@@ -380,6 +414,7 @@
                 <input id="servicesSearchInput" class="wf-input form-control services-search-input" type="text" placeholder="Buscar por serviço, descrição, local ou categoria">
             </div>
         </div>
+        <div id="servicesShowcaseTabs" class="services-showcase-tabs"></div>
         <div id="servicesCategoryChips" class="services-category-chips"></div>
         <div id="servicesActiveFilters" class="services-active-filters"></div>
     </section>
@@ -425,6 +460,7 @@
 
         const listEl = document.getElementById('servicesList');
         const chipsEl = document.getElementById('servicesCategoryChips');
+        const showcaseTabsEl = document.getElementById('servicesShowcaseTabs');
         const servicesLoadMoreSentinel = document.getElementById('servicesLoadMoreSentinel');
         const servicesLoadMoreStatus = document.getElementById('servicesLoadMoreStatus');
         const SERVICES_ROUTE_CACHE_KEY = 'wf_route_cache_services_v1';
@@ -436,6 +472,7 @@
         let officialCategories = [];
         let selectedCategory = 'Todas';
         let servicesSearchTerm = '';
+        let selectedShowcaseStrategy = 'highlight';
         let servicesSearchDebounce = null;
         let servicesObserver = null;
         const servicesViewState = {
@@ -449,7 +486,15 @@
             loadingMore: false,
         };
 
-        if (!listEl || !chipsEl) return;
+        if (!listEl || !chipsEl || !showcaseTabsEl) return;
+
+        const SERVICES_SHOWCASE_STRATEGIES = [
+            { key: 'highlight', label: 'Destaques IA' },
+            { key: 'conversion', label: 'Alta conversão' },
+            { key: 'recent', label: 'Recém-publicados' },
+            { key: 'competitive', label: 'Preço competitivo' },
+            { key: 'availability', label: 'Disponibilidade imediata' },
+        ];
 
         function getServiceCategory(service) {
             const ficha = service && typeof service.ficha_tecnica === 'object' ? service.ficha_tecnica : {};
@@ -459,6 +504,47 @@
 
         function normalizeCategory(value) {
             return String(value || '').trim().toLowerCase();
+        }
+
+        function parseServicePrice(value) {
+            const raw = String(value || '').trim();
+            if (!raw) return Number.POSITIVE_INFINITY;
+
+            const normalized = raw
+                .replace(/\s+/g, '')
+                .replace(/R\$/gi, '')
+                .replace(/\./g, '')
+                .replace(/,/g, '.');
+
+            const num = Number.parseFloat(normalized.replace(/[^0-9.\-]/g, ''));
+            return Number.isFinite(num) ? num : Number.POSITIVE_INFINITY;
+        }
+
+        function getServiceTimestamp(service) {
+            const raw = service?.updated_at || service?.created_at;
+            if (!raw) return 0;
+            const value = new Date(raw).getTime();
+            return Number.isFinite(value) ? value : 0;
+        }
+
+        function isServiceImmediatelyAvailable(service) {
+            const statusInfo = normalizeServiceStatus(service?.status || (service?.is_active ? 'disponível' : 'indisponível'));
+            return !statusInfo.offline;
+        }
+
+        function computeShowcaseScore(service) {
+            let score = 0;
+            if (isServiceImmediatelyAvailable(service)) score += 40;
+            if (service?.imagem) score += 12;
+            if (Number.isFinite(parseServicePrice(service?.preco))) score += 10;
+            if (String(service?.descricao || '').length >= 70) score += 8;
+            if (String(service?.local || '').trim() && String(service?.local || '').toLowerCase() !== 'local não informado') score += 6;
+            const recency = getServiceTimestamp(service);
+            if (recency > 0) {
+                const ageHours = Math.max(0, (Date.now() - recency) / 3600000);
+                score += Math.max(0, 28 - Math.min(28, ageHours / 3));
+            }
+            return score;
         }
 
         function escapeHtml(text) {
@@ -665,6 +751,46 @@
             return `/messages?user_id=${encodeURIComponent(providerId)}&service_id=${encodeURIComponent(service.id)}&service_title=${title}&service_category=${category}`;
         }
 
+        function applyShowcaseStrategy(services) {
+            const items = Array.isArray(services) ? services.slice() : [];
+            const strategy = SERVICES_SHOWCASE_STRATEGIES.some((item) => item.key === selectedShowcaseStrategy)
+                ? selectedShowcaseStrategy
+                : 'highlight';
+
+            if (strategy === 'recent') {
+                return items.sort((a, b) => getServiceTimestamp(b) - getServiceTimestamp(a));
+            }
+
+            if (strategy === 'competitive') {
+                return items.sort((a, b) => parseServicePrice(a?.preco) - parseServicePrice(b?.preco));
+            }
+
+            if (strategy === 'availability') {
+                return items.sort((a, b) => Number(isServiceImmediatelyAvailable(b)) - Number(isServiceImmediatelyAvailable(a)));
+            }
+
+            if (strategy === 'conversion') {
+                return items.sort((a, b) => computeShowcaseScore(b) - computeShowcaseScore(a));
+            }
+
+            return items.sort((a, b) => computeShowcaseScore(b) - computeShowcaseScore(a));
+        }
+
+        function renderShowcaseTabs() {
+            showcaseTabsEl.innerHTML = SERVICES_SHOWCASE_STRATEGIES.map((item) => `
+                <button type="button" class="services-showcase-tab ${item.key === selectedShowcaseStrategy ? 'active' : ''}" data-showcase="${item.key}">${item.label}</button>
+            `).join('');
+
+            showcaseTabsEl.querySelectorAll('.services-showcase-tab').forEach((tab) => {
+                tab.addEventListener('click', () => {
+                    selectedShowcaseStrategy = tab.getAttribute('data-showcase') || 'highlight';
+                    renderShowcaseTabs();
+                    renderActiveFilterChips();
+                    renderFilteredServices('Nenhum serviço encontrado para os filtros selecionados.');
+                });
+            });
+        }
+
         function renderCategoryChips() {
             const fromServices = Array.from(new Set(allServices.map((service) => getServiceCategory(service))));
             const categories = Array.from(new Set([...(officialCategories || []), ...fromServices]));
@@ -695,6 +821,10 @@
             if (selectedCategory !== 'Todas') {
                 labels.push({ key: 'category', label: `Categoria: ${escapeHtml(selectedCategory)}` });
             }
+            if (selectedShowcaseStrategy !== 'highlight') {
+                const selectedLabel = SERVICES_SHOWCASE_STRATEGIES.find((item) => item.key === selectedShowcaseStrategy)?.label || 'Destaques IA';
+                labels.push({ key: 'showcase', label: `Vitrine: ${escapeHtml(selectedLabel)}` });
+            }
 
             if (!labels.length) {
                 chips.innerHTML = '';
@@ -719,13 +849,17 @@
                         if (searchInput) searchInput.value = '';
                     } else if (key === 'category') {
                         selectedCategory = 'Todas';
+                    } else if (key === 'showcase') {
+                        selectedShowcaseStrategy = 'highlight';
                     } else if (key === 'clearAll') {
                         servicesSearchTerm = '';
                         selectedCategory = 'Todas';
+                        selectedShowcaseStrategy = 'highlight';
                         const searchInput = document.getElementById('servicesSearchInput');
                         if (searchInput) searchInput.value = '';
                     }
 
+                    renderShowcaseTabs();
                     renderCategoryChips();
                     renderActiveFilterChips();
                     renderFilteredServices('Nenhum serviço encontrado para os filtros selecionados.');
@@ -916,7 +1050,7 @@
         }
 
         function renderFilteredServices(emptyMessage) {
-            const filtered = filteredServices();
+            const filtered = applyShowcaseStrategy(filteredServices());
             if (!filtered.length) {
                 renderError(emptyMessage || 'Nenhum serviço encontrado para os filtros selecionados.');
                 return;
@@ -975,6 +1109,8 @@
                 allServices = cached.services;
                 officialCategories = Array.isArray(cached.categories) ? cached.categories : [];
                 selectedCategory = 'Todas';
+                selectedShowcaseStrategy = 'highlight';
+                renderShowcaseTabs();
                 renderCategoryChips();
                 renderActiveFilterChips();
                 renderFilteredServices('Nenhum serviço encontrado para os filtros selecionados.');
@@ -1000,6 +1136,8 @@
                 servicesServerState.total = servicesData.total > 0 ? servicesData.total : services.length;
                 servicesServerState.hasMore = allServices.length < servicesServerState.total;
                 selectedCategory = 'Todas';
+                selectedShowcaseStrategy = 'highlight';
+                renderShowcaseTabs();
                 renderCategoryChips();
                 renderActiveFilterChips();
                 renderFilteredServices('Nenhum serviço encontrado para os filtros selecionados.');
@@ -1022,6 +1160,8 @@
                 allServices = fallbackServices;
                 officialCategories = [];
                 selectedCategory = 'Todas';
+                selectedShowcaseStrategy = 'highlight';
+                renderShowcaseTabs();
                 renderCategoryChips();
                 renderActiveFilterChips();
                 renderFilteredServices('Nenhum serviço encontrado para os filtros selecionados.');

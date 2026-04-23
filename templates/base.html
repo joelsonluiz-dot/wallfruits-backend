@@ -373,10 +373,48 @@
             align-items: center;
             justify-content: space-between;
             gap: 0.65rem;
+            position: relative;
         }
 
         .wf-topbar {
             display: none !important;
+        }
+
+        .wf-topbar-brand {
+            display: none;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.28rem 0.72rem;
+            border-radius: 999px;
+            border: 1px solid rgba(94, 127, 44, 0.18);
+            background: rgba(255, 255, 255, 0.52);
+            backdrop-filter: blur(12px);
+            box-shadow: 0 10px 24px rgba(58, 46, 24, 0.08);
+            color: var(--wf-text);
+            font-family: 'Merriweather', serif;
+            font-size: 0.95rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            text-decoration: none;
+            white-space: nowrap;
+            pointer-events: auto;
+        }
+
+        body.wf-user-logged-in .wf-topbar-brand {
+            display: inline-flex;
+        }
+
+        .wf-topbar-brand-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--wf-accent), var(--wf-accent2));
+            box-shadow: 0 0 0 4px rgba(94, 127, 44, 0.12);
+            flex: 0 0 auto;
         }
 
         .wf-topbar-title {
@@ -2485,11 +2523,14 @@
                     <div class="wf-topbar-title">Mercado digital do agro</div>
                     <div class="wf-topbar-subtitle">Tudo em uma única aba, com navegação centralizada e foco em uso real.</div>
                 </div>
+                <a class="wf-topbar-brand" href="/" aria-label="WallFruits">
+                    <span class="wf-topbar-brand-dot" aria-hidden="true"></span>
+                    WallFruits
+                </a>
                 <div class="wf-topbar-actions wf-mobile-quick-actions">
                     <a class="btn btn-wf-secondary" href="/offers">Ofertas</a>
                     <a class="btn btn-wf-secondary" href="/community">Comunidade</a>
                     <a class="btn btn-wf-secondary" href="/services">Serviços</a>
-                    <a class="btn btn-wf-secondary" href="/library">Biblioteca</a>
                     <a class="btn btn-wf-secondary" href="/messages" id="navTopMessages" style="display:none;">Mensagens</a>
                     <a class="btn btn-wf-primary" href="/offers/new" id="navTopNewOffer" style="display:none;">Nova oferta</a>
                 </div>
@@ -5370,6 +5411,8 @@
                 actionBar.classList.toggle('mobile-visible', mobileVisible);
             }
 
+            document.body.classList.toggle('wf-user-logged-in', isLogged);
+
             const quickActionsFab = document.getElementById('actionFloatingButton');
             if (quickActionsFab) {
                 quickActionsFab.style.display = isHomePath ? '' : 'none';
@@ -6340,10 +6383,6 @@
                             <span class="material-icons">shopping_bag</span>
                             <span>Loja</span>
                         </a>
-                        <a href="/library" class="wf-popup-item" id="actionPopupLibrary">
-                            <span class="material-icons">menu_book</span>
-                            <span>Biblioteca</span>
-                        </a>
                         <a href="/messages" class="wf-popup-item" id="actionMessages" style="display:none;">
                             <span class="material-icons">chat</span>
                             <span>Mensagens</span>
@@ -6371,10 +6410,6 @@
                         <a href="/notifications" class="wf-popup-item" id="actionNotifications" style="display:none;">
                             <span class="material-icons">notifications</span>
                             <span>Notificações</span>
-                        </a>
-                        <a href="/ai-agent?entry=nav" class="wf-popup-item" id="actionAgendaPopup" data-agenda-link="1">
-                            <span class="material-icons">event</span>
-                            <span>Agenda</span>
                         </a>
                         <a href="/offers/new" class="wf-popup-item" id="actionNewOffer" style="display:none;">
                             <span class="material-icons">add_circle</span>
@@ -6509,7 +6544,7 @@
                         <span>Suporte IA WallFruits</span>
                         <button class="wf-help-popup-close" id="helpPopupClose" type="button">Fechar</button>
                     </div>
-                    <iframe data-src="/ai-agent?entry=nav" src="about:blank" loading="lazy" title="Suporte IA WallFruits"></iframe>
+                    <iframe data-src="/ai-agent?entry=support" src="about:blank" loading="lazy" title="Suporte IA WallFruits"></iframe>
                 </div>
             </div>
 
@@ -6519,7 +6554,7 @@
                         <span>Suporte IA WallFruits</span>
                         <button class="wf-ai-modal-close" id="wfAiModalClose" type="button">Fechar</button>
                     </div>
-                    <iframe data-src="/ai-agent?entry=nav" src="about:blank" loading="lazy" title="Suporte IA WallFruits"></iframe>
+                    <iframe data-src="/ai-agent?entry=support" src="about:blank" loading="lazy" title="Suporte IA WallFruits"></iframe>
                 </div>
             </div>
 

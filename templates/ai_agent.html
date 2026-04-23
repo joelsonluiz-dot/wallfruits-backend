@@ -516,6 +516,21 @@
         .agenda-form-row, .agenda-weight-grid, .agenda-composer { grid-template-columns: 1fr; }
         .agenda-guardrail-grid { grid-template-columns: 1fr; }
     }
+
+    body.wf-support-chatbot-mode .agenda-hero,
+    body.wf-support-chatbot-mode .agenda-layout > .agenda-card:first-child,
+    body.wf-support-chatbot-mode .agenda-shell > .agenda-card {
+        display: none !important;
+    }
+
+    body.wf-support-chatbot-mode .agenda-layout {
+        grid-template-columns: 1fr;
+    }
+
+    body.wf-support-chatbot-mode .agenda-layout > .agenda-card:last-child {
+        max-width: 920px;
+        margin: 0 auto;
+    }
 </style>
 
 <div class="agenda-shell">
@@ -746,6 +761,8 @@
 
 <script>
     (function setupAgendaAgent() {
+        const QUERY_ENTRY = String(new URLSearchParams(window.location.search || '').get('entry') || '').trim().toLowerCase();
+        const IS_SUPPORT_MODE = QUERY_ENTRY === 'support';
         const IS_ADMIN = "{{ 'true' if current_user and current_user.role == 'admin' else 'false' }}" === 'true';
         const AGENDA_TEMPORARY_ACCESS = "{{ 'true' if agenda_temporary_access else 'false' }}" === 'true';
         const AGENDA_GUEST_ACCESS = "{{ 'true' if agenda_guest_access else 'false' }}" === 'true';
@@ -797,6 +814,21 @@
         const eventEnd = document.getElementById('eventEnd');
         const eventLocation = document.getElementById('eventLocation');
 
+        const loginNextHref = IS_SUPPORT_MODE
+            ? '/login?next=/ai-agent%3Fentry%3Dsupport'
+            : '/login?next=/ai-agent%3Fentry%3Dnav';
+
+        if (IS_SUPPORT_MODE) {
+            document.body.classList.add('wf-support-chatbot-mode');
+            const chatTitle = document.querySelector('.agenda-layout > .agenda-card:last-child .agenda-card-head h2');
+            if (chatTitle) {
+                chatTitle.textContent = 'Suporte inteligente';
+            }
+            if (questionInput) {
+                questionInput.placeholder = 'Pergunte qualquer coisa sobre a plataforma WallFruits';
+            }
+        }
+
         const agendaCache = {
             profile: null,
             profileFetchedAt: 0,
@@ -841,7 +873,7 @@
 
         function requireAuth() {
             if (!localStorage.getItem('token')) {
-                window.location.href = '/login?next=/ai-agent%3Fentry%3Dnav';
+                window.location.href = loginNextHref;
                 return false;
             }
             return true;
@@ -871,7 +903,7 @@
             }
 
             if (lockPrimaryCta) {
-                lockPrimaryCta.href = options.primaryHref || '/login?next=/ai-agent%3Fentry%3Dnav';
+                lockPrimaryCta.href = options.primaryHref || loginNextHref;
                 lockPrimaryCta.textContent = options.primaryLabel || 'Entrar para continuar';
             }
 
@@ -910,11 +942,11 @@
                 ? window.wfSubscriptionCtaCopy('agenda_upgrade', 'Ver planos e assinar')
                 : 'Ver planos e assinar';
             const primaryHref = isGuestMode
-                ? '/login?next=/ai-agent%3Fentry%3Dnav'
+                ? loginNextHref
                 : '/pricing';
             const primaryLabel = isGuestMode ? 'Entrar para continuar' : upgradeLabel;
             const redirectTarget = isGuestMode
-                ? '/login?next=/ai-agent%3Fentry%3Dnav'
+                ? loginNextHref
                 : '/pricing';
 
             if (!isGuestMode && typeof window.wfTrackSubscriptionCtaEvent === 'function') {
