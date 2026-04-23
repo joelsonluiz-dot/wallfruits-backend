@@ -66,6 +66,7 @@ Dockerfile
 .dockerignore
 
 # Temporary files
+tmp/
 *.tmp
 *.bak
 *.cache
