@@ -1507,7 +1507,19 @@
             }
 
             .wf-topbar {
+                display: flex !important;
+                justify-content: center;
                 padding: 0.56rem 0.86rem;
+                min-height: 58px;
+            }
+
+            .wf-topbar > div:first-child,
+            .wf-topbar-actions {
+                display: none !important;
+            }
+
+            .wf-topbar-brand {
+                display: inline-flex !important;
             }
 
             .wf-container {
