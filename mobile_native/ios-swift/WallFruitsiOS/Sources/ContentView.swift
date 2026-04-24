@@ -1,24 +1,30 @@
 import SwiftUI
 
 struct ContentView: View {
-    @StateObject private var viewModel = FeedViewModel()
+    @StateObject private var authViewModel = AuthViewModel()
 
     var body: some View {
-        TabView {
-            FeedView(viewModel: viewModel)
-                .tabItem {
-                    Label("Feed", systemImage: "play.rectangle.fill")
-                }
+        Group {
+            if authViewModel.isAuthenticated {
+                TabView {
+                    FeedView(viewModel: FeedViewModel())
+                        .tabItem {
+                            Label("Feed", systemImage: "play.rectangle.fill")
+                        }
 
-            Text("Marketplace")
-                .tabItem {
-                    Label("Market", systemImage: "bag.fill")
-                }
+                    Text("Marketplace")
+                        .tabItem {
+                            Label("Market", systemImage: "bag.fill")
+                        }
 
-            Text("AI Lab")
-                .tabItem {
-                    Label("AI", systemImage: "sparkles")
+                    Text("AI Lab")
+                        .tabItem {
+                            Label("AI", systemImage: "sparkles")
+                        }
                 }
+            } else {
+                LoginView(viewModel: authViewModel)
+            }
         }
     }
 }

@@ -11,25 +11,22 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun HomeScreen(viewModel: HomeViewModel) {
-    var selectedTab by remember { mutableIntStateOf(0) }
+fun HomeScreen(viewModel: AuthViewModel) {
+    val state = viewModel.state.collectAsState().value
 
     Scaffold(
         bottomBar = {
             NavigationBar {
                 listOf("Feed", "Market", "AI").forEachIndexed { index, label ->
                     NavigationBarItem(
-                        selected = selectedTab == index,
-                        onClick = { selectedTab = index },
+                        selected = index == 0,
+                        onClick = { },
                         label = { Text(label) },
                         icon = {},
                     )
@@ -50,11 +47,11 @@ fun HomeScreen(viewModel: HomeViewModel) {
                 style = MaterialTheme.typography.headlineMedium,
             )
             Text(
-                text = "Starter nativo em Kotlin + Compose + Hilt",
+                text = "JWT ativo para ${state.userName ?: "usuario"}",
                 style = MaterialTheme.typography.bodyMedium,
             )
-            Button(onClick = { viewModel.refresh() }) {
-                Text("Atualizar feed")
+            Button(onClick = viewModel::logout) {
+                Text("Sair")
             }
         }
     }
