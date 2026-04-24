@@ -36,3 +36,7 @@
 - Home feed
 - Navegacao por abas
 - Publicacao de conteudo
+
+## Teste no proprio iPhone
+- Para teste rapido sem publicacao publica, veja [docs/IOS_BETA_PRIVADA.md](../../docs/IOS_BETA_PRIVADA.md).
+- Se voce so tiver Windows, o fluxo recomendado usa GitHub Actions para gerar o build e TestFlight para instalar no iPhone.

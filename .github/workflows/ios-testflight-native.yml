@@ -1,33 +1,50 @@
-name: iOS Native TestFlight (Template)
+name: iOS Native TestFlight
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'mobile_native/ios-swift/**'
+      - '.github/workflows/ios-testflight-native.yml'
+      - 'docs/IOS_BETA_PRIVADA.md'
+      - 'docs/CI_CD_MOBILE_PRODUCAO.md'
   workflow_dispatch:
-    inputs:
-      app_project_path:
-        description: "Caminho do .xcodeproj nativo (ex: mobile_native/ios-swift/WallFruitsiOS.xcodeproj)"
-        required: true
-        type: string
-      app_scheme:
-        description: "Scheme de build (ex: WallFruitsiOS)"
-        required: true
-        type: string
 
 jobs:
   build-and-upload-testflight:
-    runs-on: macos-latest
+    runs-on: macos-14
     permissions:
       contents: read
+
+    env:
+      APP_PROJECT_DIR: mobile_native/ios-swift/WallFruitsiOS
+      APP_PROJECT_PATH: mobile_native/ios-swift/WallFruitsiOS/WallFruitsiOS.xcodeproj
+      APP_SCHEME: WallFruitsiOS
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install XcodeGen
+        shell: bash
+        run: |
+          set -euo pipefail
+          brew install xcodegen
+
+      - name: Generate Xcode project
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$APP_PROJECT_DIR"
+          xcodegen generate
+
       - name: Validate iOS project path
         shell: bash
         run: |
           set -euo pipefail
-          test -d "${{ github.event.inputs.app_project_path }}" || {
-            echo "Projeto iOS nativo nao encontrado no caminho informado."
+          test -d "$APP_PROJECT_PATH" || {
+            echo "Projeto iOS nativo nao encontrado depois da geracao do XcodeGen."
             exit 1
           }
 
@@ -70,12 +87,14 @@ jobs:
           }
           EOF
 
-          xcodebuild -list -project "${{ github.event.inputs.app_project_path }}"
+          xcodebuild -list -project "$APP_PROJECT_PATH"
 
           fastlane run build_app \
-            project:"${{ github.event.inputs.app_project_path }}" \
-            scheme:"${{ github.event.inputs.app_scheme }}" \
+            project:"$APP_PROJECT_PATH" \
+            scheme:"$APP_SCHEME" \
             export_method:app-store \
+            export_team_id:"${APPLE_TEAM_ID}" \
+            xcargs:"DEVELOPMENT_TEAM=${APPLE_TEAM_ID} CODE_SIGN_STYLE=Automatic" \
             clean:true \
             output_directory:"build_ios" \
             output_name:"WallFruits.ipa"

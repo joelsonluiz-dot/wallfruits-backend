@@ -35,15 +35,17 @@ Automatizar build e distribuicao de apps mobile no padrao nativo:
 
 ## iOS - Precondicoes
 1. Projeto iOS nativo existente no repositorio.
-2. Caminho do .xcodeproj informado no workflow dispatch.
-3. Scheme de build existente e assinaturas configuradas.
+2. O `project.yml` do starter deve gerar o `.xcodeproj` automaticamente via XcodeGen.
+3. Assinaturas configuradas no App Store Connect.
 
 ## iOS - Como executar
-1. Abrir Actions -> iOS Native TestFlight (Template)
-2. Informar:
-   - app_project_path
-   - app_scheme
-3. Executar e validar upload no App Store Connect/TestFlight
+1. Abrir Actions -> iOS Native TestFlight
+2. Ou fazer push em `main` a partir do VS Code.
+3. Validar upload no App Store Connect/TestFlight.
+
+## iOS - Beta privada no proprio iPhone
+- Use o guia em [IOS_BETA_PRIVADA.md](IOS_BETA_PRIVADA.md) para testar no seu aparelho sem publicar na App Store.
+- Para beta privada com outras pessoas, adicione testers internos no App Store Connect e distribua via TestFlight.
 
 ## Validacao final de producao
 - Android instala e autentica
