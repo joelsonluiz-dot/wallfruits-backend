@@ -8,6 +8,9 @@ final class AuthViewModel: ObservableObject {
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
     @Published var currentUser: ApiUser?
+    @Published var offersTotal: Int = 0
+    @Published var ordersTotal: Int = 0
+    @Published var aiSignals: Int = 0
 
     private let api = AuthAPI.shared
     private let sessionStore = SessionStore.shared
@@ -33,6 +36,7 @@ final class AuthViewModel: ObservableObject {
                 sessionStore.save(token: response.accessToken)
                 currentUser = response.user
                 isLoading = false
+                await refreshDashboard()
             } catch {
                 errorMessage = error.localizedDescription
                 isLoading = false
@@ -43,8 +47,21 @@ final class AuthViewModel: ObservableObject {
     func loadCurrentUser(token: String) async {
         do {
             currentUser = try await api.me(token: token)
+            await refreshDashboard()
         } catch {
             sessionStore.clear()
+        }
+    }
+
+    func refreshDashboard() async {
+        guard let token = sessionStore.load() else { return }
+        do {
+            let snapshot = try await api.dashboardSnapshot(token: token)
+            offersTotal = snapshot.offersTotal
+            ordersTotal = snapshot.ordersTotal
+            aiSignals = snapshot.aiSignals
+        } catch {
+            // Mantem UI funcional mesmo se alguma secao ainda nao retornar dados.
         }
     }
 
@@ -53,5 +70,8 @@ final class AuthViewModel: ObservableObject {
         currentUser = nil
         email = ""
         password = ""
+        offersTotal = 0
+        ordersTotal = 0
+        aiSignals = 0
     }
 }

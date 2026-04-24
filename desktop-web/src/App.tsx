@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { APP_STORE_URL, PLAY_STORE_URL } from './config';
-import { fetchMe, login, type ApiUser } from './api';
+import { fetchDashboardSnapshot, fetchMe, login, type ApiUser } from './api';
 
 type Session = {
   token: string;
@@ -27,6 +27,9 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hydrating, setHydrating] = useState(Boolean(session));
+  const [offersTotal, setOffersTotal] = useState(0);
+  const [ordersTotal, setOrdersTotal] = useState(0);
+  const [aiSignals, setAiSignals] = useState(0);
 
   useEffect(() => {
     if (!session?.token) {
@@ -48,6 +51,31 @@ export default function App() {
       })
       .finally(() => {
         if (mounted) setHydrating(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [session?.token]);
+
+  useEffect(() => {
+    if (!session?.token) {
+      return;
+    }
+
+    let mounted = true;
+    fetchDashboardSnapshot(session.token)
+      .then((snapshot) => {
+        if (!mounted) return;
+        setOffersTotal(snapshot.offersTotal);
+        setOrdersTotal(snapshot.ordersTotal);
+        setAiSignals(snapshot.aiSignals);
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setOffersTotal(0);
+        setOrdersTotal(0);
+        setAiSignals(0);
       });
 
     return () => {
@@ -79,6 +107,21 @@ export default function App() {
     setSession(null);
     setEmail('');
     setPassword('');
+    setOffersTotal(0);
+    setOrdersTotal(0);
+    setAiSignals(0);
+  }
+
+  async function refreshDashboard() {
+    if (!session?.token) return;
+    try {
+      const snapshot = await fetchDashboardSnapshot(session.token);
+      setOffersTotal(snapshot.offersTotal);
+      setOrdersTotal(snapshot.ordersTotal);
+      setAiSignals(snapshot.aiSignals);
+    } catch {
+      setError('Nao foi possivel atualizar Feed/Marketplace/IA agora.');
+    }
   }
 
   if (hydrating) {
@@ -107,6 +150,11 @@ export default function App() {
             ))}
           </div>
           <div style={{ marginTop: 20 }}>
+            <button className="button" onClick={refreshDashboard} type="button">
+              Atualizar Feed/Market/IA
+            </button>
+          </div>
+          <div style={{ marginTop: 12 }}>
             <button className="button" onClick={logout} type="button">
               Sair
             </button>
@@ -116,15 +164,15 @@ export default function App() {
         <section className="grid">
           <article className="card">
             <h2>Feed</h2>
-            <p>Autenticacao JWT integrada com o backend real.</p>
+            <p>Ofertas retornadas por /api/offers: {offersTotal}</p>
           </article>
           <article className="card">
             <h2>Marketplace</h2>
-            <p>Estrutura pronta para conectores de ofertas e compras.</p>
+            <p>Pedidos retornados por /api/store/orders/my: {ordersTotal}</p>
           </article>
           <article className="card">
             <h2>AI Lab</h2>
-            <p>Base para automacao e assistentes no desktop.</p>
+            <p>Sinais de mercado por /api/ai/agenda/market-intelligence: {aiSignals}</p>
           </article>
         </section>
       </main>

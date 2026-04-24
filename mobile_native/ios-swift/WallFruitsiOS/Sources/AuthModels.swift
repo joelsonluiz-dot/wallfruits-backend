@@ -35,3 +35,17 @@ struct LoginResponse: Codable {
         case user
     }
 }
+
+struct OffersResponse: Codable {
+    let total: Int
+}
+
+struct StoreOrdersResponse: Codable {
+    let total: Int
+}
+
+struct DashboardSnapshot {
+    let offersTotal: Int
+    let ordersTotal: Int
+    let aiSignals: Int
+}

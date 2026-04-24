@@ -1,25 +1,32 @@
 import SwiftUI
 
-final class FeedViewModel: ObservableObject {
-    @Published var posts: [String] = ["WallFruits ready", "Native iOS starter"]
-
-    func refresh() {
-        posts = ["Refreshing feed...", "Connected to API client scaffold"]
-    }
-}
-
 struct FeedView: View {
-    @ObservedObject var viewModel: FeedViewModel
+    let userName: String
+    let offersTotal: Int
+    let ordersTotal: Int
+    let aiSignals: Int
+    let onRefresh: () -> Void
+    let onLogout: () -> Void
 
     var body: some View {
         NavigationStack {
-            List(viewModel.posts, id: \.self) { post in
-                Text(post)
+            List {
+                Section("Sessao") {
+                    Text("JWT ativo para \(userName)")
+                }
+                Section("Integracoes") {
+                    Text("Feed /api/offers: \(offersTotal)")
+                    Text("Marketplace /api/store/orders/my: \(ordersTotal)")
+                    Text("IA /api/ai/agenda/market-intelligence: \(aiSignals)")
+                }
             }
             .navigationTitle("WallFruits")
             .toolbar {
                 Button("Refresh") {
-                    viewModel.refresh()
+                    onRefresh()
+                }
+                Button("Sair") {
+                    onLogout()
                 }
             }
         }

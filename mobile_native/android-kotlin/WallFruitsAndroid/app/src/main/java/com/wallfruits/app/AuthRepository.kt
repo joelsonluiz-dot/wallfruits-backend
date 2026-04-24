@@ -19,5 +19,18 @@ class AuthRepository @Inject constructor(
 
     fun currentToken(): String? = sessionStore.accessToken
 
+    suspend fun loadDashboardSnapshot(): DashboardSnapshot {
+        val offers = api.offers(limit = 5)
+        val orders = api.myOrders()
+        val ai = api.marketIntelligence()
+
+        val aiSignals = ai.alerts.size + ai.recommendations.size + ai.opportunities.size
+        return DashboardSnapshot(
+            offersTotal = offers.total,
+            ordersTotal = orders.total,
+            aiSignals = aiSignals,
+        )
+    }
+
     fun logout() = sessionStore.clear()
 }

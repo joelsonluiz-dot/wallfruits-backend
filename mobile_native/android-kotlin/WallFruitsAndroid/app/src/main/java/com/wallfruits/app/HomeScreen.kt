@@ -50,6 +50,13 @@ fun HomeScreen(viewModel: AuthViewModel) {
                 text = "JWT ativo para ${state.userName ?: "usuario"}",
                 style = MaterialTheme.typography.bodyMedium,
             )
+            Text(
+                text = "Feed: ${state.offersTotal} | Marketplace: ${state.ordersTotal} | IA: ${state.aiSignals}",
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            Button(onClick = viewModel::refreshDashboard) {
+                Text("Atualizar dados")
+            }
             Button(onClick = viewModel::logout) {
                 Text("Sair")
             }

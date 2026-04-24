@@ -20,6 +20,7 @@ class AuthViewModel @Inject constructor(
     init {
         repository.currentUserName()?.let { userName ->
             _state.update { it.copy(isLoggedIn = true, userName = userName) }
+            refreshDashboard()
         }
     }
 
@@ -46,11 +47,28 @@ class AuthViewModel @Inject constructor(
                         errorMessage = null,
                     )
                 }
+                refreshDashboard()
             }.onFailure { throwable ->
                 _state.update {
                     it.copy(
                         isLoading = false,
                         errorMessage = throwable.message ?: "Falha ao autenticar",
+                    )
+                }
+            }
+        }
+    }
+
+    fun refreshDashboard() {
+        viewModelScope.launch {
+            runCatching {
+                repository.loadDashboardSnapshot()
+            }.onSuccess { snapshot ->
+                _state.update {
+                    it.copy(
+                        offersTotal = snapshot.offersTotal,
+                        ordersTotal = snapshot.ordersTotal,
+                        aiSignals = snapshot.aiSignals,
                     )
                 }
             }
@@ -70,4 +88,7 @@ data class AuthUiState(
     val isLoggedIn: Boolean = false,
     val userName: String? = null,
     val errorMessage: String? = null,
+    val offersTotal: Int = 0,
+    val ordersTotal: Int = 0,
+    val aiSignals: Int = 0,
 )
