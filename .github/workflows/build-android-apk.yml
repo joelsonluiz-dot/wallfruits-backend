@@ -7,6 +7,9 @@ on:
       - 'mobile_native/android-kotlin/WallFruitsAndroid/**'
       - '.github/workflows/build-android-apk.yml'
 
+permissions:
+  contents: write
+
 jobs:
   build-apk:
     runs-on: ubuntu-latest
@@ -38,3 +41,21 @@ jobs:
         with:
           name: wallfruits-android-native-apk
           path: mobile_native/android-kotlin/WallFruitsAndroid/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Prepare release APK asset
+        shell: bash
+        run: |
+          cp mobile_native/android-kotlin/WallFruitsAndroid/app/build/outputs/apk/debug/app-debug.apk \
+            mobile_native/android-kotlin/WallFruitsAndroid/app/build/outputs/apk/debug/wallfruits-android-latest.apk
+
+      - name: Publish latest APK release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-latest
+          name: WallFruits Android Latest
+          target_commitish: ${{ github.sha }}
+          make_latest: true
+          overwrite_files: true
+          files: mobile_native/android-kotlin/WallFruitsAndroid/app/build/outputs/apk/debug/wallfruits-android-latest.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
