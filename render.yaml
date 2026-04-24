@@ -158,5 +158,8 @@ services:
     env: docker
     region: oregon
     plan: free
+    rootDir: flutter_ai
     dockerfilePath: ./Dockerfile.flutter-web
     healthCheckPath: /
+    domains:
+      - wallfruits.com.br
