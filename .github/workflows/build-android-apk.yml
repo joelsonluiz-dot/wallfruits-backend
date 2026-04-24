@@ -1,10 +1,10 @@
-name: Build Android APK
+name: Build Android APK (Native Kotlin)
 
 on:
   workflow_dispatch:
   push:
     paths:
-      - 'android/**'
+      - 'mobile_native/android-kotlin/WallFruitsAndroid/**'
       - '.github/workflows/build-android-apk.yml'
 
 jobs:
@@ -31,10 +31,10 @@ jobs:
 
       - name: Build debug APK
         run: |
-          gradle -p android assembleDebug --stacktrace
+          gradle -p mobile_native/android-kotlin/WallFruitsAndroid assembleDebug --stacktrace
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: wallfruits-android-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: wallfruits-android-native-apk
+          path: mobile_native/android-kotlin/WallFruitsAndroid/app/build/outputs/apk/debug/app-debug.apk
