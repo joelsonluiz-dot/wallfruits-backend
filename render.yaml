@@ -73,7 +73,7 @@ services:
       - key: API_VERSION
         value: 2.0.0
       - key: CORS_ORIGINS
-        value: '["https://wallfruits-backend.onrender.com","https://wallfruits-api.onrender.com"]'
+        value: '["https://wallfruits-backend.onrender.com","https://wallfruits-api.onrender.com","https://wallfruits-ai-web.onrender.com","https://wallfruits.com.br"]'
       - key: ALLOWED_HOSTS
         value: '["wallfruits-backend.onrender.com","wallfruits-api.onrender.com"]'
       # E-mail — Resend (preencha no painel do Render)
@@ -152,3 +152,11 @@ services:
         sync: false
       - key: OPENAI_MODEL
         value: gpt-4o-mini
+
+  - type: web
+    name: wallfruits-ai-web
+    env: docker
+    region: oregon
+    plan: free
+    dockerfilePath: ./Dockerfile.flutter-web
+    healthCheckPath: /
