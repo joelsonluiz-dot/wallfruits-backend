@@ -33,7 +33,7 @@
 		--loja-radius-md: 16px;
 		--loja-radius-sm: 12px;
 		--loja-grid: 8px;
-		--loja-mobile-columns: 2;
+		--loja-mobile-columns: 1;
 		--loja-mobile-gap: 10px;
 	}
 
@@ -1014,8 +1014,26 @@
 		}
 
 		.loja-header-inner {
+			grid-template-columns: auto minmax(0, 1fr);
+			grid-template-areas:
+				"back brand"
+				"actions actions";
 			gap: 8px;
 			padding: 10px;
+		}
+
+		.loja-back-btn {
+			grid-area: back;
+		}
+
+		.loja-brand {
+			grid-area: brand;
+		}
+
+		.loja-header-actions {
+			grid-area: actions;
+			justify-content: flex-start;
+			flex-wrap: wrap;
 		}
 
 		.loja-back-btn,

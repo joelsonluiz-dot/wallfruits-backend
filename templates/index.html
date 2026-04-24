@@ -150,6 +150,16 @@
         margin-top: 0;
     }
 
+    .home-market-shell .home-products-section,
+    .home-market-shell .home-community-section {
+        border: 0;
+        background: transparent;
+        box-shadow: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        padding: 0;
+    }
+
     .home-market-head {
         display: flex;
         align-items: center;
@@ -1200,10 +1210,10 @@
     </div>
 </section>
 
-<section class="home-market-shell" id="homeMarketShell" aria-label="Início com Ofertas e Serviços">
+<section class="home-market-shell" id="homeMarketShell" aria-label="Início com Ofertas, Loja e Comunidade">
     <div class="home-market-head">
         <span class="home-market-kicker">Início unificado</span>
-        <div class="home-market-tabbar" role="tablist" aria-label="Alternar entre ofertas e serviços">
+        <div class="home-market-tabbar" role="tablist" aria-label="Alternar entre início e serviços">
             <span class="home-market-indicator" id="homeMarketIndicator" aria-hidden="true"></span>
             <button
                 type="button"
@@ -1213,7 +1223,7 @@
                 role="tab"
                 aria-controls="homeMarketOffersPanel"
                 aria-selected="true"
-            >Ofertas</button>
+            >Início</button>
             <button
                 type="button"
                 class="home-market-tab"
@@ -1248,6 +1258,46 @@
                     <a href="/offers" class="btn btn-wf-secondary">Ver todas</a>
                 </div>
                 <div id="homeOffersList" class="home-offers-list wf-stagger"></div>
+                <section class="home-products-section">
+                    <div class="home-offers-head">
+                        <div>
+                            <h2 class="wf-section-title home-section-title">Loja em <span class="wf-gradient-text">destaque</span></h2>
+                            <p class="home-section-subtitle">Vitrine horizontal com itens da Loja Agro para compra imediata.</p>
+                        </div>
+                        <a href="/store" class="btn btn-wf-secondary">Ir para loja</a>
+                    </div>
+                    <div id="homeFeaturedProducts" class="home-products-row"></div>
+                </section>
+
+                <section class="home-community-section">
+                    <div class="home-offers-head">
+                        <div>
+                            <h2 class="wf-section-title home-section-title">Comunidade em <span class="wf-gradient-text">destaque</span></h2>
+                            <p class="home-section-subtitle">Atualizações recentes da Comunidade Agro com acesso rápido.</p>
+                        </div>
+                        <a href="/community" class="btn btn-wf-secondary">Abrir comunidade</a>
+                    </div>
+                    <div id="homeCommunityHighlights" class="home-community-row"></div>
+                </section>
+
+                <div class="stats-grid wf-stagger" id="homeStatsGrid">
+                    <div class="stat-card">
+                        <div class="stat-value wf-gradient-text" id="activeOffers">--</div>
+                        <div class="stat-label">Ofertas Ativas</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" style="color: var(--wf-accent2);" id="tx24h">--</div>
+                        <div class="stat-label">Transações 24h</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" style="color: var(--wf-accent);">99.9%</div>
+                        <div class="stat-label">Uptime</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" style="color: var(--wf-danger);">&lt;50ms</div>
+                        <div class="stat-label">Latência API</div>
+                    </div>
+                </div>
             </section>
 
             <section class="home-market-panel home-services-section" id="homeMarketServicesPanel" data-home-market-panel="services" role="tabpanel" aria-labelledby="homeMarketTabServices" aria-hidden="true">
@@ -1263,47 +1313,6 @@
         </div>
     </div>
 </section>
-
-<section class="home-products-section">
-    <div class="home-offers-head">
-        <div>
-            <h2 class="wf-section-title home-section-title">Produtos em <span class="wf-gradient-text">destaque</span></h2>
-            <p class="home-section-subtitle">Vitrine horizontal com itens da Loja Agro para compra imediata.</p>
-        </div>
-        <a href="/store" class="btn btn-wf-secondary">Ir para loja</a>
-    </div>
-    <div id="homeFeaturedProducts" class="home-products-row"></div>
-</section>
-
-<section class="home-community-section">
-    <div class="home-offers-head">
-        <div>
-            <h2 class="wf-section-title home-section-title">Posts em <span class="wf-gradient-text">destaque</span></h2>
-            <p class="home-section-subtitle">Atualizações recentes da Comunidade Agro com acesso rápido.</p>
-        </div>
-        <a href="/community" class="btn btn-wf-secondary">Abrir comunidade</a>
-    </div>
-    <div id="homeCommunityHighlights" class="home-community-row"></div>
-</section>
-
-<div class="stats-grid wf-stagger" id="homeStatsGrid">
-    <div class="stat-card">
-        <div class="stat-value wf-gradient-text" id="activeOffers">--</div>
-        <div class="stat-label">Ofertas Ativas</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-value" style="color: var(--wf-accent2);" id="tx24h">--</div>
-        <div class="stat-label">Transações 24h</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-value" style="color: var(--wf-accent);">99.9%</div>
-        <div class="stat-label">Uptime</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-value" style="color: var(--wf-danger);">&lt;50ms</div>
-        <div class="stat-label">Latência API</div>
-    </div>
-</div>
 
 <button id="homeNewToast" class="home-new-toast" type="button" aria-label="Ver atualizações no topo da home" aria-live="polite" aria-atomic="true" aria-hidden="true">
     <span class="material-icons">north</span>
