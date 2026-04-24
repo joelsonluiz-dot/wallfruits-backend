@@ -46,7 +46,7 @@ def _read(path: str) -> str:
 
 
 def _check_nginx_policy() -> Check:
-    path = "nginx.flutter-web.conf.template"
+    path = "desktop-web/nginx.conf"
     try:
         content = _read(path)
     except OSError as exc:
@@ -62,11 +62,11 @@ def _check_nginx_policy() -> Check:
     if missing:
         return Check("nginx policy", False, f"faltando: {', '.join(missing)}")
 
-    return Check("nginx policy", True, "regra mobile->/mobile-app.html detectada")
+    return Check("nginx policy", True, "regra mobile->/mobile-app.html detectada no desktop-web/nginx.conf")
 
 
 def _check_mobile_page() -> Check:
-    path = "flutter_ai/web/mobile-app.html"
+    path = "desktop-web/public/mobile-app.html"
     try:
         content = _read(path)
     except OSError as exc:
@@ -155,9 +155,8 @@ def main() -> int:
     checks: list[Check] = []
 
     required_files = [
-        "flutter_ai/lib/main.dart",
-        "nginx.flutter-web.conf.template",
-        "flutter_ai/web/mobile-app.html",
+        "desktop-web/nginx.conf",
+        "desktop-web/public/mobile-app.html",
         ".github/workflows/build-android-aab-release.yml",
         ".github/workflows/ios-testflight-native.yml",
         ".github/workflows/smoke-web-desktop-mobile-policy.yml",

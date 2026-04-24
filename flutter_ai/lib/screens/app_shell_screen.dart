@@ -15,18 +15,12 @@ class AppShellScreen extends StatefulWidget {
 }
 
 class _AppShellScreenState extends State<AppShellScreen> with SingleTickerProviderStateMixin {
-  static const _tabs = [
-    AppShellTab.feed,
-    AppShellTab.market,
-    AppShellTab.ai,
-  ];
-
   late final TabController _tabController;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: _tabs.length, vsync: this);
+    _tabController = TabController(length: AppShellTab.values.length, vsync: this);
   }
 
   @override
@@ -103,6 +97,7 @@ class _AppShellScreenState extends State<AppShellScreen> with SingleTickerProvid
 }
 
 enum AppShellTab { feed, market, ai }
+
 class _BottomDockTabBar extends StatelessWidget {
   const _BottomDockTabBar({required this.tabController});
 
@@ -130,7 +125,7 @@ class _BottomDockTabBar extends StatelessWidget {
                 controller: tabController,
                 dividerColor: Colors.transparent,
                 indicatorColor: Colors.transparent,
-                tabs: _tabs
+                tabs: AppShellTab.values
                     .map(
                       (tab) => Tab(
                         icon: Icon(tab.icon),
@@ -169,63 +164,6 @@ class _GradientOrb extends StatelessWidget {
   }
 }
 
-class _MetricChip extends StatelessWidget {
-  const _MetricChip({required this.icon, required this.label});
-
-  final IconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-      decoration: BoxDecoration(
-        color: colorScheme.primaryContainer.withOpacity(0.42),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16, color: colorScheme.primary),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: colorScheme.primary,
-                  fontWeight: FontWeight.w800,
-                ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TagPill extends StatelessWidget {
-  const _TagPill({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-      decoration: BoxDecoration(
-        color: colorScheme.secondaryContainer.withOpacity(0.5),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700),
-      ),
-    );
-  }
-}
-
 extension on AppShellTab {
   String get label {
     switch (this) {
@@ -238,17 +176,6 @@ extension on AppShellTab {
     }
   }
 
-  String get shortLabel {
-    switch (this) {
-      case AppShellTab.feed:
-        return 'Feed';
-      case AppShellTab.market:
-        return 'Shop';
-      case AppShellTab.ai:
-        return 'Lab';
-    }
-  }
-
   IconData get icon {
     switch (this) {
       case AppShellTab.feed:
@@ -257,28 +184,6 @@ extension on AppShellTab {
         return Icons.storefront_rounded;
       case AppShellTab.ai:
         return Icons.auto_awesome_rounded;
-    }
-  }
-
-  Color get primary {
-    switch (this) {
-      case AppShellTab.feed:
-        return const Color(0xFFFC4A7D);
-      case AppShellTab.market:
-        return const Color(0xFF0DAD8B);
-      case AppShellTab.ai:
-        return const Color(0xFF2F7DFF);
-    }
-  }
-
-  Color get secondary {
-    switch (this) {
-      case AppShellTab.feed:
-        return const Color(0xFFFF9A44);
-      case AppShellTab.market:
-        return const Color(0xFF8AE05F);
-      case AppShellTab.ai:
-        return const Color(0xFF43C6FF);
     }
   }
 }

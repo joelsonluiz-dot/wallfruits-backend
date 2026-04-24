@@ -6,21 +6,23 @@ Transformar o produto para o modelo:
 - Web: apenas desktop
 
 ## O que ja foi aplicado
-- Flutter web bloqueado para navegadores mobile no servidor Nginx, com redirecionamento para pagina de orientacao.
-- Flutter app com gate de plataforma para impedir experiencia web em layout mobile.
+- Web mobile bloqueado no Nginx do desktop-web, com redirecionamento para pagina de orientacao.
+- Regra de plataforma consolidada para manter Android em Kotlin, iOS em Swift e desktop em React/TypeScript.
 
 ## Arquivos alterados neste upgrade
-- nginx.flutter-web.conf.template
-- flutter_ai/web/mobile-app.html
-- flutter_ai/lib/main.dart
+- desktop-web/nginx.conf
+- .github/copilot-instructions.md
+- mobile_native/android-kotlin/README.md
+- mobile_native/ios-swift/README.md
+- desktop-web/public/mobile-app.html
 
 ## Fase 1 - Base de producao (imediata)
 1. Publicar links oficiais das lojas:
-   - Substituir URLs em flutter_ai/web/mobile-app.html
+   - Substituir URLs em desktop-web/public/mobile-app.html
 2. Ajustar dominio web desktop:
    - Manter wallfruits.com.br para desktop web
 3. Validar redirecionamento mobile:
-   - Android Chrome e iOS Safari devem abrir /mobile-app.html
+   - Android Chrome e iOS Safari devem abrir /mobile-app.html via desktop-web/nginx.conf
 
 ## Fase 2 - Android nativo (Kotlin)
 1. Criar app Android no Android Studio (Kotlin, minSdk 26+).
