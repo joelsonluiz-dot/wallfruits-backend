@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0B8F6A">
+  <meta name="description" content="WallFruits AI disponivel como app nativo para Android e iOS.">
+  <title>WallFruits AI | App Nativo</title>
+  <style>
+    :root {
+      --bg: #f4f8f6;
+      --card: #ffffff;
+      --text: #0f1a18;
+      --muted: #5b6e68;
+      --primary: #0b8f6a;
+      --primary-2: #12b989;
+      --line: #d9e7e1;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", "Helvetica Neue", sans-serif;
+      background: radial-gradient(circle at top right, rgba(11, 143, 106, 0.18), transparent 45%),
+                  radial-gradient(circle at bottom left, rgba(18, 185, 137, 0.14), transparent 45%),
+                  var(--bg);
+      color: var(--text);
+      display: grid;
+      place-items: center;
+      padding: 20px;
+    }
+
+    .card {
+      width: min(460px, 100%);
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 10px 35px rgba(15, 26, 24, 0.08);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--primary);
+      background: rgba(11, 143, 106, 0.12);
+      padding: 6px 10px;
+      border-radius: 999px;
+      margin-bottom: 14px;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: 28px;
+      line-height: 1.2;
+    }
+
+    p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 15px;
+    }
+
+    .actions {
+      display: grid;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .btn {
+      text-decoration: none;
+      color: #fff;
+      background: linear-gradient(135deg, var(--primary), var(--primary-2));
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .btn.secondary {
+      background: #eff6f3;
+      color: #14352e;
+      border: 1px solid #d6e8e0;
+    }
+
+    .hint {
+      margin-top: 14px;
+      font-size: 12px;
+      color: #6f817c;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="badge">WallFruits AI</div>
+    <h1>Use o app nativo no celular</h1>
+    <p>
+      A versao web e exclusiva para desktop. No smartphone, instale o aplicativo nativo para ter a melhor experiencia.
+    </p>
+
+    <div class="actions">
+      <a class="btn" href="https://play.google.com" rel="noopener noreferrer">Baixar no Google Play</a>
+      <a class="btn" href="https://www.apple.com/app-store/" rel="noopener noreferrer">Baixar na App Store</a>
+      <a class="btn secondary" href="/">Abrir versao desktop web</a>
+    </div>
+
+    <div class="hint">Substitua os links das lojas pelos URLs oficiais do seu app publicado.</div>
+  </main>
+</body>
+</html>

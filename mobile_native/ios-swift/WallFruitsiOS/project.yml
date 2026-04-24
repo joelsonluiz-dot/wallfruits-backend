@@ -1,0 +1,21 @@
+name: WallFruitsiOS
+options:
+  bundleIdPrefix: com.wallfruits
+settings:
+  base:
+    SWIFT_VERSION: 5.0
+    IPHONEOS_DEPLOYMENT_TARGET: 16.0
+targets:
+  WallFruitsiOS:
+    type: application
+    platform: iOS
+    sources:
+      - Sources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.wallfruits.app
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_KEY_UIRequiresFullScreen: YES
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.social-networking
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies: []

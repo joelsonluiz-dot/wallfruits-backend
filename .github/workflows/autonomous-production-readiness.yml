@@ -1,0 +1,56 @@
+name: Autonomous Production Readiness
+
+on:
+  workflow_dispatch:
+    inputs:
+      api_base_url:
+        description: "URL da API para smoke (ex: https://wallfruits-api.onrender.com)"
+        required: false
+        type: string
+      web_base_url:
+        description: "URL da web desktop (ex: https://wallfruits.com.br)"
+        required: false
+        type: string
+      strict:
+        description: "Falhar se houver pendencias manuais (ex: links placeholder)"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  readiness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run autonomous production readiness
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ARGS=()
+
+          if [[ -n "${{ inputs.api_base_url }}" ]]; then
+            ARGS+=(--api-base-url "${{ inputs.api_base_url }}")
+          fi
+
+          if [[ -n "${{ inputs.web_base_url }}" ]]; then
+            ARGS+=(--web-base-url "${{ inputs.web_base_url }}")
+          fi
+
+          if [[ "${{ inputs.strict }}" == "true" ]]; then
+            ARGS+=(--strict)
+          fi
+
+          python scripts/09_autonomous_production_readiness.py "${ARGS[@]}"

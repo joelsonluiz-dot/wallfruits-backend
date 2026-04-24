@@ -2,10 +2,28 @@ name: Build Android Release (AAB)
 
 on:
   workflow_dispatch:
+    inputs:
+      upload_to_play:
+        description: "Publicar automaticamente no Google Play (track interno)"
+        required: false
+        default: false
+        type: boolean
+      play_track:
+        description: "Track do Google Play"
+        required: false
+        default: internal
+        type: choice
+        options:
+          - internal
+          - alpha
+          - beta
+          - production
 
 jobs:
   build-aab:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout
@@ -24,6 +42,13 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: '8.7'
+
+      - name: Validate Android module
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f android/build.gradle || (echo "android/build.gradle nao encontrado" && exit 1)
+          test -f android/app/build.gradle || (echo "android/app/build.gradle nao encontrado" && exit 1)
 
       - name: Decode keystore & write keystore.properties
         env:
@@ -52,10 +77,20 @@ jobs:
 
       - name: Build release AAB
         run: |
-          gradle -p android bundleRelease --stacktrace
+          gradle -p android clean bundleRelease --stacktrace
 
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
         with:
           name: wallfruits-android-aab
           path: android/app/build/outputs/bundle/release/app-release.aab
+
+      - name: Upload to Google Play
+        if: ${{ github.event.inputs.upload_to_play == 'true' }}
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: ${{ secrets.GOOGLE_PLAY_PACKAGE_NAME }}
+          releaseFiles: android/app/build/outputs/bundle/release/app-release.aab
+          track: ${{ github.event.inputs.play_track }}
+          status: completed

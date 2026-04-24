@@ -1,0 +1,32 @@
+name: Smoke Web Desktop Mobile Policy
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "URL base da web (ex: https://wallfruits.com.br)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  smoke-policy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run desktop/mobile policy smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/08_smoke_web_desktop_mobile_policy.py --base-url "${{ inputs.base_url }}"

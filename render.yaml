@@ -154,12 +154,12 @@ services:
         value: gpt-4o-mini
 
   - type: web
-    name: wallfruits-ai-web
+    name: wallfruits-desktop-web
     env: docker
     region: oregon
     plan: free
-    rootDir: flutter_ai
-    dockerfilePath: ./Dockerfile.flutter-web
+    rootDir: desktop-web
+    dockerfilePath: ./Dockerfile
     healthCheckPath: /
     domains:
       - wallfruits.com.br
