@@ -155,11 +155,15 @@ services:
 
   - type: web
     name: wallfruits-desktop-web
-    env: docker
+    env: static
     region: oregon
     plan: free
     rootDir: desktop-web
-    dockerfilePath: ./Dockerfile
-    healthCheckPath: /
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
     domains:
       - wallfruits.com.br

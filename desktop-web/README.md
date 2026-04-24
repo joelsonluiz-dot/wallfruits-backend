@@ -4,10 +4,14 @@
 - React
 - TypeScript
 - Vite
-- Nginx
+- Static hosting via Render
 
 ## Objetivo
 Esta e a web oficial para desktop. No celular, o usuario e redirecionado para a pagina do app nativo.
+
+## Distribuicao
+- O CTA oficial para o APK Android aponta para o release `android-latest`.
+- O desktop deve ser publicado como site estatico no Render.
 
 ## Como rodar localmente
 ```bash
