@@ -1,10 +1,10 @@
-name: Build Android APK (Native Kotlin)
+name: Build Android APK (Full UI Transitional)
 
 on:
   workflow_dispatch:
   push:
     paths:
-      - 'mobile_native/android-kotlin/WallFruitsAndroid/**'
+      - 'android/**'
       - '.github/workflows/build-android-apk.yml'
 
 permissions:
@@ -34,19 +34,19 @@ jobs:
 
       - name: Build debug APK
         run: |
-          gradle -p mobile_native/android-kotlin/WallFruitsAndroid assembleDebug --stacktrace
+          gradle -p android assembleDebug --stacktrace
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: wallfruits-android-native-apk
-          path: mobile_native/android-kotlin/WallFruitsAndroid/app/build/outputs/apk/debug/app-debug.apk
+          name: wallfruits-android-full-ui-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
 
       - name: Prepare release APK asset
         shell: bash
         run: |
-          cp mobile_native/android-kotlin/WallFruitsAndroid/app/build/outputs/apk/debug/app-debug.apk \
-            mobile_native/android-kotlin/WallFruitsAndroid/app/build/outputs/apk/debug/wallfruits-android-latest.apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk \
+            android/app/build/outputs/apk/debug/wallfruits-android-latest.apk
 
       - name: Publish latest APK release
         uses: softprops/action-gh-release@v2
@@ -56,6 +56,6 @@ jobs:
           target_commitish: ${{ github.sha }}
           make_latest: true
           overwrite_files: true
-          files: mobile_native/android-kotlin/WallFruitsAndroid/app/build/outputs/apk/debug/wallfruits-android-latest.apk
+          files: android/app/build/outputs/apk/debug/wallfruits-android-latest.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

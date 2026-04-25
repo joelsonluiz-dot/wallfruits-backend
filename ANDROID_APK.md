@@ -1,25 +1,31 @@
 # APK Android (WallFruits)
 
-Este repositório inclui um app Android nativo em Kotlin em `mobile_native/android-kotlin/WallFruitsAndroid`.
+Este repositório possui dois caminhos Android:
 
-## O que o APK entrega
+- `android/`: APK transicional com interface completa atual (WebView carregando sua plataforma visual existente).
+- `mobile_native/android-kotlin/WallFruitsAndroid`: app nativo em Kotlin (migração incremental de telas).
 
-- Login JWT
-- Home feed
-- Navegação inferior
-- Base de API em produção
+## O que o APK público entrega agora (transicional full UI)
+
+- Interface visual completa já usada na plataforma (abas e fluxos existentes)
+- Login, navegação e telas atuais via backend web
+- Atualizações visuais centralizadas no backend
 
 ## Como baixar APK
 
 1. Abra a aba **Actions** no GitHub.
-2. Execute o workflow **Build Android APK (Native Kotlin)**.
-3. Ao finalizar, baixe o artefato `wallfruits-android-native-apk`.
+2. Execute o workflow **Build Android APK (Full UI Transitional)**.
+3. Ao finalizar, baixe o artefato `wallfruits-android-full-ui-apk`.
 4. Instale o arquivo `app-debug.apk` no Android.
 
 ## Observações
 
-- O APK gerado é de debug (ideal para distribuição inicial interna).
+- O APK gerado é de debug (ideal para distribuição interna e homologação).
 - Para loja (Play Store), o próximo passo é gerar build **release** com assinatura e preferencialmente **AAB** (Android App Bundle).
+
+## Sobre o app nativo Kotlin
+
+O starter em `mobile_native/android-kotlin/WallFruitsAndroid` continua no repositório para migração definitiva nativa, mas o APK público foi ajustado para preservar sua interface completa atual até a migração total das telas.
 
 ## Play Store (Release / AAB)
 
