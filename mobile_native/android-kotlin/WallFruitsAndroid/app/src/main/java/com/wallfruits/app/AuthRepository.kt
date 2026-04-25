@@ -143,6 +143,28 @@ class AuthRepository @Inject constructor(
         )
     }
 
+    suspend fun updateManagedService(
+        serviceId: String,
+        title: String,
+        description: String,
+        price: String,
+        location: String,
+    ) {
+        api.updateService(
+            serviceId = serviceId,
+            request = UpdateServiceRequest(
+                titulo = title.trim(),
+                descricao = description.trim(),
+                preco = price.trim(),
+                local = location.trim(),
+            ),
+        )
+    }
+
+    suspend fun deleteManagedService(serviceId: String) {
+        api.deleteService(serviceId = serviceId)
+    }
+
     suspend fun createBuyerClient(
         name: String,
         company: String,
@@ -159,6 +181,30 @@ class AuthRepository @Inject constructor(
                 management_scope = managementScope.trim().ifBlank { "joint" },
             )
         )
+    }
+
+    suspend fun updateBuyerClient(
+        clientId: String,
+        name: String,
+        company: String,
+        city: String,
+        state: String,
+        managementScope: String,
+    ) {
+        api.updateBuyerClient(
+            clientId = clientId,
+            request = UpdateBuyerClientRequest(
+                name = name.trim(),
+                company_name = company.trim().ifBlank { null },
+                city = city.trim().ifBlank { null },
+                state = state.trim().ifBlank { null },
+                management_scope = managementScope.trim().ifBlank { "joint" },
+            ),
+        )
+    }
+
+    suspend fun deleteBuyerClient(clientId: String) {
+        api.deleteBuyerClient(clientId = clientId)
     }
 
     fun logout() = sessionStore.clear()

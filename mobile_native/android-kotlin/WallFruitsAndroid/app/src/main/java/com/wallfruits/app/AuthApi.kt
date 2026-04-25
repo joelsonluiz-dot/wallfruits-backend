@@ -2,7 +2,10 @@ package com.wallfruits.app
 
 import kotlinx.serialization.json.JsonObject
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.PATCH
+import retrofit2.http.Path
 import retrofit2.http.POST
 import retrofit2.http.Query
 
@@ -55,6 +58,24 @@ interface AuthApi {
     @POST("api/services")
     suspend fun createService(@Body request: CreateServiceRequest): JsonObject
 
+    @PATCH("api/services/{serviceId}")
+    suspend fun updateService(
+        @Path("serviceId") serviceId: String,
+        @Body request: UpdateServiceRequest,
+    ): JsonObject
+
+    @DELETE("api/services/{serviceId}")
+    suspend fun deleteService(@Path("serviceId") serviceId: String): JsonObject
+
     @POST("api/buyer-clients")
     suspend fun createBuyerClient(@Body request: CreateBuyerClientRequest): JsonObject
+
+    @PATCH("api/buyer-clients/{clientId}")
+    suspend fun updateBuyerClient(
+        @Path("clientId") clientId: String,
+        @Body request: UpdateBuyerClientRequest,
+    ): JsonObject
+
+    @DELETE("api/buyer-clients/{clientId}")
+    suspend fun deleteBuyerClient(@Path("clientId") clientId: String): JsonObject
 }

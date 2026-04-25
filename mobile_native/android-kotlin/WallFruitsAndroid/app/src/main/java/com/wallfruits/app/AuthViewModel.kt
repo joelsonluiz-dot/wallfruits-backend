@@ -165,6 +165,75 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    fun updateManagedService(
+        serviceId: String,
+        title: String,
+        description: String,
+        price: String,
+        location: String,
+    ) {
+        if (title.trim().length < 3 || description.trim().length < 10 || price.trim().length < 2 || location.trim().length < 2) {
+            _state.update { it.copy(moduleErrorMessage = "Preencha os campos do servico com dados validos") }
+            return
+        }
+
+        _state.update { it.copy(isModuleSaving = true, moduleErrorMessage = null, moduleActionMessage = null) }
+        viewModelScope.launch {
+            runCatching {
+                repository.updateManagedService(
+                    serviceId = serviceId,
+                    title = title,
+                    description = description,
+                    price = price,
+                    location = location,
+                )
+            }.onSuccess {
+                _state.update {
+                    it.copy(
+                        isModuleSaving = false,
+                        moduleErrorMessage = null,
+                        moduleActionMessage = "Servico atualizado com sucesso",
+                    )
+                }
+                loadSelectedModuleData(module = AppModuleTab.GERIR_SERVICOS, force = true)
+                refreshHomeData()
+            }.onFailure { throwable ->
+                _state.update {
+                    it.copy(
+                        isModuleSaving = false,
+                        moduleErrorMessage = throwable.message ?: "Falha ao atualizar servico",
+                    )
+                }
+            }
+        }
+    }
+
+    fun deleteManagedService(serviceId: String) {
+        _state.update { it.copy(isModuleSaving = true, moduleErrorMessage = null, moduleActionMessage = null) }
+        viewModelScope.launch {
+            runCatching { repository.deleteManagedService(serviceId = serviceId) }
+                .onSuccess {
+                    _state.update {
+                        it.copy(
+                            isModuleSaving = false,
+                            moduleErrorMessage = null,
+                            moduleActionMessage = "Servico removido com sucesso",
+                        )
+                    }
+                    loadSelectedModuleData(module = AppModuleTab.GERIR_SERVICOS, force = true)
+                    refreshHomeData()
+                }
+                .onFailure { throwable ->
+                    _state.update {
+                        it.copy(
+                            isModuleSaving = false,
+                            moduleErrorMessage = throwable.message ?: "Falha ao remover servico",
+                        )
+                    }
+                }
+        }
+    }
+
     fun createBuyerClient(
         name: String,
         company: String,
@@ -205,6 +274,77 @@ class AuthViewModel @Inject constructor(
                     )
                 }
             }
+        }
+    }
+
+    fun updateBuyerClient(
+        clientId: String,
+        name: String,
+        company: String,
+        city: String,
+        state: String,
+        managementScope: String,
+    ) {
+        if (name.trim().length < 2) {
+            _state.update { it.copy(moduleErrorMessage = "Nome do cliente precisa de pelo menos 2 caracteres") }
+            return
+        }
+
+        _state.update { it.copy(isModuleSaving = true, moduleErrorMessage = null, moduleActionMessage = null) }
+        viewModelScope.launch {
+            runCatching {
+                repository.updateBuyerClient(
+                    clientId = clientId,
+                    name = name,
+                    company = company,
+                    city = city,
+                    state = state,
+                    managementScope = managementScope,
+                )
+            }.onSuccess {
+                _state.update {
+                    it.copy(
+                        isModuleSaving = false,
+                        moduleErrorMessage = null,
+                        moduleActionMessage = "Cliente atualizado com sucesso",
+                    )
+                }
+                loadSelectedModuleData(module = AppModuleTab.MEUS_CLIENTES, force = true)
+                refreshHomeData()
+            }.onFailure { throwable ->
+                _state.update {
+                    it.copy(
+                        isModuleSaving = false,
+                        moduleErrorMessage = throwable.message ?: "Falha ao atualizar cliente",
+                    )
+                }
+            }
+        }
+    }
+
+    fun deleteBuyerClient(clientId: String) {
+        _state.update { it.copy(isModuleSaving = true, moduleErrorMessage = null, moduleActionMessage = null) }
+        viewModelScope.launch {
+            runCatching { repository.deleteBuyerClient(clientId = clientId) }
+                .onSuccess {
+                    _state.update {
+                        it.copy(
+                            isModuleSaving = false,
+                            moduleErrorMessage = null,
+                            moduleActionMessage = "Cliente removido com sucesso",
+                        )
+                    }
+                    loadSelectedModuleData(module = AppModuleTab.MEUS_CLIENTES, force = true)
+                    refreshHomeData()
+                }
+                .onFailure { throwable ->
+                    _state.update {
+                        it.copy(
+                            isModuleSaving = false,
+                            moduleErrorMessage = throwable.message ?: "Falha ao remover cliente",
+                        )
+                    }
+                }
         }
     }
 

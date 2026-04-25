@@ -115,7 +115,11 @@ fun HomeScreen(viewModel: AuthViewModel) {
                     state = state,
                     onRefreshSelectedModule = viewModel::refreshSelectedModule,
                     onCreateManagedService = viewModel::createManagedService,
+                    onUpdateManagedService = viewModel::updateManagedService,
+                    onDeleteManagedService = viewModel::deleteManagedService,
                     onCreateBuyerClient = viewModel::createBuyerClient,
+                    onUpdateBuyerClient = viewModel::updateBuyerClient,
+                    onDeleteBuyerClient = viewModel::deleteBuyerClient,
                     onClearModuleActionMessage = viewModel::clearModuleActionMessage,
                 )
 
@@ -139,7 +143,11 @@ private fun ModulePanel(
     state: AuthUiState,
     onRefreshSelectedModule: () -> Unit,
     onCreateManagedService: (String, String, String, String) -> Unit,
+    onUpdateManagedService: (String, String, String, String, String) -> Unit,
+    onDeleteManagedService: (String) -> Unit,
     onCreateBuyerClient: (String, String, String, String, String) -> Unit,
+    onUpdateBuyerClient: (String, String, String, String, String, String) -> Unit,
+    onDeleteBuyerClient: (String) -> Unit,
     onClearModuleActionMessage: () -> Unit,
 ) {
     when (state.selectedModule) {
@@ -149,12 +157,16 @@ private fun ModulePanel(
             state = state,
             onRefresh = onRefreshSelectedModule,
             onCreate = onCreateManagedService,
+            onUpdate = onUpdateManagedService,
+            onDelete = onDeleteManagedService,
             onClearMessage = onClearModuleActionMessage,
         )
         AppModuleTab.MEUS_CLIENTES -> ClientsModuleContent(
             state = state,
             onRefresh = onRefreshSelectedModule,
             onCreate = onCreateBuyerClient,
+            onUpdate = onUpdateBuyerClient,
+            onDelete = onDeleteBuyerClient,
             onClearMessage = onClearModuleActionMessage,
         )
         AppModuleTab.BIBLIOTECA -> LibraryModuleContent(state = state, onRefresh = onRefreshSelectedModule)
@@ -297,9 +309,13 @@ private fun ManagedServicesModuleContent(
     state: AuthUiState,
     onRefresh: () -> Unit,
     onCreate: (String, String, String, String) -> Unit,
+    onUpdate: (String, String, String, String, String) -> Unit,
+    onDelete: (String) -> Unit,
     onClearMessage: () -> Unit,
 ) {
     var showCreateDialog by remember { mutableStateOf(false) }
+    var editingItem by remember { mutableStateOf<ServicePreview?>(null) }
+    var deletingItemId by remember { mutableStateOf<String?>(null) }
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -348,6 +364,10 @@ private fun ManagedServicesModuleContent(
                         Text(item.title, style = MaterialTheme.typography.titleMedium)
                         Text(item.description, style = MaterialTheme.typography.bodyMedium)
                         Text("Preco ${item.price} | Local ${item.location}", style = MaterialTheme.typography.labelMedium)
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            TextButton(onClick = { editingItem = item }) { Text("Editar") }
+                            TextButton(onClick = { deletingItemId = item.id }) { Text("Excluir") }
+                        }
                     }
                 }
             }
@@ -363,6 +383,31 @@ private fun ManagedServicesModuleContent(
                 },
             )
         }
+
+        editingItem?.let { item ->
+            EditManagedServiceDialog(
+                item = item,
+                isSaving = state.isModuleSaving,
+                onDismiss = { editingItem = null },
+                onSave = { title, description, price, location ->
+                    onUpdate(item.id, title, description, price, location)
+                    editingItem = null
+                },
+            )
+        }
+
+        deletingItemId?.let { serviceId ->
+            ConfirmDeleteDialog(
+                title = "Excluir servico",
+                message = "Tem certeza que deseja excluir este servico?",
+                isSaving = state.isModuleSaving,
+                onDismiss = { deletingItemId = null },
+                onConfirm = {
+                    onDelete(serviceId)
+                    deletingItemId = null
+                },
+            )
+        }
     }
 }
 
@@ -371,9 +416,13 @@ private fun ClientsModuleContent(
     state: AuthUiState,
     onRefresh: () -> Unit,
     onCreate: (String, String, String, String, String) -> Unit,
+    onUpdate: (String, String, String, String, String, String) -> Unit,
+    onDelete: (String) -> Unit,
     onClearMessage: () -> Unit,
 ) {
     var showCreateDialog by remember { mutableStateOf(false) }
+    var editingItem by remember { mutableStateOf<BuyerClientPreview?>(null) }
+    var deletingItemId by remember { mutableStateOf<String?>(null) }
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -425,6 +474,10 @@ private fun ClientsModuleContent(
                             "Cidade/UF ${item.cityState} | Gestao ${item.managementScope}",
                             style = MaterialTheme.typography.labelMedium,
                         )
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            TextButton(onClick = { editingItem = item }) { Text("Editar") }
+                            TextButton(onClick = { deletingItemId = item.id }) { Text("Excluir") }
+                        }
                     }
                 }
             }
@@ -437,6 +490,31 @@ private fun ClientsModuleContent(
                 onCreate = { name, company, city, uf, scope ->
                     onCreate(name, company, city, uf, scope)
                     showCreateDialog = false
+                },
+            )
+        }
+
+        editingItem?.let { item ->
+            EditBuyerClientDialog(
+                item = item,
+                isSaving = state.isModuleSaving,
+                onDismiss = { editingItem = null },
+                onSave = { name, company, city, uf, scope ->
+                    onUpdate(item.id, name, company, city, uf, scope)
+                    editingItem = null
+                },
+            )
+        }
+
+        deletingItemId?.let { clientId ->
+            ConfirmDeleteDialog(
+                title = "Excluir cliente",
+                message = "Tem certeza que deseja excluir este cliente?",
+                isSaving = state.isModuleSaving,
+                onDismiss = { deletingItemId = null },
+                onConfirm = {
+                    onDelete(clientId)
+                    deletingItemId = null
                 },
             )
         }
@@ -588,6 +666,100 @@ private fun CreateBuyerClientDialog(
                 onClick = { onCreate(name, company, city, uf, scope) },
             ) {
                 Text(if (isSaving) "Salvando..." else "Criar")
+            }
+        },
+    )
+}
+
+@Composable
+private fun EditManagedServiceDialog(
+    item: ServicePreview,
+    isSaving: Boolean,
+    onDismiss: () -> Unit,
+    onSave: (String, String, String, String) -> Unit,
+) {
+    var title by remember(item.id) { mutableStateOf(item.title) }
+    var description by remember(item.id) { mutableStateOf(item.description) }
+    var price by remember(item.id) { mutableStateOf(item.price) }
+    var location by remember(item.id) { mutableStateOf(item.location) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Editar servico") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text("Titulo") })
+                OutlinedTextField(value = description, onValueChange = { description = it }, label = { Text("Descricao") })
+                OutlinedTextField(value = price, onValueChange = { price = it }, label = { Text("Preco") })
+                OutlinedTextField(value = location, onValueChange = { location = it }, label = { Text("Local") })
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss, enabled = !isSaving) { Text("Cancelar") }
+        },
+        confirmButton = {
+            TextButton(enabled = !isSaving, onClick = { onSave(title, description, price, location) }) {
+                Text(if (isSaving) "Salvando..." else "Salvar")
+            }
+        },
+    )
+}
+
+@Composable
+private fun EditBuyerClientDialog(
+    item: BuyerClientPreview,
+    isSaving: Boolean,
+    onDismiss: () -> Unit,
+    onSave: (String, String, String, String, String) -> Unit,
+) {
+    val cityAndUf = item.cityState.split("/")
+    var name by remember(item.id) { mutableStateOf(item.name) }
+    var company by remember(item.id) { mutableStateOf(item.company) }
+    var city by remember(item.id) { mutableStateOf(cityAndUf.getOrNull(0) ?: "") }
+    var uf by remember(item.id) { mutableStateOf(cityAndUf.getOrNull(1) ?: "") }
+    var scope by remember(item.id) { mutableStateOf(item.managementScope) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Editar cliente") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Nome") })
+                OutlinedTextField(value = company, onValueChange = { company = it }, label = { Text("Empresa") })
+                OutlinedTextField(value = city, onValueChange = { city = it }, label = { Text("Cidade") })
+                OutlinedTextField(value = uf, onValueChange = { uf = it }, label = { Text("UF") })
+                OutlinedTextField(value = scope, onValueChange = { scope = it }, label = { Text("Gestao (buyer|wallfruits|joint)") })
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss, enabled = !isSaving) { Text("Cancelar") }
+        },
+        confirmButton = {
+            TextButton(enabled = !isSaving, onClick = { onSave(name, company, city, uf, scope) }) {
+                Text(if (isSaving) "Salvando..." else "Salvar")
+            }
+        },
+    )
+}
+
+@Composable
+private fun ConfirmDeleteDialog(
+    title: String,
+    message: String,
+    isSaving: Boolean,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = { Text(message) },
+        dismissButton = {
+            TextButton(onClick = onDismiss, enabled = !isSaving) { Text("Cancelar") }
+        },
+        confirmButton = {
+            TextButton(onClick = onConfirm, enabled = !isSaving) {
+                Text(if (isSaving) "Excluindo..." else "Excluir")
             }
         },
     )
