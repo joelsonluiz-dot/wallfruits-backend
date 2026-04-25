@@ -18,6 +18,24 @@ data class RegisterRequest(
 )
 
 @Serializable
+data class CreateServiceRequest(
+    val titulo: String,
+    val descricao: String,
+    val preco: String,
+    val local: String,
+    val imagem: String,
+)
+
+@Serializable
+data class CreateBuyerClientRequest(
+    val name: String,
+    val company_name: String? = null,
+    val city: String? = null,
+    val state: String? = null,
+    val management_scope: String = "joint",
+)
+
+@Serializable
 data class ApiUser(
     val id: Int,
     val name: String,

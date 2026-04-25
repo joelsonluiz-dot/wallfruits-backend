@@ -1,5 +1,6 @@
 package com.wallfruits.app
 
+import kotlinx.serialization.json.JsonObject
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -50,4 +51,10 @@ interface AuthApi {
 
     @GET("api/buyer-clients/dashboard")
     suspend fun buyerClientsDashboard(): BuyerClientsDashboardResponse
+
+    @POST("api/services")
+    suspend fun createService(@Body request: CreateServiceRequest): JsonObject
+
+    @POST("api/buyer-clients")
+    suspend fun createBuyerClient(@Body request: CreateBuyerClientRequest): JsonObject
 }

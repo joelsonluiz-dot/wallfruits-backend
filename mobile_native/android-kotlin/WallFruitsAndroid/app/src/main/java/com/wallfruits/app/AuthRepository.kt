@@ -10,6 +10,8 @@ class AuthRepository @Inject constructor(
     private val api: AuthApi,
     private val sessionStore: SessionStore,
 ) {
+    private val defaultServiceImage = "https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=1000&q=80"
+
     suspend fun register(name: String, email: String, password: String, role: String): ApiUser {
         return api.register(
             RegisterRequest(
@@ -122,6 +124,41 @@ class AuthRepository @Inject constructor(
                 readTime = item.stringValue("read_time") ?: "Tempo livre",
             )
         }
+    }
+
+    suspend fun createManagedService(
+        title: String,
+        description: String,
+        price: String,
+        location: String,
+    ) {
+        api.createService(
+            CreateServiceRequest(
+                titulo = title.trim(),
+                descricao = description.trim(),
+                preco = price.trim(),
+                local = location.trim(),
+                imagem = defaultServiceImage,
+            )
+        )
+    }
+
+    suspend fun createBuyerClient(
+        name: String,
+        company: String,
+        city: String,
+        state: String,
+        managementScope: String,
+    ) {
+        api.createBuyerClient(
+            CreateBuyerClientRequest(
+                name = name.trim(),
+                company_name = company.trim().ifBlank { null },
+                city = city.trim().ifBlank { null },
+                state = state.trim().ifBlank { null },
+                management_scope = managementScope.trim().ifBlank { "joint" },
+            )
+        )
     }
 
     fun logout() = sessionStore.clear()

@@ -44,6 +44,10 @@ class AuthViewModel @Inject constructor(
         _state.update { it.copy(role = role) }
     }
 
+    fun clearModuleActionMessage() {
+        _state.update { it.copy(moduleActionMessage = null) }
+    }
+
     fun selectModule(module: AppModuleTab) {
         _state.update { it.copy(selectedModule = module) }
         loadSelectedModuleData(module = module)
@@ -119,6 +123,90 @@ class AuthViewModel @Inject constructor(
     }
 
     fun refreshDashboard() = refreshHomeData()
+
+    fun createManagedService(
+        title: String,
+        description: String,
+        price: String,
+        location: String,
+    ) {
+        if (title.trim().length < 3 || description.trim().length < 10 || price.trim().length < 2 || location.trim().length < 2) {
+            _state.update { it.copy(moduleErrorMessage = "Preencha os campos do servico com dados validos") }
+            return
+        }
+
+        _state.update { it.copy(isModuleSaving = true, moduleErrorMessage = null, moduleActionMessage = null) }
+        viewModelScope.launch {
+            runCatching {
+                repository.createManagedService(
+                    title = title,
+                    description = description,
+                    price = price,
+                    location = location,
+                )
+            }.onSuccess {
+                _state.update {
+                    it.copy(
+                        isModuleSaving = false,
+                        moduleErrorMessage = null,
+                        moduleActionMessage = "Servico criado com sucesso",
+                    )
+                }
+                loadSelectedModuleData(module = AppModuleTab.GERIR_SERVICOS, force = true)
+                refreshHomeData()
+            }.onFailure { throwable ->
+                _state.update {
+                    it.copy(
+                        isModuleSaving = false,
+                        moduleErrorMessage = throwable.message ?: "Falha ao criar servico",
+                    )
+                }
+            }
+        }
+    }
+
+    fun createBuyerClient(
+        name: String,
+        company: String,
+        city: String,
+        state: String,
+        managementScope: String,
+    ) {
+        if (name.trim().length < 2) {
+            _state.update { it.copy(moduleErrorMessage = "Nome do cliente precisa de pelo menos 2 caracteres") }
+            return
+        }
+
+        _state.update { it.copy(isModuleSaving = true, moduleErrorMessage = null, moduleActionMessage = null) }
+        viewModelScope.launch {
+            runCatching {
+                repository.createBuyerClient(
+                    name = name,
+                    company = company,
+                    city = city,
+                    state = state,
+                    managementScope = managementScope,
+                )
+            }.onSuccess {
+                _state.update {
+                    it.copy(
+                        isModuleSaving = false,
+                        moduleErrorMessage = null,
+                        moduleActionMessage = "Cliente criado com sucesso",
+                    )
+                }
+                loadSelectedModuleData(module = AppModuleTab.MEUS_CLIENTES, force = true)
+                refreshHomeData()
+            }.onFailure { throwable ->
+                _state.update {
+                    it.copy(
+                        isModuleSaving = false,
+                        moduleErrorMessage = throwable.message ?: "Falha ao criar cliente",
+                    )
+                }
+            }
+        }
+    }
 
     fun refreshSelectedModule() {
         loadSelectedModuleData(module = _state.value.selectedModule, force = true)
@@ -346,7 +434,9 @@ data class AuthUiState(
     val clientsTotal: Int = 0,
     val libraryTotal: Int = 0,
     val isModuleLoading: Boolean = false,
+    val isModuleSaving: Boolean = false,
     val moduleErrorMessage: String? = null,
+    val moduleActionMessage: String? = null,
     val communityItems: List<CommunityPreview> = emptyList(),
     val serviceItems: List<ServicePreview> = emptyList(),
     val managedServiceItems: List<ServicePreview> = emptyList(),
