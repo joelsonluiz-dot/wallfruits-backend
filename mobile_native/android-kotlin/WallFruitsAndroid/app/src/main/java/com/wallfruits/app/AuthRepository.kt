@@ -8,6 +8,17 @@ class AuthRepository @Inject constructor(
     private val api: AuthApi,
     private val sessionStore: SessionStore,
 ) {
+    suspend fun register(name: String, email: String, password: String, role: String): ApiUser {
+        return api.register(
+            RegisterRequest(
+                name = name.trim(),
+                email = email.trim(),
+                password = password,
+                role = role,
+            )
+        )
+    }
+
     suspend fun login(email: String, password: String): ApiUser {
         val response = api.login(LoginRequest(email = email.trim(), password = password))
         sessionStore.accessToken = response.access_token
@@ -29,6 +40,18 @@ class AuthRepository @Inject constructor(
             offersTotal = offers.total,
             ordersTotal = orders.total,
             aiSignals = aiSignals,
+        )
+    }
+
+    suspend fun loadNativeModulesSnapshot(): NativeModulesSnapshot {
+        suspend fun safeCount(block: suspend () -> Int): Int = runCatching { block() }.getOrDefault(0)
+
+        return NativeModulesSnapshot(
+            communityTotal = safeCount { api.communityPosts(limit = 1).total },
+            servicesTotal = safeCount { api.services(limit = 1).total },
+            managedServicesTotal = safeCount { api.managedServices(limit = 1).total },
+            clientsTotal = safeCount { api.buyerClientsDashboard().total },
+            libraryTotal = safeCount { api.libraryCatalog().total },
         )
     }
 

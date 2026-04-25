@@ -10,6 +10,14 @@ data class LoginRequest(
 )
 
 @Serializable
+data class RegisterRequest(
+    val name: String,
+    val email: String,
+    val password: String,
+    val role: String,
+)
+
+@Serializable
 data class ApiUser(
     val id: Int,
     val name: String,
@@ -66,4 +74,36 @@ data class AIMarketSnapshot(
     val alerts: List<JsonObject> = emptyList(),
     val recommendations: List<JsonObject> = emptyList(),
     val opportunities: List<JsonObject> = emptyList(),
+)
+
+@Serializable
+data class CommunityPostsResponse(
+    val posts: List<JsonObject> = emptyList(),
+    val total: Int = 0,
+)
+
+@Serializable
+data class ServiceListResponse(
+    val services: List<JsonObject> = emptyList(),
+    val total: Int = 0,
+)
+
+@Serializable
+data class LibraryCatalogResponse(
+    val items: List<JsonObject> = emptyList(),
+    val total: Int = 0,
+)
+
+@Serializable
+data class BuyerClientsDashboardResponse(
+    val total: Int = 0,
+)
+
+@Serializable
+data class NativeModulesSnapshot(
+    val communityTotal: Int,
+    val servicesTotal: Int,
+    val managedServicesTotal: Int,
+    val clientsTotal: Int,
+    val libraryTotal: Int,
 )

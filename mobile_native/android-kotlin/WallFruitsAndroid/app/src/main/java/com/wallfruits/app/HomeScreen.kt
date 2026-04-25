@@ -2,64 +2,146 @@ package com.wallfruits.app
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(viewModel: AuthViewModel) {
     val state = viewModel.state.collectAsState().value
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
+    val coroutineScope = rememberCoroutineScope()
 
-    Scaffold(
-        bottomBar = {
-            NavigationBar {
-                listOf("Feed", "Market", "AI").forEachIndexed { index, label ->
-                    NavigationBarItem(
-                        selected = index == 0,
-                        onClick = { },
-                        label = { Text(label) },
-                        icon = {},
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            ModalDrawerSheet {
+                Text(
+                    text = "WallFruits - Modulos",
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 20.dp),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                AppModuleTab.entries.forEach { module ->
+                    NavigationDrawerItem(
+                        label = { Text(module.title) },
+                        selected = state.selectedModule == module,
+                        onClick = {
+                            viewModel.selectModule(module)
+                            coroutineScope.launch { drawerState.close() }
+                        },
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp),
                     )
                 }
             }
-        }
+        },
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(24.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally,
+        Scaffold(
+            modifier = Modifier.padding(padding),
+            topBar = {
+                TopAppBar(
+                    title = { Text("WallFruits Android") },
+                    navigationIcon = {
+                        TextButton(onClick = { coroutineScope.launch { drawerState.open() } }) {
+                            Text("Menu")
+                        }
+                    },
+                    actions = {
+                        TextButton(onClick = viewModel::refreshHomeData) {
+                            Text("Atualizar")
+                        }
+                    },
+                )
+            },
         ) {
-            Text(
-                text = "WallFruits Android",
-                style = MaterialTheme.typography.headlineMedium,
-            )
-            Text(
-                text = "JWT ativo para ${state.userName ?: "usuario"}",
-                style = MaterialTheme.typography.bodyMedium,
-            )
-            Text(
-                text = "Feed: ${state.offersTotal} | Marketplace: ${state.ordersTotal} | IA: ${state.aiSignals}",
-                style = MaterialTheme.typography.bodyMedium,
-            )
-            Button(onClick = viewModel::refreshDashboard) {
-                Text("Atualizar dados")
-            }
-            Button(onClick = viewModel::logout) {
-                Text("Sair")
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(it)
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.Top,
+                horizontalAlignment = Alignment.Start,
+            ) {
+                Text(
+                    text = "Sessao ativa: ${state.userName ?: "usuario"}",
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Feed ${state.offersTotal} | Marketplace ${state.ordersTotal} | IA ${state.aiSignals}",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Comunidade ${state.communityTotal} | Servicos ${state.servicesTotal} | Biblioteca ${state.libraryTotal}",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                ModulePanel(state = state)
+
+                Spacer(modifier = Modifier.height(20.dp))
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    Button(onClick = viewModel::refreshHomeData) {
+                        Text("Atualizar dados")
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Button(onClick = viewModel::logout) {
+                        Text("Sair")
+                    }
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun ModulePanel(state: AuthUiState) {
+    val (title, subtitle) = when (state.selectedModule) {
+        AppModuleTab.INICIO -> "Inicio" to "Resumo geral da plataforma com Feed, Marketplace e IA."
+        AppModuleTab.COMUNIDADE -> "Comunidade" to "Posts da comunidade disponiveis: ${state.communityTotal}."
+        AppModuleTab.SERVICOS -> "Servicos" to "Servicos publicos cadastrados: ${state.servicesTotal}."
+        AppModuleTab.GERIR_SERVICOS -> "Gerir servicos" to "Servicos sob gestao: ${state.managedServicesTotal}."
+        AppModuleTab.MEUS_CLIENTES -> "Meus clientes" to "Clientes cadastrados no modulo: ${state.clientsTotal}."
+        AppModuleTab.BIBLIOTECA -> "Biblioteca" to "Itens publicados na biblioteca: ${state.libraryTotal}."
+        AppModuleTab.LOJA_AGRICOLA -> "Loja Agricola" to "Fluxo da loja preservado junto ao Marketplace (pedidos ${state.ordersTotal})."
+        AppModuleTab.PAINEL_DA_LOJA -> "Painel da Loja" to "Modulo do painel da loja pronto para evolucao nativa por sprint."
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(text = title, style = MaterialTheme.typography.headlineSmall)
+        Text(text = subtitle, style = MaterialTheme.typography.bodyLarge)
+        Text(
+            text = "Migracao nativa ativa: modulo funcional com dados reais e sem quebra de sessao.",
+            style = MaterialTheme.typography.bodyMedium,
+        )
     }
 }

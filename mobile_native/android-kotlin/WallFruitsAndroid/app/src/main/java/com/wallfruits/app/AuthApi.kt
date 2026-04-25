@@ -9,6 +9,9 @@ interface AuthApi {
     @POST("api/auth/login")
     suspend fun login(@Body request: LoginRequest): LoginResponse
 
+    @POST("api/auth/register")
+    suspend fun register(@Body request: RegisterRequest): ApiUser
+
     @GET("api/auth/me")
     suspend fun me(): ApiUser
 
@@ -23,4 +26,28 @@ interface AuthApi {
 
     @GET("api/ai/agenda/market-intelligence")
     suspend fun marketIntelligence(): AIMarketSnapshot
+
+    @GET("api/community/posts")
+    suspend fun communityPosts(
+        @Query("skip") skip: Int = 0,
+        @Query("limit") limit: Int = 1,
+    ): CommunityPostsResponse
+
+    @GET("api/services")
+    suspend fun services(
+        @Query("skip") skip: Int = 0,
+        @Query("limit") limit: Int = 1,
+    ): ServiceListResponse
+
+    @GET("api/services/manage/list")
+    suspend fun managedServices(
+        @Query("skip") skip: Int = 0,
+        @Query("limit") limit: Int = 1,
+    ): ServiceListResponse
+
+    @GET("api/library/catalog")
+    suspend fun libraryCatalog(): LibraryCatalogResponse
+
+    @GET("api/buyer-clients/dashboard")
+    suspend fun buyerClientsDashboard(): BuyerClientsDashboardResponse
 }
