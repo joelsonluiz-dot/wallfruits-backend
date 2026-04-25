@@ -214,6 +214,90 @@ class AuthViewModel @Inject constructor(
                 }
             }
 
+            AppModuleTab.GERIR_SERVICOS -> {
+                if (!force && _state.value.managedServiceItems.isNotEmpty()) {
+                    return
+                }
+                _state.update { it.copy(isModuleLoading = true, moduleErrorMessage = null) }
+                viewModelScope.launch {
+                    runCatching { repository.loadManagedServicesPreview() }
+                        .onSuccess { items ->
+                            _state.update {
+                                it.copy(
+                                    isModuleLoading = false,
+                                    moduleErrorMessage = null,
+                                    managedServiceItems = items,
+                                    managedServicesTotal = if (it.managedServicesTotal == 0) items.size else it.managedServicesTotal,
+                                )
+                            }
+                        }
+                        .onFailure { throwable ->
+                            _state.update {
+                                it.copy(
+                                    isModuleLoading = false,
+                                    moduleErrorMessage = throwable.message ?: "Falha ao carregar servicos gerenciados",
+                                )
+                            }
+                        }
+                }
+            }
+
+            AppModuleTab.MEUS_CLIENTES -> {
+                if (!force && _state.value.clientItems.isNotEmpty()) {
+                    return
+                }
+                _state.update { it.copy(isModuleLoading = true, moduleErrorMessage = null) }
+                viewModelScope.launch {
+                    runCatching { repository.loadBuyerClientsPreview() }
+                        .onSuccess { items ->
+                            _state.update {
+                                it.copy(
+                                    isModuleLoading = false,
+                                    moduleErrorMessage = null,
+                                    clientItems = items,
+                                    clientsTotal = if (it.clientsTotal == 0) items.size else it.clientsTotal,
+                                )
+                            }
+                        }
+                        .onFailure { throwable ->
+                            _state.update {
+                                it.copy(
+                                    isModuleLoading = false,
+                                    moduleErrorMessage = throwable.message ?: "Falha ao carregar clientes",
+                                )
+                            }
+                        }
+                }
+            }
+
+            AppModuleTab.BIBLIOTECA -> {
+                if (!force && _state.value.libraryItems.isNotEmpty()) {
+                    return
+                }
+                _state.update { it.copy(isModuleLoading = true, moduleErrorMessage = null) }
+                viewModelScope.launch {
+                    runCatching { repository.loadLibraryPreview() }
+                        .onSuccess { items ->
+                            _state.update {
+                                it.copy(
+                                    isModuleLoading = false,
+                                    moduleErrorMessage = null,
+                                    libraryItems = items,
+                                    libraryTotal = if (it.libraryTotal == 0) items.size else it.libraryTotal,
+                                )
+                            }
+                        }
+                        .onFailure { throwable ->
+                            _state.update {
+                                it.copy(
+                                    isModuleLoading = false,
+                                    moduleErrorMessage = throwable.message ?: "Falha ao carregar biblioteca",
+                                )
+                            }
+                        }
+                }
+            }
+
             else -> {
                 _state.update { it.copy(isModuleLoading = false, moduleErrorMessage = null) }
             }
@@ -265,4 +349,7 @@ data class AuthUiState(
     val moduleErrorMessage: String? = null,
     val communityItems: List<CommunityPreview> = emptyList(),
     val serviceItems: List<ServicePreview> = emptyList(),
+    val managedServiceItems: List<ServicePreview> = emptyList(),
+    val clientItems: List<BuyerClientPreview> = emptyList(),
+    val libraryItems: List<LibraryPreview> = emptyList(),
 )

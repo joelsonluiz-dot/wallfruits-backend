@@ -83,6 +83,47 @@ class AuthRepository @Inject constructor(
         }
     }
 
+    suspend fun loadManagedServicesPreview(limit: Int = 20): List<ServicePreview> {
+        val response = api.managedServices(limit = limit)
+        return response.services.mapIndexed { index, item ->
+            ServicePreview(
+                id = item.stringValue("id", "service_id") ?: "managed-service-$index",
+                title = item.stringValue("titulo", "title", "name") ?: "Servico",
+                description = item.stringValue("descricao", "description", "summary") ?: "Sem descricao",
+                price = item.stringValue("preco", "price", "valor") ?: "A combinar",
+                location = item.stringValue("local", "location", "cidade") ?: "Local nao informado",
+            )
+        }
+    }
+
+    suspend fun loadBuyerClientsPreview(): List<BuyerClientPreview> {
+        val response = api.buyerClientsDashboard()
+        return response.clients.mapIndexed { index, item ->
+            val city = item.stringValue("city")
+            val state = item.stringValue("state")
+            BuyerClientPreview(
+                id = item.stringValue("id", "client_id") ?: "client-$index",
+                name = item.stringValue("name") ?: "Cliente",
+                company = item.stringValue("company_name") ?: "Sem empresa",
+                cityState = listOfNotNull(city, state).joinToString("/").ifBlank { "Nao informado" },
+                managementScope = item.stringValue("management_scope") ?: "joint",
+            )
+        }
+    }
+
+    suspend fun loadLibraryPreview(limit: Int = 24): List<LibraryPreview> {
+        val response = api.libraryCatalog()
+        return response.items.take(limit).mapIndexed { index, item ->
+            LibraryPreview(
+                id = item.stringValue("id", "book_id") ?: "book-$index",
+                title = item.stringValue("title", "name") ?: "Leitura",
+                author = item.stringValue("author") ?: "Autor nao informado",
+                category = item.stringValue("category") ?: "Sem categoria",
+                readTime = item.stringValue("read_time") ?: "Tempo livre",
+            )
+        }
+    }
+
     fun logout() = sessionStore.clear()
 }
 

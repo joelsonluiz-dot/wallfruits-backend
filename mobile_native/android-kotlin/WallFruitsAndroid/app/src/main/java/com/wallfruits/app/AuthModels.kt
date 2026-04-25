@@ -96,6 +96,7 @@ data class LibraryCatalogResponse(
 
 @Serializable
 data class BuyerClientsDashboardResponse(
+    val clients: List<JsonObject> = emptyList(),
     val total: Int = 0,
 )
 
@@ -122,4 +123,20 @@ data class ServicePreview(
     val description: String,
     val price: String,
     val location: String,
+)
+
+data class BuyerClientPreview(
+    val id: String,
+    val name: String,
+    val company: String,
+    val cityState: String,
+    val managementScope: String,
+)
+
+data class LibraryPreview(
+    val id: String,
+    val title: String,
+    val author: String,
+    val category: String,
+    val readTime: String,
 )

@@ -133,6 +133,9 @@ private fun ModulePanel(
     when (state.selectedModule) {
         AppModuleTab.COMUNIDADE -> CommunityModuleContent(state = state, onRefresh = onRefreshSelectedModule)
         AppModuleTab.SERVICOS -> ServicesModuleContent(state = state, onRefresh = onRefreshSelectedModule)
+        AppModuleTab.GERIR_SERVICOS -> ManagedServicesModuleContent(state = state, onRefresh = onRefreshSelectedModule)
+        AppModuleTab.MEUS_CLIENTES -> ClientsModuleContent(state = state, onRefresh = onRefreshSelectedModule)
+        AppModuleTab.BIBLIOTECA -> LibraryModuleContent(state = state, onRefresh = onRefreshSelectedModule)
         else -> GenericModuleContent(state = state)
     }
 }
@@ -141,11 +144,11 @@ private fun ModulePanel(
 private fun GenericModuleContent(state: AuthUiState) {
     val (title, subtitle) = when (state.selectedModule) {
         AppModuleTab.INICIO -> "Inicio" to "Resumo geral da plataforma com Feed, Marketplace e IA."
+        AppModuleTab.LOJA_AGRICOLA -> "Loja Agricola" to "Fluxo da loja preservado junto ao Marketplace (pedidos ${state.ordersTotal})."
+        AppModuleTab.PAINEL_DA_LOJA -> "Painel da Loja" to "Modulo do painel da loja pronto para evolucao nativa por sprint."
         AppModuleTab.GERIR_SERVICOS -> "Gerir servicos" to "Servicos sob gestao: ${state.managedServicesTotal}."
         AppModuleTab.MEUS_CLIENTES -> "Meus clientes" to "Clientes cadastrados no modulo: ${state.clientsTotal}."
         AppModuleTab.BIBLIOTECA -> "Biblioteca" to "Itens publicados na biblioteca: ${state.libraryTotal}."
-        AppModuleTab.LOJA_AGRICOLA -> "Loja Agricola" to "Fluxo da loja preservado junto ao Marketplace (pedidos ${state.ordersTotal})."
-        AppModuleTab.PAINEL_DA_LOJA -> "Painel da Loja" to "Modulo do painel da loja pronto para evolucao nativa por sprint."
         AppModuleTab.COMUNIDADE -> "Comunidade" to "Posts da comunidade disponiveis: ${state.communityTotal}."
         AppModuleTab.SERVICOS -> "Servicos" to "Servicos publicos cadastrados: ${state.servicesTotal}."
     }
@@ -258,6 +261,156 @@ private fun ServicesModuleContent(state: AuthUiState, onRefresh: () -> Unit) {
                         Text(item.description, style = MaterialTheme.typography.bodyMedium)
                         Text(
                             "Preco ${item.price} | Local ${item.location}",
+                            style = MaterialTheme.typography.labelMedium,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ManagedServicesModuleContent(state: AuthUiState, onRefresh: () -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("Gerir servicos", style = MaterialTheme.typography.headlineSmall)
+            TextButton(onClick = onRefresh) { Text("Atualizar modulo") }
+        }
+        Text("Servicos sob gestao: ${state.managedServicesTotal}", style = MaterialTheme.typography.bodyMedium)
+        if (state.isModuleLoading) {
+            Text("Carregando servicos gerenciados...", style = MaterialTheme.typography.bodyMedium)
+            return
+        }
+        state.moduleErrorMessage?.let { message ->
+            Text(message, style = MaterialTheme.typography.bodyMedium)
+            return
+        }
+        if (state.managedServiceItems.isEmpty()) {
+            Text("Nenhum servico em gestao no momento.", style = MaterialTheme.typography.bodyMedium)
+            return
+        }
+
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(280.dp),
+            contentPadding = PaddingValues(vertical = 4.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            items(state.managedServiceItems, key = { it.id }) { item ->
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(item.title, style = MaterialTheme.typography.titleMedium)
+                        Text(item.description, style = MaterialTheme.typography.bodyMedium)
+                        Text("Preco ${item.price} | Local ${item.location}", style = MaterialTheme.typography.labelMedium)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ClientsModuleContent(state: AuthUiState, onRefresh: () -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("Meus clientes", style = MaterialTheme.typography.headlineSmall)
+            TextButton(onClick = onRefresh) { Text("Atualizar modulo") }
+        }
+        Text("Clientes cadastrados: ${state.clientsTotal}", style = MaterialTheme.typography.bodyMedium)
+        if (state.isModuleLoading) {
+            Text("Carregando clientes...", style = MaterialTheme.typography.bodyMedium)
+            return
+        }
+        state.moduleErrorMessage?.let { message ->
+            Text(message, style = MaterialTheme.typography.bodyMedium)
+            return
+        }
+        if (state.clientItems.isEmpty()) {
+            Text("Nenhum cliente encontrado no momento.", style = MaterialTheme.typography.bodyMedium)
+            return
+        }
+
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(280.dp),
+            contentPadding = PaddingValues(vertical = 4.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            items(state.clientItems, key = { it.id }) { item ->
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(item.name, style = MaterialTheme.typography.titleMedium)
+                        Text(item.company, style = MaterialTheme.typography.bodyMedium)
+                        Text(
+                            "Cidade/UF ${item.cityState} | Gestao ${item.managementScope}",
+                            style = MaterialTheme.typography.labelMedium,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LibraryModuleContent(state: AuthUiState, onRefresh: () -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("Biblioteca", style = MaterialTheme.typography.headlineSmall)
+            TextButton(onClick = onRefresh) { Text("Atualizar modulo") }
+        }
+        Text("Itens publicados: ${state.libraryTotal}", style = MaterialTheme.typography.bodyMedium)
+        if (state.isModuleLoading) {
+            Text("Carregando biblioteca...", style = MaterialTheme.typography.bodyMedium)
+            return
+        }
+        state.moduleErrorMessage?.let { message ->
+            Text(message, style = MaterialTheme.typography.bodyMedium)
+            return
+        }
+        if (state.libraryItems.isEmpty()) {
+            Text("Nenhum item na biblioteca no momento.", style = MaterialTheme.typography.bodyMedium)
+            return
+        }
+
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(280.dp),
+            contentPadding = PaddingValues(vertical = 4.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            items(state.libraryItems, key = { it.id }) { item ->
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(item.title, style = MaterialTheme.typography.titleMedium)
+                        Text(item.author, style = MaterialTheme.typography.bodyMedium)
+                        Text(
+                            "Categoria ${item.category} | Leitura ${item.readTime}",
                             style = MaterialTheme.typography.labelMedium,
                         )
                     }
