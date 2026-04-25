@@ -107,3 +107,19 @@ data class NativeModulesSnapshot(
     val clientsTotal: Int,
     val libraryTotal: Int,
 )
+
+data class CommunityPreview(
+    val id: String,
+    val author: String,
+    val text: String,
+    val likes: Int,
+    val comments: Int,
+)
+
+data class ServicePreview(
+    val id: String,
+    val title: String,
+    val description: String,
+    val price: String,
+    val location: String,
+)

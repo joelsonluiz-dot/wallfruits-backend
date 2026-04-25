@@ -46,6 +46,7 @@ class AuthViewModel @Inject constructor(
 
     fun selectModule(module: AppModuleTab) {
         _state.update { it.copy(selectedModule = module) }
+        loadSelectedModuleData(module = module)
     }
 
     fun submitAuth() {
@@ -119,6 +120,10 @@ class AuthViewModel @Inject constructor(
 
     fun refreshDashboard() = refreshHomeData()
 
+    fun refreshSelectedModule() {
+        loadSelectedModuleData(module = _state.value.selectedModule, force = true)
+    }
+
     fun refreshHomeData() {
         viewModelScope.launch {
             runCatching {
@@ -145,6 +150,72 @@ class AuthViewModel @Inject constructor(
                         libraryTotal = snapshot.libraryTotal,
                     )
                 }
+            }
+
+            loadSelectedModuleData(module = _state.value.selectedModule, force = true)
+        }
+    }
+
+    private fun loadSelectedModuleData(module: AppModuleTab, force: Boolean = false) {
+        when (module) {
+            AppModuleTab.COMUNIDADE -> {
+                if (!force && _state.value.communityItems.isNotEmpty()) {
+                    return
+                }
+                _state.update { it.copy(isModuleLoading = true, moduleErrorMessage = null) }
+                viewModelScope.launch {
+                    runCatching { repository.loadCommunityPreview() }
+                        .onSuccess { items ->
+                            _state.update {
+                                it.copy(
+                                    isModuleLoading = false,
+                                    moduleErrorMessage = null,
+                                    communityItems = items,
+                                    communityTotal = if (it.communityTotal == 0) items.size else it.communityTotal,
+                                )
+                            }
+                        }
+                        .onFailure { throwable ->
+                            _state.update {
+                                it.copy(
+                                    isModuleLoading = false,
+                                    moduleErrorMessage = throwable.message ?: "Falha ao carregar comunidade",
+                                )
+                            }
+                        }
+                }
+            }
+
+            AppModuleTab.SERVICOS -> {
+                if (!force && _state.value.serviceItems.isNotEmpty()) {
+                    return
+                }
+                _state.update { it.copy(isModuleLoading = true, moduleErrorMessage = null) }
+                viewModelScope.launch {
+                    runCatching { repository.loadServicesPreview() }
+                        .onSuccess { items ->
+                            _state.update {
+                                it.copy(
+                                    isModuleLoading = false,
+                                    moduleErrorMessage = null,
+                                    serviceItems = items,
+                                    servicesTotal = if (it.servicesTotal == 0) items.size else it.servicesTotal,
+                                )
+                            }
+                        }
+                        .onFailure { throwable ->
+                            _state.update {
+                                it.copy(
+                                    isModuleLoading = false,
+                                    moduleErrorMessage = throwable.message ?: "Falha ao carregar servicos",
+                                )
+                            }
+                        }
+                }
+            }
+
+            else -> {
+                _state.update { it.copy(isModuleLoading = false, moduleErrorMessage = null) }
             }
         }
     }
@@ -190,4 +261,8 @@ data class AuthUiState(
     val managedServicesTotal: Int = 0,
     val clientsTotal: Int = 0,
     val libraryTotal: Int = 0,
+    val isModuleLoading: Boolean = false,
+    val moduleErrorMessage: String? = null,
+    val communityItems: List<CommunityPreview> = emptyList(),
+    val serviceItems: List<ServicePreview> = emptyList(),
 )

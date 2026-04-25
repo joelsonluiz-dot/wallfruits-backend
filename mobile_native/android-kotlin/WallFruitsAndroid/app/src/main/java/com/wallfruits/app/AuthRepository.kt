@@ -2,6 +2,8 @@ package com.wallfruits.app
 
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 
 @Singleton
 class AuthRepository @Inject constructor(
@@ -55,5 +57,48 @@ class AuthRepository @Inject constructor(
         )
     }
 
+    suspend fun loadCommunityPreview(limit: Int = 12): List<CommunityPreview> {
+        val response = api.communityPosts(limit = limit)
+        return response.posts.mapIndexed { index, item ->
+            CommunityPreview(
+                id = item.stringValue("id", "post_id") ?: "post-$index",
+                author = item.stringValue("author_name", "author", "user_name") ?: "Comunidade WallFruits",
+                text = item.stringValue("content", "text", "caption", "title") ?: "Post sem descricao",
+                likes = item.intValue("likes_count", "likes") ?: 0,
+                comments = item.intValue("comments_count", "comments") ?: 0,
+            )
+        }
+    }
+
+    suspend fun loadServicesPreview(limit: Int = 20): List<ServicePreview> {
+        val response = api.services(limit = limit)
+        return response.services.mapIndexed { index, item ->
+            ServicePreview(
+                id = item.stringValue("id", "service_id") ?: "service-$index",
+                title = item.stringValue("titulo", "title", "name") ?: "Servico",
+                description = item.stringValue("descricao", "description", "summary") ?: "Sem descricao",
+                price = item.stringValue("preco", "price", "valor") ?: "A combinar",
+                location = item.stringValue("local", "location", "cidade") ?: "Local nao informado",
+            )
+        }
+    }
+
     fun logout() = sessionStore.clear()
+}
+
+private fun JsonObject.stringValue(vararg keys: String): String? {
+    keys.forEach { key ->
+        val primitive = this[key] as? JsonPrimitive ?: return@forEach
+        primitive.contentOrNull?.trim()?.takeIf { it.isNotEmpty() }?.let { return it }
+    }
+    return null
+}
+
+private fun JsonObject.intValue(vararg keys: String): Int? {
+    keys.forEach { key ->
+        val primitive = this[key] as? JsonPrimitive ?: return@forEach
+        primitive.intOrNull?.let { return it }
+        primitive.contentOrNull?.toIntOrNull()?.let { return it }
+    }
+    return null
 }
