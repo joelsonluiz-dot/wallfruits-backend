@@ -73,7 +73,11 @@ def _check_mobile_page() -> Check:
         return Check("mobile page", False, f"falha ao ler {path}: {exc}")
 
     has_play = "play.google.com" in content
-    has_app_store = "apple.com/app-store" in content
+    # Accept both canonical App Store patterns used in docs/pages.
+    has_app_store = (
+        "apple.com/app-store" in content
+        or "apps.apple.com" in content
+    )
 
     if not (has_play and has_app_store):
         return Check("mobile page", False, "links de loja nao encontrados")
