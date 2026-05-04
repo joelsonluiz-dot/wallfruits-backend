@@ -170,6 +170,8 @@ private fun ModulePanel(
             onClearMessage = onClearModuleActionMessage,
         )
         AppModuleTab.BIBLIOTECA -> LibraryModuleContent(state = state, onRefresh = onRefreshSelectedModule)
+        AppModuleTab.LOJA_AGRICOLA -> StoreModuleContent(state = state, onRefresh = onRefreshSelectedModule)
+        AppModuleTab.PAINEL_DA_LOJA -> StoreModuleContent(state = state, onRefresh = onRefreshSelectedModule)
         else -> GenericModuleContent(state = state)
     }
 }
@@ -232,21 +234,18 @@ private fun CommunityModuleContent(state: AuthUiState, onRefresh: () -> Unit) {
 
         LazyColumn(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(280.dp),
+                .fillMaxWidth(),
             contentPadding = PaddingValues(vertical = 4.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             items(state.communityItems, key = { it.id }) { item ->
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text(item.author, style = MaterialTheme.typography.titleMedium)
-                        Text(item.text, style = MaterialTheme.typography.bodyMedium)
-                        Text(
-                            "Curtidas ${item.likes} | Comentarios ${item.comments}",
-                            style = MaterialTheme.typography.labelMedium,
-                        )
-                    }
+                StandardCardContainer {
+                    Text(item.author, style = MaterialTheme.typography.titleMedium)
+                    Text(item.text, style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        "Curtidas ${item.likes} | Comentarios ${item.comments}",
+                        style = MaterialTheme.typography.labelMedium,
+                    )
                 }
             }
         }
@@ -283,21 +282,19 @@ private fun ServicesModuleContent(state: AuthUiState, onRefresh: () -> Unit) {
 
         LazyColumn(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(280.dp),
+                .fillMaxWidth(),
             contentPadding = PaddingValues(vertical = 4.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             items(state.serviceItems, key = { it.id }) { item ->
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text(item.title, style = MaterialTheme.typography.titleMedium)
-                        Text(item.description, style = MaterialTheme.typography.bodyMedium)
-                        Text(
-                            "Preco ${item.price} | Local ${item.location}",
-                            style = MaterialTheme.typography.labelMedium,
-                        )
-                    }
+                StandardCardContainer {
+                    StandardImagePlaceholder()
+                    Text(item.title, style = MaterialTheme.typography.titleMedium)
+                    Text(item.description, style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        "Preco ${item.price} | Local ${item.location}",
+                        style = MaterialTheme.typography.labelMedium,
+                    )
                 }
             }
         }
@@ -353,21 +350,18 @@ private fun ManagedServicesModuleContent(
 
         LazyColumn(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(280.dp),
+                .fillMaxWidth(),
             contentPadding = PaddingValues(vertical = 4.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             items(state.managedServiceItems, key = { it.id }) { item ->
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text(item.title, style = MaterialTheme.typography.titleMedium)
-                        Text(item.description, style = MaterialTheme.typography.bodyMedium)
-                        Text("Preco ${item.price} | Local ${item.location}", style = MaterialTheme.typography.labelMedium)
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            TextButton(onClick = { editingItem = item }) { Text("Editar") }
-                            TextButton(onClick = { deletingItemId = item.id }) { Text("Excluir") }
-                        }
+                StandardCardContainer {
+                    Text(item.title, style = MaterialTheme.typography.titleMedium)
+                    Text(item.description, style = MaterialTheme.typography.bodyMedium)
+                    Text("Preco ${item.price} | Local ${item.location}", style = MaterialTheme.typography.labelMedium)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        TextButton(onClick = { editingItem = item }) { Text("Editar") }
+                        TextButton(onClick = { deletingItemId = item.id }) { Text("Excluir") }
                     }
                 }
             }
@@ -460,24 +454,21 @@ private fun ClientsModuleContent(
 
         LazyColumn(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(280.dp),
+                .fillMaxWidth(),
             contentPadding = PaddingValues(vertical = 4.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             items(state.clientItems, key = { it.id }) { item ->
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text(item.name, style = MaterialTheme.typography.titleMedium)
-                        Text(item.company, style = MaterialTheme.typography.bodyMedium)
-                        Text(
-                            "Cidade/UF ${item.cityState} | Gestao ${item.managementScope}",
-                            style = MaterialTheme.typography.labelMedium,
-                        )
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            TextButton(onClick = { editingItem = item }) { Text("Editar") }
-                            TextButton(onClick = { deletingItemId = item.id }) { Text("Excluir") }
-                        }
+                StandardCardContainer {
+                    Text(item.name, style = MaterialTheme.typography.titleMedium)
+                    Text(item.company, style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        "Cidade/UF ${item.cityState} | Gestao ${item.managementScope}",
+                        style = MaterialTheme.typography.labelMedium,
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        TextButton(onClick = { editingItem = item }) { Text("Editar") }
+                        TextButton(onClick = { deletingItemId = item.id }) { Text("Excluir") }
                     }
                 }
             }
@@ -553,23 +544,20 @@ private fun LibraryModuleContent(state: AuthUiState, onRefresh: () -> Unit) {
 
         LazyColumn(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(280.dp),
+                .fillMaxWidth(),
             contentPadding = PaddingValues(vertical = 4.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             items(state.libraryItems, key = { it.id }) { item ->
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text(item.title, style = MaterialTheme.typography.titleMedium)
-                        Text(item.author, style = MaterialTheme.typography.bodyMedium)
-                        Text(
-                            "Categoria ${item.category} | Leitura ${item.readTime}",
-                            style = MaterialTheme.typography.labelMedium,
-                        )
-                        TextButton(onClick = { selectedItem = item }) {
-                            Text("Ver detalhe")
-                        }
+                StandardCardContainer {
+                    Text(item.title, style = MaterialTheme.typography.titleMedium)
+                    Text(item.author, style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        "Categoria ${item.category} | Leitura ${item.readTime}",
+                        style = MaterialTheme.typography.labelMedium,
+                    )
+                    TextButton(onClick = { selectedItem = item }) {
+                        Text("Ver detalhe")
                     }
                 }
             }

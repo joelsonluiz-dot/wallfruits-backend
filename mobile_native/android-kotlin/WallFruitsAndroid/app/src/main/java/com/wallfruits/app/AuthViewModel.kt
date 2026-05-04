@@ -414,7 +414,7 @@ class AuthViewModel @Inject constructor(
                 }
             }
 
-            AppModuleTab.SERVICOS -> {
+            AppModuleTab.SERVICOS, AppModuleTab.LOJA_AGRICOLA, AppModuleTab.PAINEL_DA_LOJA -> {
                 if (!force && _state.value.serviceItems.isNotEmpty()) {
                     return
                 }

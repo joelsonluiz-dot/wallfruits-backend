@@ -77,3 +77,10 @@ android/*.jks
 android/*.keystore
 android/*.p12
 android/release.keystore
+
+# Android/Gradle local state
+.gradle/
+local.properties
+
+# Generated Android artifacts
+artifacts/android-native-apk/

@@ -53,6 +53,22 @@ data class UpdateBuyerClientRequest(
 )
 
 @Serializable
+data class LibraryCatalogUpsertRequest(
+    val id: String? = null,
+    val title: String,
+    val author: String? = null,
+    val category: String? = null,
+    val read_time: String? = null,
+    val cover: String? = null,
+    val text: String,
+)
+
+@Serializable
+data class CommunityCommentCreateRequest(
+    val content: String,
+)
+
+@Serializable
 data class ApiUser(
     val id: Int,
     val name: String,
@@ -150,6 +166,19 @@ data class CommunityPreview(
     val text: String,
     val likes: Int,
     val comments: Int,
+    val shares: Int,
+    val likedByMe: Boolean,
+)
+
+data class CommunityDetail(
+    val id: String,
+    val author: String,
+    val text: String,
+    val imageUrl: String?,
+    val likes: Int,
+    val comments: Int,
+    val shares: Int,
+    val likedByMe: Boolean,
 )
 
 data class ServicePreview(
@@ -174,4 +203,6 @@ data class LibraryPreview(
     val author: String,
     val category: String,
     val readTime: String,
+    val text: String,
+    val cover: String?,
 )
