@@ -917,6 +917,13 @@
 		transform: translateY(0) scale(1);
 	}
 
+	@media (max-width: 1279px) {
+		.reveal-on-scroll {
+			opacity: 1;
+			transform: none;
+		}
+	}
+
 	.loja-toast-wrap {
 		position: fixed;
 		right: 14px;
@@ -1919,6 +1926,11 @@
 		function setupRevealObserver() {
 			const targets = document.querySelectorAll(".reveal-on-scroll");
 			if (!targets.length) return;
+
+			if (window.matchMedia("(max-width: 1279px)").matches) {
+				targets.forEach((node) => node.classList.add("is-visible"));
+				return;
+			}
 
 			if (!("IntersectionObserver" in window)) {
 				targets.forEach((node) => node.classList.add("is-visible"));
