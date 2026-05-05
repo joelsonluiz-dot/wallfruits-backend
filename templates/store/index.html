@@ -63,6 +63,8 @@
 	.wf-messages-toggle {
 		display: none !important;
 	}
+
+	.loja-banner-content {
 		z-index: 2;
 		padding: 18px;
 		color: #FFFFFF;
@@ -143,6 +145,78 @@
 	.loja-banner-dot.is-active {
 		width: 22px;
 		background: #FFFFFF;
+	}
+
+	.loja-header {
+		position: sticky;
+		top: 0;
+		z-index: 50;
+		background: linear-gradient(180deg, rgba(255, 251, 240, 0.95) 0%, rgba(255, 251, 240, 0.88) 100%);
+		backdrop-filter: blur(12px);
+		border-bottom: 1px solid rgba(209, 213, 219, 0.6);
+		box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+	}
+
+	.loja-header-inner {
+		display: grid;
+		grid-template-areas: "header-top" "header-actions";
+		gap: 10px;
+		padding: 12px 14px;
+		max-width: 100%;
+		width: 100%;
+		margin: 0 auto;
+	}
+
+	.loja-back-btn,
+	.loja-icon-btn {
+		border: none;
+		background: rgba(255, 255, 255, 0.7);
+		border: 1px solid rgba(209, 213, 219, 0.4);
+		border-radius: 12px;
+		color: #374151;
+		cursor: pointer;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 40px;
+		height: 40px;
+		font-size: 1.2rem;
+		transition: all 0.22s ease;
+	}
+
+	.loja-back-btn:hover,
+	.loja-icon-btn:hover {
+		background: #FFFFFF;
+		border-color: rgba(209, 213, 219, 0.6);
+		transform: translateY(-2px);
+	}
+
+	.loja-brand {
+		display: grid;
+		gap: 2px;
+		align-self: center;
+	}
+
+	.loja-brand-title {
+		margin: 0;
+		font-size: 0.95rem;
+		font-weight: 800;
+		color: #111827;
+		line-height: 1.2;
+	}
+
+	.loja-brand-sub {
+		margin: 0;
+		font-size: 0.72rem;
+		color: #6B7280;
+		line-height: 1.2;
+	}
+
+	.loja-header-actions {
+		display: flex;
+		gap: 8px;
+		align-items: center;
+		justify-content: flex-start;
 	}
 
 	.loja-filter-grid {
@@ -685,6 +759,10 @@
 		.loja-header {
 			top: 6px;
 			border-radius: 16px;
+			background: linear-gradient(180deg, rgba(255, 251, 240, 0.94) 0%, rgba(255, 251, 240, 0.87) 100%);
+			backdrop-filter: blur(12px);
+			border-bottom: 1px solid rgba(209, 213, 219, 0.5);
+			box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
 		}
 
 		.loja-header-inner {
