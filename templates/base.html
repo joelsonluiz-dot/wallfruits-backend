@@ -6326,8 +6326,6 @@
 </main>
 </div>
 
-            {% set wf_is_store_route = request and request.path and request.path.startswith('/store') %}
-            {% if not wf_is_store_route %}
             <button class="wf-mobile-floating-add" id="actionFloatingButton" type="button" title="Abrir ações rápidas" aria-label="Abrir ações rápidas">
                 <span class="material-icons">add</span>
             </button>
@@ -6386,7 +6384,6 @@
                     </ul>
                 </nav>
             </div>
-            {% endif %}
 
             <!-- Popup de ações -->
             <div class="wf-popup-overlay" id="mobileActionPopup">
