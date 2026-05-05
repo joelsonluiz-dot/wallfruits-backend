@@ -1,0 +1,45 @@
+name: Build and Deploy to Render
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Build desktop-web
+        working-directory: desktop-web
+        run: |
+          npm ci
+          npm run build
+
+      - name: Build backend (optional)
+        run: |
+          echo "No explicit backend build here. Render will use repository/Dockerfile as configured."
+
+      - name: Trigger Render deploys
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_IDS: ${{ secrets.RENDER_SERVICE_IDS }}
+        run: |
+          if [ -z "$RENDER_API_KEY" ] || [ -z "$RENDER_SERVICE_IDS" ]; then
+            echo "RENDER_API_KEY or RENDER_SERVICE_IDS secrets not set. Aborting."; exit 1
+          fi
+          IFS=',' read -ra IDS <<< "$RENDER_SERVICE_IDS"
+          for id in "${IDS[@]}"; do
+            id_trimmed=$(echo "$id" | xargs)
+            echo "Triggering deploy for service: $id_trimmed"
+            curl -sSf -X POST "https://api.render.com/v1/services/$id_trimmed/deploys" \
+              -H "Authorization: Bearer $RENDER_API_KEY" \
+              -H "Content-Type: application/json" \
+              -d '{}' || { echo "Failed to trigger deploy for $id_trimmed"; exit 1; }
+          done

@@ -62,15 +62,15 @@ fun StoreModuleContent(state: AuthUiState, onRefresh: () -> Unit) {
 
         LazyVerticalGrid(
             columns = GridCells.Adaptive(minSize = UiDimens.cardMinWidth),
-            contentPadding = PaddingValues(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(UiDimens.screenPadding),
+            horizontalArrangement = Arrangement.spacedBy(UiDimens.screenPadding),
+            verticalArrangement = Arrangement.spacedBy(UiDimens.screenPadding),
             modifier = Modifier.fillMaxWidth(),
         ) {
             items(items, key = { it.id }) { item ->
                 StandardCardContainer(modifier = Modifier) {
                     StandardImagePlaceholder()
-                    Text(item.title, style = MaterialTheme.typography.titleMedium, maxLines = 2)
+                    Text(item.title, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
                     Text(item.price, style = MaterialTheme.typography.bodyMedium)
                     androidx.compose.foundation.layout.Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                         StandardButton(text = "Ver", onClick = { /* abrir detalhe */ })

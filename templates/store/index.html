@@ -1011,6 +1011,11 @@
 			padding-inline: 0;
 		}
 
+		:root {
+			--loja-mobile-columns: 2;
+			--loja-mobile-gap: 8px;
+		}
+
 		.loja-shell,
 		.loja-main {
 			gap: calc(var(--loja-grid) * 1.5);
@@ -1122,6 +1127,10 @@
 
 		.loja-search-shell {
 			grid-template-columns: 1fr;
+		}
+
+		.loja-filter-grid {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
 		}
 
 		.loja-search-btn {
@@ -1265,6 +1274,11 @@
 
 		.loja-banner {
 			min-height: 158px;
+		}
+
+		.loja-section-grid {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 10px;
 		}
 
 		.loja-banner-content {

@@ -57,5 +57,10 @@
 @media (max-width: 768px) {
   .store-app-shell {
     padding: 0 10px 16px;
+    overflow-x: clip;
+  }
+
+  .loja-page {
+    overflow-x: clip;
   }
 }
