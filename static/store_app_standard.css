@@ -65,21 +65,330 @@
   }
 }
 
-/* Responsive grid breakpoints for store pages */
-@media (max-width: 1200px) {
-  .loja-section-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+/* Store mobile layout overrides */
+@media (max-width: 639px) {
+  .loja-page {
+    gap: calc(var(--loja-grid) * 1.5);
+    overflow-x: hidden;
+    padding-inline: 0;
+  }
+
+  :root {
+    --loja-mobile-columns: 2;
+    --loja-mobile-gap: 8px;
+  }
+
+  .loja-shell,
+  .loja-main {
+    gap: calc(var(--loja-grid) * 1.5);
+    min-width: 0;
+  }
+
+  .loja-main {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .loja-header {
+    top: 6px;
+    border-radius: 16px;
+  }
+
+  .loja-header-inner {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      "back brand"
+      "actions actions";
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .loja-back-btn {
+    grid-area: back;
+  }
+
+  .loja-brand {
+    grid-area: brand;
+  }
+
+  .loja-header-actions {
+    grid-area: actions;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .loja-back-btn,
+  .loja-icon-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 11px;
+  }
+
+  .loja-header-actions {
+    gap: 4px;
+  }
+
+  .loja-brand-title {
+    font-size: 0.92rem;
+  }
+
+  .loja-brand-sub {
+    font-size: 0.68rem;
+  }
+
+  .loja-category-card {
+    min-width: 108px;
+  }
+
+  .loja-panel,
+  .loja-section {
+    padding: 10px;
+    border-radius: 14px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .loja-search-history {
+    overflow-x: visible;
+    flex-wrap: wrap;
+    scroll-snap-type: none;
+    gap: 6px;
+  }
+
+  .loja-categories-track {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    padding: 2px 2px 4px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .loja-categories-track::-webkit-scrollbar {
+    display: none;
+  }
+
+  .loja-category-card {
+    flex: 0 0 112px;
+    min-width: 112px;
+    padding: 10px 9px;
+    font-size: 0.74rem;
+  }
+
+  .loja-section-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .loja-card-media {
+    aspect-ratio: 1 / 1;
+  }
+
+  .loja-card-actions {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .loja-card-actions .loja-btn.detail {
+    grid-column: 1 / -1;
+    min-height: 40px;
+  }
+
+  .loja-search-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .loja-filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .loja-search-btn {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    font-size: 0.95rem;
+  }
+
+  .loja-search-input,
+  .loja-filter-select {
+    font-size: 16px;
+  }
+
+  .loja-filter-select {
+    min-height: 44px;
+  }
+
+  .loja-banner {
+    min-height: 170px;
+  }
+
+  .loja-banner-content {
+    padding: 12px;
+  }
+
+  .loja-banner-content h2 {
+    font-size: 1rem;
+  }
+
+  .loja-banner-content p {
+    font-size: 0.8rem;
+  }
+
+  .loja-section-head {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .loja-card {
+    border-radius: 12px;
+    grid-template-rows: auto minmax(0, 1fr);
+    width: 100%;
+    min-width: 0;
+  }
+
+  .loja-fav-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+  }
+
+  .loja-badge {
+    font-size: 0.56rem;
+    padding: 3px 6px;
+  }
+
+  .loja-card-body {
+    padding: 8px;
+    gap: 6px;
+    align-content: space-between;
+    height: 100%;
+  }
+
+  .loja-card-category {
+    font-size: 0.56rem;
+  }
+
+  .loja-card-name {
+    font-size: clamp(0.72rem, 2.5vw, 0.84rem);
+    line-height: 1.25;
+    min-height: calc(2 * 1.25em);
+  }
+
+  .loja-proof-row {
+    font-size: 0.6rem;
+    gap: 3px;
+  }
+
+  .loja-urgency,
+  .loja-discount {
+    font-size: 0.55rem;
+    padding: 3px 5px;
+  }
+
+  .loja-price-main {
+    font-size: clamp(0.84rem, 3vw, 0.95rem);
+  }
+
+  .loja-price-old {
+    font-size: 0.58rem;
+  }
+
+  .loja-btn {
+    min-height: 38px;
+    font-size: 0.66rem;
+    padding: 8px 6px;
+  }
+
+  .loja-toast-wrap {
+    right: 10px;
+    left: 10px;
+    bottom: 12px;
+  }
+
+  .loja-toast {
+    max-width: none;
+    min-width: 0;
+  }
+
+  #lojaBuscaMount,
+  #lojaCategoriasMount,
+  #lojaBannerMount,
+  #lojaProdutosMount {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
 }
 
-@media (max-width: 900px) {
-  .loja-section-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .loja-card { grid-auto-rows: auto; }
-  .store-app-shell { padding-left: 12px; padding-right: 12px; }
-}
+@media (max-width: 420px) {
+  .loja-header-inner {
+    padding: 8px;
+    gap: 6px;
+  }
 
-@media (max-width: 600px) {
-  .loja-section-grid { grid-template-columns: 1fr; }
-  .loja-category-card { min-width: 88px; }
-  .loja-header-inner { grid-template-columns: auto 1fr auto; gap: 8px; padding: 10px; }
+  .loja-brand-title {
+    font-size: 0.86rem;
+  }
+
+  .loja-brand-sub {
+    display: none;
+  }
+
+  .loja-back-btn,
+  .loja-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+  }
+
+  .loja-banner {
+    min-height: 150px;
+  }
+
+  .loja-section-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .loja-banner-content {
+    padding: 10px;
+  }
+
+  .loja-banner-content h2 {
+    font-size: 0.92rem;
+  }
+
+  .loja-category-card {
+    flex-basis: 88px;
+    min-width: 88px;
+    padding: 7px;
+    font-size: 0.68rem;
+  }
+
+  .loja-category-icon {
+    width: 28px;
+    height: 28px;
+    font-size: 0.9rem;
+  }
+
+  .loja-card-body {
+    padding: 7px;
+    gap: 5px;
+  }
+
+  .loja-btn {
+    min-height: 36px;
+    font-size: 0.62rem;
+    padding: 7px 5px;
+  }
 }
 
 /* Ensure product images scale and cards fit on small devices */
@@ -87,3 +396,42 @@
 
 /* Provide comfortable touch targets */
 button, .loja-back-btn, .loja-icon-btn { min-height: 44px; min-width: 44px; }
+
+/* Fixes for horizontal overflow in banners, tracks and badge stacks */
+.loja-banner,
+.loja-banner-track {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+.loja-banner img,
+.loja-banner-track img,
+.loja-card-media img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+.loja-categories-track {
+  -webkit-overflow-scrolling: touch;
+}
+
+.loja-categories-track > * {
+  min-width: 0;
+}
+
+.loja-badge-stack {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* Ensure grid/flex children cannot force parent to expand */
+.loja-shell *,
+.loja-main *,
+.loja-section-grid * {
+  min-width: 0;
+}
