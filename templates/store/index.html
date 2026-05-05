@@ -63,350 +63,6 @@
 	.wf-messages-toggle {
 		display: none !important;
 	}
-
-	.loja-page,
-	.loja-page *,
-	.loja-page *::before,
-	.loja-page *::after {
-		box-sizing: border-box;
-	}
-
-	.loja-shell {
-		display: grid;
-		gap: calc(var(--loja-grid) * 2);
-		min-width: 0;
-	}
-
-	.loja-aside {
-		display: none;
-	}
-
-	.loja-main {
-		display: grid;
-		gap: calc(var(--loja-grid) * 2);
-		min-width: 0;
-		overflow-x: hidden;
-	}
-
-	.loja-header {
-		position: sticky;
-		top: 8px;
-		z-index: 60;
-		border-radius: var(--loja-radius-lg);
-		border: 1px solid rgba(255, 255, 255, 0.25);
-		background:
-			linear-gradient(120deg, rgba(37, 99, 235, 0.92) 0%, rgba(59, 130, 246, 0.9) 42%, rgba(99, 102, 241, 0.88) 100%);
-		backdrop-filter: blur(18px);
-		box-shadow:
-			0 12px 28px rgba(37, 99, 235, 0.24),
-			0 2px 8px rgba(15, 23, 42, 0.15);
-		transform-origin: top center;
-		transition: transform 0.28s ease, box-shadow 0.28s ease, border-radius 0.28s ease;
-	}
-
-	.loja-header.is-scrolled {
-		transform: scale(calc(1 - (0.06 * var(--header-progress, 0))));
-		border-radius: 16px;
-		box-shadow:
-			0 18px 34px rgba(15, 23, 42, 0.26),
-			0 8px 16px rgba(37, 99, 235, 0.18);
-	}
-
-	.loja-header-inner {
-		display: grid;
-		grid-template-columns: auto 1fr auto;
-		align-items: center;
-		gap: calc(var(--loja-grid) * 1.5);
-		padding: calc(var(--loja-grid) * 1.5);
-	}
-
-	.loja-back-btn,
-	.loja-icon-btn {
-		width: 40px;
-		height: 40px;
-		border: 1px solid rgba(255, 255, 255, 0.42);
-		border-radius: 14px;
-		background: rgba(255, 255, 255, 0.2);
-		color: var(--loja-white);
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		text-decoration: none;
-		position: relative;
-		overflow: hidden;
-		transition: transform 0.18s ease, background 0.18s ease;
-	}
-
-	.loja-back-btn:active,
-	.loja-icon-btn:active {
-		transform: scale(0.95);
-	}
-
-	.loja-brand {
-		min-width: 0;
-	}
-
-	.loja-brand-title {
-		margin: 0;
-		font-family: "Sora", "Segoe UI", sans-serif;
-		font-weight: 700;
-		font-size: 1rem;
-		line-height: 1.2;
-		color: var(--loja-white);
-		letter-spacing: 0.01em;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-	}
-
-	.loja-brand-sub {
-		margin: 2px 0 0;
-		color: rgba(255, 255, 255, 0.82);
-		font-size: 0.74rem;
-		font-weight: 600;
-	}
-
-	.loja-header-actions {
-		display: flex;
-		gap: calc(var(--loja-grid));
-		align-items: center;
-	}
-
-	.loja-cart-count {
-		position: absolute;
-		right: -4px;
-		top: -5px;
-		min-width: 18px;
-		height: 18px;
-		border-radius: 999px;
-		background: var(--loja-yellow);
-		color: #1F2937;
-		border: 1px solid rgba(255, 255, 255, 0.7);
-		font-size: 0.65rem;
-		font-weight: 900;
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		line-height: 1;
-		padding: 0 4px;
-	}
-
-	.loja-cart-count.bump {
-		animation: badgeBump 0.38s ease;
-	}
-
-	.loja-panel {
-		border: 1px solid rgba(209, 213, 219, 0.8);
-		border-radius: var(--loja-radius-md);
-		background: rgba(255, 255, 255, 0.82);
-		backdrop-filter: blur(14px);
-		box-shadow: var(--loja-shadow-soft);
-		padding: calc(var(--loja-grid) * 1.5);
-	}
-
-	.loja-search-form {
-		display: grid;
-		gap: calc(var(--loja-grid));
-	}
-
-	.loja-search-shell {
-		display: grid;
-		grid-template-columns: 1fr auto;
-		gap: calc(var(--loja-grid));
-		align-items: center;
-	}
-
-	.loja-search-input-wrap {
-		position: relative;
-		border-radius: 16px;
-		border: 1px solid #D1D5DB;
-		background: #FFFFFF;
-		transition: box-shadow 0.24s ease, border-color 0.24s ease, transform 0.24s ease;
-	}
-
-	.loja-search-input-wrap.is-focused {
-		border-color: rgba(37, 99, 235, 0.55);
-		box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.13);
-		transform: translateY(-1px);
-	}
-
-	.loja-search-icon {
-		position: absolute;
-		left: 12px;
-		top: 50%;
-		transform: translateY(-50%);
-		color: #64748B;
-		font-size: 1.12rem;
-		transition: color 0.22s ease;
-	}
-
-	.loja-search-input-wrap.is-focused .loja-search-icon {
-		color: var(--loja-blue);
-	}
-
-	.loja-search-input {
-		width: 100%;
-		border: none;
-		outline: none;
-		background: transparent;
-		border-radius: 16px;
-		padding: 12px 12px 12px 40px;
-		font-size: 0.94rem;
-		font-weight: 600;
-		color: var(--loja-gray-900);
-	}
-
-	.loja-search-btn {
-		border: none;
-		border-radius: 14px;
-		background: linear-gradient(140deg, #2563EB 0%, #3B82F6 52%, #6366F1 100%);
-		color: #FFFFFF;
-		font-weight: 800;
-		font-size: 0.83rem;
-		padding: 11px 14px;
-		min-width: 108px;
-		position: relative;
-		overflow: hidden;
-	}
-
-	.loja-search-suggestions {
-		margin-top: calc(var(--loja-grid));
-		border: 1px solid rgba(209, 213, 219, 0.85);
-		border-radius: 14px;
-		background: rgba(255, 255, 255, 0.95);
-		max-height: 240px;
-		overflow: auto;
-		display: none;
-		box-shadow: 0 12px 22px rgba(15, 23, 42, 0.08);
-	}
-
-	.loja-search-suggestions.open {
-		display: block;
-	}
-
-	.loja-suggestion-item {
-		width: 100%;
-		text-align: left;
-		background: transparent;
-		border: none;
-		border-bottom: 1px solid rgba(226, 232, 240, 0.82);
-		padding: 10px 12px;
-		font-size: 0.85rem;
-		font-weight: 600;
-		color: #334155;
-		cursor: pointer;
-	}
-
-	.loja-suggestion-item:last-child {
-		border-bottom: none;
-	}
-
-	.loja-suggestion-item:hover {
-		background: rgba(37, 99, 235, 0.08);
-	}
-
-	.loja-search-history {
-		display: flex;
-		gap: calc(var(--loja-grid));
-		overflow-x: auto;
-		padding-bottom: 2px;
-		scroll-snap-type: x mandatory;
-	}
-
-	.loja-history-chip {
-		border: 1px solid rgba(191, 219, 254, 0.9);
-		border-radius: 999px;
-		background: rgba(239, 246, 255, 0.95);
-		color: #1D4ED8;
-		font-size: 0.73rem;
-		font-weight: 800;
-		padding: 6px 10px;
-		white-space: nowrap;
-		scroll-snap-align: start;
-		cursor: pointer;
-	}
-
-	.loja-categories-track {
-		display: flex;
-		gap: calc(var(--loja-grid));
-		overflow-x: auto;
-		scroll-snap-type: x mandatory;
-		padding-bottom: 2px;
-	}
-
-	.loja-category-card {
-		border: 1px solid rgba(209, 213, 219, 0.9);
-		border-radius: 14px;
-		background: rgba(255, 255, 255, 0.78);
-		min-width: 118px;
-		padding: 10px;
-		display: grid;
-		gap: 6px;
-		align-content: start;
-		text-align: left;
-		color: #374151;
-		font-weight: 700;
-		font-size: 0.78rem;
-		box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
-		scroll-snap-align: start;
-		transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-		cursor: pointer;
-	}
-
-	.loja-category-card:hover {
-		transform: translateY(-2px);
-	}
-
-	.loja-category-card.is-active {
-		border-color: rgba(37, 99, 235, 0.78);
-		background: linear-gradient(140deg, rgba(37, 99, 235, 0.12) 0%, rgba(99, 102, 241, 0.14) 100%);
-		box-shadow: 0 12px 24px rgba(37, 99, 235, 0.2);
-		transform: scale(1.02);
-	}
-
-	.loja-category-card:active {
-		transform: scale(0.98);
-	}
-
-	.loja-category-icon {
-		width: 34px;
-		height: 34px;
-		border-radius: 10px;
-		background: rgba(37, 99, 235, 0.12);
-		color: #2563EB;
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		font-size: 1.1rem;
-	}
-
-	.loja-banner {
-		position: relative;
-		border-radius: var(--loja-radius-lg);
-		overflow: hidden;
-		border: 1px solid rgba(191, 219, 254, 0.75);
-		background: #111827;
-		box-shadow: var(--loja-shadow-card);
-		min-height: 188px;
-	}
-
-	.loja-banner-track {
-		display: flex;
-		height: 100%;
-		transition: transform 0.62s cubic-bezier(0.22, 0.61, 0.36, 1);
-	}
-
-	.loja-banner-slide {
-		min-width: 100%;
-		display: grid;
-		grid-template-columns: 1fr;
-		align-items: stretch;
-		position: relative;
-		isolation: isolate;
-	}
-
-	.loja-banner-content {
-		position: relative;
 		z-index: 2;
 		padding: 18px;
 		color: #FFFFFF;
@@ -1826,6 +1482,33 @@
 			return { label: "Top", className: "best" };
 		}
 
+		const LOJA_IMAGE_PLACEHOLDER = "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(
+			'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480" role="img" aria-label="Produto sem imagem">' +
+			'<defs><linearGradient id="g" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#dbeafe"/><stop offset="1" stop-color="#eef2ff"/></linearGradient></defs>' +
+			'<rect width="640" height="480" fill="url(#g)"/>' +
+			'<circle cx="320" cy="190" r="64" fill="#93c5fd" opacity="0.95"/>' +
+			'<rect x="190" y="286" width="260" height="26" rx="13" fill="#60a5fa"/>' +
+			'<rect x="150" y="326" width="340" height="18" rx="9" fill="#bfdbfe"/>' +
+			'</svg>'
+		);
+
+		function refreshLojaImageFallbacks(root = document) {
+			const images = root.querySelectorAll?.(".loja-card-media img") || [];
+			images.forEach((img) => {
+				if (!(img instanceof HTMLImageElement)) return;
+				const replaceWithPlaceholder = () => {
+					if (img.dataset.placeholderApplied === "1") return;
+					if (img.naturalWidth > 0 && img.naturalHeight > 0) return;
+					img.dataset.placeholderApplied = "1";
+					img.src = LOJA_IMAGE_PLACEHOLDER;
+					img.classList.add("is-placeholder");
+				};
+
+				img.addEventListener("error", replaceWithPlaceholder, { once: true });
+				window.setTimeout(replaceWithPlaceholder, 850);
+			});
+		}
+
 		function render_loja_cards(products, sectionKey) {
 			return products.map((product) => {
 				const id = String(product?.id || "");
@@ -1842,7 +1525,7 @@
 				const badge = productBadge(product, sectionKey);
 				const slug = encodeURIComponent(String(product?.slug || ""));
 				const image = product?.image
-					? `<img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.name || "Produto")}" loading="lazy" decoding="async" />`
+					? `<img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.name || "Produto")}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='${LOJA_IMAGE_PLACEHOLDER}';this.classList.add('is-placeholder');" />`
 					: `<span class="material-symbols-outlined" style="font-size:48px;color:#94A3B8;">inventory_2</span>`;
 
 				return `
@@ -1964,6 +1647,8 @@
 					`).join("")}
 				</div>
 			`;
+
+			refreshLojaImageFallbacks(dom.produtosMount);
 
 			setupRevealObserver();
 		}
