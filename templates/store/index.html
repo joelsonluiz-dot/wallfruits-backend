@@ -1016,6 +1016,33 @@
 			--loja-mobile-gap: 8px;
 		}
 
+	<!-- Inline mobile override to force fixed grid widths during deploy propagation -->
+	<style id="wf-inline-mobile-fix">
+	@media (max-width: 900px) {
+		.loja-filter-grid, .loja-section-grid, .loja-search-shell {
+			grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+			width: 100% !important;
+			max-width: 100% !important;
+			box-sizing: border-box !important;
+		}
+
+		.loja-search-btn {
+			width: 100% !important;
+			min-width: 0 !important;
+		}
+
+		.loja-card, .loja-panel, .loja-section {
+			min-width: 0 !important;
+			max-width: 100% !important;
+			width: 100% !important;
+		}
+
+		body, .loja-page {
+			overflow-x: hidden !important;
+		}
+	}
+	</style>
+
 		.loja-shell,
 		.loja-main {
 			gap: calc(var(--loja-grid) * 1.5);
