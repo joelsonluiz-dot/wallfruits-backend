@@ -58,6 +58,11 @@
 		background: linear-gradient(180deg, #FFFFFF 0%, #FAFAFA 100%);
 	}
 
+	.wf-container {
+		max-width: none;
+		padding: 0;
+	}
+
 	.loja-shell {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
@@ -188,7 +193,7 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: 12px;
-		padding: 10px 16px;
+		padding: 10px 0;
 		max-width: 100%;
 		width: 100%;
 		margin: 0 auto;
@@ -245,7 +250,7 @@
 	.loja-search-form {
 		display: grid;
 		gap: 8px;
-		padding: 0 16px;
+		padding: 0;
 	}
 
 	.loja-search-shell {
@@ -335,7 +340,7 @@
 		gap: 8px;
 		overflow-x: auto;
 		overflow-y: hidden;
-		padding: 8px 16px;
+		padding: 8px 0;
 		scroll-snap-type: x proximity;
 		-webkit-overflow-scrolling: touch;
 	}
@@ -371,7 +376,7 @@
 		border-radius: 12px;
 		overflow: hidden;
 		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-		margin: 0 16px;
+		margin: 0;
 	}
 
 	.loja-banner-track {
@@ -390,7 +395,7 @@
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
 		gap: 8px;
-		padding: 0 16px;
+		padding: 0;
 	}
 
 	.loja-filter-select {
@@ -459,7 +464,7 @@
 		border-radius: 0;
 		background: #FFFFFF;
 		box-shadow: none;
-		padding: 0 16px;
+		padding: 0;
 		content-visibility: auto;
 	}
 
@@ -1599,11 +1604,6 @@
 						<button type="button" id="lojaBackBtn" class="loja-back-btn ripple" aria-label="Voltar">
 							<span class="material-symbols-outlined">arrow_back</span>
 						</button>
-
-						<div class="loja-brand">
-							<h1 class="loja-brand-title">Loja WallFruits</h1>
-							<p class="loja-brand-sub">Marketplace global-ready para conversao</p>
-						</div>
 
 						<div class="loja-header-actions">
 							<a href="/store/cart" class="loja-icon-btn ripple" aria-label="Carrinho" title="Carrinho">
