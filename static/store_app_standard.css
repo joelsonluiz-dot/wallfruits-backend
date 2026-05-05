@@ -448,7 +448,7 @@ button, .loja-back-btn, .loja-icon-btn { min-height: 44px; min-width: 44px; }
 .loja-banner-track {
   display: flex;
   gap: 8px;
-  overflow-x: auto;
+  overflow-x: hidden;
   overflow-y: hidden;
   scroll-snap-type: x mandatory;
 }
@@ -465,10 +465,17 @@ button, .loja-back-btn, .loja-icon-btn { min-height: 44px; min-width: 44px; }
 .loja-banner-track .slide {
   min-width: 0;
   max-width: 100%;
+  overflow: hidden;
 }
 
 /* If JS initializes transforms on track children, keep them constrained */
 .loja-banner-track [style], .loja-categories-track [style] {
   max-width: 100% !important;
   box-sizing: border-box;
+}
+
+.loja-banner,
+.loja-banner-track,
+.loja-categories-track {
+  overscroll-behavior-x: contain;
 }
