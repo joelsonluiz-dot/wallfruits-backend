@@ -55,25 +55,7 @@
 		overflow-x: hidden;
 		-webkit-text-size-adjust: 100%;
 		text-size-adjust: 100%;
-		position: relative;
-		isolation: isolate;
-		border-radius: 20px;
-		background:
-			radial-gradient(1200px 420px at 12% -10%, rgba(37, 99, 235, 0.2), rgba(37, 99, 235, 0) 60%),
-			radial-gradient(900px 340px at 92% 0%, rgba(250, 204, 21, 0.18), rgba(250, 204, 21, 0) 55%),
-			linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(248, 250, 252, 0.8) 100%);
-	}
-
-	.loja-page::before {
-		content: "";
-		position: absolute;
-		inset: 0;
-		z-index: -1;
-		pointer-events: none;
-		background-image:
-			linear-gradient(rgba(148, 163, 184, 0.06) 1px, transparent 1px),
-			linear-gradient(90deg, rgba(148, 163, 184, 0.06) 1px, transparent 1px);
-		background-size: 24px 24px;
+		background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(248, 250, 252, 0.92) 100%);
 	}
 
 	.loja-shell {
@@ -89,12 +71,11 @@
 	}
 
 	.loja-panel {
-		border: 1px solid rgba(226, 232, 240, 0.86);
-		border-radius: 18px;
-		padding: 14px;
-		background: linear-gradient(175deg, rgba(255, 255, 255, 0.96) 0%, rgba(248, 250, 252, 0.92) 100%);
-		box-shadow: var(--loja-premium-glow);
-		backdrop-filter: blur(10px);
+		border: 1px solid rgba(226, 232, 240, 0.8);
+		border-radius: 14px;
+		padding: 12px;
+		background: #FFFFFF;
+		box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
 	}
 
 	/* Evita sobreposicao de controles globais da base sobre o layout da Loja.
@@ -196,27 +177,17 @@
 		position: sticky;
 		top: 0;
 		z-index: 50;
-		background: linear-gradient(165deg, rgba(255, 255, 255, 0.96) 0%, rgba(248, 250, 252, 0.9) 55%, rgba(250, 204, 21, 0.16) 100%);
-		backdrop-filter: blur(12px);
-		border: 1px solid var(--loja-premium-border);
-		border-radius: 18px;
-		box-shadow: 0 16px 32px rgba(15, 23, 42, 0.12);
-		overflow: hidden;
-	}
-
-	.loja-header::after {
-		content: "";
-		position: absolute;
-		inset: 0;
-		pointer-events: none;
-		background: linear-gradient(95deg, rgba(255, 255, 255, 0) 8%, rgba(255, 255, 255, 0.42) 50%, rgba(255, 255, 255, 0) 92%);
+		background: rgba(255, 255, 255, 0.98);
+		border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+		box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+		will-change: transform;
 	}
 
 	.loja-header-inner {
 		display: grid;
 		grid-template-areas: "header-top" "header-actions";
-		gap: 10px;
-		padding: 12px 14px;
+		gap: 8px;
+		padding: 8px 12px;
 		max-width: 100%;
 		width: 100%;
 		margin: 0 auto;
@@ -310,8 +281,8 @@
 		border: none;
 		outline: none;
 		background: transparent;
-		padding: 12px 12px 12px 40px;
-		font-size: 0.9rem;
+		padding: 11px 11px 11px 38px;
+		font-size: 0.88rem;
 		font-weight: 700;
 		color: #0F172A;
 	}
@@ -389,10 +360,10 @@
 	}
 
 	.loja-banner {
-		border: 1px solid rgba(59, 130, 246, 0.2);
-		border-radius: 18px;
+		border: 1px solid rgba(226, 232, 240, 0.8);
+		border-radius: 16px;
 		overflow: hidden;
-		box-shadow: 0 16px 28px rgba(30, 64, 175, 0.2);
+		box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
 	}
 
 	.loja-banner-track {
@@ -403,7 +374,8 @@
 	.loja-banner-slide {
 		position: relative;
 		flex: 0 0 100%;
-		min-height: 188px;
+		min-height: 160px;
+		content-visibility: auto;
 	}
 
 	.loja-filter-grid {
@@ -414,20 +386,14 @@
 
 	.loja-filter-select {
 		width: 100%;
-		border: 1px solid rgba(148, 163, 184, 0.52);
-		border-radius: 14px;
-		background: rgba(255, 255, 255, 0.95);
+		border: 1px solid rgba(148, 163, 184, 0.44);
+		border-radius: 12px;
+		background: #FFFFFF;
 		color: #0F172A;
-		font-size: 0.86rem;
-		font-weight: 800;
-		padding: 11px 12px;
+		font-size: 0.8rem;
+		font-weight: 700;
+		padding: 10px;
 		outline: none;
-		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
-	}
-
-	.loja-filter-select:focus {
-		border-color: rgba(37, 99, 235, 0.55);
-		box-shadow: 0 0 0 3px rgba(191, 219, 254, 0.65);
 	}
 
 	.loja-active-filters {
@@ -476,11 +442,11 @@
 
 	.loja-section {
 		border: 1px solid rgba(209, 213, 219, 0.84);
-		border-radius: var(--loja-radius-md);
-		background: rgba(255, 255, 255, 0.84);
-		backdrop-filter: blur(12px);
-		box-shadow: var(--loja-shadow-soft);
+		border-radius: 14px;
+		background: rgba(255, 255, 255, 0.92);
+		box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
 		padding: calc(var(--loja-grid) * 1.5);
+		content-visibility: auto;
 	}
 
 	.loja-section-head {
@@ -514,27 +480,29 @@
 	.loja-card {
 		position: relative;
 		border: 1px solid rgba(209, 213, 219, 0.88);
-		border-radius: 18px;
+		border-radius: 16px;
 		background: #FFFFFF;
 		overflow: hidden;
 		min-width: 0;
 		height: 100%;
 		display: grid;
 		grid-template-rows: auto 1fr;
-		box-shadow: 0 8px 20px rgba(15, 23, 42, 0.07);
-		transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+		box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+		transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+		content-visibility: auto;
+		will-change: transform;
 	}
 
 	.loja-card:hover {
-		transform: translateY(-4px);
-		border-color: rgba(59, 130, 246, 0.6);
-		box-shadow: 0 16px 26px rgba(37, 99, 235, 0.15);
+		transform: translateY(-2px);
+		border-color: rgba(59, 130, 246, 0.4);
+		box-shadow: 0 8px 16px rgba(37, 99, 235, 0.1);
 	}
 
 	.loja-card-media {
 		position: relative;
 		aspect-ratio: 1 / 1;
-		background: linear-gradient(160deg, #EFF6FF 0%, #F3F4F6 55%, #FFFFFF 100%);
+		background: #F3F4F6;
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -545,11 +513,11 @@
 		width: 100%;
 		height: 100%;
 		object-fit: contain;
-		transition: transform 0.25s ease;
+		will-change: transform;
 	}
 
 	.loja-card:hover .loja-card-media img {
-		transform: scale(1.03);
+		transform: scale(1.02);
 	}
 
 	.loja-badge-stack {
@@ -731,15 +699,16 @@
 
 	.loja-btn {
 		border: none;
-		border-radius: 12px;
-		font-size: 0.74rem;
+		border-radius: 10px;
+		font-size: 0.72rem;
 		font-weight: 900;
 		text-align: center;
-		padding: 10px 10px;
+		padding: 9px 9px;
 		position: relative;
 		overflow: hidden;
 		text-decoration: none;
 		cursor: pointer;
+		transition: background-color 0.15s ease, transform 0.15s ease;
 	}
 
 	.loja-btn.buy {
@@ -763,7 +732,7 @@
 	}
 
 	.loja-btn:active {
-		transform: scale(0.97);
+		transform: scale(0.96);
 	}
 
 	.ripple-wave {
@@ -892,26 +861,17 @@
 	}
 
 	@keyframes ripple {
-		to {
-			transform: scale(4);
-			opacity: 0;
-		}
+		to { transform: scale(3); opacity: 0; }
 	}
 
 	@keyframes badgePulse {
-		0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.45); }
-		50% { transform: scale(1.04); box-shadow: 0 0 0 8px rgba(255, 255, 255, 0); }
-	}
-
-	@keyframes badgeBump {
-		0% { transform: scale(1); }
-		40% { transform: scale(1.25); }
-		100% { transform: scale(1); }
+		0%, 100% { transform: scale(1); }
+		50% { transform: scale(1.05); }
 	}
 
 	@keyframes heartPop {
 		0% { transform: scale(1); }
-		40% { transform: scale(1.28); }
+		40% { transform: scale(1.2); }
 		100% { transform: scale(1); }
 	}
 
@@ -1460,12 +1420,13 @@
 			favorites: new Set(),
 			allProducts: [],
 			visibleCount: 0,
-			pageSize: 12,
+			pageSize: 8,
 			lastQueryKey: "",
 			cartCount: 0,
 			bannerIndex: 0,
 			bannerTimer: null,
 			searchHistory: [],
+			renderScheduled: false,
 		};
 
 		const STORE_ROUTE_CACHE_PREFIX = "wf_route_cache_store_v1";
@@ -2233,6 +2194,10 @@
 			state.visibleCount += nextChunk.length;
 			render_loja_produtos(state.allProducts.slice(0, state.visibleCount));
 
+			if ("requestIdleCallback" in window) {
+				requestIdleCallback(() => prefetchNextImages(), { timeout: 1200 });
+			}
+
 			if (dom.loadMoreStatus) {
 				if (state.visibleCount < state.allProducts.length) {
 					dom.loadMoreStatus.style.display = "block";
@@ -2244,18 +2209,35 @@
 			}
 		}
 
+		function prefetchNextImages() {
+			const nextVisibleEnd = state.visibleCount + state.pageSize;
+			const nextChunk = state.allProducts.slice(state.visibleCount, nextVisibleEnd);
+			nextChunk.forEach((item) => {
+				const img = document.createElement("img");
+				img.style.display = "none";
+				img.src = item?.img || item?.image_url || "";
+				document.body.appendChild(img);
+				setTimeout(() => img.remove(), 100);
+			});
+		}
+
 		function setupInfiniteScroll() {
 			if (!dom.loadMoreSentinel || !("IntersectionObserver" in window)) return;
 			if (storeObserver) storeObserver.disconnect();
 
 			storeObserver = new IntersectionObserver((entries) => {
 				entries.forEach((entry) => {
-					if (!entry.isIntersecting) return;
-					appendNextProducts();
+					if (!entry.isIntersecting || state.renderScheduled) return;
+					state.renderScheduled = true;
+					if ("requestIdleCallback" in window) {
+						requestIdleCallback(() => { appendNextProducts(); state.renderScheduled = false; }, { timeout: 800 });
+					} else {
+						requestAnimationFrame(() => { appendNextProducts(); state.renderScheduled = false; });
+					}
 				});
 			}, {
 				root: null,
-				rootMargin: "220px 0px",
+				rootMargin: "160px 0px",
 				threshold: 0,
 			});
 
