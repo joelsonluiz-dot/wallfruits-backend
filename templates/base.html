@@ -2390,6 +2390,20 @@
             transition: none !important;
             transform: none !important;
         }
+
+        /* Mobile responsiveness overrides: show topbar, hide sidebar and ensure images/buttons are touch-friendly */
+        @media (max-width: 900px) {
+            .wf-app-shell { grid-template-columns: 1fr !important; }
+            .wf-sidebar { display: none !important; }
+            .wf-topbar { display: flex !important; }
+            .wf-topbar-brand { display: inline-flex !important; }
+            .wf-brand { display: none !important; }
+            .wf-shell-main { padding-left: 12px !important; padding-right: 12px !important; }
+            img, .wf-card img, .loja-card-media img { max-width: 100%; height: auto; }
+            button, .loja-back-btn, .loja-icon-btn, .wf-mobile-nav-item { min-height: 44px; min-width: 44px; }
+            .wf-mobile-wrap { display: block !important; pointer-events: auto; }
+            .wf-bottom-menu { width: 100% !important; }
+        }
     </style>
 </head>
 <body>

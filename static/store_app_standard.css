@@ -64,3 +64,26 @@
     overflow-x: clip;
   }
 }
+
+/* Responsive grid breakpoints for store pages */
+@media (max-width: 1200px) {
+  .loja-section-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 900px) {
+  .loja-section-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .loja-card { grid-auto-rows: auto; }
+  .store-app-shell { padding-left: 12px; padding-right: 12px; }
+}
+
+@media (max-width: 600px) {
+  .loja-section-grid { grid-template-columns: 1fr; }
+  .loja-category-card { min-width: 88px; }
+  .loja-header-inner { grid-template-columns: auto 1fr auto; gap: 8px; padding: 10px; }
+}
+
+/* Ensure product images scale and cards fit on small devices */
+.loja-card-media img, .store-app-shell img { max-width: 100%; height: auto; display: block; }
+
+/* Provide comfortable touch targets */
+button, .loja-back-btn, .loja-icon-btn { min-height: 44px; min-width: 44px; }
