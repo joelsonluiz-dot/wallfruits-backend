@@ -4,6 +4,16 @@
 
 {% block content %}
 <style>
+    body.wf-home-page .wf-container,
+    body.wf-home-page .wf-shell-main,
+    body.wf-home-page #wfMainContent {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        margin: 0 !important;
+    }
+
     .hero-section {
         position: relative;
         padding: 4rem 0 3rem;
@@ -1277,6 +1287,8 @@
 </button>
 
 <script>
+    document.body.classList.add('wf-home-page');
+
     const HOME_AUTO_REFRESH_DEFAULT_MS = 45000;
     const HOME_AUTO_REFRESH_OPTIONS = [20000, 45000, 90000];
     const HOME_REFRESH_PAUSED_KEY = 'wf_home_refresh_paused';

@@ -4,8 +4,18 @@
 
 {% block content %}
 <style>
+    body.wf-community-page .wf-container,
+    body.wf-community-page .wf-shell-main,
+    body.wf-community-page #wfMainContent {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        margin: 0 !important;
+    }
+
     .community-wrap {
-        max-width: 880px;
+        max-width: 100%;
         margin: 0 auto;
         display: grid;
         gap: 0.92rem;
@@ -1404,6 +1414,8 @@
 
 <script>
     (function setupCommunityPage() {
+        document.body.classList.add('wf-community-page');
+
         const postInput = document.getElementById('communityPostInput');
         const imageInput = document.getElementById('communityImageInput');
         const sendBtn = document.getElementById('communitySendBtn');
