@@ -373,6 +373,39 @@
             return div.innerHTML;
         }
 
+        function normalizeServiceCategoryLabel(value) {
+            const raw = String(value || '').trim();
+            const key = raw.toLowerCase();
+
+            if (!raw) return 'Serviço';
+            if (key.includes('solo') || key.includes('análise') || key.includes('analise')) return 'Solo';
+            if (key.includes('plantio') || key.includes('semead')) return 'Plantio';
+            if (key.includes('preparo')) return 'Preparo';
+            if (key.includes('irriga')) return 'Irrigação';
+            if (key.includes('pulver')) return 'Pulverização';
+            if (key.includes('praga') || key.includes('doenç') || key.includes('doenc')) return 'Pragas';
+            if (key.includes('adub')) return 'Adubação';
+            if (key.includes('colhe')) return 'Colheita';
+            if (key.includes('pós-colhe') || key.includes('pos-colhe') || key.includes('benefic')) return 'Pós-colheita';
+            if (key.includes('mecaniz') || key.includes('implement')) return 'Mecanização';
+            if (key.includes('drone')) return 'Drone';
+            if (key.includes('geo') || key.includes('map')) return 'Mapa';
+            if (key.includes('assist')) return 'Assistência';
+            if (key.includes('consult')) return 'Consultoria';
+            if (key.includes('pod')) return 'Podas';
+            if (key.includes('silag')) return 'Silagem';
+            if (key.includes('pastag')) return 'Pastagem';
+            if (key.includes('caf')) return 'Café';
+            if (key.includes('frut')) return 'Frutas';
+            if (key.includes('hort')) return 'Horta';
+            if (key.includes('avi')) return 'Aves';
+            if (key.includes('bovin')) return 'Bovinos';
+            if (key.includes('suin')) return 'Suínos';
+            if (key.includes('precis')) return 'Precisão';
+
+            return raw.split(/\s+/)[0] || raw;
+        }
+
         function buildTechRows(ficha) {
             const labels = {
                 categoria: 'Categoria',
@@ -394,7 +427,7 @@
             const provider = service?.created_by_user;
             if (!provider?.id) return null;
             const title = encodeURIComponent(service?.titulo || 'Serviço agrícola');
-            const category = encodeURIComponent(String(service?.ficha_tecnica?.categoria || '').trim());
+            const category = encodeURIComponent(normalizeServiceCategoryLabel(service?.ficha_tecnica?.categoria || ''));
             return `/messages?user_id=${provider.id}&service_id=${service.id}&service_title=${title}&service_category=${category}`;
         }
 
@@ -409,7 +442,7 @@
             const image = esc(String(service?.imagem || '').trim() || '/static/icon.svg');
             const local = esc(service?.local || 'Local não informado');
             const preco = esc(service?.preco || 'Sob consulta');
-            const categoria = esc(String(ficha?.categoria || 'Serviço agrícola').trim() || 'Serviço agrícola');
+            const categoria = esc(normalizeServiceCategoryLabel(ficha?.categoria || 'Serviço agrícola'));
             const unidade = esc(String(ficha?.unidade || 'Não informada').trim() || 'Não informada');
             const prazo = esc(String(ficha?.prazo_atendimento || 'Não informado').trim() || 'Não informado');
             const disponibilidade = esc(String(ficha?.disponibilidade || 'Não informada').trim() || 'Não informada');

@@ -502,6 +502,39 @@
             return value || 'Sem categoria';
         }
 
+        function normalizeServiceCategoryLabel(value) {
+            const raw = String(value || '').trim();
+            const key = raw.toLowerCase();
+
+            if (!raw) return 'Categoria';
+            if (key.includes('solo') || key.includes('análise') || key.includes('analise')) return 'Solo';
+            if (key.includes('plantio') || key.includes('semead')) return 'Plantio';
+            if (key.includes('preparo')) return 'Preparo';
+            if (key.includes('irriga')) return 'Irrigação';
+            if (key.includes('pulver')) return 'Pulverização';
+            if (key.includes('praga') || key.includes('doenç') || key.includes('doenc')) return 'Pragas';
+            if (key.includes('adub')) return 'Adubação';
+            if (key.includes('colhe')) return 'Colheita';
+            if (key.includes('pós-colhe') || key.includes('pos-colhe') || key.includes('benefic')) return 'Pós-colheita';
+            if (key.includes('mecaniz') || key.includes('implement')) return 'Mecanização';
+            if (key.includes('drone')) return 'Drone';
+            if (key.includes('geo') || key.includes('map')) return 'Mapa';
+            if (key.includes('assist')) return 'Assistência';
+            if (key.includes('consult')) return 'Consultoria';
+            if (key.includes('pod')) return 'Podas';
+            if (key.includes('silag')) return 'Silagem';
+            if (key.includes('pastag')) return 'Pastagem';
+            if (key.includes('caf')) return 'Café';
+            if (key.includes('frut')) return 'Frutas';
+            if (key.includes('hort')) return 'Horta';
+            if (key.includes('avi')) return 'Aves';
+            if (key.includes('bovin')) return 'Bovinos';
+            if (key.includes('suin')) return 'Suínos';
+            if (key.includes('precis')) return 'Precisão';
+
+            return raw.split(/\s+/)[0] || raw;
+        }
+
         function normalizeCategory(value) {
             return String(value || '').trim().toLowerCase();
         }
@@ -723,7 +756,7 @@
             const targetSearch = normalizeCategory(servicesSearchTerm);
 
             return allServices.filter((service) => {
-                const category = normalizeCategory(getServiceCategory(service));
+                const category = normalizeCategory(normalizeServiceCategoryLabel(getServiceCategory(service)));
                 const categoryMatches = selectedCategory === 'Todas' || category === targetCategory;
                 if (!categoryMatches) return false;
 
@@ -732,7 +765,7 @@
                     service?.titulo,
                     service?.descricao,
                     service?.local,
-                    getServiceCategory(service),
+                    normalizeServiceCategoryLabel(getServiceCategory(service)),
                 ].join(' '));
                 return haystack.includes(targetSearch);
             });
@@ -747,7 +780,7 @@
             if (!providerId) return null;
 
             const title = encodeURIComponent(service.titulo || 'Serviço agrícola');
-            const category = encodeURIComponent(getServiceCategory(service));
+            const category = encodeURIComponent(normalizeServiceCategoryLabel(getServiceCategory(service)));
             return `/messages?user_id=${encodeURIComponent(providerId)}&service_id=${encodeURIComponent(service.id)}&service_title=${title}&service_category=${category}`;
         }
 
@@ -792,8 +825,8 @@
         }
 
         function renderCategoryChips() {
-            const fromServices = Array.from(new Set(allServices.map((service) => getServiceCategory(service))));
-            const categories = Array.from(new Set([...(officialCategories || []), ...fromServices]));
+            const fromServices = Array.from(new Set(allServices.map((service) => normalizeServiceCategoryLabel(getServiceCategory(service)))));
+            const categories = Array.from(new Set([...(officialCategories || []), ...fromServices].map((item) => normalizeServiceCategoryLabel(item))));
             const options = ['Todas', ...categories];
 
             chipsEl.innerHTML = options.map((label) => `
@@ -819,7 +852,7 @@
                 labels.push({ key: 'search', label: `Busca: ${escapeHtml(servicesSearchTerm)}` });
             }
             if (selectedCategory !== 'Todas') {
-                labels.push({ key: 'category', label: `Categoria: ${escapeHtml(selectedCategory)}` });
+                labels.push({ key: 'category', label: `Categoria: ${escapeHtml(normalizeServiceCategoryLabel(selectedCategory))}` });
             }
             if (selectedShowcaseStrategy !== 'highlight') {
                 const selectedLabel = SERVICES_SHOWCASE_STRATEGIES.find((item) => item.key === selectedShowcaseStrategy)?.label || 'Destaques IA';
