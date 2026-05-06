@@ -187,6 +187,7 @@ data class ServicePreview(
     val description: String,
     val price: String,
     val location: String,
+    val category: String,
 )
 
 data class BuyerClientPreview(

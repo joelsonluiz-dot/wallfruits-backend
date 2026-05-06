@@ -1,5 +1,6 @@
 package com.wallfruits.app
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -10,9 +11,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -36,6 +39,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
@@ -254,6 +259,24 @@ private fun CommunityModuleContent(state: AuthUiState, onRefresh: () -> Unit) {
 
 @Composable
 private fun ServicesModuleContent(state: AuthUiState, onRefresh: () -> Unit) {
+    var selectedCategory by remember(state.serviceItems) { mutableStateOf("Todas") }
+    val categories = remember(state.serviceItems) {
+        state.serviceItems
+            .map { normalizeUiServiceCategoryLabel(it.category) }
+            .distinct()
+            .sorted()
+    }
+    val categoryOptions = remember(categories) {
+        listOf("Todas") + categories
+    }
+    val filteredServices = remember(state.serviceItems, selectedCategory) {
+        if (selectedCategory == "Todas") {
+            state.serviceItems
+        } else {
+            state.serviceItems.filter { normalizeUiServiceCategoryLabel(it.category) == selectedCategory }
+        }
+    }
+
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -267,6 +290,21 @@ private fun ServicesModuleContent(state: AuthUiState, onRefresh: () -> Unit) {
             TextButton(onClick = onRefresh) { Text("Atualizar modulo") }
         }
         Text("Servicos encontrados: ${state.servicesTotal}", style = MaterialTheme.typography.bodyMedium)
+        if (categoryOptions.size > 1) {
+            LazyRow(
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(vertical = 2.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                items(categoryOptions, key = { it }) { category ->
+                    ServiceCategoryChip(
+                        label = category,
+                        selected = selectedCategory == category,
+                        onClick = { selectedCategory = category },
+                    )
+                }
+            }
+        }
         if (state.isModuleLoading) {
             Text("Carregando servicos...", style = MaterialTheme.typography.bodyMedium)
             return
@@ -279,6 +317,10 @@ private fun ServicesModuleContent(state: AuthUiState, onRefresh: () -> Unit) {
             Text("Nenhum servico disponivel no momento.", style = MaterialTheme.typography.bodyMedium)
             return
         }
+        if (filteredServices.isEmpty()) {
+            Text("Nenhum servico encontrado para essa categoria.", style = MaterialTheme.typography.bodyMedium)
+            return
+        }
 
         LazyColumn(
             modifier = Modifier
@@ -286,13 +328,17 @@ private fun ServicesModuleContent(state: AuthUiState, onRefresh: () -> Unit) {
             contentPadding = PaddingValues(vertical = 4.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            items(state.serviceItems, key = { it.id }) { item ->
+            items(filteredServices, key = { it.id }) { item ->
                 StandardCardContainer {
                     StandardImagePlaceholder()
                     Text(item.title, style = MaterialTheme.typography.titleMedium)
                     Text(item.description, style = MaterialTheme.typography.bodyMedium)
                     Text(
                         "Preco ${item.price} | Local ${item.location}",
+                        style = MaterialTheme.typography.labelMedium,
+                    )
+                    Text(
+                        "Categoria ${normalizeUiServiceCategoryLabel(item.category)}",
                         style = MaterialTheme.typography.labelMedium,
                     )
                 }
@@ -553,7 +599,7 @@ private fun LibraryModuleContent(state: AuthUiState, onRefresh: () -> Unit) {
                     Text(item.title, style = MaterialTheme.typography.titleMedium)
                     Text(item.author, style = MaterialTheme.typography.bodyMedium)
                     Text(
-                        "Categoria ${item.category} | Leitura ${item.readTime}",
+                        "Categoria ${normalizeUiServiceCategoryLabel(item.category)} | Leitura ${item.readTime}",
                         style = MaterialTheme.typography.labelMedium,
                     )
                     TextButton(onClick = { selectedItem = item }) {
@@ -570,7 +616,7 @@ private fun LibraryModuleContent(state: AuthUiState, onRefresh: () -> Unit) {
                 text = {
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text("Autor: ${item.author}")
-                        Text("Categoria: ${item.category}")
+                        Text("Categoria: ${normalizeUiServiceCategoryLabel(item.category)}")
                         Text("Tempo de leitura: ${item.readTime}")
                         Text("ID: ${item.id}")
                     }
@@ -583,6 +629,64 @@ private fun LibraryModuleContent(state: AuthUiState, onRefresh: () -> Unit) {
             )
         }
     }
+}
+
+@Composable
+private fun ServiceCategoryChip(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    val backgroundColor = if (selected) Color(0xFF2A8B58) else Color(0xFFF5F8F5)
+    val contentColor = if (selected) Color.White else Color(0xFF236242)
+    val border = if (selected) null else BorderStroke(1.dp, Color(0xFFCBD9CF))
+
+    Button(
+        onClick = onClick,
+        shape = RoundedCornerShape(14.dp),
+        border = border,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = backgroundColor,
+            contentColor = contentColor,
+        ),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
+        elevation = ButtonDefaults.buttonElevation(defaultElevation = if (selected) 3.dp else 1.dp),
+    ) {
+        Text(label, style = MaterialTheme.typography.labelLarge)
+    }
+}
+
+private fun normalizeUiServiceCategoryLabel(value: String?): String {
+    val raw = value.orEmpty().trim()
+    val key = raw.lowercase()
+
+    if (raw.isEmpty()) return "Categoria"
+    if (key.contains("solo") || key.contains("análise") || key.contains("analise")) return "Solo"
+    if (key.contains("plantio") || key.contains("semead")) return "Plantio"
+    if (key.contains("preparo")) return "Preparo"
+    if (key.contains("irriga")) return "Irrigação"
+    if (key.contains("pulver")) return "Pulverização"
+    if (key.contains("praga") || key.contains("doenç") || key.contains("doenc")) return "Pragas"
+    if (key.contains("adub")) return "Adubação"
+    if (key.contains("colhe")) return "Colheita"
+    if (key.contains("pós-colhe") || key.contains("pos-colhe") || key.contains("benefic")) return "Pós-colheita"
+    if (key.contains("mecaniz") || key.contains("implement")) return "Mecanização"
+    if (key.contains("drone")) return "Drone"
+    if (key.contains("geo") || key.contains("map")) return "Mapa"
+    if (key.contains("assist")) return "Assistência"
+    if (key.contains("consult")) return "Consultoria"
+    if (key.contains("pod")) return "Podas"
+    if (key.contains("silag")) return "Silagem"
+    if (key.contains("pastag")) return "Pastagem"
+    if (key.contains("caf")) return "Café"
+    if (key.contains("frut")) return "Frutas"
+    if (key.contains("hort")) return "Horta"
+    if (key.contains("avi")) return "Aves"
+    if (key.contains("bovin")) return "Bovinos"
+    if (key.contains("suin")) return "Suínos"
+    if (key.contains("precis")) return "Precisão"
+
+    return raw.split(Regex("\\s+")).firstOrNull().orEmpty().ifBlank { raw }
 }
 
 @Composable

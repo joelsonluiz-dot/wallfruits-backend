@@ -81,6 +81,7 @@ class AuthRepository @Inject constructor(
                 description = item.stringValue("descricao", "description", "summary") ?: "Sem descricao",
                 price = item.stringValue("preco", "price", "valor") ?: "A combinar",
                 location = item.stringValue("local", "location", "cidade") ?: "Local nao informado",
+                category = item.stringValue("category", "categoria", "service_category") ?: "Sem categoria",
             )
         }
     }
@@ -94,6 +95,7 @@ class AuthRepository @Inject constructor(
                 description = item.stringValue("descricao", "description", "summary") ?: "Sem descricao",
                 price = item.stringValue("preco", "price", "valor") ?: "A combinar",
                 location = item.stringValue("local", "location", "cidade") ?: "Local nao informado",
+                category = item.stringValue("category", "categoria", "service_category") ?: "Sem categoria",
             )
         }
     }
