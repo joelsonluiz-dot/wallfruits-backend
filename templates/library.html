@@ -630,7 +630,7 @@
 </style>
 
 <div class="library-premium">
-    <section class="lib-hero wf-card store-motion-card" data-wf-reveal>
+    <section class="lib-hero wf-card">
         <div>
             <span class="lib-kicker">Biblioteca premium</span>
             <h1>Leituras reais para todos os usuarios</h1>
@@ -658,7 +658,7 @@
     </section>
 
     {% if current_user and (current_user.role == "admin" or current_user.is_superuser) %}
-    <section id="libraryAdminPanel" class="lib-admin wf-card store-motion-card" data-wf-reveal>
+    <section id="libraryAdminPanel" class="lib-admin wf-card">
         <header class="lib-admin-head">
             <h2>Painel de publicacao</h2>
             <p>Publique, edite e atualize os cards que ficam visiveis para todos.</p>
@@ -702,12 +702,12 @@
     </section>
     {% endif %}
 
-    <section class="lib-toolbar wf-card store-motion-card" data-wf-reveal>
+    <section class="lib-toolbar wf-card">
         <input id="librarySearchInput" class="lib-search-input" type="search" placeholder="Buscar por titulo, autor, categoria ou trecho...">
         <div id="libraryCategoryFilters" class="lib-filters"></div>
     </section>
 
-    <section id="libraryFeaturedPanel" class="lib-featured wf-card store-motion-card" data-wf-reveal hidden></section>
+    <section id="libraryFeaturedPanel" class="lib-featured wf-card" hidden></section>
 
     <section id="libraryCardsGrid" class="lib-grid"></section>
     <section id="libraryDetailPanel" class="lib-detail" hidden></section>
@@ -1009,7 +1009,7 @@
             }
 
             gridEl.innerHTML = state.filtered.map((book, index) => `
-                <article class="lib-card ${index === 0 ? 'lib-card--feature' : ''} ${cardCategoryClass(book.category)} wf-card store-motion-card" data-book-id="${escapeHtml(book.id)}" tabindex="0" role="button" aria-label="Abrir leitura ${escapeHtml(book.title)}">
+                <article class="lib-card ${index === 0 ? 'lib-card--feature' : ''} ${cardCategoryClass(book.category)} wf-card" data-book-id="${escapeHtml(book.id)}" tabindex="0" role="button" aria-label="Abrir leitura ${escapeHtml(book.title)}">
                     <div class="lib-card-cover">
                         ${book.cover ? `<img src="${escapeHtml(book.cover)}" alt="Capa de ${escapeHtml(book.title)}">` : ''}
                         <span class="lib-card-chip">${escapeHtml(book.category)}</span>

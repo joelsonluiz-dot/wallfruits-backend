@@ -58,6 +58,29 @@
 		background: linear-gradient(180deg, #FFFFFF 0%, #FAFAFA 100%);
 	}
 
+	body.wf-store-page .wf-brand,
+	body.wf-store-page .wf-topbar-brand {
+		display: none !important;
+	}
+
+	body.wf-store-page .wf-app-shell {
+		grid-template-columns: minmax(0, 1fr) !important;
+	}
+
+	body.wf-store-page .wf-sidebar {
+		display: none !important;
+	}
+
+	body.wf-store-page .wf-shell-main,
+	body.wf-store-page #wfMainContent,
+	body.wf-store-page .wf-container {
+		width: 100% !important;
+		max-width: 100% !important;
+		margin: 0 !important;
+		padding-left: 0 !important;
+		padding-right: 0 !important;
+	}
+
 	.wf-container {
 		max-width: none;
 		padding: 0;
@@ -1049,7 +1072,14 @@
 		}
 
 		.loja-search-shell {
-			grid-template-columns: 1fr;
+			display: flex;
+			align-items: center;
+			gap: 8px;
+		}
+
+		.loja-search-input-wrap {
+			flex: 1 1 auto;
+			min-width: 0;
 		}
 
 		.loja-filter-grid {
@@ -1058,10 +1088,12 @@
 		}
 
 		.loja-search-btn {
-			width: 100%;
+			width: auto;
+			flex: 0 0 auto;
 			min-width: 0;
-			min-height: 44px;
-			font-size: 0.95rem;
+			min-height: 40px;
+			padding: 0 12px;
+			font-size: 0.82rem;
 		}
 
 		.loja-search-input,
@@ -1584,13 +1616,65 @@
 				"fertilizantes": "compost",
 				"defensivos": "shield",
 				"equipamentos": "construction",
+				"ferramentas": "handyman",
+				"maquinarios": "precision_manufacturing",
+				"roupas": "checkroom",
 				"irrigacao": "water_drop",
 				"vet": "pets",
+				"veterinaria": "pets",
+				"pecuaria": "agriculture",
 				"hortifruti": "nutrition",
 			};
 			if (map[key]) return map[key];
 			const pool = ["agriculture", "eco", "inventory_2", "sell", "yard", "task_alt"];
 			return pool[index % pool.length];
+		}
+
+		const EXTRA_AGRO_CATEGORIES = [
+			{ name: "Fertilizantes", slug: "fertilizantes" },
+			{ name: "Defensivos", slug: "defensivos" },
+			{ name: "Sementes", slug: "sementes" },
+			{ name: "Irrigacao", slug: "irrigacao" },
+			{ name: "Roupas", slug: "roupas" },
+			{ name: "Ferramentas", slug: "ferramentas" },
+			{ name: "Maquinarios", slug: "maquinarios" },
+			{ name: "Veterinaria", slug: "veterinaria" },
+			{ name: "Pecuaria", slug: "pecuaria" },
+		];
+
+		function normalizeCategoryLabel(category) {
+			const rawName = String(category?.name || category || "").trim();
+			const key = String(category?.slug || rawName || "").toLowerCase();
+
+			if (key.includes("adubo") || key.includes("fert")) return "Fertilizantes";
+			if (key.includes("defens")) return "Defensivos";
+			if (key.includes("sement")) return "Sementes";
+			if (key.includes("irriga")) return "Irrigacao";
+			if (key.includes("maquin") || key.includes("trator")) return "Maquinarios";
+			if (key.includes("ferrament")) return "Ferramentas";
+			if (key.includes("roup")) return "Roupas";
+			if (key.includes("veter") || key === "vet") return "Veterinaria";
+			if (key.includes("pecuar") || key.includes("gado")) return "Pecuaria";
+
+			if (rawName.length > 22) {
+				const compact = rawName.split(/,|\/| e | - /i)[0];
+				return String(compact || rawName).trim();
+			}
+
+			return rawName || "Categoria";
+		}
+
+		function categoryLabelBySlug(slug) {
+			const target = String(slug || "").trim().toLowerCase();
+			if (!target) return "";
+
+			const fromApi = categoriesData.find((item) => String(item?.slug || "").trim().toLowerCase() === target);
+			if (fromApi) return normalizeCategoryLabel(fromApi);
+
+			const fromExtra = EXTRA_AGRO_CATEGORIES.find((item) => String(item?.slug || "").trim().toLowerCase() === target);
+			if (fromExtra) return normalizeCategoryLabel(fromExtra);
+
+			return normalizeCategoryLabel(String(target).replace(/-/g, " "));
 		}
 
 		function render_loja_header() {
@@ -1636,13 +1720,21 @@
 
 		function render_loja_categorias() {
 			const items = [{ name: "Todos", slug: "", icon: "grid_view" }];
-			categoriesData.forEach((category, index) => {
-				items.push({
-					name: String(category?.name || `Categoria ${index + 1}`),
-					slug: String(category?.slug || ""),
-					icon: categoryIconBySlug(category?.slug, index),
+			const merged = new Map();
+
+			[...categoriesData, ...EXTRA_AGRO_CATEGORIES].forEach((category, index) => {
+				const slug = String(category?.slug || "").trim().toLowerCase();
+				const dedupKey = slug || String(category?.name || "").trim().toLowerCase();
+				if (!dedupKey || merged.has(dedupKey)) return;
+
+				merged.set(dedupKey, {
+					name: normalizeCategoryLabel(category),
+					slug,
+					icon: categoryIconBySlug(slug, index),
 				});
 			});
+
+			items.push(...Array.from(merged.values()));
 
 			return `
 				<div class="loja-categories-track" id="categoryChips">
@@ -1783,7 +1875,7 @@
 						</div>
 
 						<div class="loja-card-body">
-							<p class="loja-card-category">${escapeHtml(product?.category || "Categoria")}</p>
+							<p class="loja-card-category">${escapeHtml(normalizeCategoryLabel(product?.category || "Categoria"))}</p>
 							<h4 class="loja-card-name">${escapeHtml(product?.name || "Produto")}</h4>
 
 							<div class="loja-proof-row">
@@ -2086,7 +2178,7 @@
 			if (!dom.activeFilters) return;
 			const chips = [];
 			if (state.q) chips.push(`<span class="loja-active-filter">Busca: ${escapeHtml(state.q)}</span>`);
-			if (state.category) chips.push(`<span class="loja-active-filter">Categoria: ${escapeHtml(state.category)}</span>`);
+			if (state.category) chips.push(`<span class="loja-active-filter">Categoria: ${escapeHtml(categoryLabelBySlug(state.category) || state.category)}</span>`);
 			if (state.crop) chips.push(`<span class="loja-active-filter">Cultura: ${escapeHtml(state.crop)}</span>`);
 			if (state.pest) chips.push(`<span class="loja-active-filter">Praga: ${escapeHtml(state.pest)}</span>`);
 			if (state.priceRange) chips.push(`<span class="loja-active-filter">Preco: ${escapeHtml(state.priceRange.replace("-", " ate "))}</span>`);
