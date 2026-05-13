@@ -96,25 +96,22 @@ fun HomeScreen(viewModel: AuthViewModel) {
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(it)
-                    .padding(20.dp),
-                verticalArrangement = Arrangement.Top,
+                    .padding(horizontal = 18.dp, vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
                 horizontalAlignment = Alignment.Start,
             ) {
-                Text(
-                    text = "Sessao ativa: ${state.userName ?: "usuario"}",
-                    style = MaterialTheme.typography.titleMedium,
+                PremiumOverviewCard(
+                    title = "Sessao ativa",
+                    subtitle = state.userName ?: "usuario",
+                    metrics = listOf(
+                        "Feed ${state.offersTotal}",
+                        "Marketplace ${state.ordersTotal}",
+                        "IA ${state.aiSignals}",
+                        "Comunidade ${state.communityTotal}",
+                        "Servicos ${state.servicesTotal}",
+                        "Biblioteca ${state.libraryTotal}",
+                    ),
                 )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "Feed ${state.offersTotal} | Marketplace ${state.ordersTotal} | IA ${state.aiSignals}",
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "Comunidade ${state.communityTotal} | Servicos ${state.servicesTotal} | Biblioteca ${state.libraryTotal}",
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Spacer(modifier = Modifier.height(16.dp))
 
                 ModulePanel(
                     state = state,
@@ -128,7 +125,6 @@ fun HomeScreen(viewModel: AuthViewModel) {
                     onClearModuleActionMessage = viewModel::clearModuleActionMessage,
                 )
 
-                Spacer(modifier = Modifier.height(20.dp))
                 Row(modifier = Modifier.fillMaxWidth()) {
                     Button(onClick = viewModel::refreshHomeData) {
                         Text("Atualizar dados")
@@ -136,6 +132,47 @@ fun HomeScreen(viewModel: AuthViewModel) {
                     Spacer(modifier = Modifier.width(12.dp))
                     Button(onClick = viewModel::logout) {
                         Text("Sair")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PremiumOverviewCard(
+    title: String,
+    subtitle: String,
+    metrics: List<String>,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(22.dp),
+        colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = Color.White),
+        border = BorderStroke(1.dp, Color(0xFFE3ECE4)),
+        elevation = androidx.compose.material3.CardDefaults.cardElevation(defaultElevation = 4.dp),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(title, style = MaterialTheme.typography.labelLarge, color = Color(0xFF5C7564))
+                Text(subtitle, style = MaterialTheme.typography.headlineSmall, color = Color(0xFF153A24))
+            }
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(metrics, key = { it }) { metric ->
+                    Card(
+                        shape = RoundedCornerShape(14.dp),
+                        colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = Color(0xFFF6FAF6)),
+                        border = BorderStroke(1.dp, Color(0xFFD8E6DA)),
+                    ) {
+                        Text(
+                            text = metric,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = Color(0xFF245C3B),
+                        )
                     }
                 }
             }
