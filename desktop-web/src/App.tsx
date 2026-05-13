@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { APP_STORE_URL, ANDROID_APK_URL, APP_VERSION, PLAY_STORE_URL } from './config';
 import { fetchDashboardSnapshot, fetchMe, login, type ApiUser } from './api';
 
@@ -90,8 +90,6 @@ export default function App() {
       mounted = false;
     };
   }, [session?.token]);
-
-  const stack = useMemo(() => ['React', 'TypeScript', 'JWT', 'FastAPI', 'Vite'], []);
 
   const sidebar = (
     <aside className="sidebar">
@@ -211,13 +209,6 @@ export default function App() {
               <div className="eyebrow">Sessao ativa</div>
               <h1>Bem-vindo, {session.user.name}</h1>
               <p>{session.user.email}</p>
-              <div className="chips">
-                {stack.map((item) => (
-                  <span className="chip" key={item}>
-                    {item}
-                  </span>
-                ))}
-              </div>
               <div style={{ marginTop: 20 }}>
                 <button className="button" onClick={refreshDashboard} type="button">
                   Atualizar Feed/Market/IA
@@ -258,8 +249,8 @@ export default function App() {
           <span>WallFruits Desktop</span>
         </div>
         <div className="topbarCenter">
-          <span className="topbarBadge">Desktop web</span>
-          <span className="topbarText">Instagram-like scroll, foco em operação e distribuição</span>
+          <span className="topbarBadge">Entrar</span>
+          <span className="topbarText">Acesso ao desktop com login persistente</span>
         </div>
         <div className="topbarRight">v{APP_VERSION}</div>
       </header>
@@ -267,9 +258,8 @@ export default function App() {
         {sidebar}
         <section className="content">
           <section className="hero">
-            <div className="eyebrow">WallFruits Desktop</div>
-            <h1>Entrar com JWT no desktop web.</h1>
-            <p>Use o mesmo login da API para acessar o desktop com sessao persistente.</p>
+            <div className="eyebrow">Central de acesso</div>
+            <h1>Bem-vindo</h1>
 
             <form className="loginForm" onSubmit={handleSubmit}>
               <input
@@ -295,14 +285,6 @@ export default function App() {
                 {loading ? 'Entrando...' : 'Entrar'}
               </button>
             </form>
-
-            <div className="chips">
-              {stack.map((item) => (
-                <span className="chip" key={item}>
-                  {item}
-                </span>
-              ))}
-            </div>
           </section>
 
           <section className="grid">
