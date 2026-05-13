@@ -96,8 +96,8 @@ fun HomeScreen(viewModel: AuthViewModel) {
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(it)
-                    .padding(horizontal = 18.dp, vertical = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
+                    .padding(horizontal = UiDimens.lg, vertical = UiDimens.lg),
+                verticalArrangement = Arrangement.spacedBy(UiDimens.lg),
                 horizontalAlignment = Alignment.Start,
             ) {
                 PremiumOverviewCard(
@@ -129,7 +129,7 @@ fun HomeScreen(viewModel: AuthViewModel) {
                     Button(onClick = viewModel::refreshHomeData) {
                         Text("Atualizar dados")
                     }
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(UiDimens.md))
                     Button(onClick = viewModel::logout) {
                         Text("Sair")
                     }
@@ -147,20 +147,35 @@ private fun PremiumOverviewCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(22.dp),
+        shape = RoundedCornerShape(UiDimens.cardCornerRadius),
         colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = Color.White),
         border = BorderStroke(1.dp, Color(0xFFE3ECE4)),
-        elevation = androidx.compose.material3.CardDefaults.cardElevation(defaultElevation = 4.dp),
+        elevation = androidx.compose.material3.CardDefaults.cardElevation(defaultElevation = 6.dp),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.padding(UiDimens.lg),
+            verticalArrangement = Arrangement.spacedBy(UiDimens.md),
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(title, style = MaterialTheme.typography.labelLarge, color = Color(0xFF5C7564))
-                Text(subtitle, style = MaterialTheme.typography.headlineSmall, color = Color(0xFF153A24))
+            Column(verticalArrangement = Arrangement.spacedBy(UiDimens.xs)) {
+                Text(
+                    title,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = Color(0xFF5C7564),
+                    fontSize = androidx.compose.ui.unit.sp(12),
+                    letterSpacing = androidx.compose.ui.unit.sp(0.5f),
+                )
+                Text(
+                    subtitle,
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = Color(0xFF153A24),
+                    fontSize = androidx.compose.ui.unit.sp(20),
+                    letterSpacing = androidx.compose.ui.unit.sp(-0.5f),
+                )
             }
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(UiDimens.sm),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
                 items(metrics, key = { it }) { metric ->
                     Card(
                         shape = RoundedCornerShape(14.dp),
@@ -169,9 +184,11 @@ private fun PremiumOverviewCard(
                     ) {
                         Text(
                             text = metric,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                            modifier = Modifier.padding(horizontal = UiDimens.md, vertical = UiDimens.sm),
                             style = MaterialTheme.typography.labelMedium,
                             color = Color(0xFF245C3B),
+                            fontSize = androidx.compose.ui.unit.sp(13),
+                            letterSpacing = androidx.compose.ui.unit.sp(0.3f),
                         )
                     }
                 }
