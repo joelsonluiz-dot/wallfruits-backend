@@ -42,12 +42,15 @@ body {
 }
 
 .topbar {
-  position: sticky;
+  position: fixed;
   top: 0;
-  z-index: 20;
-  max-width: 1520px;
+  left: 0;
+  right: 0;
+  z-index: 120;
+  height: 64px;
+  max-width: 100%;
   margin: 0 auto;
-  padding: 18px 24px 14px;
+  padding: 12px 24px;
   display: grid;
   grid-template-columns: minmax(180px, auto) minmax(0, 1fr) auto;
   align-items: center;

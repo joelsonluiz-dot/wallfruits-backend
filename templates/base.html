@@ -62,7 +62,8 @@
             background: var(--wf-bg);
             background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.34), rgba(244, 239, 223, 0.95));
             color: var(--wf-text);
-            min-height: 100vh;
+                    --wf-mobile-dock-shift: 0px;
+                    --wf-topbar-height: 64px;
             overflow-x: hidden;
             -webkit-font-smoothing: antialiased;
             text-rendering: optimizeLegibility;
@@ -80,9 +81,10 @@
 
         a:focus-visible,
         button:focus-visible,
-        [role="button"]:focus-visible,
-        input:focus-visible,
-        textarea:focus-visible,
+                .wf-shell-main {
+                    min-width: 0;
+                    padding-top: var(--wf-topbar-height);
+                }
         select:focus-visible {
             outline: none;
             box-shadow: var(--wf-focus-ring);
@@ -101,20 +103,22 @@
             flex-wrap: wrap;
             margin-bottom: 0.92rem;
         }
-
-        .wf-section-head-main {
-            min-width: 0;
-            display: grid;
-            gap: 0.24rem;
-        }
-
-        .wf-section-title-lg {
-            margin: 0;
-            font-size: clamp(1.14rem, 2vw, 1.38rem);
-            font-weight: 900;
-            letter-spacing: -0.03em;
-            color: #f8fbff;
-            line-height: 1.2;
+                .wf-topbar {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    height: var(--wf-topbar-height);
+                    z-index: 120;
+                    background: rgba(244, 239, 223, 0.92);
+                    backdrop-filter: blur(10px);
+                    border-bottom: 1px solid var(--wf-border);
+                    padding: 0 1rem;
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 0.65rem;
+                }
         }
 
         .wf-section-subtitle {
@@ -226,7 +230,7 @@
             box-shadow: 4px 0 24px rgba(0,0,0,0.02);
             padding: 1.5rem 1.2rem;
             position: sticky;
-            top: 0;
+            top: var(--wf-topbar-height);
             height: 100vh;
             overflow-y: auto;
             overscroll-behavior: contain;
