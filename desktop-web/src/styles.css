@@ -35,7 +35,7 @@ body {
 
 .shell {
   min-height: 100vh;
-  padding: 0 24px 24px;
+  padding: 64px 24px 24px;
   display: grid;
   gap: 24px;
   grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
