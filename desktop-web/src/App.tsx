@@ -165,27 +165,137 @@ export default function App() {
 
   if (hydrating) {
     return (
-      <main className="shell">
-        {sidebar}
-        <section className="content">
-          <section className="hero">
-            <div className="eyebrow">WallFruits Desktop</div>
-            <h1>Carregando sua sessao...</h1>
+      <>
+        <header className="topbar">
+          <div className="topbarBrand">
+            <span className="topbarDot" />
+            <span>WallFruits Desktop</span>
+          </div>
+          <div className="topbarCenter">
+            <span className="topbarBadge">Home web</span>
+            <span className="topbarText">Scroll principal com experiência premium</span>
+          </div>
+          <div className="topbarRight">v{APP_VERSION}</div>
+        </header>
+        <main className="shell">
+          {sidebar}
+          <section className="content">
+            <section className="hero">
+              <div className="eyebrow">WallFruits Desktop</div>
+              <h1>Carregando sua sessao...</h1>
+            </section>
           </section>
-        </section>
-      </main>
+        </main>
+      </>
     );
   }
 
   if (session) {
     return (
+      <>
+        <header className="topbar">
+          <div className="topbarBrand">
+            <span className="topbarDot" />
+            <span>WallFruits Desktop</span>
+          </div>
+          <div className="topbarCenter">
+            <span className="topbarBadge">Sessao ativa</span>
+            <span className="topbarText">{session.user.name}</span>
+          </div>
+          <div className="topbarRight">v{APP_VERSION}</div>
+        </header>
+        <main className="shell">
+          {sidebar}
+          <section className="content">
+            <section className="hero">
+              <div className="eyebrow">Sessao ativa</div>
+              <h1>Bem-vindo, {session.user.name}</h1>
+              <p>{session.user.email}</p>
+              <div className="chips">
+                {stack.map((item) => (
+                  <span className="chip" key={item}>
+                    {item}
+                  </span>
+                ))}
+              </div>
+              <div style={{ marginTop: 20 }}>
+                <button className="button" onClick={refreshDashboard} type="button">
+                  Atualizar Feed/Market/IA
+                </button>
+              </div>
+              <div style={{ marginTop: 12 }}>
+                <button className="button buttonSecondary" onClick={logout} type="button">
+                  Sair
+                </button>
+              </div>
+            </section>
+
+            <section className="grid">
+              <article className="card">
+                <h2>Feed</h2>
+                <p>Ofertas retornadas por /api/offers: {offersTotal}</p>
+              </article>
+              <article className="card">
+                <h2>Marketplace</h2>
+                <p>Pedidos retornados por /api/store/orders/my: {ordersTotal}</p>
+              </article>
+              <article className="card">
+                <h2>AI Lab</h2>
+                <p>Sinais de mercado por /api/ai/agenda/market-intelligence: {aiSignals}</p>
+              </article>
+            </section>
+          </section>
+        </main>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <header className="topbar">
+        <div className="topbarBrand">
+          <span className="topbarDot" />
+          <span>WallFruits Desktop</span>
+        </div>
+        <div className="topbarCenter">
+          <span className="topbarBadge">Desktop web</span>
+          <span className="topbarText">Instagram-like scroll, foco em operação e distribuição</span>
+        </div>
+        <div className="topbarRight">v{APP_VERSION}</div>
+      </header>
       <main className="shell">
         {sidebar}
         <section className="content">
           <section className="hero">
-            <div className="eyebrow">Sessao ativa</div>
-            <h1>Bem-vindo, {session.user.name}</h1>
-            <p>{session.user.email}</p>
+            <div className="eyebrow">WallFruits Desktop</div>
+            <h1>Entrar com JWT no desktop web.</h1>
+            <p>Use o mesmo login da API para acessar o desktop com sessao persistente.</p>
+
+            <form className="loginForm" onSubmit={handleSubmit}>
+              <input
+                className="input"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="Email"
+                autoComplete="email"
+                type="email"
+                required
+              />
+              <input
+                className="input"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder="Senha"
+                autoComplete="current-password"
+                type="password"
+                required
+              />
+              {error ? <p className="error">{error}</p> : null}
+              <button className="button" type="submit" disabled={loading}>
+                {loading ? 'Entrando...' : 'Entrar'}
+              </button>
+            </form>
+
             <div className="chips">
               {stack.map((item) => (
                 <span className="chip" key={item}>
@@ -193,97 +303,26 @@ export default function App() {
                 </span>
               ))}
             </div>
-            <div style={{ marginTop: 20 }}>
-              <button className="button" onClick={refreshDashboard} type="button">
-                Atualizar Feed/Market/IA
-              </button>
-            </div>
-            <div style={{ marginTop: 12 }}>
-              <button className="button buttonSecondary" onClick={logout} type="button">
-                Sair
-              </button>
-            </div>
           </section>
 
           <section className="grid">
             <article className="card">
-              <h2>Feed</h2>
-              <p>Ofertas retornadas por /api/offers: {offersTotal}</p>
+              <h2>Mobile nativo</h2>
+              <p>Android e iOS continuam priorizados como app principal.</p>
             </article>
             <article className="card">
-              <h2>Marketplace</h2>
-              <p>Pedidos retornados por /api/store/orders/my: {ordersTotal}</p>
+              <h2>Desktop apenas</h2>
+              <p>No celular, a web redireciona para a pagina do app nativo.</p>
             </article>
             <article className="card">
-              <h2>AI Lab</h2>
-              <p>Sinais de mercado por /api/ai/agenda/market-intelligence: {aiSignals}</p>
+              <h2>Lojas</h2>
+              <p>
+                <a href={PLAY_STORE_URL}>Google Play</a> e <a href={APP_STORE_URL}>App Store</a>
+              </p>
             </article>
           </section>
         </section>
       </main>
-    );
-  }
-
-  return (
-    <main className="shell">
-      {sidebar}
-      <section className="content">
-        <section className="hero">
-          <div className="eyebrow">WallFruits Desktop</div>
-          <h1>Entrar com JWT no desktop web.</h1>
-          <p>Use o mesmo login da API para acessar o desktop com sessao persistente.</p>
-
-          <form className="loginForm" onSubmit={handleSubmit}>
-            <input
-              className="input"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="Email"
-              autoComplete="email"
-              type="email"
-              required
-            />
-            <input
-              className="input"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              placeholder="Senha"
-              autoComplete="current-password"
-              type="password"
-              required
-            />
-            {error ? <p className="error">{error}</p> : null}
-            <button className="button" type="submit" disabled={loading}>
-              {loading ? 'Entrando...' : 'Entrar'}
-            </button>
-          </form>
-
-          <div className="chips">
-            {stack.map((item) => (
-              <span className="chip" key={item}>
-                {item}
-              </span>
-            ))}
-          </div>
-        </section>
-
-        <section className="grid">
-          <article className="card">
-            <h2>Mobile nativo</h2>
-            <p>Android e iOS continuam priorizados como app principal.</p>
-          </article>
-          <article className="card">
-            <h2>Desktop apenas</h2>
-            <p>No celular, a web redireciona para a pagina do app nativo.</p>
-          </article>
-          <article className="card">
-            <h2>Lojas</h2>
-            <p>
-              <a href={PLAY_STORE_URL}>Google Play</a> e <a href={APP_STORE_URL}>App Store</a>
-            </p>
-          </article>
-        </section>
-      </section>
-    </main>
+    </>
   );
 }
