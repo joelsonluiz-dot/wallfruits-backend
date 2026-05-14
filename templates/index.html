@@ -1693,6 +1693,7 @@
 
     const HOME_SAVED_POSTS_KEY = 'wf_home_saved_posts';
     const HOME_OFFERS_HTML_CACHE_KEY = 'wf_home_offers_html_v1';
+    const HOME_PRODUCTS_HTML_CACHE_KEY = 'wf_home_products_html_v1';
     const HOME_SERVICES_HTML_CACHE_KEY = 'wf_home_services_html_v1';
     const HOME_COMMUNITY_HTML_CACHE_KEY = 'wf_home_community_html_v1';
     let homeOffersDelegationBound = false;
@@ -1956,19 +1957,49 @@
     }
 
     function getProductImage(product) {
-        return product.image || fallbackImageSvg(product.name || 'Produto');
+        const candidate = String(product?.image || product?.image_url || '').trim();
+        if (candidate) return candidate;
+
+        const bucket = `${String(product?.category || '').toLowerCase()} ${String(product?.name || '').toLowerCase()}`;
+        if (bucket.includes('roup') || bucket.includes('camisa') || bucket.includes('polo')) {
+            return 'https://images.unsplash.com/photo-1578932750294-f5075e85f44a?auto=format&fit=crop&w=960&q=80';
+        }
+        if (bucket.includes('semen') || bucket.includes('seed')) {
+            return 'https://images.unsplash.com/photo-1615811361523-6bd03d7748e7?auto=format&fit=crop&w=960&q=80';
+        }
+        if (bucket.includes('fert')) {
+            return 'https://images.unsplash.com/photo-1625246333195-78d9c38ad449?auto=format&fit=crop&w=960&q=80';
+        }
+        if (bucket.includes('ferrament')) {
+            return 'https://images.unsplash.com/photo-1581147036324-c1c4f0f4e9a7?auto=format&fit=crop&w=960&q=80';
+        }
+
+        return fallbackImageSvg(product?.name || 'Produto');
     }
 
-    async function loadHomeFeaturedProducts() {
+    async function loadHomeFeaturedProducts(options = {}) {
+        const silent = Boolean(options.silent);
         const container = document.getElementById('homeFeaturedProducts');
         if (!container) return;
 
+        if (!silent && !container.innerHTML.trim()) {
+            const cachedHtml = readHomeSectionHtml(HOME_PRODUCTS_HTML_CACHE_KEY);
+            if (cachedHtml) {
+                container.innerHTML = cachedHtml;
+            }
+        }
+
+        const previousHtml = container.innerHTML;
+
         try {
-            const data = await apiRequest('/store/featured?limit=8');
+            const data = await homeRequestWithRetry('/store/featured?limit=8');
             const products = Array.isArray(data?.products) ? data.products : [];
+            const signature = products.map((item) => String(item?.id || item?.slug || item?.name || '')).join('|');
 
             if (!products.length) {
                 container.innerHTML = '<div class="wf-alert wf-alert-info">A vitrine de produtos ainda está vazia.</div>';
+                writeHomeSectionHtml(HOME_PRODUCTS_HTML_CACHE_KEY, container.innerHTML);
+                markHomeUpdated('products', 'empty', silent);
                 return;
             }
 
@@ -1984,8 +2015,18 @@
                     </div>
                 </a>
             `).join('');
+
+            writeHomeSectionHtml(HOME_PRODUCTS_HTML_CACHE_KEY, container.innerHTML);
+            markHomeUpdated('products', signature, silent);
         } catch {
-            container.innerHTML = '<div class="wf-alert wf-alert-error">Falha ao carregar produtos em destaque.</div>';
+            if (previousHtml && previousHtml.trim()) {
+                container.innerHTML = previousHtml;
+                return;
+            }
+
+            if (!silent) {
+                container.innerHTML = '<div class="wf-alert wf-alert-error">Falha ao carregar produtos em destaque.</div>';
+            }
         }
     }
 
@@ -2216,6 +2257,7 @@
 
         await Promise.allSettled([
             loadHomeOffers({ silent: true }),
+            loadHomeFeaturedProducts({ silent: true }),
             loadHomeServiceHighlights({ silent: true }),
             loadHomeCommunityHighlights({ silent: true }),
             loadStats({ silent: true }),

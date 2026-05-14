@@ -1846,6 +1846,44 @@
 			'</svg>'
 		);
 
+		const REAL_STORE_IMAGES = {
+			fertilizantes: "https://images.unsplash.com/photo-1625246333195-78d9c38ad449?auto=format&fit=crop&w=1200&q=80",
+			defensivos: "https://images.unsplash.com/photo-1628359355624-855775b5c9c4?auto=format&fit=crop&w=1200&q=80",
+			sementes: "https://images.unsplash.com/photo-1615811361523-6bd03d7748e7?auto=format&fit=crop&w=1200&q=80",
+			irrigacao: "https://images.unsplash.com/photo-1563514227147-6d2ff665a6a0?auto=format&fit=crop&w=1200&q=80",
+			roupas: "https://images.unsplash.com/photo-1578932750294-f5075e85f44a?auto=format&fit=crop&w=1200&q=80",
+			ferramentas: "https://images.unsplash.com/photo-1581147036324-c1c4f0f4e9a7?auto=format&fit=crop&w=1200&q=80",
+			maquinarios: "https://images.unsplash.com/photo-1592982537447-7440770cbfc9?auto=format&fit=crop&w=1200&q=80",
+			veterinaria: "https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?auto=format&fit=crop&w=1200&q=80",
+			pecuaria: "https://images.unsplash.com/photo-1500595046743-cd271d694d30?auto=format&fit=crop&w=1200&q=80",
+			default: "https://images.unsplash.com/photo-1595841696677-6489ff3f8cd1?auto=format&fit=crop&w=1200&q=80",
+		};
+
+		const storeImagePrefetchSet = new Set();
+
+		function getStoreRealFallbackImage(product) {
+			const categoryKey = String(product?.category || "").trim().toLowerCase();
+			const nameKey = String(product?.name || "").trim().toLowerCase();
+			const bucket = `${categoryKey} ${nameKey}`;
+
+			if (bucket.includes("fert")) return REAL_STORE_IMAGES.fertilizantes;
+			if (bucket.includes("defens") || bucket.includes("inset") || bucket.includes("fung")) return REAL_STORE_IMAGES.defensivos;
+			if (bucket.includes("semen") || bucket.includes("seed")) return REAL_STORE_IMAGES.sementes;
+			if (bucket.includes("irriga") || bucket.includes("mangueira") || bucket.includes("aspersor")) return REAL_STORE_IMAGES.irrigacao;
+			if (bucket.includes("roup") || bucket.includes("camisa") || bucket.includes("polo")) return REAL_STORE_IMAGES.roupas;
+			if (bucket.includes("ferrament") || bucket.includes("tool")) return REAL_STORE_IMAGES.ferramentas;
+			if (bucket.includes("maquin") || bucket.includes("trator") || bucket.includes("colheit")) return REAL_STORE_IMAGES.maquinarios;
+			if (bucket.includes("veter") || bucket.includes("pet") || bucket.includes("animal")) return REAL_STORE_IMAGES.veterinaria;
+			if (bucket.includes("pecu") || bucket.includes("gado") || bucket.includes("bov")) return REAL_STORE_IMAGES.pecuaria;
+			return REAL_STORE_IMAGES.default;
+		}
+
+		function getStoreCardImage(product) {
+			const candidate = String(product?.image || product?.image_url || "").trim();
+			if (candidate) return candidate;
+			return getStoreRealFallbackImage(product);
+		}
+
 		function refreshLojaImageFallbacks(root = document) {
 			const images = root.querySelectorAll?.(".loja-card-media img") || [];
 			images.forEach((img) => {
@@ -1878,9 +1916,8 @@
 				const urgency = productUrgency(product);
 				const badge = productBadge(product, sectionKey);
 				const slug = encodeURIComponent(String(product?.slug || ""));
-				const image = product?.image
-					? `<img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.name || "Produto")}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='${LOJA_IMAGE_PLACEHOLDER}';this.classList.add('is-placeholder');" />`
-					: `<span class="material-symbols-outlined" style="font-size:48px;color:#94A3B8;">inventory_2</span>`;
+				const cardImage = getStoreCardImage(product);
+				const image = `<img src="${escapeHtml(cardImage)}" alt="${escapeHtml(product.name || "Produto")}" loading="lazy" decoding="async" data-fallback-src="${escapeHtml(getStoreRealFallbackImage(product))}" onerror="if(this.dataset.fallbackApplied==='1'){this.onerror=null;this.src='${LOJA_IMAGE_PLACEHOLDER}';this.classList.add('is-placeholder');}else{this.dataset.fallbackApplied='1';this.src=this.dataset.fallbackSrc || '${LOJA_IMAGE_PLACEHOLDER}';}" />`;
 
 				return `
 					<article class="loja-card reveal-on-scroll">
@@ -2339,12 +2376,30 @@
 			const nextVisibleEnd = state.visibleCount + state.pageSize;
 			const nextChunk = state.allProducts.slice(state.visibleCount, nextVisibleEnd);
 			nextChunk.forEach((item) => {
+				const url = getStoreCardImage(item);
+				if (!url || storeImagePrefetchSet.has(url)) return;
+				storeImagePrefetchSet.add(url);
 				const img = document.createElement("img");
 				img.style.display = "none";
-				img.src = item?.img || item?.image_url || "";
+				img.src = url;
 				document.body.appendChild(img);
 				setTimeout(() => img.remove(), 100);
 			});
+		}
+
+		async function storeRequestWithRetry(url, attempts = 2) {
+			let lastError = null;
+			for (let attempt = 1; attempt <= attempts; attempt += 1) {
+				try {
+					return await apiRequest(url);
+				} catch (error) {
+					lastError = error;
+					if (attempt < attempts) {
+						await new Promise((resolve) => setTimeout(resolve, 240));
+					}
+				}
+			}
+			throw lastError || new Error("Falha ao carregar vitrine da loja.");
 		}
 
 		function setupInfiniteScroll() {
@@ -2397,7 +2452,7 @@
 			}
 
 			try {
-				const data = await apiRequest(`/store/products${queryString ? `?${queryString}` : ""}`);
+				const data = await storeRequestWithRetry(`/store/products${queryString ? `?${queryString}` : ""}`);
 				if (state.lastQueryKey !== cacheKey) return;
 				applyStorePayload(data || {});
 				writeStoreRouteCache(cacheKey, data || {});
