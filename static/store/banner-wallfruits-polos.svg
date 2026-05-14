@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 700" role="img" aria-label="Banner WallFruits camisas polo agricolas">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#244f33"/>
+      <stop offset="52%" stop-color="#2f6a43"/>
+      <stop offset="100%" stop-color="#8a6b2f"/>
+    </linearGradient>
+    <linearGradient id="shirtA" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#2f8b56"/>
+      <stop offset="100%" stop-color="#1f6a40"/>
+    </linearGradient>
+    <linearGradient id="shirtB" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#d2a44d"/>
+      <stop offset="100%" stop-color="#a57a2f"/>
+    </linearGradient>
+    <linearGradient id="shirtC" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#5d7f43"/>
+      <stop offset="100%" stop-color="#3e5f2f"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="160%">
+      <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#102317" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="700" fill="url(#bg)"/>
+  <ellipse cx="1210" cy="160" rx="350" ry="180" fill="#ffffff" opacity="0.08"/>
+  <ellipse cx="320" cy="620" rx="480" ry="150" fill="#000000" opacity="0.12"/>
+
+  <g transform="translate(880,128)" filter="url(#shadow)">
+    <g transform="translate(0,20)">
+      <path d="M120 94 L204 64 L288 94 L334 212 L296 240 L278 204 L278 456 L130 456 L130 204 L112 240 L74 212 Z" fill="url(#shirtA)"/>
+      <path d="M180 68 L230 68 L248 108 L162 108 Z" fill="#f5f5f2"/>
+      <path d="M186 108 L224 108 L220 146 L190 146 Z" fill="#f3f4f6"/>
+      <rect x="178" y="182" width="52" height="26" rx="6" fill="#ffffff" opacity="0.25"/>
+      <text x="204" y="199" text-anchor="middle" font-size="13" fill="#ffffff" font-family="Segoe UI, Arial, sans-serif" font-weight="700">WF</text>
+    </g>
+
+    <g transform="translate(196,0)">
+      <path d="M120 94 L204 64 L288 94 L334 212 L296 240 L278 204 L278 456 L130 456 L130 204 L112 240 L74 212 Z" fill="url(#shirtB)"/>
+      <path d="M180 68 L230 68 L248 108 L162 108 Z" fill="#f3f4f6"/>
+      <path d="M186 108 L224 108 L220 146 L190 146 Z" fill="#f9fafb"/>
+      <rect x="178" y="182" width="52" height="26" rx="6" fill="#ffffff" opacity="0.27"/>
+      <text x="204" y="199" text-anchor="middle" font-size="13" fill="#ffffff" font-family="Segoe UI, Arial, sans-serif" font-weight="700">WF</text>
+    </g>
+
+    <g transform="translate(392,20)">
+      <path d="M120 94 L204 64 L288 94 L334 212 L296 240 L278 204 L278 456 L130 456 L130 204 L112 240 L74 212 Z" fill="url(#shirtC)"/>
+      <path d="M180 68 L230 68 L248 108 L162 108 Z" fill="#f4f4f3"/>
+      <path d="M186 108 L224 108 L220 146 L190 146 Z" fill="#f7f7f5"/>
+      <rect x="178" y="182" width="52" height="26" rx="6" fill="#ffffff" opacity="0.25"/>
+      <text x="204" y="199" text-anchor="middle" font-size="13" fill="#ffffff" font-family="Segoe UI, Arial, sans-serif" font-weight="700">WF</text>
+    </g>
+  </g>
+
+  <g transform="translate(120,150)">
+    <text x="0" y="0" fill="#ffffff" font-size="34" font-family="Segoe UI, Arial, sans-serif" font-weight="700" opacity="0.92">WALLFRUITS STORE</text>
+    <text x="0" y="88" fill="#ffffff" font-size="74" font-family="Segoe UI, Arial, sans-serif" font-weight="800">Camisas Polo Agro</text>
+    <text x="0" y="152" fill="#f7f4ea" font-size="36" font-family="Segoe UI, Arial, sans-serif" font-weight="600">Cores agrícolas • coleção oficial</text>
+    <text x="0" y="212" fill="#fff7da" font-size="30" font-family="Segoe UI, Arial, sans-serif" font-weight="500">Verde Safra, Terra Dourada e Campo Premium</text>
+  </g>
+</svg>

@@ -178,10 +178,17 @@
 		transform: translateY(calc(var(--banner-parallax, 0px) * -1));
 	}
 
+	.loja-banner-visual img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		display: block;
+	}
+
 	.loja-banner-gradient {
 		position: absolute;
 		inset: 0;
-		background: radial-gradient(circle at 82% 14%, rgba(250, 204, 21, 0.45) 0%, rgba(250, 204, 21, 0) 35%), linear-gradient(132deg, #2563EB 0%, #3B82F6 46%, #6366F1 100%);
+		background: linear-gradient(90deg, rgba(17, 24, 39, 0.62) 0%, rgba(17, 24, 39, 0.28) 46%, rgba(17, 24, 39, 0.06) 100%);
 	}
 
 	.loja-banner-dots {
@@ -387,7 +394,18 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 8px;
+		max-width: 172px;
+		min-width: 0;
 		scroll-snap-align: start;
+	}
+
+	.loja-category-label {
+		display: block;
+		min-width: 0;
+		max-width: 120px;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 
 	.loja-category-card.is-active {
@@ -1056,6 +1074,11 @@
 			min-width: 112px;
 			padding: 10px 9px;
 			font-size: 0.74rem;
+			max-width: 132px;
+		}
+
+		.loja-category-label {
+			max-width: 74px;
 		}
 
 		.loja-section-grid {
@@ -1279,6 +1302,11 @@
 			min-width: 88px;
 			padding: 7px;
 			font-size: 0.68rem;
+			max-width: 104px;
+		}
+
+		.loja-category-label {
+			max-width: 58px;
 		}
 
 		.loja-category-icon {
@@ -1512,25 +1540,12 @@
 
 		const bannerSlides = [
 			{
-				tag: "ofertas premium",
-				title: "Insumos com preco inteligente para sua safra",
-				subtitle: "Compare categorias, aproveite descontos de hoje e finalize compra em poucos toques.",
-				cta: "Ver ofertas do dia",
+				tag: "colecao oficial",
+				title: "Camisas polo WallFruits em cores agricolas",
+				subtitle: "Linha oficial com visual premium para campo: Verde Safra, Terra Dourada e Campo Premium.",
+				cta: "Comprar camisas polo",
 				category: "",
-			},
-			{
-				tag: "mais vendidos",
-				title: "Top produtos com alta recompra e confianca",
-				subtitle: "A prova social dos itens mais procurados para operacao profissional no campo.",
-				cta: "Ir para mais vendidos",
-				category: "",
-			},
-			{
-				tag: "novidades",
-				title: "Lancamentos com entrega rapida e estoque monitorado",
-				subtitle: "Novos itens com visualizacao instantanea de urgencia para acelerar decisoes.",
-				cta: "Explorar novidades",
-				category: "",
+				image: "/static/store/banner-wallfruits-polos.svg",
 			},
 		];
 
@@ -1748,7 +1763,7 @@
 					${items.map((item) => `
 						<button type="button" class="loja-category-card ${state.category === item.slug ? "is-active" : ""} ripple" data-category-chip="${escapeHtml(item.slug)}">
 							<span class="loja-category-icon material-symbols-outlined">${escapeHtml(item.icon)}</span>
-							<span>${escapeHtml(item.name)}</span>
+							<span class="loja-category-label" title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</span>
 						</button>
 					`).join("")}
 				</div>
@@ -1762,6 +1777,7 @@
 						${bannerSlides.map((slide, index) => `
 							<article class="loja-banner-slide" data-banner-slide="${index}">
 								<div class="loja-banner-visual">
+									<img src="${escapeHtml(slide.image || "/static/store/banner-wallfruits-polos.svg")}" alt="Banner WallFruits camisas polo agricolas" loading="eager" decoding="async" />
 									<div class="loja-banner-gradient"></div>
 								</div>
 								<div class="loja-banner-content">
