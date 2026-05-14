@@ -32,30 +32,69 @@ class AIDashboardContent extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            colorScheme.primary.withOpacity(0.22),
-            colorScheme.secondary.withOpacity(0.15),
+            colorScheme.primary.withOpacity(0.16),
+            colorScheme.secondary.withOpacity(0.1),
             colorScheme.surface,
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
       ),
-      child: SafeArea(
-        top: tabController == null,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-          children: [
-            if (tabController != null) ...[
-              _FeedTopTabBar(tabController: tabController!),
-              const SizedBox(height: 16),
-            ],
-            SmartSuggestionsPanel(),
-            const SizedBox(height: 12),
-            PredictiveInsightsCard(),
-            const SizedBox(height: 12),
-            AgroChatView(),
-          ],
-        ),
+      child: CustomScrollView(
+        physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+        slivers: [
+          SliverSafeArea(
+            bottom: false,
+            sliver: SliverAppBar(
+              pinned: true,
+              floating: false,
+              automaticallyImplyLeading: false,
+              elevation: 0,
+              scrolledUnderElevation: 0,
+              surfaceTintColor: Colors.transparent,
+              backgroundColor: colorScheme.surface.withOpacity(0.94),
+              toolbarHeight: 58,
+              titleSpacing: 16,
+              title: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Início',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
+                  ),
+                  Text(
+                    'Feed fluido, premium e mais leve',
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+                  ),
+                ],
+              ),
+              bottom: tabController == null
+                  ? null
+                  : PreferredSize(
+                      preferredSize: const Size.fromHeight(50),
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+                        child: _FeedTopTabBar(tabController: tabController!),
+                      ),
+                    ),
+            ),
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 96),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate(
+                [
+                  SmartSuggestionsPanel(),
+                  const SizedBox(height: 12),
+                  PredictiveInsightsCard(),
+                  const SizedBox(height: 12),
+                  AgroChatView(),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -71,32 +110,35 @@ class _FeedTopTabBar extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(18),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
         child: Container(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
-            color: colorScheme.surface.withOpacity(0.62),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: colorScheme.primary.withOpacity(0.18)),
+            color: colorScheme.surface.withOpacity(0.82),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: colorScheme.outlineVariant.withOpacity(0.45)),
           ),
           child: TabBar(
             controller: tabController,
             isScrollable: true,
             dividerColor: Colors.transparent,
-            indicatorSize: TabBarIndicatorSize.tab,
-            indicator: BoxDecoration(
-              color: colorScheme.primary.withOpacity(0.14),
-              borderRadius: BorderRadius.circular(999),
+            indicatorSize: TabBarIndicatorSize.label,
+            indicatorPadding: const EdgeInsets.symmetric(horizontal: 10),
+            indicator: UnderlineTabIndicator(
+              borderSide: BorderSide(color: colorScheme.primary, width: 2.4),
+              insets: const EdgeInsets.symmetric(horizontal: 18),
             ),
             labelColor: colorScheme.primary,
-            unselectedLabelColor: colorScheme.onSurfaceVariant,
-            labelPadding: const EdgeInsets.symmetric(horizontal: 14),
+            unselectedLabelColor: colorScheme.onSurfaceVariant.withOpacity(0.78),
+            labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
+            unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+            labelPadding: const EdgeInsets.symmetric(horizontal: 10),
             tabs: const [
-              Tab(text: 'Inicio', icon: Icon(Icons.home_rounded)),
-              Tab(text: 'Mercado', icon: Icon(Icons.storefront_rounded)),
-              Tab(text: 'IA', icon: Icon(Icons.auto_awesome_rounded)),
+              Tab(text: 'Inicio', icon: Icon(Icons.home_rounded, size: 18)),
+              Tab(text: 'Mercado', icon: Icon(Icons.storefront_rounded, size: 18)),
+              Tab(text: 'IA', icon: Icon(Icons.auto_awesome_rounded, size: 18)),
             ],
           ),
         ),

@@ -110,32 +110,40 @@ class _BottomDockTabBar extends StatelessWidget {
     return SafeArea(
       top: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+        padding: const EdgeInsets.fromLTRB(10, 4, 10, 10),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(18),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
             child: Container(
+              height: 64,
               decoration: BoxDecoration(
-                color: colorScheme.surface.withOpacity(0.9),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: colorScheme.outlineVariant.withOpacity(0.52)),
+                color: colorScheme.surface.withOpacity(0.88),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: colorScheme.outlineVariant.withOpacity(0.42)),
               ),
               child: TabBar(
                 controller: tabController,
                 dividerColor: Colors.transparent,
-                indicatorColor: Colors.transparent,
+                indicatorSize: TabBarIndicatorSize.label,
+                indicator: UnderlineTabIndicator(
+                  borderSide: BorderSide(color: colorScheme.primary, width: 2.2),
+                  insets: const EdgeInsets.symmetric(horizontal: 18),
+                ),
+                labelPadding: const EdgeInsets.symmetric(horizontal: 8),
+                tabAlignment: TabAlignment.fill,
                 tabs: AppShellTab.values
                     .map(
                       (tab) => Tab(
-                        icon: Icon(tab.icon),
+                        icon: Icon(tab.icon, size: 18),
                         text: tab.label,
                       ),
                     )
                     .toList(),
                 labelColor: colorScheme.primary,
-                unselectedLabelColor: colorScheme.onSurfaceVariant,
-                labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
+                unselectedLabelColor: colorScheme.onSurfaceVariant.withOpacity(0.78),
+                labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11),
+                unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 11),
               ),
             ),
           ),

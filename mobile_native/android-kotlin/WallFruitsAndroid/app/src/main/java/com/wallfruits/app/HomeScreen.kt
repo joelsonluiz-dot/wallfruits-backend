@@ -1,4 +1,4 @@
-package com.wallfruits.app
+﻿package com.wallfruits.app
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
@@ -20,12 +20,16 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -41,6 +45,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
@@ -92,49 +97,194 @@ fun HomeScreen(viewModel: AuthViewModel) {
                 )
             },
         ) {
-            Column(
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(it)
-                    .padding(horizontal = UiDimens.lg, vertical = UiDimens.lg),
-                verticalArrangement = Arrangement.spacedBy(UiDimens.lg),
-                horizontalAlignment = Alignment.Start,
+                    .padding(it),
             ) {
-                PremiumOverviewCard(
-                    title = "Sessao ativa",
-                    subtitle = state.userName ?: "usuario",
-                    metrics = listOf(
-                        "Feed ${state.offersTotal}",
-                        "Marketplace ${state.ordersTotal}",
-                        "IA ${state.aiSignals}",
-                        "Comunidade ${state.communityTotal}",
-                        "Servicos ${state.servicesTotal}",
-                        "Biblioteca ${state.libraryTotal}",
-                    ),
-                )
-
-                ModulePanel(
-                    state = state,
-                    onRefreshSelectedModule = viewModel::refreshSelectedModule,
-                    onCreateManagedService = viewModel::createManagedService,
-                    onUpdateManagedService = viewModel::updateManagedService,
-                    onDeleteManagedService = viewModel::deleteManagedService,
-                    onCreateBuyerClient = viewModel::createBuyerClient,
-                    onUpdateBuyerClient = viewModel::updateBuyerClient,
-                    onDeleteBuyerClient = viewModel::deleteBuyerClient,
-                    onClearModuleActionMessage = viewModel::clearModuleActionMessage,
-                )
-
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    Button(onClick = viewModel::refreshHomeData) {
-                        Text("Atualizar dados")
-                    }
-                    Spacer(modifier = Modifier.width(UiDimens.md))
-                    Button(onClick = viewModel::logout) {
-                        Text("Sair")
-                    }
+                if (state.selectedModule == AppModuleTab.INICIO) {
+                    HomeFeedContent(
+                        state = state,
+                        onSelectModule = viewModel::selectModule,
+                        onRefresh = viewModel::refreshHomeData,
+                        onLogout = viewModel::logout,
+                    )
+                } else {
+                    ModuleWorkspaceContent(
+                        state = state,
+                        onSelectModule = viewModel::selectModule,
+                        onRefreshSelectedModule = viewModel::refreshSelectedModule,
+                        onCreateManagedService = viewModel::createManagedService,
+                        onUpdateManagedService = viewModel::updateManagedService,
+                        onDeleteManagedService = viewModel::deleteManagedService,
+                        onCreateBuyerClient = viewModel::createBuyerClient,
+                        onUpdateBuyerClient = viewModel::updateBuyerClient,
+                        onDeleteBuyerClient = viewModel::deleteBuyerClient,
+                        onClearModuleActionMessage = viewModel::clearModuleActionMessage,
+                        onLogout = viewModel::logout,
+                    )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun HomeFeedContent(
+    state: AuthUiState,
+    onSelectModule: (AppModuleTab) -> Unit,
+    onRefresh: () -> Unit,
+    onLogout: () -> Unit,
+) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(horizontal = UiDimens.md, vertical = UiDimens.sm),
+        verticalArrangement = Arrangement.spacedBy(UiDimens.md),
+    ) {
+        item {
+            PremiumHomeBar(
+                selectedModule = state.selectedModule,
+                onSelectModule = onSelectModule,
+            )
+        }
+        item {
+            PremiumOverviewCard(
+                title = "Sessao ativa",
+                subtitle = state.userName ?: "usuario",
+                metrics = listOf(
+                    "Feed ${state.offersTotal}",
+                    "Marketplace ${state.ordersTotal}",
+                    "IA ${state.aiSignals}",
+                    "Comunidade ${state.communityTotal}",
+                    "Servicos ${state.servicesTotal}",
+                    "Biblioteca ${state.libraryTotal}",
+                ),
+            )
+        }
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(UiDimens.sm), modifier = Modifier.fillMaxWidth()) {
+                AssistChip(onClick = onRefresh, label = { Text("Atualizar") })
+                AssistChip(onClick = onLogout, label = { Text("Sair") })
+            }
+        }
+        item {
+            StandardCardContainer {
+                Text("Feed em tempo real", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    text = "Scroll continuo, sem vazio superior e com navegação compacta para dar sensação de app premium.",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
+        }
+        item {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(UiDimens.sm)) {
+                MiniSnapshotCard(label = "Feed", value = state.offersTotal.toString(), accent = Color(0xFF2A8B58), modifier = Modifier.weight(1f))
+                MiniSnapshotCard(label = "Market", value = state.ordersTotal.toString(), accent = Color(0xFF8B6A2D), modifier = Modifier.weight(1f))
+            }
+        }
+        item {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(UiDimens.sm)) {
+                MiniSnapshotCard(label = "IA", value = state.aiSignals.toString(), accent = Color(0xFF275D38), modifier = Modifier.weight(1f))
+                MiniSnapshotCard(label = "Comunidade", value = state.communityTotal.toString(), accent = Color(0xFF56786A), modifier = Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+@Composable
+private fun PremiumHomeBar(
+    selectedModule: AppModuleTab,
+    onSelectModule: (AppModuleTab) -> Unit,
+) {
+    StandardCardContainer {
+        Column(verticalArrangement = Arrangement.spacedBy(UiDimens.sm)) {
+            Text("Inicio", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+            Text(
+                text = "Tab bar compacta no topo, scroll mais limpo e visual mais premium.",
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            ScrollableTabRow(
+                selectedTabIndex = AppModuleTab.entries.indexOf(selectedModule).coerceAtLeast(0),
+                edgePadding = 0.dp,
+                indicator = { positions ->
+                    TabRowDefaults.SecondaryIndicator(
+                        modifier = Modifier.tabIndicatorOffset(positions[AppModuleTab.entries.indexOf(selectedModule).coerceAtLeast(0)]),
+                        color = Color(0xFF275D38),
+                        height = 2.dp,
+                    )
+                },
+                divider = {},
+                containerColor = Color.Transparent,
+            ) {
+                AppModuleTab.entries.forEach { module ->
+                    Tab(
+                        selected = selectedModule == module,
+                        onClick = { onSelectModule(module) },
+                        text = { Text(module.title) },
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MiniSnapshotCard(
+    label: String,
+    value: String,
+    accent: Color,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(16.dp),
+        colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = Color.White),
+        border = BorderStroke(1.dp, accent.copy(alpha = 0.14f)),
+    ) {
+        Column(modifier = Modifier.padding(UiDimens.md), verticalArrangement = Arrangement.spacedBy(UiDimens.xs)) {
+            Text(label, style = MaterialTheme.typography.labelMedium, color = accent)
+            Text(value, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+@Composable
+private fun ModuleWorkspaceContent(
+    state: AuthUiState,
+    onSelectModule: (AppModuleTab) -> Unit,
+    onRefreshSelectedModule: () -> Unit,
+    onCreateManagedService: (String, String, String, String) -> Unit,
+    onUpdateManagedService: (String, String, String, String, String) -> Unit,
+    onDeleteManagedService: (String) -> Unit,
+    onCreateBuyerClient: (String, String, String, String, String) -> Unit,
+    onUpdateBuyerClient: (String, String, String, String, String, String) -> Unit,
+    onDeleteBuyerClient: (String) -> Unit,
+    onClearModuleActionMessage: () -> Unit,
+    onLogout: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = UiDimens.md, vertical = UiDimens.sm),
+        verticalArrangement = Arrangement.spacedBy(UiDimens.md),
+        horizontalAlignment = Alignment.Start,
+    ) {
+        PremiumHomeBar(selectedModule = state.selectedModule, onSelectModule = onSelectModule)
+
+        ModulePanel(
+            state = state,
+            onRefreshSelectedModule = onRefreshSelectedModule,
+            onCreateManagedService = onCreateManagedService,
+            onUpdateManagedService = onUpdateManagedService,
+            onDeleteManagedService = onDeleteManagedService,
+            onCreateBuyerClient = onCreateBuyerClient,
+            onUpdateBuyerClient = onUpdateBuyerClient,
+            onDeleteBuyerClient = onDeleteBuyerClient,
+            onClearModuleActionMessage = onClearModuleActionMessage,
+        )
+
+        Row(horizontalArrangement = Arrangement.spacedBy(UiDimens.sm)) {
+            AssistChip(onClick = onLogout, label = { Text("Sair") })
         }
     }
 }
@@ -715,30 +865,30 @@ private fun normalizeUiServiceCategoryLabel(value: String?): String {
     val key = raw.lowercase()
 
     if (raw.isEmpty()) return "Categoria"
-    if (key.contains("solo") || key.contains("análise") || key.contains("analise")) return "Solo"
+    if (key.contains("solo") || key.contains("an├ílise") || key.contains("analise")) return "Solo"
     if (key.contains("plantio") || key.contains("semead")) return "Plantio"
     if (key.contains("preparo")) return "Preparo"
-    if (key.contains("irriga")) return "Irrigação"
-    if (key.contains("pulver")) return "Pulverização"
-    if (key.contains("praga") || key.contains("doenç") || key.contains("doenc")) return "Pragas"
-    if (key.contains("adub")) return "Adubação"
+    if (key.contains("irriga")) return "Irriga├º├úo"
+    if (key.contains("pulver")) return "Pulveriza├º├úo"
+    if (key.contains("praga") || key.contains("doen├º") || key.contains("doenc")) return "Pragas"
+    if (key.contains("adub")) return "Aduba├º├úo"
     if (key.contains("colhe")) return "Colheita"
-    if (key.contains("pós-colhe") || key.contains("pos-colhe") || key.contains("benefic")) return "Pós-colheita"
-    if (key.contains("mecaniz") || key.contains("implement")) return "Mecanização"
+    if (key.contains("p├│s-colhe") || key.contains("pos-colhe") || key.contains("benefic")) return "P├│s-colheita"
+    if (key.contains("mecaniz") || key.contains("implement")) return "Mecaniza├º├úo"
     if (key.contains("drone")) return "Drone"
     if (key.contains("geo") || key.contains("map")) return "Mapa"
-    if (key.contains("assist")) return "Assistência"
+    if (key.contains("assist")) return "Assist├¬ncia"
     if (key.contains("consult")) return "Consultoria"
     if (key.contains("pod")) return "Podas"
     if (key.contains("silag")) return "Silagem"
     if (key.contains("pastag")) return "Pastagem"
-    if (key.contains("caf")) return "Café"
+    if (key.contains("caf")) return "Caf├®"
     if (key.contains("frut")) return "Frutas"
     if (key.contains("hort")) return "Horta"
     if (key.contains("avi")) return "Aves"
     if (key.contains("bovin")) return "Bovinos"
-    if (key.contains("suin")) return "Suínos"
-    if (key.contains("precis")) return "Precisão"
+    if (key.contains("suin")) return "Su├¡nos"
+    if (key.contains("precis")) return "Precis├úo"
 
     return raw.split(Regex("\\s+")).firstOrNull().orEmpty().ifBlank { raw }
 }
