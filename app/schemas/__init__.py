@@ -13,3 +13,4 @@ from .reputation_schema import *
 from .report_schema import *
 from .social_schema import *
 from .community_schema import *
+from .service_request_schema import *

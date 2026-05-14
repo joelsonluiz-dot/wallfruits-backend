@@ -234,6 +234,175 @@
         padding: 0.8rem;
     }
 
+    .services-queue-shell {
+        display: grid;
+        gap: 0.7rem;
+    }
+
+    .services-queue-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+    }
+
+    .services-queue-sub {
+        margin: 0.2rem 0 0;
+        color: #476c92;
+        font-size: 0.76rem;
+        font-weight: 600;
+    }
+
+    .services-queue-badge {
+        border-radius: 999px;
+        padding: 0.2rem 0.6rem;
+        font-size: 0.68rem;
+        font-weight: 800;
+        background: linear-gradient(130deg, #1d6f45, #2b8a58);
+        color: #fff;
+        white-space: nowrap;
+    }
+
+    .services-queue-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        margin: 0.6rem 0 0.4rem;
+        align-items: center;
+    }
+
+    .services-queue-toolbar select,
+    .services-queue-toolbar button {
+        font-size: 0.74rem;
+    }
+
+    .services-queue-list {
+        display: grid;
+        gap: 0.6rem;
+        max-height: 65vh;
+        overflow: auto;
+        padding-right: 0.2rem;
+    }
+
+    .queue-item {
+        border: 1px solid rgba(21, 84, 127, 0.2);
+        border-radius: 12px;
+        background: #fff;
+        padding: 0.6rem;
+        display: grid;
+        gap: 0.4rem;
+        box-shadow: 0 10px 18px rgba(17, 52, 92, 0.08);
+    }
+
+    .queue-item.premium {
+        border-color: rgba(32, 133, 78, 0.35);
+        box-shadow: 0 12px 24px rgba(17, 82, 51, 0.12);
+    }
+
+    .queue-item-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.5rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .queue-title {
+        margin: 0;
+        font-size: 0.82rem;
+        font-weight: 900;
+        color: #184f7f;
+    }
+
+    .queue-badges {
+        display: flex;
+        gap: 0.3rem;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .queue-badge {
+        border-radius: 999px;
+        padding: 0.18rem 0.55rem;
+        font-size: 0.64rem;
+        font-weight: 800;
+        background: #edf4fd;
+        color: #2c5f93;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+
+    .queue-badge.premium {
+        background: #eaf7ee;
+        color: #1f6d41;
+    }
+
+    .queue-score {
+        font-size: 0.7rem;
+        font-weight: 800;
+        color: #1f6d41;
+    }
+
+    .queue-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        font-size: 0.72rem;
+        color: #4c6d90;
+    }
+
+    .queue-ai {
+        font-size: 0.72rem;
+        color: #2f5f8f;
+        font-weight: 700;
+    }
+
+    .queue-input,
+    .queue-textarea {
+        width: 100%;
+        border: 1px solid rgba(19, 74, 120, 0.22);
+        border-radius: 10px;
+        padding: 0.5rem 0.6rem;
+        font-size: 0.76rem;
+        background: #fff;
+    }
+
+    .queue-textarea {
+        min-height: 72px;
+        resize: vertical;
+    }
+
+    .queue-actions {
+        display: flex;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+    }
+
+    .queue-action-btn {
+        border: none;
+        border-radius: 10px;
+        font-size: 0.72rem;
+        font-weight: 800;
+        padding: 0.5rem 0.65rem;
+        cursor: pointer;
+    }
+
+    .queue-action-btn.primary {
+        background: linear-gradient(130deg, #1d6f45, #2b8a58);
+        color: #fff;
+    }
+
+    .queue-action-btn.secondary {
+        background: #edf3fb;
+        color: #2b5f95;
+    }
+
+    .queue-action-btn.danger {
+        background: #ffecec;
+        color: #9a3737;
+    }
+
     @media (max-width: 980px) {
         .services-manage-grid {
             grid-template-columns: 1fr;
@@ -369,6 +538,40 @@
             </div>
         </article>
     </section>
+
+    <section class="services-queue-shell">
+        <article class="services-manage-card">
+            <div class="services-queue-head">
+                <div>
+                    <h2>Fila inteligente de solicitações</h2>
+                    <p class="services-queue-sub">Ranking IA prioriza solicitações premium e urgentes para acelerar conversões.</p>
+                </div>
+                <span class="services-queue-badge">Premium em destaque</span>
+            </div>
+
+            <div class="services-queue-toolbar">
+                <select id="providerQueueStatusFilter" title="Filtrar por status">
+                    <option value="">Todos os status</option>
+                    <option value="pending">Pendentes</option>
+                    <option value="responded">Respondidos</option>
+                    <option value="scheduled">Agendados</option>
+                    <option value="accepted">Aceitos</option>
+                    <option value="rejected">Recusados</option>
+                    <option value="cancelled">Cancelados</option>
+                </select>
+                <button type="button" class="services-btn services-btn-secondary" id="providerQueueRefreshBtn">Atualizar fila</button>
+            </div>
+
+            <div id="providerQueueStatus" class="services-status"></div>
+            <div id="providerQueueList" class="services-queue-list"></div>
+
+            <div class="services-pager">
+                <button type="button" class="services-btn services-btn-secondary" id="providerQueuePrevBtn">Anterior</button>
+                <span id="providerQueuePagerInfo" class="services-pager-info">Página 1 de 1</span>
+                <button type="button" class="services-btn services-btn-secondary" id="providerQueueNextBtn">Próxima</button>
+            </div>
+        </article>
+    </section>
 </div>
 
 <script>
@@ -399,9 +602,22 @@
         const nextBtn = document.getElementById('servicesNextBtn');
         const pagerInfo = document.getElementById('servicesPagerInfo');
         const previewBox = document.getElementById('serviceImagePreview');
+        const queueListEl = document.getElementById('providerQueueList');
+        const queueStatusEl = document.getElementById('providerQueueStatus');
+        const queueStatusFilter = document.getElementById('providerQueueStatusFilter');
+        const queueRefreshBtn = document.getElementById('providerQueueRefreshBtn');
+        const queuePrevBtn = document.getElementById('providerQueuePrevBtn');
+        const queueNextBtn = document.getElementById('providerQueueNextBtn');
+        const queuePagerInfo = document.getElementById('providerQueuePagerInfo');
 
         let allServices = [];
         let currentPage = 1;
+        const queueState = {
+            skip: 0,
+            limit: 6,
+            total: 0,
+            status: '',
+        };
 
         const fields = {
             id: document.getElementById('serviceId'),
@@ -421,6 +637,12 @@
             equipamentos: document.getElementById('serviceEquipamentos'),
             observacoes: document.getElementById('serviceObservacoes'),
         };
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = String(text ?? '');
+            return div.innerHTML;
+        }
 
         function setImagePreview(url) {
             const safeUrl = String(url || '').trim();
@@ -485,6 +707,143 @@
             statusEl.style.display = 'none';
             statusEl.textContent = '';
             statusEl.classList.remove('error');
+        }
+
+        function showQueueStatus(message, isError = false) {
+            if (!queueStatusEl) return;
+            queueStatusEl.textContent = message;
+            queueStatusEl.classList.toggle('error', isError);
+            queueStatusEl.style.display = message ? 'block' : 'none';
+        }
+
+        function queueStatusLabel(status) {
+            const normalized = String(status || '').toLowerCase();
+            const map = {
+                pending: 'Pendente',
+                responded: 'Respondido',
+                scheduled: 'Agendado',
+                accepted: 'Aceito',
+                rejected: 'Recusado',
+                cancelled: 'Cancelado',
+            };
+            return map[normalized] || 'Em análise';
+        }
+
+        function renderProviderQueue(requests) {
+            if (!queueListEl) return;
+            if (!requests.length) {
+                queueListEl.innerHTML = '<div class="services-item">Nenhuma solicitação encontrada.</div>';
+                return;
+            }
+
+            queueListEl.innerHTML = requests.map((req) => {
+                const serviceTitle = escapeHtml(req?.service?.titulo || 'Serviço agrícola');
+                const requesterName = escapeHtml(req?.requester?.name || 'Solicitante');
+                const location = escapeHtml(req?.location || req?.service?.local || 'Local não informado');
+                const budgetValue = req?.budget != null ? `R$ ${Number(req.budget).toFixed(2)}` : 'Sob consulta';
+                const statusLabel = queueStatusLabel(req?.status);
+                const premiumBadge = req?.is_premium || req?.priority === 'high'
+                    ? '<span class="queue-badge premium">Premium</span>'
+                    : '';
+                const score = Math.round((Number(req?.ai_rank_score || 0.72)) * 100);
+                const recommendation = escapeHtml(req?.ai_recommendation || 'Priorizar nas próximas horas');
+                const timeSince = escapeHtml(req?.time_since_creation || 'agora');
+                const notes = escapeHtml(req?.notes || 'Sem observações adicionais.');
+                const canAct = ['pending', 'responded', 'scheduled'].includes(String(req?.status || '').toLowerCase());
+                const noteId = `queueNote-${req.id}`;
+                const scheduleId = `queueSchedule-${req.id}`;
+
+                return `
+                    <article class="queue-item ${req?.is_premium || req?.priority === 'high' ? 'premium' : ''}">
+                        <div class="queue-item-head">
+                            <h3 class="queue-title">${serviceTitle}</h3>
+                            <div class="queue-badges">
+                                ${premiumBadge}
+                                <span class="queue-badge status">${statusLabel}</span>
+                                <span class="queue-score">IA ${score}%</span>
+                            </div>
+                        </div>
+                        <div class="queue-meta">
+                            <span>Solicitante: ${requesterName}</span>
+                            <span>Local: ${location}</span>
+                            <span>Orçamento: ${budgetValue}</span>
+                            <span>${timeSince}</span>
+                        </div>
+                        <div class="queue-ai">${recommendation}</div>
+                        <div class="queue-meta">${notes}</div>
+                        ${canAct ? `
+                            <textarea id="${noteId}" class="queue-textarea" placeholder="Mensagem para o solicitante"></textarea>
+                            <input id="${scheduleId}" type="datetime-local" class="queue-input" placeholder="Agendamento" />
+                            <div class="queue-actions">
+                                <button type="button" class="queue-action-btn primary" data-queue-action="responded" data-request-id="${req.id}">Responder</button>
+                                <button type="button" class="queue-action-btn secondary" data-queue-action="scheduled" data-request-id="${req.id}">Agendar</button>
+                                <button type="button" class="queue-action-btn danger" data-queue-action="rejected" data-request-id="${req.id}">Recusar</button>
+                            </div>
+                        ` : '<div class="queue-meta">Solicitação finalizada.</div>'}
+                    </article>
+                `;
+            }).join('');
+
+            queueListEl.querySelectorAll('[data-queue-action]').forEach((btn) => {
+                btn.addEventListener('click', async () => {
+                    const action = btn.getAttribute('data-queue-action');
+                    const requestId = btn.getAttribute('data-request-id');
+                    if (!action || !requestId) return;
+
+                    const note = document.getElementById(`queueNote-${requestId}`)?.value || '';
+                    const scheduledDate = document.getElementById(`queueSchedule-${requestId}`)?.value || null;
+
+                    if (action === 'scheduled' && !scheduledDate) {
+                        showQueueStatus('Informe a data/hora do agendamento antes de confirmar.', true);
+                        return;
+                    }
+
+                    try {
+                        await apiRequest(`/services/requests/${requestId}/status`, 'PATCH', {
+                            status: action,
+                            note: note.trim() || null,
+                            scheduled_date: scheduledDate || null,
+                        });
+                        showQueueStatus('Solicitação atualizada com sucesso.');
+                        await loadProviderQueue();
+                    } catch (error) {
+                        showQueueStatus(error.message || 'Erro ao atualizar solicitação.', true);
+                    }
+                });
+            });
+        }
+
+        function updateQueuePager() {
+            if (!queuePagerInfo || !queuePrevBtn || !queueNextBtn) return;
+            const totalPages = Math.max(1, Math.ceil(queueState.total / queueState.limit));
+            const currentPage = Math.floor(queueState.skip / queueState.limit) + 1;
+            queuePagerInfo.textContent = `Página ${currentPage} de ${totalPages} (${queueState.total} solicitações)`;
+            queuePrevBtn.disabled = currentPage <= 1;
+            queueNextBtn.disabled = currentPage >= totalPages;
+        }
+
+        async function loadProviderQueue() {
+            if (!queueListEl) return;
+            showQueueStatus('Carregando fila...', false);
+
+            try {
+                const params = new URLSearchParams();
+                params.set('skip', String(queueState.skip));
+                params.set('limit', String(queueState.limit));
+                if (queueState.status) params.set('status', queueState.status);
+
+                const data = await apiRequest(`/services/requests/provider-queue?${params.toString()}`);
+                const requests = Array.isArray(data?.requests) ? data.requests : [];
+                queueState.total = Number(data?.total || 0);
+                renderProviderQueue(requests);
+                updateQueuePager();
+                showQueueStatus('', false);
+            } catch (error) {
+                queueState.total = 0;
+                renderProviderQueue([]);
+                updateQueuePager();
+                showQueueStatus(error.message || 'Não foi possível carregar a fila.', true);
+            }
         }
 
         function resetForm() {
@@ -739,8 +1098,38 @@
 
         newBtn.addEventListener('click', resetForm);
 
+        if (queueStatusFilter) {
+            queueStatusFilter.addEventListener('change', () => {
+                queueState.status = String(queueStatusFilter.value || '').trim();
+                queueState.skip = 0;
+                loadProviderQueue();
+            });
+        }
+
+        if (queueRefreshBtn) {
+            queueRefreshBtn.addEventListener('click', () => {
+                queueState.skip = 0;
+                loadProviderQueue();
+            });
+        }
+
+        if (queuePrevBtn) {
+            queuePrevBtn.addEventListener('click', () => {
+                queueState.skip = Math.max(0, queueState.skip - queueState.limit);
+                loadProviderQueue();
+            });
+        }
+
+        if (queueNextBtn) {
+            queueNextBtn.addEventListener('click', () => {
+                queueState.skip += queueState.limit;
+                loadProviderQueue();
+            });
+        }
+
         loadOfficialCategories();
         loadServices();
+        loadProviderQueue();
     })();
 </script>
 {% endblock %}

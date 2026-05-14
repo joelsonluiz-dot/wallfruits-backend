@@ -1,12 +1,21 @@
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from pydantic import BaseModel, Field
+from sqlalchemy import case, func
 from sqlalchemy.orm import Session
 
+from app.ai.business_os import build_orchestration_decision
 from app.core.auth_middleware import get_current_user
 from app.core.http_cache import set_detail_cache_headers
 from app.database.connection import get_db
 from app.models.service import Service
+from app.models.service_request import ServiceRequest
 from app.models.user import User
+from app.schemas import ServiceRequestCreate, ServiceRequestResponse, ServiceRequestStatusUpdate
+from app.services.ai_telemetry_service import AITelemetryService
+from app.services.notification_service import create_notification
+from app.services.subscription_policy_service import capabilities_for_user
 
 router = APIRouter(prefix="/services", tags=["Services"])
 
@@ -188,6 +197,45 @@ def _build_ficha_from_payload(payload: ServiceIn | ServiceUpdateIn, *, current: 
     return base
 
 
+def _service_request_payload(item: ServiceRequest) -> dict:
+    return {
+        "id": str(item.id),
+        "service_id": item.service_id,
+        "requester_user_id": item.requester_user_id,
+        "provider_user_id": item.provider_user_id,
+        "status": item.status,
+        "priority": item.priority,
+        "requested_date": item.requested_date.isoformat() if item.requested_date else None,
+        "budget": float(item.budget) if item.budget is not None else None,
+        "location": item.location,
+        "notes": item.notes,
+        "created_at": item.created_at.isoformat() if item.created_at else None,
+        "updated_at": item.updated_at.isoformat() if item.updated_at else None,
+        "service": {
+            "id": item.service.id,
+            "titulo": item.service.titulo,
+            "local": item.service.local,
+            "preco": item.service.preco,
+        }
+        if item.service
+        else None,
+        "requester": {
+            "id": item.requester.id,
+            "name": item.requester.name,
+            "profile_image": item.requester.profile_image,
+        }
+        if item.requester
+        else None,
+        "provider": {
+            "id": item.provider.id,
+            "name": item.provider.name,
+            "profile_image": item.provider.profile_image,
+        }
+        if item.provider
+        else None,
+    }
+
+
 @router.get("")
 async def list_services(
     db: Session = Depends(get_db),
@@ -231,6 +279,261 @@ async def list_services_manage(
     return {"services": payload, "total": len(payload)}
 
 
+@router.get("/requests/my")
+async def list_my_service_requests(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
+    status: str | None = Query(None),
+):
+    query = db.query(ServiceRequest).filter(ServiceRequest.requester_user_id == current_user.id)
+
+    if status:
+        query = query.filter(ServiceRequest.status == status)
+
+    total = query.count()
+    requests = query.order_by(ServiceRequest.created_at.desc()).offset(skip).limit(limit).all()
+    payload = [_service_request_payload(item) for item in requests]
+
+    return {"requests": payload, "total": total, "skip": skip, "limit": limit}
+
+
+@router.get("/requests/provider-queue")
+async def list_provider_queue(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
+    status: str | None = Query(None),
+):
+    query = db.query(ServiceRequest).filter(ServiceRequest.provider_user_id == current_user.id)
+
+    if status:
+        query = query.filter(ServiceRequest.status == status)
+
+    priority_rank = case(
+        (ServiceRequest.priority == "high", 2),
+        (ServiceRequest.priority == "normal", 1),
+        else_=0,
+    )
+
+    total = query.count()
+    requests = (
+        query
+        .order_by(priority_rank.desc(), ServiceRequest.created_at.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+
+    payload = []
+    for index, item in enumerate(requests):
+        req_data = _service_request_payload(item)
+        created_at = item.created_at or datetime.utcnow()
+        created_naive = created_at.replace(tzinfo=None) if created_at.tzinfo else created_at
+        diff = datetime.utcnow() - created_naive
+        hours_ago = max(0.0, diff.total_seconds() / 3600)
+
+        if hours_ago < 1:
+            time_str = f"{int(diff.total_seconds() / 60)} min atrás"
+        elif hours_ago < 24:
+            time_str = f"{int(hours_ago)} h atrás"
+        else:
+            days = int(hours_ago / 24)
+            time_str = f"{days} dia{'s' if days > 1 else ''} atrás"
+
+        priority_weight = 0.88 if item.priority == "high" else 0.68
+        urgency = max(0.0, 1.0 - min(hours_ago / 24.0, 1.0))
+        ai_score = round((priority_weight * 0.7) + (urgency * 0.3), 3)
+
+        if hours_ago < 2:
+            recommendation = "Responder nas próximas 2h"
+        elif hours_ago < 8:
+            recommendation = "Alto potencial nas próximas 8h"
+        else:
+            recommendation = "Priorizar ainda hoje"
+
+        req_data["time_since_creation"] = time_str
+        req_data["is_premium"] = item.priority == "high"
+        req_data["ai_rank_score"] = ai_score
+        req_data["ai_recommendation"] = recommendation
+        req_data["rank_position"] = skip + index + 1
+        payload.append(req_data)
+
+    return {"requests": payload, "total": total, "skip": skip, "limit": limit}
+
+
+@router.patch("/requests/{request_id}/status")
+async def update_service_request_status(
+    request_id: str,
+    payload: ServiceRequestStatusUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    import uuid
+
+    try:
+        req_uuid = uuid.UUID(request_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="ID de solicitação inválido")
+
+    service_request = db.query(ServiceRequest).filter(ServiceRequest.id == req_uuid).first()
+    if not service_request:
+        raise HTTPException(status_code=404, detail="Solicitação de serviço não encontrada")
+
+    new_status = payload.status.lower().strip()
+    note_text = (payload.note or "").strip()
+    scheduled_date = payload.scheduled_date
+
+    valid_statuses = ["pending", "responded", "scheduled", "accepted", "rejected", "cancelled"]
+    if new_status not in valid_statuses:
+        raise HTTPException(status_code=400, detail=f"Status inválido. Valores válidos: {', '.join(valid_statuses)}")
+
+    current_status = service_request.status
+    transitions = {
+        "pending": ["responded", "scheduled", "cancelled"],
+        "responded": ["accepted", "rejected", "scheduled", "cancelled"],
+        "scheduled": ["accepted", "rejected", "cancelled"],
+        "accepted": [],
+        "rejected": [],
+        "cancelled": [],
+    }
+
+    if new_status not in transitions.get(current_status, []):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Transição inválida de {current_status} para {new_status}",
+        )
+
+    if new_status in ["responded", "scheduled"]:
+        if service_request.provider_user_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Apenas o fornecedor pode responder ou agendar")
+
+    if new_status in ["accepted", "rejected", "cancelled"]:
+        if service_request.requester_user_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Apenas o solicitante pode aceitar, recusar ou cancelar")
+
+    if new_status == "scheduled" and scheduled_date is None:
+        raise HTTPException(status_code=400, detail="Informe a data/horário do agendamento")
+
+    service_request.status = new_status
+
+    if scheduled_date is not None:
+        service_request.requested_date = scheduled_date
+
+    if note_text:
+        stamp = datetime.utcnow().strftime("%d/%m/%Y %H:%M")
+        note_entry = f"[{stamp}] {note_text}"
+        service_request.notes = f"{service_request.notes}\n{note_entry}".strip() if service_request.notes else note_entry
+
+    actor_name = current_user.name
+    event_type = "service_request_updated"
+
+    if new_status == "responded":
+        create_notification(
+            db,
+            user_id=service_request.requester_user_id,
+            actor_user_id=current_user.id,
+            notification_type="service_request_response",
+            title="Fornecedor respondeu",
+            message=f"{actor_name} respondeu à sua solicitação de serviço.",
+            resource_type="service_request",
+            resource_id=str(service_request.id),
+        )
+        event_type = "service_request_responded"
+    elif new_status == "scheduled":
+        schedule_label = scheduled_date.strftime("%d/%m/%Y %H:%M") if scheduled_date else "Agendamento confirmado"
+        create_notification(
+            db,
+            user_id=service_request.requester_user_id,
+            actor_user_id=current_user.id,
+            notification_type="service_request_scheduled",
+            title="Solicitação agendada",
+            message=f"{actor_name} agendou o serviço para {schedule_label}.",
+            resource_type="service_request",
+            resource_id=str(service_request.id),
+        )
+        event_type = "service_request_scheduled"
+    elif new_status == "accepted":
+        create_notification(
+            db,
+            user_id=service_request.provider_user_id,
+            actor_user_id=current_user.id,
+            notification_type="service_request_accepted",
+            title="Solicitação aceita",
+            message=f"{actor_name} aceitou sua oferta de serviço.",
+            resource_type="service_request",
+            resource_id=str(service_request.id),
+        )
+        event_type = "service_request_accepted"
+    elif new_status == "rejected":
+        create_notification(
+            db,
+            user_id=service_request.provider_user_id,
+            actor_user_id=current_user.id,
+            notification_type="service_request_rejected",
+            title="Solicitação rejeitada",
+            message=f"{actor_name} rejeitou sua oferta de serviço.",
+            resource_type="service_request",
+            resource_id=str(service_request.id),
+        )
+        event_type = "service_request_rejected"
+    elif new_status == "cancelled":
+        recipient_id = (
+            service_request.provider_user_id
+            if current_user.id == service_request.requester_user_id
+            else service_request.requester_user_id
+        )
+        create_notification(
+            db,
+            user_id=recipient_id,
+            actor_user_id=current_user.id,
+            notification_type="service_request_cancelled",
+            title="Solicitação cancelada",
+            message=f"{actor_name} cancelou a solicitação de serviço.",
+            resource_type="service_request",
+            resource_id=str(service_request.id),
+        )
+        event_type = "service_request_cancelled"
+
+    telemetry = AITelemetryService(db)
+    decision = build_orchestration_decision(
+        event_type=event_type,
+        event_domain="atendimento",
+        metadata={
+            "service_request_id": str(service_request.id),
+            "previous_status": current_status,
+            "new_status": new_status,
+            "actor_user_id": current_user.id,
+            "scheduled_date": scheduled_date.isoformat() if scheduled_date else None,
+        },
+        risk_level="low",
+        risk_score=0.1,
+    )
+
+    telemetry.log_event(
+        user_id=current_user.id,
+        event_type=event_type,
+        entity_type="service_request",
+        entity_id=str(service_request.id),
+        metadata={
+            "previous_status": current_status,
+            "new_status": new_status,
+            "decision": decision,
+        },
+        event_domain="atendimento",
+        event_source=f"/api/services/requests/{request_id}/status",
+        idempotency_key=f"service-request-status:{request_id}:{new_status}:{current_user.id}",
+        commit=True,
+    )
+
+    db.commit()
+    db.refresh(service_request)
+
+    return _service_request_payload(service_request)
+
+
 @router.get("/{service_id}")
 async def get_service(service_id: int, db: Session = Depends(get_db), response: Response = None):
     service = db.query(Service).filter(Service.id == service_id).first()
@@ -263,6 +566,153 @@ async def create_service(
     db.commit()
     db.refresh(item)
     return _service_payload(item)
+
+
+@router.post("/{service_id}/requests", response_model=ServiceRequestResponse, status_code=201)
+async def create_service_request(
+    service_id: int,
+    payload: ServiceRequestCreate,
+    request_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    service = db.query(Service).filter(Service.id == service_id, Service.is_active == True).first()
+    if not service:
+        raise HTTPException(status_code=404, detail="Servico nao encontrado ou indisponivel")
+
+    service_capabilities = capabilities_for_user(db, request_user.id)
+    service_monthly_limit = service_capabilities.get("service_request_monthly_limit")
+    priority_boost = float(service_capabilities.get("service_request_priority_boost") or 1.0)
+    priority = "high" if priority_boost >= 1.35 else "normal"
+
+    if service_monthly_limit is not None:
+        now_utc = datetime.now(timezone.utc)
+        month_start = now_utc.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        monthly_requests = (
+            db.query(func.count(ServiceRequest.id))
+            .filter(
+                ServiceRequest.requester_user_id == request_user.id,
+                ServiceRequest.created_at >= month_start,
+            )
+            .scalar()
+            or 0
+        )
+
+        if monthly_requests >= int(service_monthly_limit):
+            telemetry = AITelemetryService(db)
+            decision = build_orchestration_decision(
+                event_type="service_request_denied",
+                event_domain="atendimento",
+                metadata={
+                    "reason": "service_request_monthly_limit",
+                    "service_id": service_id,
+                    "requester_user_id": request_user.id,
+                    "service_request_monthly_limit": service_monthly_limit,
+                    "service_request_priority_boost": priority_boost,
+                },
+                risk_level="medium",
+                risk_score=0.5,
+            )
+
+            telemetry.log_event(
+                user_id=request_user.id,
+                event_type="service_request_denied",
+                entity_type="service_request",
+                entity_id=None,
+                metadata={
+                    "reason": "service_request_monthly_limit",
+                    "service_id": service_id,
+                    "service_request_monthly_limit": service_monthly_limit,
+                    "service_request_priority_boost": priority_boost,
+                    "decision": decision,
+                },
+                event_domain="atendimento",
+                event_source=f"/api/services/{service_id}/requests",
+                idempotency_key=f"service-request-denied:{request_user.id}:{service_id}:{month_start.date()}",
+                commit=True,
+            )
+
+            raise HTTPException(
+                status_code=403,
+                detail="Seus créditos de solicitação de serviço acabaram neste mês. Faça upgrade para continuar.",
+            )
+
+    if service.created_by_user_id and service.created_by_user_id == request_user.id:
+        raise HTTPException(status_code=400, detail="Nao e possivel solicitar o proprio servico")
+
+    provider_user_id = service.created_by_user_id
+
+    telemetry = AITelemetryService(db)
+    decision = build_orchestration_decision(
+        event_type="service_request_created",
+        event_domain="atendimento",
+        metadata={
+            "service_id": service_id,
+            "requester_user_id": request_user.id,
+            "provider_user_id": provider_user_id,
+            "priority_boost": priority_boost,
+        },
+        risk_level="low" if priority_boost >= 1.35 else "medium",
+        risk_score=0.15 if priority_boost >= 1.35 else 0.45,
+    )
+
+    request_row = ServiceRequest(
+        service_id=service.id,
+        requester_user_id=request_user.id,
+        provider_user_id=provider_user_id,
+        status="pending",
+        priority=priority,
+        requested_date=payload.requested_date,
+        budget=payload.budget,
+        location=(payload.location or service.local).strip() if (payload.location or service.local) else None,
+        notes=(payload.notes or "").strip() or None,
+    )
+    db.add(request_row)
+    db.flush()
+
+    if provider_user_id is not None:
+        create_notification(
+            db,
+            user_id=provider_user_id,
+            actor_user_id=request_user.id,
+            notification_type="service_request",
+            title="Nova solicitação de serviço",
+            message=f"{request_user.name} solicitou o serviço {service.titulo}.",
+            resource_type="service_request",
+            resource_id=str(request_row.id),
+        )
+
+    create_notification(
+        db,
+        user_id=request_user.id,
+        actor_user_id=provider_user_id,
+        notification_type="service_request",
+        title="Solicitação registrada",
+        message=f"Sua solicitação para {service.titulo} foi registrada com prioridade {priority}.",
+        resource_type="service_request",
+        resource_id=str(request_row.id),
+    )
+
+    telemetry.log_event(
+        user_id=request_user.id,
+        event_type="service_request_created",
+        entity_type="service_request",
+        entity_id=str(request_row.id),
+        metadata={
+            "service_id": service_id,
+            "provider_user_id": provider_user_id,
+            "priority": priority,
+            "priority_boost": priority_boost,
+            "decision": decision,
+        },
+        event_domain="atendimento",
+        event_source=f"/api/services/{service_id}/requests",
+        idempotency_key=f"service-request:{request_user.id}:{service_id}:{request_row.id}",
+        commit=True,
+    )
+
+    db.commit()
+    db.refresh(request_row)
+    return _service_request_payload(request_row)
 
 
 @router.patch("/{service_id}")

@@ -251,6 +251,128 @@
         gap: 0.52rem;
     }
 
+    .service-request-card {
+        border: 1px solid rgba(21, 84, 127, 0.16);
+        border-radius: 14px;
+        background: linear-gradient(135deg, #f4fbf7 0%, #f2f7ff 100%);
+        padding: 0.8rem;
+        display: grid;
+        gap: 0.5rem;
+    }
+
+    .service-request-card h3 {
+        margin: 0;
+        font-size: 0.9rem;
+        font-weight: 900;
+        color: #184f7f;
+    }
+
+    .service-request-card p {
+        margin: 0;
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: #476c92;
+    }
+
+    .service-request-premium {
+        border-radius: 12px;
+        border: 1px solid rgba(27, 106, 66, 0.2);
+        background: #eaf7ee;
+        color: #1f6d41;
+        font-size: 0.72rem;
+        font-weight: 800;
+        padding: 0.4rem 0.6rem;
+    }
+
+    .service-request-form {
+        display: grid;
+        gap: 0.5rem;
+    }
+
+    .service-request-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+    }
+
+    .service-request-form input,
+    .service-request-form textarea {
+        width: 100%;
+        border: 1px solid rgba(19, 74, 120, 0.2);
+        border-radius: 10px;
+        background: #fff;
+        padding: 0.55rem 0.6rem;
+        font-size: 0.78rem;
+    }
+
+    .service-request-form textarea {
+        min-height: 84px;
+        resize: vertical;
+    }
+
+    .service-request-status {
+        border-radius: 12px;
+        padding: 0.55rem 0.65rem;
+        font-size: 0.76rem;
+        font-weight: 700;
+        background: #f0f7ff;
+        color: #2b5f95;
+        display: none;
+    }
+
+    .service-request-status.error {
+        background: #ffefef;
+        color: #9a3737;
+    }
+
+    .service-upgrade-modal {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(9, 20, 34, 0.5);
+        z-index: 2000;
+        padding: 1rem;
+    }
+
+    .service-upgrade-modal.show {
+        display: flex;
+    }
+
+    .service-upgrade-card {
+        background: #fff;
+        border-radius: 16px;
+        padding: 1rem;
+        max-width: 420px;
+        width: 100%;
+        box-shadow: 0 18px 36px rgba(16, 44, 72, 0.2);
+        text-align: center;
+        display: grid;
+        gap: 0.5rem;
+    }
+
+    .service-upgrade-title {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 900;
+        color: #184f7f;
+    }
+
+    .service-upgrade-text {
+        margin: 0;
+        font-size: 0.78rem;
+        color: #4c6d90;
+        font-weight: 600;
+    }
+
+    .service-upgrade-actions {
+        display: flex;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
     .service-action {
         border: none;
         border-radius: 12px;
@@ -340,6 +462,10 @@
             grid-template-columns: 1fr;
         }
 
+        .service-request-row {
+            grid-template-columns: 1fr;
+        }
+
         .service-tech-row {
             grid-template-columns: 1fr;
         }
@@ -362,15 +488,58 @@
     <article id="serviceDetailState" class="service-loading">Carregando serviço...</article>
 </div>
 
+<div id="serviceUpgradeModal" class="service-upgrade-modal" role="dialog" aria-modal="true" aria-labelledby="serviceUpgradeTitle">
+    <div class="service-upgrade-card">
+        <h3 id="serviceUpgradeTitle" class="service-upgrade-title">Créditos mensais esgotados</h3>
+        <p class="service-upgrade-text">Faça upgrade para liberar mais solicitações e prioridade IA.</p>
+        <div class="service-upgrade-actions">
+            <button type="button" class="btn btn-wf-secondary" id="serviceUpgradeCloseBtn">Fechar</button>
+            <a class="btn btn-wf-primary" href="/pricing">Ver planos premium</a>
+        </div>
+    </div>
+</div>
+
 <script>
     (function initServiceDetailPage() {
         const stateEl = document.getElementById('serviceDetailState');
         const serviceId = Number('{{ service_id }}');
+        const upgradeModal = document.getElementById('serviceUpgradeModal');
+        const upgradeCloseBtn = document.getElementById('serviceUpgradeCloseBtn');
 
         function esc(text) {
             const div = document.createElement('div');
             div.textContent = String(text || '');
             return div.innerHTML;
+        }
+
+        function showServiceUpgradeModal() {
+            if (!upgradeModal) return;
+            upgradeModal.classList.add('show');
+        }
+
+        function hideServiceUpgradeModal() {
+            if (!upgradeModal) return;
+            upgradeModal.classList.remove('show');
+        }
+
+        function redirectGuestToAuth() {
+            const next = encodeURIComponent(`${window.location.pathname}${window.location.search}`);
+            const goToLogin = window.confirm('Para continuar, entre na sua conta. Clique em OK para Login ou Cancelar para Criar conta.');
+            window.location.href = goToLogin ? `/login?next=${next}` : `/register?next=${next}`;
+        }
+
+        function ensureAuthenticated() {
+            if (localStorage.getItem('token')) return true;
+            redirectGuestToAuth();
+            return false;
+        }
+
+        function showRequestStatus(message, isError = false) {
+            const statusEl = document.getElementById('serviceRequestStatus');
+            if (!statusEl) return;
+            statusEl.textContent = message;
+            statusEl.classList.toggle('error', isError);
+            statusEl.style.display = message ? 'block' : 'none';
         }
 
         function normalizeServiceCategoryLabel(value) {
@@ -429,6 +598,44 @@
             const title = encodeURIComponent(service?.titulo || 'Serviço agrícola');
             const category = encodeURIComponent(normalizeServiceCategoryLabel(service?.ficha_tecnica?.categoria || ''));
             return `/messages?user_id=${provider.id}&service_id=${service.id}&service_title=${title}&service_category=${category}`;
+        }
+
+        function bindRequestForm(service) {
+            const form = document.getElementById('serviceRequestForm');
+            if (!form) return;
+
+            const dateInput = document.getElementById('serviceRequestDate');
+            const budgetInput = document.getElementById('serviceRequestBudget');
+            const locationInput = document.getElementById('serviceRequestLocation');
+            const notesInput = document.getElementById('serviceRequestNotes');
+
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                if (!ensureAuthenticated()) return;
+
+                const requestedDate = dateInput?.value ? new Date(dateInput.value).toISOString() : null;
+                const budgetValue = budgetInput?.value ? Number(budgetInput.value) : null;
+                const payload = {
+                    requested_date: requestedDate,
+                    budget: Number.isFinite(budgetValue) ? budgetValue : null,
+                    location: locationInput?.value?.trim() || null,
+                    notes: notesInput?.value?.trim() || null,
+                };
+
+                showRequestStatus('Enviando solicitação...', false);
+
+                try {
+                    await apiRequest(`/services/${service.id}/requests`, 'POST', payload);
+                    showRequestStatus('Solicitação enviada com sucesso. Acompanhe em Minhas solicitações.', false);
+                    if (notesInput) notesInput.value = '';
+                } catch (error) {
+                    const message = String(error?.message || 'Não foi possível enviar a solicitação.');
+                    showRequestStatus(message, true);
+                    if (message.toLowerCase().includes('crédito') || message.toLowerCase().includes('upgrade')) {
+                        showServiceUpgradeModal();
+                    }
+                }
+            });
         }
 
         function renderService(service) {
@@ -526,12 +733,44 @@
                         </div>
                     </section>
 
+                    <section class="service-request-card" id="serviceRequestCard">
+                        <h3>Solicitar atendimento premium</h3>
+                        <p>Plano premium ganha prioridade na fila e resposta acelerada via IA.</p>
+                        <div class="service-request-premium">Prioridade IA ativa para assinantes Pro, Premium e Enterprise.</div>
+                        <form id="serviceRequestForm" class="service-request-form">
+                            <div class="service-request-row">
+                                <div>
+                                    <label class="wf-label" for="serviceRequestDate">Data preferida</label>
+                                    <input id="serviceRequestDate" type="datetime-local" placeholder="Selecione data e hora">
+                                </div>
+                                <div>
+                                    <label class="wf-label" for="serviceRequestBudget">Orçamento estimado</label>
+                                    <input id="serviceRequestBudget" type="number" step="0.01" placeholder="Ex.: 350.00">
+                                </div>
+                            </div>
+                            <div class="service-request-row">
+                                <div>
+                                    <label class="wf-label" for="serviceRequestLocation">Local de atendimento</label>
+                                    <input id="serviceRequestLocation" type="text" maxlength="180" placeholder="Cidade, estado ou fazenda">
+                                </div>
+                                <div>
+                                    <label class="wf-label" for="serviceRequestNotes">Observações</label>
+                                    <input id="serviceRequestNotes" type="text" maxlength="2000" placeholder="Detalhes do serviço, área, urgência">
+                                </div>
+                            </div>
+                            <button type="submit" class="service-action primary">Enviar solicitação</button>
+                        </form>
+                        <div id="serviceRequestStatus" class="service-request-status"></div>
+                    </section>
+
                     <div class="service-actions">
                         ${chatLink ? `<a href="${chatLink}" class="service-action primary">Solicitar orçamento no bate-papo</a>` : '<span class="service-action secondary" style="opacity:.8; pointer-events:none;">Divulgador indisponível</span>'}
                         <a href="/services" class="service-action secondary">Voltar para serviços</a>
                     </div>
                 </div>
             `;
+
+            bindRequestForm(service);
         }
 
         async function loadService() {
@@ -548,6 +787,16 @@
                 stateEl.className = 'service-error';
                 stateEl.textContent = 'Não foi possível carregar este serviço agora.';
             }
+        }
+
+        if (upgradeCloseBtn) {
+            upgradeCloseBtn.addEventListener('click', hideServiceUpgradeModal);
+        }
+
+        if (upgradeModal) {
+            upgradeModal.addEventListener('click', (event) => {
+                if (event.target === upgradeModal) hideServiceUpgradeModal();
+            });
         }
 
         loadService();

@@ -84,3 +84,8 @@ local.properties
 
 # Generated Android artifacts
 artifacts/android-native-apk/
+
+# Desktop web build/install artifacts
+desktop-web/node_modules/
+desktop-web/dist/
+desktop-web/*.tsbuildinfo

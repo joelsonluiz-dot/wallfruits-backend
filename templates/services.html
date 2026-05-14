@@ -364,6 +364,158 @@
         font-size: 0.76rem;
     }
 
+    .services-requests-shell {
+        border-radius: 18px;
+        border: 1px solid rgba(21, 84, 127, 0.16);
+        background: #fff;
+        box-shadow: 0 12px 26px rgba(19, 61, 99, 0.12);
+        padding: 0.9rem;
+        display: grid;
+        gap: 0.6rem;
+    }
+
+    .services-requests-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+    }
+
+    .services-requests-head h2 {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 900;
+        color: #184f7f;
+    }
+
+    .services-requests-head p {
+        margin: 0.2rem 0 0;
+        font-size: 0.76rem;
+        font-weight: 600;
+        color: #476c92;
+    }
+
+    .services-requests-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        align-items: center;
+    }
+
+    .services-requests-list {
+        display: grid;
+        gap: 0.6rem;
+    }
+
+    .service-request-card {
+        border: 1px solid rgba(21, 84, 127, 0.18);
+        border-radius: 14px;
+        background: #fff;
+        padding: 0.7rem;
+        display: grid;
+        gap: 0.4rem;
+    }
+
+    .service-request-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.5rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .service-request-title {
+        margin: 0;
+        font-size: 0.82rem;
+        font-weight: 900;
+        color: #1b4d7e;
+    }
+
+    .service-request-badges {
+        display: flex;
+        gap: 0.3rem;
+        flex-wrap: wrap;
+    }
+
+    .service-request-badge {
+        border-radius: 999px;
+        padding: 0.18rem 0.55rem;
+        font-size: 0.64rem;
+        font-weight: 800;
+        background: #edf4fd;
+        color: #2c5f93;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+
+    .service-request-badge.premium {
+        background: #eaf7ee;
+        color: #1f6d41;
+    }
+
+    .service-request-meta {
+        font-size: 0.72rem;
+        color: #4c6d90;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+    }
+
+    .service-request-actions {
+        display: flex;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+    }
+
+    .service-upgrade-modal {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(9, 20, 34, 0.5);
+        z-index: 2000;
+        padding: 1rem;
+    }
+
+    .service-upgrade-modal.show {
+        display: flex;
+    }
+
+    .service-upgrade-card {
+        background: #fff;
+        border-radius: 16px;
+        padding: 1rem;
+        max-width: 420px;
+        width: 100%;
+        box-shadow: 0 18px 36px rgba(16, 44, 72, 0.2);
+        text-align: center;
+        display: grid;
+        gap: 0.5rem;
+    }
+
+    .service-upgrade-title {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 900;
+        color: #184f7f;
+    }
+
+    .service-upgrade-text {
+        margin: 0;
+        font-size: 0.78rem;
+        color: #4c6d90;
+        font-weight: 600;
+    }
+
+    .service-upgrade-actions {
+        display: flex;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
     @media (max-width: 920px) {
         .services-list {
             grid-template-columns: 1fr;
@@ -434,6 +586,41 @@
         <div id="servicesLoadMoreSentinel" style="height:2px;"></div>
         <div id="servicesLoadMoreStatus" class="service-empty services-load-status" role="status" aria-live="polite"></div>
     </section>
+
+    <section class="services-requests-shell" id="servicesRequestsSection">
+        <div class="services-requests-head">
+            <div>
+                <h2>Minhas solicitações</h2>
+                <p>Acompanhe respostas, agendamentos e status premium das solicitações.</p>
+            </div>
+            <span class="service-status">Fluxo premium ativo</span>
+        </div>
+        <div class="services-requests-toolbar">
+            <select id="myServiceRequestsFilter" title="Filtrar solicitações">
+                <option value="">Todos os status</option>
+                <option value="pending">Pendentes</option>
+                <option value="responded">Respondidas</option>
+                <option value="scheduled">Agendadas</option>
+                <option value="accepted">Aceitas</option>
+                <option value="rejected">Recusadas</option>
+                <option value="cancelled">Canceladas</option>
+            </select>
+            <button type="button" class="btn btn-wf-secondary" id="myServiceRequestsRefresh">Atualizar</button>
+        </div>
+        <div id="myServiceRequestsStatus" class="services-load-status" role="status" aria-live="polite"></div>
+        <div id="myServiceRequestsList" class="services-requests-list"></div>
+    </section>
+</div>
+
+<div id="serviceUpgradeModal" class="service-upgrade-modal" role="dialog" aria-modal="true" aria-labelledby="serviceUpgradeTitle">
+    <div class="service-upgrade-card">
+        <h3 id="serviceUpgradeTitle" class="service-upgrade-title">Créditos mensais esgotados</h3>
+        <p class="service-upgrade-text">Faça upgrade para liberar mais solicitações e ganhar prioridade IA na fila.</p>
+        <div class="service-upgrade-actions">
+            <button type="button" class="btn btn-wf-secondary" id="serviceUpgradeCloseBtn">Fechar</button>
+            <a class="btn btn-wf-primary" href="/pricing">Ver planos premium</a>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -473,6 +660,12 @@
         const showcaseTabsEl = document.getElementById('servicesShowcaseTabs');
         const servicesLoadMoreSentinel = document.getElementById('servicesLoadMoreSentinel');
         const servicesLoadMoreStatus = document.getElementById('servicesLoadMoreStatus');
+        const myRequestsListEl = document.getElementById('myServiceRequestsList');
+        const myRequestsStatusEl = document.getElementById('myServiceRequestsStatus');
+        const myRequestsFilter = document.getElementById('myServiceRequestsFilter');
+        const myRequestsRefreshBtn = document.getElementById('myServiceRequestsRefresh');
+        const upgradeModal = document.getElementById('serviceUpgradeModal');
+        const upgradeCloseBtn = document.getElementById('serviceUpgradeCloseBtn');
         const SERVICES_ROUTE_CACHE_KEY = 'wf_route_cache_services_v1';
         const SERVICES_ROUTE_CACHE_TTL_MS = 180000;
         const SERVICES_PAGE_SIZE = 12;
@@ -596,6 +789,16 @@
             return div.innerHTML;
         }
 
+        function showServiceUpgradeModal() {
+            if (!upgradeModal) return;
+            upgradeModal.classList.add('show');
+        }
+
+        function hideServiceUpgradeModal() {
+            if (!upgradeModal) return;
+            upgradeModal.classList.remove('show');
+        }
+
         function formatDateTimeShort(value) {
             if (!value) return '';
             const date = new Date(value);
@@ -665,6 +868,111 @@
                 label: 'Indisponível',
                 offline: true,
             };
+        }
+
+        function requestStatusLabel(status) {
+            const normalized = String(status || '').toLowerCase();
+            const map = {
+                pending: 'Pendente',
+                responded: 'Respondida',
+                scheduled: 'Agendada',
+                accepted: 'Aceita',
+                rejected: 'Recusada',
+                cancelled: 'Cancelada',
+            };
+            return map[normalized] || 'Em análise';
+        }
+
+        function showMyRequestsStatus(message = '') {
+            if (!myRequestsStatusEl) return;
+            myRequestsStatusEl.textContent = message;
+            myRequestsStatusEl.style.display = message ? 'block' : 'none';
+        }
+
+        function renderMyRequests(requests) {
+            if (!myRequestsListEl) return;
+
+            if (!requests.length) {
+                myRequestsListEl.innerHTML = '<div class="service-request-card">Nenhuma solicitação encontrada.</div>';
+                return;
+            }
+
+            myRequestsListEl.innerHTML = requests.map((req) => {
+                const serviceTitle = escapeHtml(req?.service?.titulo || 'Serviço agrícola');
+                const providerName = escapeHtml(req?.provider?.name || 'Prestador');
+                const statusLabel = requestStatusLabel(req?.status);
+                const premiumBadge = req?.priority === 'high'
+                    ? '<span class="service-request-badge premium">Premium</span>'
+                    : '';
+                const createdAt = req?.created_at ? formatRelativeCompact(req.created_at) : '';
+                const scheduleDate = req?.requested_date ? formatDateTimeShort(req.requested_date) : '';
+                const canAccept = ['responded', 'scheduled'].includes(String(req?.status || '').toLowerCase());
+                const canCancel = ['pending'].includes(String(req?.status || '').toLowerCase());
+                const canReject = ['responded', 'scheduled'].includes(String(req?.status || '').toLowerCase());
+
+                return `
+                    <article class="service-request-card">
+                        <div class="service-request-head">
+                            <h3 class="service-request-title">${serviceTitle}</h3>
+                            <div class="service-request-badges">
+                                ${premiumBadge}
+                                <span class="service-request-badge">${statusLabel}</span>
+                            </div>
+                        </div>
+                        <div class="service-request-meta">
+                            <span>Prestador: ${providerName}</span>
+                            <span>${createdAt ? `Criado ${createdAt}` : 'Criado recentemente'}</span>
+                            ${scheduleDate ? `<span>Agendamento: ${scheduleDate}</span>` : ''}
+                        </div>
+                        <div class="service-request-actions">
+                            ${canAccept ? `<button type="button" class="btn btn-wf-primary" data-request-action="accepted" data-request-id="${req.id}">Aceitar</button>` : ''}
+                            ${canReject ? `<button type="button" class="btn btn-wf-secondary" data-request-action="rejected" data-request-id="${req.id}">Recusar</button>` : ''}
+                            ${canCancel ? `<button type="button" class="btn btn-wf-secondary" data-request-action="cancelled" data-request-id="${req.id}">Cancelar</button>` : ''}
+                        </div>
+                    </article>
+                `;
+            }).join('');
+
+            myRequestsListEl.querySelectorAll('[data-request-action]').forEach((btn) => {
+                btn.addEventListener('click', async () => {
+                    const action = btn.getAttribute('data-request-action');
+                    const requestId = btn.getAttribute('data-request-id');
+                    if (!action || !requestId) return;
+
+                    try {
+                        await apiRequest(`/services/requests/${requestId}/status`, 'PATCH', { status: action });
+                        showMyRequestsStatus('Solicitação atualizada.');
+                        await loadMyRequests();
+                    } catch (error) {
+                        showMyRequestsStatus(error.message || 'Erro ao atualizar solicitação.');
+                    }
+                });
+            });
+        }
+
+        async function loadMyRequests() {
+            if (!myRequestsListEl) return;
+            if (!localStorage.getItem('token')) {
+                myRequestsListEl.innerHTML = '<div class="service-request-card">Faça login para acompanhar suas solicitações.</div>';
+                return;
+            }
+
+            showMyRequestsStatus('Carregando solicitações...');
+            try {
+                const params = new URLSearchParams();
+                params.set('skip', '0');
+                params.set('limit', '8');
+                if (myRequestsFilter && myRequestsFilter.value) {
+                    params.set('status', myRequestsFilter.value);
+                }
+                const data = await apiRequest(`/services/requests/my?${params.toString()}`);
+                const requests = Array.isArray(data?.requests) ? data.requests : [];
+                renderMyRequests(requests);
+                showMyRequestsStatus('');
+            } catch (error) {
+                renderMyRequests([]);
+                showMyRequestsStatus(error.message || 'Não foi possível carregar suas solicitações.');
+            }
         }
 
         function servicesSnapshotSignature(services, categories) {
@@ -1211,8 +1519,31 @@
             }
         }
 
+        if (myRequestsFilter) {
+            myRequestsFilter.addEventListener('change', () => {
+                loadMyRequests();
+            });
+        }
+
+        if (myRequestsRefreshBtn) {
+            myRequestsRefreshBtn.addEventListener('click', () => {
+                loadMyRequests();
+            });
+        }
+
+        if (upgradeCloseBtn) {
+            upgradeCloseBtn.addEventListener('click', hideServiceUpgradeModal);
+        }
+
+        if (upgradeModal) {
+            upgradeModal.addEventListener('click', (event) => {
+                if (event.target === upgradeModal) hideServiceUpgradeModal();
+            });
+        }
+
         setupServicesInfiniteScroll();
         loadServices();
+        loadMyRequests();
     })();
 </script>
 {% endblock %}

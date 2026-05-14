@@ -33,6 +33,7 @@ from .library_item import LibraryItem
 from .buyer_client import BuyerClient, BuyerClientPolicy, BuyerClientSlotPurchase
 from .ai_models import UserBehaviorLog, AISuggestion, Prediction, EmbeddingRecord, AIChatMessage
 from .agenda_event import AgendaEvent
+from .service_request import ServiceRequest
 
 __all__ = [
     "User",
@@ -84,4 +85,5 @@ __all__ = [
     "EmbeddingRecord",
     "AIChatMessage",
     "AgendaEvent",
+    "ServiceRequest",
 ]

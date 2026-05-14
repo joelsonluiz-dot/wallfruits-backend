@@ -12,6 +12,7 @@ from app.core.auth_middleware import get_current_user, get_user_from_token
 from app.services.ai_telemetry_service import AITelemetryService
 from app.services.notification_service import create_notification
 from app.services.profile_service import ProfileService
+from app.services.subscription_policy_service import capabilities_for_user
 
 router = APIRouter(
     prefix="/messages",
@@ -61,6 +62,8 @@ async def send_message(
     try:
         telemetry = AITelemetryService(db)
         request_id = getattr(request.state, "request_id", None)
+        service_capabilities = capabilities_for_user(db, current_user.id)
+        service_monthly_limit = service_capabilities.get("service_request_monthly_limit")
 
         # Verificar se o destinatário existe
         receiver = db.query(User).filter(User.id == message.receiver_id).first()
@@ -72,8 +75,7 @@ async def send_message(
             raise HTTPException(400, "Não é possível enviar mensagem para você mesmo")
 
         if message.message_type == "service_inquiry":
-            is_premium = ProfileService(db).is_premium(current_user.id)
-            if not is_premium:
+            if service_monthly_limit is not None:
                 now_utc = datetime.now(timezone.utc)
                 month_start = now_utc.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
@@ -88,7 +90,7 @@ async def send_message(
                     or 0
                 )
 
-                if monthly_requests >= 1:
+                if monthly_requests >= int(service_monthly_limit):
                     telemetry.log_event(
                         user_id=current_user.id,
                         event_type="message_send_denied",
@@ -98,12 +100,35 @@ async def send_message(
                             "reason": "service_inquiry_monthly_limit",
                             "receiver_id": message.receiver_id,
                             "message_type": message.message_type,
+                            "service_request_monthly_limit": service_monthly_limit,
+                            "service_request_priority_boost": service_capabilities.get("service_request_priority_boost"),
                         },
                         event_domain="customer_service",
                         event_source="/api/messages",
                         request_id=request_id,
                         idempotency_key=(
                             f"message-denied:{current_user.id}:{message.receiver_id}:"
+                            f"{message.message_type}:monthly_limit"
+                        ),
+                        commit=True,
+                    )
+                    telemetry.log_event(
+                        user_id=current_user.id,
+                        event_type="service_inquiry_denied",
+                        entity_type="message_thread",
+                        entity_id=str(message.thread_id) if message.thread_id else None,
+                        metadata={
+                            "reason": "service_inquiry_monthly_limit",
+                            "receiver_id": message.receiver_id,
+                            "message_type": message.message_type,
+                            "service_request_monthly_limit": service_monthly_limit,
+                            "service_request_priority_boost": service_capabilities.get("service_request_priority_boost"),
+                        },
+                        event_domain="customer_service",
+                        event_source="/api/messages",
+                        request_id=request_id,
+                        idempotency_key=(
+                            f"service-denied:{current_user.id}:{message.receiver_id}:"
                             f"{message.message_type}:monthly_limit"
                         ),
                         commit=True,
@@ -164,6 +189,27 @@ async def send_message(
 
         db.commit()
         db.refresh(new_message)
+
+        if new_message.message_type == "service_inquiry":
+            telemetry.log_event(
+                user_id=current_user.id,
+                event_type="service_inquiry_created",
+                entity_type="message_thread",
+                entity_id=str(new_message.thread_id),
+                metadata={
+                    "message_id": str(new_message.id),
+                    "receiver_id": new_message.receiver_id,
+                    "message_type": new_message.message_type,
+                    "offer_id": str(new_message.offer_id) if new_message.offer_id else None,
+                    "service_request_monthly_limit": service_monthly_limit,
+                    "service_request_priority_boost": service_capabilities.get("service_request_priority_boost"),
+                },
+                event_domain="customer_service",
+                event_source="/api/messages",
+                request_id=request_id,
+                idempotency_key=f"service-inquiry-sent:{new_message.id}",
+                commit=True,
+            )
 
         telemetry.log_event(
             user_id=current_user.id,

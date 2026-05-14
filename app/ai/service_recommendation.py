@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.ai.llm_client import LLMClient
 from app.models.ai_models import AISuggestion
+from app.services.subscription_policy_service import capabilities_for_user
 
 
 class ServiceRecommendationAI:
@@ -14,6 +15,9 @@ class ServiceRecommendationAI:
     def recommend(self, *, user_id: int, crop_type: str, region: str, season: str) -> list[dict]:
         crop = crop_type.strip().lower()
         season_norm = season.strip().lower()
+        user_capabilities = capabilities_for_user(self.db, user_id)
+        service_priority_boost = float(user_capabilities.get("service_request_priority_boost") or 1.0)
+        premium_plan = str(user_capabilities.get("plan") or "none")
 
         catalog = [
             {
@@ -44,10 +48,14 @@ class ServiceRecommendationAI:
 
         enriched = []
         for item in picks:
+            priority = "high" if service_priority_boost >= 1.35 or season_norm in {"primavera", "verao"} else "medium"
             recommendation = {
                 "service": item["service"],
                 "timing": item["timing"],
                 "context": f"{region} | estação: {season_norm}",
+                "priority": priority,
+                "premium_tier": premium_plan,
+                "priority_boost": round(service_priority_boost, 2),
             }
             enriched.append(recommendation)
 
@@ -58,9 +66,15 @@ class ServiceRecommendationAI:
                     suggestion_type="service_timing",
                     title="Serviço recomendado para sua lavoura",
                     content=f"{item['service']} ({item['timing']}).",
-                    priority="high" if season_norm in {"primavera", "verao"} else "medium",
+                    priority=priority,
                     confidence=0.78,
-                    meta_json={"crop_type": crop_type, "region": region, "season": season},
+                    meta_json={
+                        "crop_type": crop_type,
+                        "region": region,
+                        "season": season,
+                        "premium_tier": premium_plan,
+                        "service_request_priority_boost": service_priority_boost,
+                    },
                 )
             )
 

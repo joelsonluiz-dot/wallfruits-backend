@@ -26,6 +26,8 @@ _PLAN_CAPABILITIES: dict[str, dict[str, Any]] = {
         "allow_auto_flash_auction": False,
         "allow_business_os_marketing_loop": False,
         "allow_business_os_persist": False,
+        "service_request_monthly_limit": 1,
+        "service_request_priority_boost": 1.0,
     },
     "basic": {
         "allowed_autonomy_modes": ["assistida"],
@@ -34,6 +36,8 @@ _PLAN_CAPABILITIES: dict[str, dict[str, Any]] = {
         "allow_auto_flash_auction": False,
         "allow_business_os_marketing_loop": False,
         "allow_business_os_persist": False,
+        "service_request_monthly_limit": 1,
+        "service_request_priority_boost": 1.0,
     },
     "pro": {
         "allowed_autonomy_modes": ["assistida", "semi_autonoma"],
@@ -42,6 +46,8 @@ _PLAN_CAPABILITIES: dict[str, dict[str, Any]] = {
         "allow_auto_flash_auction": False,
         "allow_business_os_marketing_loop": True,
         "allow_business_os_persist": False,
+        "service_request_monthly_limit": 3,
+        "service_request_priority_boost": 1.15,
     },
     "premium": {
         "allowed_autonomy_modes": ["assistida", "semi_autonoma", "autonoma"],
@@ -50,6 +56,8 @@ _PLAN_CAPABILITIES: dict[str, dict[str, Any]] = {
         "allow_auto_flash_auction": True,
         "allow_business_os_marketing_loop": True,
         "allow_business_os_persist": True,
+        "service_request_monthly_limit": None,
+        "service_request_priority_boost": 1.35,
     },
     "enterprise": {
         "allowed_autonomy_modes": ["assistida", "semi_autonoma", "autonoma"],
@@ -58,6 +66,8 @@ _PLAN_CAPABILITIES: dict[str, dict[str, Any]] = {
         "allow_auto_flash_auction": True,
         "allow_business_os_marketing_loop": True,
         "allow_business_os_persist": True,
+        "service_request_monthly_limit": None,
+        "service_request_priority_boost": 1.5,
     },
 }
 
