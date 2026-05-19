@@ -13,12 +13,12 @@ object UiDimens {
     
     // Legacy (kept for compatibility)
     val screenPadding = lg
-    val cardPadding = md
+    val cardPadding = xl
     val cardImageHeight = 120.dp
     val cardMinWidth = 160.dp
     
     // Premium spacing
-    val cardCornerRadius = 16.dp
-    val topbarHeight = 56.dp
+    val cardCornerRadius = 24.dp
+    val topbarHeight = 64.dp
     val bottomBarHeight = 64.dp
 }

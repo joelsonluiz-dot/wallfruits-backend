@@ -541,7 +541,7 @@
                     throw new Error(text || `Erro HTTP ${response.status}`);
                 }
 
-                showMessage('ok', 'Produto publicado com sucesso. Redirecionando painel...');
+                showMessage('ok', 'Operação realizada com sucesso. Redirecionando painel...');
                 window.setTimeout(() => {
                     window.location.href = '/store/manage/dashboard';
                 }, 420);

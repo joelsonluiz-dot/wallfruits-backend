@@ -968,7 +968,7 @@
 		}
 
 		:root {
-			--loja-mobile-columns: 2;
+			--loja-mobile-columns: 1;
 			--loja-mobile-gap: 8px;
 		}
 
@@ -1082,7 +1082,7 @@
 		}
 
 		.loja-section-grid {
-			grid-template-columns: repeat(2, minmax(0, 1fr));
+			grid-template-columns: repeat(var(--loja-mobile-columns), minmax(0, 1fr));
 			gap: 8px;
 			width: 100%;
 			max-width: 100%;
@@ -1113,7 +1113,7 @@
 		}
 
 		.loja-filter-grid {
-			grid-template-columns: repeat(2, minmax(0, 1fr));
+			grid-template-columns: 1fr;
 			gap: 8px;
 		}
 
@@ -1249,6 +1249,15 @@
 	}
 
 	@media (max-width: 420px) {
+		.loja-search-shell {
+			flex-direction: column;
+			align-items: stretch;
+		}
+
+		.loja-search-btn {
+			width: 100%;
+		}
+
 		.loja-header-inner {
 			padding: 8px;
 			gap: 6px;
@@ -1274,7 +1283,7 @@
 		}
 
 		.loja-section-grid {
-			grid-template-columns: repeat(2, minmax(0, 1fr));
+			grid-template-columns: 1fr;
 			gap: 8px;
 		}
 
@@ -2498,13 +2507,13 @@
 				if (triggerButton) setButtonLoading(triggerButton, true);
 				await apiRequest("/store/cart/add", "POST", { product_id: Number(productId), quantity: 1 });
 				await refreshCartCounter(true);
-				showToast("Produto adicionado ao carrinho.", "ok");
+				showToast("Operação realizada com sucesso.", "ok");
 
 				if (options?.buyNow) {
 					window.location.href = "/store/checkout";
 				}
 			} catch (error) {
-				showToast(error?.message || "Nao foi possivel adicionar ao carrinho.", "error");
+				showToast(error?.message || "Falha ao executar a operação.", "error");
 			} finally {
 				if (triggerButton) setButtonLoading(triggerButton, false);
 				storeCartInFlight.delete(key);

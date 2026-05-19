@@ -1,0 +1,12 @@
+name = "wallfruits-image-proxy"
+compatibility_date = "2026-05-19"
+
+account_id = "YOUR_CLOUDFLARE_ACCOUNT_ID"
+route = "<your-domain.com>/images/*"
+
+[vars]
+ORIGIN_HOST_PLACEHOLDER = "https://static.wallfruits.com"
+
+[build]
+command = "npm install"
+

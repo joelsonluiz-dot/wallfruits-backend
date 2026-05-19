@@ -1,6 +1,8 @@
 import SwiftUI
 import Foundation
 
+private let statusError = "Nao foi possivel carregar os dados."
+
 @MainActor
 final class AuthViewModel: ObservableObject {
     @Published var email: String = ""
@@ -38,7 +40,7 @@ final class AuthViewModel: ObservableObject {
                 isLoading = false
                 await refreshDashboard()
             } catch {
-                errorMessage = error.localizedDescription
+                errorMessage = statusError
                 isLoading = false
             }
         }

@@ -1138,7 +1138,7 @@
                 await apiRequest(endpoint, method, payload);
                 await loadCatalog();
                 clearForm();
-                setFeedback(editingId ? 'Leitura atualizada com sucesso.' : 'Leitura publicada com sucesso.', 'ok');
+                setFeedback(editingId ? 'Operação realizada com sucesso.' : 'Operação realizada com sucesso.', 'ok');
             } catch (error) {
                 const message = String(error?.message || 'Falha ao publicar leitura.');
                 setFeedback(message, 'error');

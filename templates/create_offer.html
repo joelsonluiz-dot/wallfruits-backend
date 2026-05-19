@@ -100,7 +100,7 @@
             };
 
             const created = await apiRequest('/offers', 'POST', payload);
-            alert('Oferta criada com sucesso.');
+            alert('Operação realizada com sucesso.');
             window.location.href = `/offers/${created.id}`;
         } catch (error) {
             alert(error.message || 'Falha ao criar oferta.');

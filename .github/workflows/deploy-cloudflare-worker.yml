@@ -1,0 +1,28 @@
+name: Deploy Cloudflare Worker
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  publish-worker:
+    name: Publish Cloudflare Worker
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Publish Worker to Cloudflare
+        uses: cloudflare/wrangler-action@1
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          working-directory: infra/cloudflare/worker-image-proxy
+          command: publish
+        env:
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+
+      - name: Confirm published
+        run: echo "Cloudflare Worker publish attempted. Check Actions logs for details."
+
+# Requirements:
+# - Set repository secrets: CF_API_TOKEN (write access to Workers) and CF_ACCOUNT_ID.
+# - Ensure `infra/cloudflare/worker-image-proxy/wrangler.toml` contains the desired `route` and settings.

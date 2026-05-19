@@ -707,9 +707,9 @@
                 try {
                     setButtonLoading(btnAdd, true);
                     await apiRequest('/store/cart/add', 'POST', { product_id: productId, quantity });
-                    showMessage('ok', 'Produto adicionado ao carrinho com sucesso.');
+                    showMessage('ok', 'Operação realizada com sucesso.');
                 } catch (error) {
-                    showMessage('error', error.message || 'Nao foi possivel adicionar ao carrinho.');
+                    showMessage('error', error.message || 'Falha ao executar a operação.');
                 } finally {
                     setButtonLoading(btnAdd, false);
                 }

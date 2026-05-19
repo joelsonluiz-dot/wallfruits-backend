@@ -1,11 +1,14 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useState, useRef } from 'react';
 import { APP_STORE_URL, ANDROID_APK_URL, APP_VERSION, PLAY_STORE_URL } from './config';
 import { fetchDashboardSnapshot, fetchMe, login, type ApiUser } from './api';
+import Skeleton from './components/Skeleton';
 
 type Session = {
   token: string;
   user: ApiUser;
 };
+
+type DashboardTab = 'feed' | 'market' | 'ai';
 
 function DownloadIcon() {
   return (
@@ -16,6 +19,26 @@ function DownloadIcon() {
 }
 
 const storageKey = 'wallfruits_session';
+const mobileBreakpoint = 900;
+const STATUS_LOADING = 'Carregando dados...';
+const STATUS_ERROR = 'Nao foi possivel carregar os dados.';
+const STATUS_EMPTY = 'Nenhum item encontrado.';
+
+function shouldRedirectToMobileLanding(): boolean {
+  if (typeof window === 'undefined') return false;
+
+  const query = new URLSearchParams(window.location.search);
+  if (query.get('desktop') === '1') return false;
+
+  if (window.location.pathname === '/mobile-app.html') return false;
+
+  const ua = navigator.userAgent || '';
+  const isMobileUa = /android|iphone|ipod|mobile|windows phone|blackberry|opera mini/i.test(ua);
+  const isSmallViewport = window.innerWidth <= mobileBreakpoint;
+  const isCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
+
+  return isSmallViewport && (isMobileUa || isCoarsePointer);
+}
 
 function readSession(): Session | null {
   const raw = localStorage.getItem(storageKey);
@@ -38,6 +61,39 @@ export default function App() {
   const [offersTotal, setOffersTotal] = useState(0);
   const [ordersTotal, setOrdersTotal] = useState(0);
   const [aiSignals, setAiSignals] = useState(0);
+  const [activeTab, setActiveTab] = useState<DashboardTab>('feed');
+
+  useEffect(() => {
+    if (!shouldRedirectToMobileLanding()) return;
+    window.location.replace('/mobile-app.html');
+  }, []);
+
+  // PWA install prompt handling
+  useEffect(() => {
+    function beforeInstall(e: any) {
+      e.preventDefault();
+      (window as any).__wfDeferredPrompt = e;
+    }
+    window.addEventListener('beforeinstallprompt', beforeInstall as EventListener);
+    return () => window.removeEventListener('beforeinstallprompt', beforeInstall as EventListener);
+  }, []);
+
+  // Swipe gestures for tab switching
+  const touchStartX = useRef<number | null>(null);
+  function onTouchStart(e: React.TouchEvent) { touchStartX.current = e.touches[0].clientX; }
+  function onTouchEnd(e: React.TouchEvent) {
+    if (touchStartX.current == null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    if (Math.abs(dx) < 40) return;
+    if (dx < 0) {
+      // swipe left -> next tab
+      setActiveTab(activeTab === 'feed' ? 'market' : activeTab === 'market' ? 'ai' : 'feed');
+    } else {
+      // swipe right -> prev tab
+      setActiveTab(activeTab === 'ai' ? 'market' : activeTab === 'market' ? 'feed' : 'ai');
+    }
+    touchStartX.current = null;
+  }
 
   useEffect(() => {
     if (!session?.token) {
@@ -133,7 +189,7 @@ export default function App() {
       setSession(nextSession);
       localStorage.setItem(storageKey, JSON.stringify(nextSession));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Falha ao autenticar');
+      setError(err instanceof Error ? err.message : STATUS_ERROR);
     } finally {
       setLoading(false);
     }
@@ -147,6 +203,16 @@ export default function App() {
     setOffersTotal(0);
     setOrdersTotal(0);
     setAiSignals(0);
+    setActiveTab('feed');
+  }
+
+  function promptInstall() {
+    const deferred = (window as any).__wfDeferredPrompt;
+    if (!deferred) return;
+    deferred.prompt();
+    deferred.userChoice.then(() => {
+      (window as any).__wfDeferredPrompt = null;
+    });
   }
 
   async function refreshDashboard() {
@@ -157,7 +223,7 @@ export default function App() {
       setOrdersTotal(snapshot.ordersTotal);
       setAiSignals(snapshot.aiSignals);
     } catch {
-      setError('Nao foi possivel atualizar Feed/Marketplace/IA agora.');
+      setError(STATUS_ERROR);
     }
   }
 
@@ -173,14 +239,15 @@ export default function App() {
             <span className="topbarBadge">Home web</span>
             <span className="topbarText">Scroll principal com experiência premium</span>
           </div>
-          <div className="topbarRight">v{APP_VERSION}</div>
+          <div className="topbarRight">v{APP_VERSION} <button className="button buttonSmall" onClick={promptInstall} style={{marginLeft:8}}>Instalar</button></div>
         </header>
         <main className="shell">
           {sidebar}
           <section className="content">
             <section className="hero">
               <div className="eyebrow">WallFruits Desktop</div>
-              <h1>Carregando sua sessao...</h1>
+              <h1>{STATUS_LOADING}</h1>
+              <Skeleton lines={4} />
             </section>
           </section>
         </main>
@@ -200,40 +267,101 @@ export default function App() {
             <span className="topbarBadge">Sessao ativa</span>
             <span className="topbarText">{session.user.name}</span>
           </div>
-          <div className="topbarRight">v{APP_VERSION}</div>
+          <div className="topbarRight">v{APP_VERSION} <button className="button buttonSmall" onClick={promptInstall} style={{marginLeft:8}}>Instalar</button></div>
         </header>
         <main className="shell">
           {sidebar}
           <section className="content">
-            <section className="hero">
-              <div className="eyebrow">Sessao ativa</div>
-              <h1>Bem-vindo, {session.user.name}</h1>
-              <p>{session.user.email}</p>
-              <div style={{ marginTop: 20 }}>
-                <button className="button" onClick={refreshDashboard} type="button">
-                  Atualizar Feed/Market/IA
-                </button>
-              </div>
-              <div style={{ marginTop: 12 }}>
-                <button className="button buttonSecondary" onClick={logout} type="button">
-                  Sair
-                </button>
-              </div>
+            <section className="hero feedHero">
+              <div className="eyebrow">Inicio</div>
+              <h1>WallFruits</h1>
+              <p>
+                Mesma base visual em iOS, Android e Web: hero, metricas, acoes e cards com a mesma linguagem.
+              </p>
+              <p className="feedSubline">Sessao ativa: {session.user.name} • {session.user.email}</p>
             </section>
 
-            <section className="grid">
-              <article className="card">
+            <section className="tabSwitch" aria-label="Abas principais">
+              <button
+                type="button"
+                className={`tabSwitchBtn ${activeTab === 'feed' ? 'isActive' : ''}`}
+                onClick={() => setActiveTab('feed')}
+              >
+                Feed
+              </button>
+              <button
+                type="button"
+                className={`tabSwitchBtn ${activeTab === 'market' ? 'isActive' : ''}`}
+                onClick={() => setActiveTab('market')}
+              >
+                Market
+              </button>
+              <button
+                type="button"
+                className={`tabSwitchBtn ${activeTab === 'ai' ? 'isActive' : ''}`}
+                onClick={() => setActiveTab('ai')}
+              >
+                AI
+              </button>
+            </section>
+
+            <section className="metricsGrid">
+              <article className="metricCard">
+                <span className="metricLabel">Feed</span>
+                <strong>{offersTotal}</strong>
+                <p>/api/offers</p>
+              </article>
+              <article className="metricCard">
+                <span className="metricLabel">Marketplace</span>
+                <strong>{ordersTotal}</strong>
+                <p>/api/store/orders/my</p>
+              </article>
+              <article className="metricCard">
+                <span className="metricLabel">AI</span>
+                <strong>{aiSignals}</strong>
+                <p>/api/ai/agenda/market-intelligence</p>
+              </article>
+              <article className="metricCard">
+                <span className="metricLabel">Sessao</span>
+                <strong>1</strong>
+                <p>JWT ativo</p>
+              </article>
+            </section>
+
+            <section className="actionRow">
+              <button className="button" onClick={refreshDashboard} type="button">
+                Atualizar
+              </button>
+              <button className="button buttonSecondary" onClick={logout} type="button">
+                Sair
+              </button>
+            </section>
+
+            <section className="feedStack">
+              <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+              <article className="feedCard feedCardPrimary">
+                <h2>Sessao</h2>
+                <p>JWT ativo para {session.user.name}</p>
+              </article>
+              {offersTotal === 0 && ordersTotal === 0 && aiSignals === 0 ? (
+                <article className="feedCard">
+                  <h2>Vazio</h2>
+                  <p>{STATUS_EMPTY}</p>
+                </article>
+              ) : null}
+              <article className="feedCard">
                 <h2>Feed</h2>
-                <p>Ofertas retornadas por /api/offers: {offersTotal}</p>
+                <p>/api/offers: {offersTotal}</p>
               </article>
-              <article className="card">
+              <article className="feedCard">
                 <h2>Marketplace</h2>
-                <p>Pedidos retornados por /api/store/orders/my: {ordersTotal}</p>
+                <p>/api/store/orders/my: {ordersTotal}</p>
               </article>
-              <article className="card">
-                <h2>AI Lab</h2>
-                <p>Sinais de mercado por /api/ai/agenda/market-intelligence: {aiSignals}</p>
+              <article className="feedCard">
+                <h2>AI</h2>
+                <p>/api/ai/agenda/market-intelligence: {aiSignals}</p>
               </article>
+              </div>
             </section>
           </section>
         </main>
@@ -252,7 +380,7 @@ export default function App() {
           <span className="topbarBadge">Entrar</span>
           <span className="topbarText">Acesso ao desktop com login persistente</span>
         </div>
-        <div className="topbarRight">v{APP_VERSION}</div>
+        <div className="topbarRight">v{APP_VERSION} <button className="button buttonSmall" onClick={promptInstall} style={{marginLeft:8}}>Instalar</button></div>
       </header>
       <main className="shell">
         {sidebar}

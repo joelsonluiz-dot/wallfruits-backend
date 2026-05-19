@@ -1,0 +1,41 @@
+name: Preview Cloudflare Worker for PR
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  preview:
+    name: Publish Preview Worker (PR)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Publish Preview Worker to Cloudflare
+        uses: cloudflare/wrangler-action@v1
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          working-directory: infra/cloudflare/worker-image-proxy
+          command: publish --name wallfruits-image-proxy-pr-${{ github.event.pull_request.number }}
+        env:
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+
+      - name: Comment PR with preview URL
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const pr = context.payload.pull_request.number;
+            const name = `wallfruits-image-proxy-pr-${context.payload.pull_request.number}`;
+            const previewUrl = `https://${name}.workers.dev`;
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr,
+              body: `Preview Cloudflare Worker published: ${previewUrl}`
+            });
+
+      - name: Confirm preview
+        run: echo "Preview worker published for PR #${{ github.event.pull_request.number }}"
+
+# Notes:
+# - This publishes a uniquely-named worker per PR. Adjust naming strategy if your account has naming constraints.

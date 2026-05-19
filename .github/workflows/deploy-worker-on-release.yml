@@ -1,0 +1,28 @@
+name: Deploy Cloudflare Worker on Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    name: Publish Worker (release)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Publish Worker to Cloudflare
+        uses: cloudflare/wrangler-action@v1
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          working-directory: infra/cloudflare/worker-image-proxy
+          command: publish
+        env:
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+
+      - name: Confirm published
+        run: echo "Cloudflare Worker published for release."
+
+# Notes:
+# - Ensure `CF_API_TOKEN` and `CF_ACCOUNT_ID` are set in repository secrets.
+# - Triggered when a GitHub Release is published.

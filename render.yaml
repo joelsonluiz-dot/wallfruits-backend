@@ -66,6 +66,10 @@ services:
       # Opcional: base pública (ex.: https://cdn.seudominio.com). Se vazio, usa SUPABASE_URL.
       - key: SUPABASE_STORAGE_PUBLIC_BASE_URL
         value: ""
+      - key: CDN_IMAGE_PROXY_URL
+        value: "https://cdn.wallfruits.com/images" # configure to your CDN or Cloudflare Worker URL
+      - key: CDN_IMAGE_ORIGIN
+        value: "https://static.wallfruits.com" # origin where original images are stored (supabase/storage or blob)
       - key: SUPABASE_STORAGE_TIMEOUT_SECONDS
         value: 20
       - key: API_TITLE

@@ -1385,7 +1385,7 @@
         };
         try {
             const result = await apiRequest(`/dashboard/admin/users/${userId}`, 'PATCH', payload);
-            alert(result.message || 'Conta atualizada com sucesso.');
+            alert(result.message || 'Operação realizada com sucesso.');
         } catch (err) {
             alert(err.message || 'Erro ao atualizar conta.');
         }

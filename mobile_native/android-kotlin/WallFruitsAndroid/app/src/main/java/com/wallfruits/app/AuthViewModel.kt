@@ -149,7 +149,7 @@ class AuthViewModel @Inject constructor(
                     it.copy(
                         isModuleSaving = false,
                         moduleErrorMessage = null,
-                        moduleActionMessage = "Servico criado com sucesso",
+                        moduleActionMessage = "Operação realizada com sucesso.",
                     )
                 }
                 loadSelectedModuleData(module = AppModuleTab.GERIR_SERVICOS, force = true)
@@ -192,7 +192,7 @@ class AuthViewModel @Inject constructor(
                     it.copy(
                         isModuleSaving = false,
                         moduleErrorMessage = null,
-                        moduleActionMessage = "Servico atualizado com sucesso",
+                        moduleActionMessage = "Operação realizada com sucesso.",
                     )
                 }
                 loadSelectedModuleData(module = AppModuleTab.GERIR_SERVICOS, force = true)
@@ -201,7 +201,7 @@ class AuthViewModel @Inject constructor(
                 _state.update {
                     it.copy(
                         isModuleSaving = false,
-                        moduleErrorMessage = throwable.message ?: "Falha ao atualizar servico",
+                        moduleErrorMessage = throwable.message ?: "Falha ao executar a operação.",
                     )
                 }
             }
@@ -217,7 +217,7 @@ class AuthViewModel @Inject constructor(
                         it.copy(
                             isModuleSaving = false,
                             moduleErrorMessage = null,
-                            moduleActionMessage = "Servico removido com sucesso",
+                            moduleActionMessage = "Operação realizada com sucesso.",
                         )
                     }
                     loadSelectedModuleData(module = AppModuleTab.GERIR_SERVICOS, force = true)
@@ -261,7 +261,7 @@ class AuthViewModel @Inject constructor(
                     it.copy(
                         isModuleSaving = false,
                         moduleErrorMessage = null,
-                        moduleActionMessage = "Cliente criado com sucesso",
+                        moduleActionMessage = "Operação realizada com sucesso.",
                     )
                 }
                 loadSelectedModuleData(module = AppModuleTab.MEUS_CLIENTES, force = true)
@@ -306,7 +306,7 @@ class AuthViewModel @Inject constructor(
                     it.copy(
                         isModuleSaving = false,
                         moduleErrorMessage = null,
-                        moduleActionMessage = "Cliente atualizado com sucesso",
+                        moduleActionMessage = "Operação realizada com sucesso.",
                     )
                 }
                 loadSelectedModuleData(module = AppModuleTab.MEUS_CLIENTES, force = true)
@@ -315,7 +315,7 @@ class AuthViewModel @Inject constructor(
                 _state.update {
                     it.copy(
                         isModuleSaving = false,
-                        moduleErrorMessage = throwable.message ?: "Falha ao atualizar cliente",
+                        moduleErrorMessage = throwable.message ?: "Falha ao executar a operação.",
                     )
                 }
             }
@@ -331,7 +331,7 @@ class AuthViewModel @Inject constructor(
                         it.copy(
                             isModuleSaving = false,
                             moduleErrorMessage = null,
-                            moduleActionMessage = "Cliente removido com sucesso",
+                            moduleActionMessage = "Operação realizada com sucesso.",
                         )
                     }
                     loadSelectedModuleData(module = AppModuleTab.MEUS_CLIENTES, force = true)

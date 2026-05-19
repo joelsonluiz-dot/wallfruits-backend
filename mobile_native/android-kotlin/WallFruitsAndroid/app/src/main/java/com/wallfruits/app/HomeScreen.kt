@@ -2,6 +2,7 @@
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -48,6 +49,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+
+private const val STATUS_LOADING = "Carregando dados..."
+private const val STATUS_ERROR = "Nao foi possivel carregar os dados."
+private const val STATUS_EMPTY = "Nenhum item encontrado."
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -138,7 +143,7 @@ private fun HomeFeedContent(
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(horizontal = UiDimens.md, vertical = UiDimens.sm),
+        contentPadding = PaddingValues(horizontal = UiDimens.md, vertical = UiDimens.md),
         verticalArrangement = Arrangement.spacedBy(UiDimens.md),
     ) {
         item {
@@ -149,43 +154,59 @@ private fun HomeFeedContent(
         }
         item {
             PremiumOverviewCard(
-                title = "Sessao ativa",
-                subtitle = state.userName ?: "usuario",
+                title = "Inicio",
+                subtitle = "WallFruits",
                 metrics = listOf(
                     "Feed ${state.offersTotal}",
                     "Marketplace ${state.ordersTotal}",
                     "IA ${state.aiSignals}",
-                    "Comunidade ${state.communityTotal}",
-                    "Servicos ${state.servicesTotal}",
-                    "Biblioteca ${state.libraryTotal}",
+                    "Sessao ${state.userName ?: "usuario"}",
                 ),
             )
         }
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(UiDimens.sm), modifier = Modifier.fillMaxWidth()) {
-                AssistChip(onClick = onRefresh, label = { Text("Atualizar") })
-                AssistChip(onClick = onLogout, label = { Text("Sair") })
+                StandardButton(text = "Atualizar", onClick = onRefresh)
+                StandardButton(text = "Sair", onClick = onLogout)
             }
         }
         item {
             StandardCardContainer {
-                Text("Feed em tempo real", style = MaterialTheme.typography.titleMedium)
+                Text("Sessao", style = MaterialTheme.typography.titleMedium)
                 Text(
-                    text = "Scroll continuo, sem vazio superior e com navegação compacta para dar sensação de app premium.",
+                    text = "JWT ativo para ${state.userName ?: "usuario"}",
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
         }
         item {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(UiDimens.sm)) {
-                MiniSnapshotCard(label = "Feed", value = state.offersTotal.toString(), accent = Color(0xFF2A8B58), modifier = Modifier.weight(1f))
-                MiniSnapshotCard(label = "Market", value = state.ordersTotal.toString(), accent = Color(0xFF8B6A2D), modifier = Modifier.weight(1f))
+                MiniSnapshotCard(label = "Feed", value = state.offersTotal.toString(), accent = Color(0xFF0066FF), modifier = Modifier.weight(1f))
+                MiniSnapshotCard(label = "Market", value = state.ordersTotal.toString(), accent = Color(0xFFFF6B00), modifier = Modifier.weight(1f))
             }
         }
         item {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(UiDimens.sm)) {
-                MiniSnapshotCard(label = "IA", value = state.aiSignals.toString(), accent = Color(0xFF275D38), modifier = Modifier.weight(1f))
-                MiniSnapshotCard(label = "Comunidade", value = state.communityTotal.toString(), accent = Color(0xFF56786A), modifier = Modifier.weight(1f))
+                MiniSnapshotCard(label = "IA", value = state.aiSignals.toString(), accent = Color(0xFFF59E0B), modifier = Modifier.weight(1f))
+                MiniSnapshotCard(label = "Sessao", value = "1", accent = Color(0xFF0052CC), modifier = Modifier.weight(1f))
+            }
+        }
+        item {
+            StandardCardContainer {
+                Text("Feed", style = MaterialTheme.typography.titleMedium)
+                Text("/api/offers: ${state.offersTotal}", style = MaterialTheme.typography.bodyMedium)
+            }
+        }
+        item {
+            StandardCardContainer {
+                Text("Marketplace", style = MaterialTheme.typography.titleMedium)
+                Text("/api/store/orders/my: ${state.ordersTotal}", style = MaterialTheme.typography.bodyMedium)
+            }
+        }
+        item {
+            StandardCardContainer {
+                Text("AI", style = MaterialTheme.typography.titleMedium)
+                Text("/api/ai/agenda/market-intelligence: ${state.aiSignals}", style = MaterialTheme.typography.bodyMedium)
             }
         }
     }
@@ -200,7 +221,7 @@ private fun PremiumHomeBar(
         Column(verticalArrangement = Arrangement.spacedBy(UiDimens.sm)) {
             Text("Inicio", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
             Text(
-                text = "Tab bar compacta no topo, scroll mais limpo e visual mais premium.",
+                text = "Mesma base visual em iOS, Android e Web: hero, metricas, acoes e cards com a mesma linguagem.",
                 style = MaterialTheme.typography.bodyMedium,
             )
             ScrollableTabRow(
@@ -209,7 +230,7 @@ private fun PremiumHomeBar(
                 indicator = { positions ->
                     TabRowDefaults.SecondaryIndicator(
                         modifier = Modifier.tabIndicatorOffset(positions[AppModuleTab.entries.indexOf(selectedModule).coerceAtLeast(0)]),
-                        color = Color(0xFF275D38),
+                        color = Color(0xFF0066FF),
                         height = 2.dp,
                     )
                 },
@@ -269,6 +290,8 @@ private fun ModuleWorkspaceContent(
         verticalArrangement = Arrangement.spacedBy(UiDimens.md),
         horizontalAlignment = Alignment.Start,
     ) {
+        ModuleIntroCard(state = state)
+
         PremiumHomeBar(selectedModule = state.selectedModule, onSelectModule = onSelectModule)
 
         ModulePanel(
@@ -284,7 +307,44 @@ private fun ModuleWorkspaceContent(
         )
 
         Row(horizontalArrangement = Arrangement.spacedBy(UiDimens.sm)) {
-            AssistChip(onClick = onLogout, label = { Text("Sair") })
+            StandardButton(text = "Sair", onClick = onLogout)
+        }
+    }
+}
+
+@Composable
+private fun ModuleIntroCard(state: AuthUiState) {
+    StandardCardContainer {
+        Column(verticalArrangement = Arrangement.spacedBy(UiDimens.sm)) {
+            Text("Inicio", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+            Text(
+                text = "Mesma base visual em iOS, Android e Web: hero, metricas, acoes e cards com a mesma linguagem.",
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(UiDimens.sm), modifier = Modifier.fillMaxWidth()) {
+                MiniSnapshotCard(label = "Feed", value = state.offersTotal.toString(), accent = Color(0xFF0066FF), modifier = Modifier.weight(1f))
+                MiniSnapshotCard(label = "Market", value = state.ordersTotal.toString(), accent = Color(0xFFFF6B00), modifier = Modifier.weight(1f))
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(UiDimens.sm), modifier = Modifier.fillMaxWidth()) {
+                MiniSnapshotCard(label = "IA", value = state.aiSignals.toString(), accent = Color(0xFFF59E0B), modifier = Modifier.weight(1f))
+                MiniSnapshotCard(label = "Sessao", value = "1", accent = Color(0xFF0052CC), modifier = Modifier.weight(1f))
+            }
+            StandardCardContainer {
+                Text("Sessao", style = MaterialTheme.typography.titleMedium)
+                Text("JWT ativo para ${state.userName ?: "usuario"}", style = MaterialTheme.typography.bodyMedium)
+            }
+            StandardCardContainer {
+                Text("Feed", style = MaterialTheme.typography.titleMedium)
+                Text("/api/offers: ${state.offersTotal}", style = MaterialTheme.typography.bodyMedium)
+            }
+            StandardCardContainer {
+                Text("Marketplace", style = MaterialTheme.typography.titleMedium)
+                Text("/api/store/orders/my: ${state.ordersTotal}", style = MaterialTheme.typography.bodyMedium)
+            }
+            StandardCardContainer {
+                Text("AI", style = MaterialTheme.typography.titleMedium)
+                Text("/api/ai/agenda/market-intelligence: ${state.aiSignals}", style = MaterialTheme.typography.bodyMedium)
+            }
         }
     }
 }
@@ -429,15 +489,15 @@ private fun CommunityModuleContent(state: AuthUiState, onRefresh: () -> Unit) {
         }
         Text("Posts encontrados: ${state.communityTotal}", style = MaterialTheme.typography.bodyMedium)
         if (state.isModuleLoading) {
-            Text("Carregando posts...", style = MaterialTheme.typography.bodyMedium)
+            Text(STATUS_LOADING, style = MaterialTheme.typography.bodyMedium)
             return
         }
-        state.moduleErrorMessage?.let { message ->
-            Text(message, style = MaterialTheme.typography.bodyMedium)
+        state.moduleErrorMessage?.let {
+            Text(STATUS_ERROR, style = MaterialTheme.typography.bodyMedium)
             return
         }
         if (state.communityItems.isEmpty()) {
-            Text("Nenhum post disponivel no momento.", style = MaterialTheme.typography.bodyMedium)
+            Text(STATUS_EMPTY, style = MaterialTheme.typography.bodyMedium)
             return
         }
 
@@ -510,19 +570,19 @@ private fun ServicesModuleContent(state: AuthUiState, onRefresh: () -> Unit) {
             }
         }
         if (state.isModuleLoading) {
-            Text("Carregando servicos...", style = MaterialTheme.typography.bodyMedium)
+            Text(STATUS_LOADING, style = MaterialTheme.typography.bodyMedium)
             return
         }
-        state.moduleErrorMessage?.let { message ->
-            Text(message, style = MaterialTheme.typography.bodyMedium)
+        state.moduleErrorMessage?.let {
+            Text(STATUS_ERROR, style = MaterialTheme.typography.bodyMedium)
             return
         }
         if (state.serviceItems.isEmpty()) {
-            Text("Nenhum servico disponivel no momento.", style = MaterialTheme.typography.bodyMedium)
+            Text(STATUS_EMPTY, style = MaterialTheme.typography.bodyMedium)
             return
         }
         if (filteredServices.isEmpty()) {
-            Text("Nenhum servico encontrado para essa categoria.", style = MaterialTheme.typography.bodyMedium)
+            Text(STATUS_EMPTY, style = MaterialTheme.typography.bodyMedium)
             return
         }
 
@@ -586,15 +646,15 @@ private fun ManagedServicesModuleContent(
             }
         }
         if (state.isModuleLoading) {
-            Text("Carregando servicos gerenciados...", style = MaterialTheme.typography.bodyMedium)
+            Text(STATUS_LOADING, style = MaterialTheme.typography.bodyMedium)
             return
         }
-        state.moduleErrorMessage?.let { message ->
-            Text(message, style = MaterialTheme.typography.bodyMedium)
+        state.moduleErrorMessage?.let {
+            Text(STATUS_ERROR, style = MaterialTheme.typography.bodyMedium)
             return
         }
         if (state.managedServiceItems.isEmpty()) {
-            Text("Nenhum servico em gestao no momento.", style = MaterialTheme.typography.bodyMedium)
+            Text(STATUS_EMPTY, style = MaterialTheme.typography.bodyMedium)
             return
         }
 
@@ -690,15 +750,15 @@ private fun ClientsModuleContent(
             }
         }
         if (state.isModuleLoading) {
-            Text("Carregando clientes...", style = MaterialTheme.typography.bodyMedium)
+            Text(STATUS_LOADING, style = MaterialTheme.typography.bodyMedium)
             return
         }
-        state.moduleErrorMessage?.let { message ->
-            Text(message, style = MaterialTheme.typography.bodyMedium)
+        state.moduleErrorMessage?.let {
+            Text(STATUS_ERROR, style = MaterialTheme.typography.bodyMedium)
             return
         }
         if (state.clientItems.isEmpty()) {
-            Text("Nenhum cliente encontrado no momento.", style = MaterialTheme.typography.bodyMedium)
+            Text(STATUS_EMPTY, style = MaterialTheme.typography.bodyMedium)
             return
         }
 
@@ -780,15 +840,15 @@ private fun LibraryModuleContent(state: AuthUiState, onRefresh: () -> Unit) {
         }
         Text("Itens publicados: ${state.libraryTotal}", style = MaterialTheme.typography.bodyMedium)
         if (state.isModuleLoading) {
-            Text("Carregando biblioteca...", style = MaterialTheme.typography.bodyMedium)
+            Text(STATUS_LOADING, style = MaterialTheme.typography.bodyMedium)
             return
         }
-        state.moduleErrorMessage?.let { message ->
-            Text(message, style = MaterialTheme.typography.bodyMedium)
+        state.moduleErrorMessage?.let {
+            Text(STATUS_ERROR, style = MaterialTheme.typography.bodyMedium)
             return
         }
         if (state.libraryItems.isEmpty()) {
-            Text("Nenhum item na biblioteca no momento.", style = MaterialTheme.typography.bodyMedium)
+            Text(STATUS_EMPTY, style = MaterialTheme.typography.bodyMedium)
             return
         }
 

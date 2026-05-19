@@ -26,6 +26,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
+private const val STATUS_LOADING = "Carregando dados..."
+private const val STATUS_ERROR = "Nao foi possivel carregar os dados."
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun StoreModuleContent(state: AuthUiState, onRefresh: () -> Unit) {
@@ -38,11 +41,11 @@ fun StoreModuleContent(state: AuthUiState, onRefresh: () -> Unit) {
         RowHeader(title = "Loja", onRefresh = onRefresh)
 
         if (state.isModuleLoading) {
-            Text("Carregando loja...", style = MaterialTheme.typography.bodyMedium)
+            Text(STATUS_LOADING, style = MaterialTheme.typography.bodyMedium)
             return
         }
-        state.moduleErrorMessage?.let { message ->
-            Text(message, style = MaterialTheme.typography.bodyMedium)
+        state.moduleErrorMessage?.let {
+            Text(STATUS_ERROR, style = MaterialTheme.typography.bodyMedium)
             return
         }
 

@@ -1,5 +1,7 @@
 import SwiftUI
 
+private let statusLoading = "Carregando dados..."
+
 struct LoginView: View {
     @ObservedObject var viewModel: AuthViewModel
 
@@ -22,7 +24,7 @@ struct LoginView: View {
                     .font(.footnote)
             }
 
-            Button(viewModel.isLoading ? "Entrando..." : "Entrar") {
+            Button(viewModel.isLoading ? statusLoading : "Entrar") {
                 viewModel.login()
             }
             .buttonStyle(.borderedProminent)

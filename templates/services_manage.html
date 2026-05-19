@@ -945,7 +945,7 @@
 
                     try {
                         await apiRequest(`/services/${id}`, 'PATCH', { is_active: nextActive });
-                        showStatus(nextActive ? 'Serviço ativado com sucesso.' : 'Serviço desativado com sucesso.');
+                        showStatus('Operação realizada com sucesso.');
                         await loadServices();
                     } catch (error) {
                         showStatus(error.message || 'Falha ao atualizar status do serviço.', true);
@@ -1013,7 +1013,7 @@
 
                 fields.imagem.value = data.url;
                 setImagePreview(data.url);
-                showStatus('Imagem enviada com sucesso e vinculada ao campo URL.');
+                showStatus('Operação realizada com sucesso.');
             } catch (error) {
                 showStatus(error.message || 'Erro ao enviar imagem.', true);
             }
@@ -1083,10 +1083,10 @@
             try {
                 if (fields.id.value) {
                     await apiRequest(`/services/${fields.id.value}`, 'PATCH', payload);
-                    showStatus('Serviço atualizado com sucesso.');
+                    showStatus('Operação realizada com sucesso.');
                 } else {
                     await apiRequest('/services', 'POST', payload);
-                    showStatus('Serviço criado com sucesso.');
+                    showStatus('Operação realizada com sucesso.');
                 }
 
                 resetForm();

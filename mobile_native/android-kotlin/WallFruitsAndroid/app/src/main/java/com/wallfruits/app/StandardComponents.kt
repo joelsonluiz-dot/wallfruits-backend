@@ -24,10 +24,10 @@ import androidx.compose.ui.unit.dp
 fun StandardCardContainer(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(UiDimens.cardCornerRadius),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.dp, Color(0xFFE4ECE7)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        border = BorderStroke(1.dp, Color(0x1A0066FF)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
     ) {
         Column(modifier = Modifier.padding(UiDimens.cardPadding), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             content()
@@ -41,11 +41,11 @@ fun StandardImagePlaceholder(modifier: Modifier = Modifier) {
         modifier = modifier
             .fillMaxWidth()
             .height(UiDimens.cardImageHeight)
-            .clip(RoundedCornerShape(16.dp))
-            .background(Color(0xFFF2F6F3)),
+            .clip(RoundedCornerShape(20.dp))
+            .background(Color(0xFFF7F8FA)),
         contentAlignment = Alignment.Center,
     ) {
-        Text("Imagem", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF55715F))
+        Text("Imagem", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF6B7280))
     }
 }
 
@@ -53,6 +53,6 @@ fun StandardImagePlaceholder(modifier: Modifier = Modifier) {
 fun StandardButton(text: String, onClick: () -> Unit) {
     Button(
         onClick = onClick,
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(14.dp),
     ) { Text(text) }
 }
