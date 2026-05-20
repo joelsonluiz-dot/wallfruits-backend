@@ -566,6 +566,35 @@
 	min-height: 140px;
 }
 
+/* Swipe hint gradient and indicator */
+.loja-swipe-hint {
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+}
+.loja-swipe-gradient-left,
+.loja-swipe-gradient-right {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	width: 56px;
+	pointer-events: none;
+}
+.loja-swipe-gradient-left { left: 0; background: linear-gradient(90deg, rgba(250,250,250,1) 0%, rgba(250,250,250,0) 100%); }
+.loja-swipe-gradient-right { right: 0; background: linear-gradient(270deg, rgba(250,250,250,1) 0%, rgba(250,250,250,0) 100%); }
+.loja-swipe-indicator {
+	position: absolute;
+	right: 14px;
+	bottom: 12px;
+	background: rgba(0,0,0,0.06);
+	color: rgba(0,0,0,0.75);
+	font-weight: 700;
+	font-size: 12px;
+	padding: 6px 10px;
+	border-radius: 999px;
+	backdrop-filter: blur(4px);
+}
+
 	.loja-card {
 		position: relative;
 		border: none;
@@ -2071,6 +2100,13 @@
 
 			refreshLojaImageFallbacks(dom.produtosMount);
 
+			// Add horizontal swipe hints for highlight rows
+			try {
+				addSwipeHintsToHighlights(dom.produtosMount);
+			} catch (e) {
+				// ignore
+			}
+
 			setupRevealObserver();
 		}
 
@@ -2675,6 +2711,34 @@
 			}, { passive: true });
 
 			startBannerAutoPlay();
+		}
+
+		function addSwipeHintsToHighlights(root) {
+			const container = root || document;
+			const rows = Array.from(container.querySelectorAll('.loja-section-grid.loja-highlight-row'));
+			rows.forEach((row) => {
+				if (row.querySelector('.loja-swipe-hint')) return;
+				const hint = document.createElement('div');
+				hint.className = 'loja-swipe-hint';
+				hint.innerHTML = `
+					<div class="loja-swipe-gradient-left"></div>
+					<div class="loja-swipe-gradient-right"></div>
+					<div class="loja-swipe-indicator">Deslize</div>
+				`;
+				row.style.position = row.style.position || 'relative';
+				row.appendChild(hint);
+
+				const update = () => {
+					const atStart = row.scrollLeft <= 8;
+					const atEnd = Math.abs(row.scrollLeft + row.clientWidth - row.scrollWidth) <= 8;
+					hint.querySelector('.loja-swipe-gradient-left').style.display = atStart ? 'block' : 'none';
+					hint.querySelector('.loja-swipe-gradient-right').style.display = atEnd ? 'none' : 'block';
+					hint.querySelector('.loja-swipe-indicator').style.opacity = atEnd ? '0' : '1';
+				};
+
+				update();
+				row.addEventListener('scroll', () => { window.requestAnimationFrame(update); }, { passive: true });
+			});
 		}
 
 		function bindHeaderActions() {

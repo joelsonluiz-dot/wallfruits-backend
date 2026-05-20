@@ -22,50 +22,59 @@
 
     <div class="wf-card">
         <div class="card-body">
-            <form id="newOfferForm" class="offer-form-grid">
-                <div class="full">
-                    <label class="wf-label">Nome do produto</label>
-                    <input id="product_name" class="wf-input form-control" type="text" required minlength="2" maxlength="255" placeholder="Ex.: Manga Tommy, Uva Itália, Banana Prata">
+            <form id="newOfferForm" class="offer-form-grid" novalidate>
+                <div id="offerStep1" class="offer-step full">
+                    <div class="full">
+                        <label class="wf-label">Nome do produto</label>
+                        <input id="product_name" class="wf-input form-control" type="text" required minlength="2" maxlength="255" placeholder="Ex.: Manga Tommy, Uva Itália, Banana Prata">
+                    </div>
+
+                    <div class="full">
+                        <label class="wf-label">Descrição</label>
+                        <textarea id="description" class="wf-input form-control" rows="3" maxlength="1000" placeholder="Descreva qualidade, lote, disponibilidade..."></textarea>
+                    </div>
+
+                    <div>
+                        <label class="wf-label">Categoria</label>
+                        <input id="category" class="wf-input form-control" type="text" maxlength="100" placeholder="Frutas">
+                    </div>
+
+                    <div>
+                        <label class="wf-label">Unidade</label>
+                        <input id="unit" class="wf-input form-control" type="text" maxlength="50" placeholder="kg" value="kg" required>
+                    </div>
+
+                    <div class="full d-flex gap-2 flex-wrap mt-2">
+                        <button type="button" id="nextStepBtn" class="btn btn-wf-primary">Próximo</button>
+                        <a href="/offers" class="btn btn-wf-secondary">Cancelar</a>
+                    </div>
                 </div>
 
-                <div class="full">
-                    <label class="wf-label">Descrição</label>
-                    <textarea id="description" class="wf-input form-control" rows="3" maxlength="1000" placeholder="Descreva qualidade, lote, disponibilidade..."></textarea>
-                </div>
+                <div id="offerStep2" class="offer-step full" style="display:none;">
+                    <div>
+                        <label class="wf-label">Quantidade</label>
+                        <input id="quantity" class="wf-input form-control" type="number" min="0.01" step="0.01">
+                    </div>
 
-                <div>
-                    <label class="wf-label">Categoria</label>
-                    <input id="category" class="wf-input form-control" type="text" maxlength="100" placeholder="Frutas">
-                </div>
+                    <div>
+                        <label class="wf-label">Preço (R$)</label>
+                        <input id="price" class="wf-input form-control" type="number" min="0.01" step="0.01">
+                    </div>
 
-                <div>
-                    <label class="wf-label">Unidade</label>
-                    <input id="unit" class="wf-input form-control" type="text" maxlength="50" placeholder="kg" value="kg" required>
-                </div>
+                    <div>
+                        <label class="wf-label">Localização</label>
+                        <input id="location" class="wf-input form-control" type="text" minlength="2" maxlength="150" placeholder="Cidade/UF">
+                    </div>
 
-                <div>
-                    <label class="wf-label">Quantidade</label>
-                    <input id="quantity" class="wf-input form-control" type="number" min="0.01" step="0.01" required>
-                </div>
+                    <div>
+                        <label class="wf-label">Pedido mínimo</label>
+                        <input id="min_order" class="wf-input form-control" type="number" min="0.01" step="0.01" value="1">
+                    </div>
 
-                <div>
-                    <label class="wf-label">Preço (R$)</label>
-                    <input id="price" class="wf-input form-control" type="number" min="0.01" step="0.01" required>
-                </div>
-
-                <div>
-                    <label class="wf-label">Localização</label>
-                    <input id="location" class="wf-input form-control" type="text" minlength="2" maxlength="150" placeholder="Cidade/UF" required>
-                </div>
-
-                <div>
-                    <label class="wf-label">Pedido mínimo</label>
-                    <input id="min_order" class="wf-input form-control" type="number" min="0.01" step="0.01" value="1">
-                </div>
-
-                <div class="full d-flex gap-2 flex-wrap mt-2">
-                    <button type="submit" id="submitOfferBtn" class="btn btn-wf-primary">Publicar oferta</button>
-                    <a href="/offers" class="btn btn-wf-secondary">Ver ofertas</a>
+                    <div class="full d-flex gap-2 flex-wrap mt-2">
+                        <button type="button" id="backStepBtn" class="btn btn-wf-secondary">Voltar</button>
+                        <button type="submit" id="submitOfferBtn" class="btn btn-wf-primary">Publicar oferta</button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -73,40 +82,83 @@
 </div>
 
 <script>
-    document.getElementById('newOfferForm').addEventListener('submit', async (event) => {
-        event.preventDefault();
+    (function setupOfferWizard() {
+        const form = document.getElementById('newOfferForm');
+        const step1 = document.getElementById('offerStep1');
+        const step2 = document.getElementById('offerStep2');
+        const nextBtn = document.getElementById('nextStepBtn');
+        const backBtn = document.getElementById('backStepBtn');
 
-        const token = localStorage.getItem('token');
-        if (!token) {
-            alert('Faça login para publicar uma oferta.');
-            window.location.href = '/login';
-            return;
+        function showStep(n) {
+            if (n === 1) {
+                step1.style.display = '';
+                step2.style.display = 'none';
+            } else {
+                step1.style.display = 'none';
+                step2.style.display = '';
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        const submitBtn = document.getElementById('submitOfferBtn');
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Publicando...';
+        nextBtn.addEventListener('click', (e) => {
+            // Validate required fields in step 1
+            const name = document.getElementById('product_name');
+            const unit = document.getElementById('unit');
+            if (!name.value || name.value.trim().length < 2) {
+                alert('Informe um nome de produto válido.');
+                name.focus();
+                return;
+            }
+            if (!unit.value) {
+                alert('Informe a unidade do produto.');
+                unit.focus();
+                return;
+            }
+            showStep(2);
+        });
 
-        try {
-            const payload = {
-                product_name: document.getElementById('product_name').value,
-                description: document.getElementById('description').value || null,
-                category: document.getElementById('category').value || null,
-                unit: document.getElementById('unit').value,
-                quantity: Number(document.getElementById('quantity').value),
-                price: Number(document.getElementById('price').value),
-                location: document.getElementById('location').value,
-                min_order: Number(document.getElementById('min_order').value || 1),
-            };
+        backBtn && backBtn.addEventListener('click', (e) => {
+            showStep(1);
+        });
 
-            const created = await apiRequest('/offers', 'POST', payload);
-            alert('Operação realizada com sucesso.');
-            window.location.href = `/offers/${created.id}`;
-        } catch (error) {
-            alert(error.message || 'Falha ao criar oferta.');
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Publicar oferta';
-        }
-    });
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('Faça login para publicar uma oferta.');
+                window.location.href = '/login';
+                return;
+            }
+
+            const submitBtn = document.getElementById('submitOfferBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Publicando...';
+
+            try {
+                const payload = {
+                    product_name: document.getElementById('product_name').value,
+                    description: document.getElementById('description').value || null,
+                    category: document.getElementById('category').value || null,
+                    unit: document.getElementById('unit').value,
+                    quantity: Number(document.getElementById('quantity').value) || 0,
+                    price: Number(document.getElementById('price').value) || 0,
+                    location: document.getElementById('location').value || '',
+                    min_order: Number(document.getElementById('min_order').value || 1),
+                };
+
+                const created = await apiRequest('/offers', 'POST', payload);
+                alert('Operação realizada com sucesso.');
+                window.location.href = `/offers/${created.id}`;
+            } catch (error) {
+                alert(error.message || 'Falha ao criar oferta.');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Publicar oferta';
+            }
+        });
+
+        // Ensure progressive enhancement: if JS disabled, full form still submits
+        showStep(1);
+    })();
 </script>
 {% endblock %}
