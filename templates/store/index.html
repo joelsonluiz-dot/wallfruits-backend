@@ -2111,6 +2111,65 @@
 			refreshLojaImageFallbacks(dom.produtosMount);
 
 			setupRevealObserver();
+
+			// initialize carousel controls for highlight rows
+			(function setupLojaCarousels() {
+				const carousels = dom.produtosMount.querySelectorAll('.loja-section');
+				if (!carousels.length) return;
+				carousels.forEach((section) => {
+					const key = section.getAttribute('data-loja-section');
+					if (!['best','recommended','new'].includes(key)) return;
+					const grid = section.querySelector('.loja-section-grid');
+					const controls = section.querySelector('.loja-carousel-controls');
+					if (!grid || !controls) return;
+					const prev = controls.querySelector('.loja-carousel-prev');
+					const next = controls.querySelector('.loja-carousel-next');
+					const scrollAmount = Math.max(grid.clientWidth * 0.75, 240);
+
+					prev.addEventListener('click', () => {
+						grid.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+					});
+					next.addEventListener('click', () => {
+						grid.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+					});
+
+					// keyboard accessibility
+					controls.querySelectorAll('button').forEach((btn) => {
+						btn.addEventListener('keydown', (ev) => {
+							if (ev.key === 'Enter' || ev.key === ' ') {
+								ev.preventDefault();
+								btn.click();
+							}
+						});
+					});
+				});
+			})();
+
+			// If controls were not rendered server-side, inject them dynamically for highlight rows
+			(function injectLojaControlsIfMissing() {
+				const sections = dom.produtosMount.querySelectorAll('.loja-section');
+				sections.forEach((section) => {
+					const key = section.getAttribute('data-loja-section');
+					if (!['best','recommended','new'].includes(key)) return;
+					const head = section.querySelector('.loja-section-head');
+					if (!head) return;
+					if (head.querySelector('.loja-carousel-controls')) return; // already there
+					const controls = document.createElement('div');
+					controls.className = 'loja-carousel-controls';
+					controls.setAttribute('data-target', key);
+					controls.innerHTML = '<button type="button" class="loja-carousel-prev" aria-label="Anterior">‹</button><button type="button" class="loja-carousel-next" aria-label="Próximo">›</button>';
+					// append to header
+					head.appendChild(controls);
+					// wire handlers (reuse same logic)
+					const grid = section.querySelector('.loja-section-grid');
+					const prev = controls.querySelector('.loja-carousel-prev');
+					const next = controls.querySelector('.loja-carousel-next');
+					if (!grid || !prev || !next) return;
+					const scrollAmount = Math.max(grid.clientWidth * 0.75, 240);
+					prev.addEventListener('click', () => grid.scrollBy({ left: -scrollAmount, behavior: 'smooth' }));
+					next.addEventListener('click', () => grid.scrollBy({ left: scrollAmount, behavior: 'smooth' }));
+				});
+			})();
 		}
 
 		function applyRipple(event, element) {
