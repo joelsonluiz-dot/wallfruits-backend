@@ -2040,7 +2040,7 @@
 									<p>${escapeHtml(section.subtitle)}</p>
 								</div>
 							</header>
-							<div class="loja-section-grid">
+							<div class="loja-section-grid ${['best','recommended','new'].includes(section.key) ? 'loja-highlight-row' : ''}">
 								${render_loja_cards(section.items, section.key)}
 							</div>
 						</section>
