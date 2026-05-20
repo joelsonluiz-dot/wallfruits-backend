@@ -215,6 +215,36 @@
 		background: #FFFFFF;
 	}
 
+/* Banner controls (prev/next) */
+.loja-banner-controls {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	pointer-events: none;
+	z-index: 4;
+}
+
+.loja-banner-controls button {
+	pointer-events: auto;
+	border: none;
+	background: rgba(0,0,0,0.32);
+	color: #fff;
+	width: 44px;
+	height: 44px;
+	border-radius: 999px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	margin: 0 8px;
+	cursor: pointer;
+	transition: background 120ms ease, transform 80ms ease;
+}
+
+.loja-banner-controls button:hover { background: rgba(0,0,0,0.48); transform: translateY(-1px); }
+
+
 	.loja-header {
 		position: sticky;
 		top: 0;
@@ -1608,6 +1638,22 @@
 				category: "",
 				image: "/static/store/banner-wallfruits-polos.svg",
 			},
+			{
+				tag: "promocao",
+				title: "Ofertas especiais de equipamentos",
+				subtitle: "Descontos em ferramentas e implementos por tempo limitado.",
+				cta: "Ver ofertas",
+				category: "",
+				image: "https://images.unsplash.com/photo-1598514982901-ae5f1f5d40f3?auto=format&fit=crop&w=1200&q=80",
+			},
+			{
+				tag: "novo",
+				title: "Lançamentos da safra",
+				subtitle: "Produtos recém-chegados e reposições recentes na vitrine.",
+				cta: "Explorar novidades",
+				category: "",
+				image: "https://images.unsplash.com/photo-1628359355624-855775b5c9c4?auto=format&fit=crop&w=1200&q=80",
+			},
 		];
 
 		function readJsonScript(id, fallback) {
@@ -1849,6 +1895,10 @@
 								</div>
 							</article>
 						`).join("")}
+					</div>
+					<div class="loja-banner-controls" id="lojaBannerControls">
+						<button type="button" class="loja-banner-prev" aria-label="Anterior">‹</button>
+						<button type="button" class="loja-banner-next" aria-label="Proximo">›</button>
 					</div>
 					<div class="loja-banner-dots" id="lojaBannerDots">
 						${bannerSlides.map((_, index) => `
@@ -2771,6 +2821,12 @@
 					prevBanner(true);
 				}
 			}, { passive: true });
+
+			// prev/next buttons
+			const prevBtn = document.querySelector('.loja-banner-prev');
+			const nextBtn = document.querySelector('.loja-banner-next');
+			if (prevBtn) prevBtn.addEventListener('click', () => prevBanner(true));
+			if (nextBtn) nextBtn.addEventListener('click', () => nextBanner(true));
 
 			startBannerAutoPlay();
 		}
