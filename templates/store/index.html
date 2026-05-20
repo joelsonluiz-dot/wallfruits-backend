@@ -399,6 +399,26 @@
 		scroll-snap-align: start;
 	}
 
+/* Highlight rows: show certain sections as horizontal scrollable carousels */
+.loja-section-grid.loja-highlight-row {
+	display: flex;
+	gap: 12px;
+	overflow-x: auto;
+	padding: 8px 0 18px;
+	-webkit-overflow-scrolling: touch;
+}
+
+.loja-section-grid.loja-highlight-row .loja-card {
+	flex: 0 0 auto;
+	min-width: 200px;
+	max-width: 260px;
+	scroll-snap-align: start;
+}
+
+.loja-section-head h3 {
+    margin: 0 0 6px 0;
+}
+
 	.loja-category-label {
 		display: block;
 		min-width: 0;
@@ -2040,7 +2060,7 @@
 									<p>${escapeHtml(section.subtitle)}</p>
 								</div>
 							</header>
-							<div class="loja-section-grid">
+							<div class="loja-section-grid ${['best','recommended','new'].includes(section.key) ? 'loja-highlight-row' : ''}">
 								${render_loja_cards(section.items, section.key)}
 							</div>
 						</section>
