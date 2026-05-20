@@ -410,14 +410,46 @@
 
 .loja-section-grid.loja-highlight-row .loja-card {
 	flex: 0 0 auto;
-	min-width: 200px;
-	max-width: 260px;
+	min-width: 220px;
+	max-width: 280px;
 	scroll-snap-align: start;
 }
 
 .loja-section-head h3 {
     margin: 0 0 6px 0;
 }
+
+/* Carousel controls */
+.loja-carousel-controls {
+	display: inline-flex;
+	gap: 8px;
+	align-items: center;
+}
+
+.loja-carousel-controls button {
+	border: none;
+	background: rgba(0,0,0,0.06);
+	width: 36px;
+	height: 36px;
+	border-radius: 999px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: background 120ms ease;
+}
+
+.loja-carousel-controls button:hover { background: rgba(0,0,0,0.12); }
+
+.loja-carousel-controls button:active { transform: translateY(1px); }
+
+/* Highlight row image/card tweaks */
+.loja-section-grid.loja-highlight-row .loja-card-media {
+	aspect-ratio: 4 / 3;
+	min-height: 140px;
+}
+
+.loja-section-grid.loja-highlight-row { padding-bottom: 12px; }
 
 	.loja-category-label {
 		display: block;
@@ -2058,6 +2090,14 @@
 								<div>
 									<h3>${escapeHtml(section.title)}</h3>
 									<p>${escapeHtml(section.subtitle)}</p>
+								</div>
+								<div>
+									${['best','recommended','new'].includes(section.key) ? `
+										<div class="loja-carousel-controls" data-target="${escapeHtml(section.key)}">
+											<button type="button" class="loja-carousel-prev" aria-label="Anterior">‹</button>
+											<button type="button" class="loja-carousel-next" aria-label="Próximo">›</button>
+										</div>
+									` : `<a href="/store?section=${encodeURIComponent(section.key)}" class="loja-section-more">Ver mais</a>`}
 								</div>
 							</header>
 							<div class="loja-section-grid ${['best','recommended','new'].includes(section.key) ? 'loja-highlight-row' : ''}">
