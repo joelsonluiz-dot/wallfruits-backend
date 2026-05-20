@@ -34,14 +34,71 @@
                         <textarea id="description" class="wf-input form-control" rows="3" maxlength="1000" placeholder="Descreva qualidade, lote, disponibilidade..."></textarea>
                     </div>
 
-                    <div>
-                        <label class="wf-label">Categoria</label>
-                        <input id="category" class="wf-input form-control" type="text" maxlength="100" placeholder="Frutas">
+                    <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+                        <div style="flex:1; min-width:160px;">
+                            <label class="wf-label">Categoria</label>
+                            <select id="category" class="wf-input form-control">
+                                <option value="">Selecione</option>
+                                <option value="Frutas">Frutas</option>
+                                <option value="Hortaliças">Hortaliças</option>
+                                <option value="Grãos">Grãos</option>
+                                <option value="Flores">Flores</option>
+                                <option value="Outros">Outros</option>
+                            </select>
+                        </div>
+
+                        <div style="min-width:140px;">
+                            <label class="wf-label">Unidade</label>
+                            <select id="unit" class="wf-input form-control" required>
+                                <option value="kg">kg</option>
+                                <option value="un">un</option>
+                                <option value="caixa">caixa</option>
+                                <option value="pacote">pacote</option>
+                            </select>
+                        </div>
+
+                        <div style="min-width:160px;">
+                            <label class="wf-label">Embalagem</label>
+                            <select id="packaging" class="wf-input form-control">
+                                <option value="Granel">Granel</option>
+                                <option value="Sacado">Sacado</option>
+                                <option value="Caixa">Caixa</option>
+                                <option value="Polibag">Polibag</option>
+                            </select>
+                        </div>
                     </div>
 
-                    <div>
-                        <label class="wf-label">Unidade</label>
-                        <input id="unit" class="wf-input form-control" type="text" maxlength="50" placeholder="kg" value="kg" required>
+                    <div style="display:flex; gap:0.75rem; margin-top:0.5rem; flex-wrap:wrap;">
+                        <div style="min-width:160px;">
+                            <label class="wf-label">Variedade</label>
+                            <select id="variety" class="wf-input form-control">
+                                <option value="">Não especificado</option>
+                                <option value="Tommy">Tommy</option>
+                                <option value="Itália">Itália</option>
+                                <option value="Prata">Prata</option>
+                                <option value="Outra">Outra</option>
+                            </select>
+                        </div>
+
+                        <div style="min-width:160px;">
+                            <label class="wf-label">Calibre</label>
+                            <select id="calibre" class="wf-input form-control">
+                                <option value="">Não especificado</option>
+                                <option value="P">P</option>
+                                <option value="M">M</option>
+                                <option value="G">G</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="full mt-2">
+                        <label class="wf-label">Atributos / Certificações</label>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <label><input type="checkbox" name="certifications" value="organico"> Orgânico</label>
+                            <label><input type="checkbox" name="certifications" value="integrado"> Integrado</label>
+                            <label><input type="checkbox" name="certifications" value="convencional"> Convencional</label>
+                            <label><input type="checkbox" name="certifications" value="frescura_garantida"> Frescura garantida</label>
+                        </div>
                     </div>
 
                     <div class="full d-flex gap-2 flex-wrap mt-2">
@@ -51,27 +108,40 @@
                 </div>
 
                 <div id="offerStep2" class="offer-step full" style="display:none;">
-                    <div>
-                        <label class="wf-label">Quantidade</label>
-                        <input id="quantity" class="wf-input form-control" type="number" min="0.01" step="0.01">
+                    <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+                        <div style="flex:1; min-width:160px;">
+                            <label class="wf-label">Quantidade</label>
+                            <input id="quantity" class="wf-input form-control" type="number" min="0.01" step="0.01">
+                        </div>
+
+                        <div style="min-width:160px;">
+                            <label class="wf-label">Preço (R$)</label>
+                            <input id="price" class="wf-input form-control" type="number" min="0.01" step="0.01">
+                        </div>
+
+                        <div style="min-width:160px;">
+                            <label class="wf-label">Pedido mínimo</label>
+                            <input id="min_order" class="wf-input form-control" type="number" min="0.01" step="0.01" value="1">
+                        </div>
                     </div>
 
-                    <div>
-                        <label class="wf-label">Preço (R$)</label>
-                        <input id="price" class="wf-input form-control" type="number" min="0.01" step="0.01">
+                    <div style="display:flex; gap:0.75rem; margin-top:0.5rem; flex-wrap:wrap;">
+                        <div style="flex:1; min-width:220px;">
+                            <label class="wf-label">Localização</label>
+                            <input id="location" class="wf-input form-control" type="text" minlength="2" maxlength="150" placeholder="Cidade/UF">
+                        </div>
+
+                        <div style="min-width:220px;">
+                            <label class="wf-label">Condição de entrega</label>
+                            <select id="delivery_condition" class="wf-input form-control">
+                                <option value="Fob">Fob (retirada)</option>
+                                <option value="Cif">Cif (entrega)</option>
+                                <option value="Frete">Frete a combinar</option>
+                            </select>
+                        </div>
                     </div>
 
-                    <div>
-                        <label class="wf-label">Localização</label>
-                        <input id="location" class="wf-input form-control" type="text" minlength="2" maxlength="150" placeholder="Cidade/UF">
-                    </div>
-
-                    <div>
-                        <label class="wf-label">Pedido mínimo</label>
-                        <input id="min_order" class="wf-input form-control" type="number" min="0.01" step="0.01" value="1">
-                    </div>
-
-                    <div class="full d-flex gap-2 flex-wrap mt-2">
+                    <div class="full d-flex gap-2 flex-wrap mt-3">
                         <button type="button" id="backStepBtn" class="btn btn-wf-secondary">Voltar</button>
                         <button type="submit" id="submitOfferBtn" class="btn btn-wf-primary">Publicar oferta</button>
                     </div>
@@ -104,6 +174,7 @@
             // Validate required fields in step 1
             const name = document.getElementById('product_name');
             const unit = document.getElementById('unit');
+            const category = document.getElementById('category');
             if (!name.value || name.value.trim().length < 2) {
                 alert('Informe um nome de produto válido.');
                 name.focus();
@@ -112,6 +183,11 @@
             if (!unit.value) {
                 alert('Informe a unidade do produto.');
                 unit.focus();
+                return;
+            }
+            if (!category.value) {
+                alert('Selecione uma categoria para o produto.');
+                category.focus();
                 return;
             }
             showStep(2);
@@ -136,13 +212,20 @@
             submitBtn.textContent = 'Publicando...';
 
             try {
+                // Build payload including structured fields
+                const certifications = Array.from(document.querySelectorAll('input[name="certifications"]:checked')).map(i => i.value);
                 const payload = {
                     product_name: document.getElementById('product_name').value,
                     description: document.getElementById('description').value || null,
                     category: document.getElementById('category').value || null,
                     unit: document.getElementById('unit').value,
+                    packaging: document.getElementById('packaging') ? document.getElementById('packaging').value : null,
+                    variety: document.getElementById('variety') ? document.getElementById('variety').value : null,
+                    calibre: document.getElementById('calibre') ? document.getElementById('calibre').value : null,
+                    certifications: certifications,
                     quantity: Number(document.getElementById('quantity').value) || 0,
                     price: Number(document.getElementById('price').value) || 0,
+                    delivery_condition: document.getElementById('delivery_condition') ? document.getElementById('delivery_condition').value : null,
                     location: document.getElementById('location').value || '',
                     min_order: Number(document.getElementById('min_order').value || 1),
                 };
