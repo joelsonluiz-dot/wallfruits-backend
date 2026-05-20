@@ -76,16 +76,13 @@
     }
     .stat-card {
         background: var(--wf-card);
+        width: 100%;
+        max-width: 100%;
         border: 1px solid var(--wf-border);
         border-radius: var(--wf-radius);
         padding: 1.5rem;
         text-align: center;
         transition: transform var(--wf-motion-normal) ease, box-shadow var(--wf-motion-normal) ease, border-color var(--wf-motion-normal) ease;
-    }
-    .stat-card:hover {
-        border-color: rgba(0,212,170,0.2);
-        transform: translateY(-3px);
-        box-shadow: 0 12px 40px rgba(0,0,0,0.25);
     }
     .stat-value {
         font-size: 2.2rem;
@@ -98,13 +95,14 @@
         color: var(--wf-text-secondary);
         font-weight: 500;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        cursor: default;
     }
     .home-market-shell {
         margin-top: 1.5rem;
+        width: 100%;
+        max-width: 100%;
         display: grid;
         gap: 0.72rem;
-        width: 100%;
     }
 
     .home-offers-section,
@@ -218,24 +216,23 @@
     }
 
     .home-market-viewport {
-        overflow-x: auto;
-        overflow-y: visible;
-        scroll-snap-type: x mandatory;
-        scroll-behavior: smooth;
+        overflow: visible;
+        scroll-snap-type: none;
+        scroll-behavior: auto;
         scrollbar-width: none;
         -ms-overflow-style: none;
-        touch-action: pan-y pinch-zoom;
-        overscroll-behavior: none;
-        overscroll-behavior-x: none;
-        overscroll-behavior-y: none;
-        -webkit-overflow-scrolling: touch;
-        cursor: grab;
+        touch-action: auto;
+        overscroll-behavior: auto;
+        overscroll-behavior-x: auto;
+        overscroll-behavior-y: auto;
+        -webkit-overflow-scrolling: auto;
+        cursor: default;
         border-radius: 16px;
     }
 
 
     .home-market-viewport.is-dragging {
-        cursor: grabbing;
+        cursor: default;
     }
 
     .home-market-viewport::-webkit-scrollbar {
@@ -243,15 +240,29 @@
     }
 
     .home-market-track {
-        display: flex;
+        display: grid;
+        gap: 1rem;
         width: 100%;
         align-items: stretch;
     }
 
     .home-market-panel {
-        min-width: 100%;
-        scroll-snap-align: start;
-        scroll-snap-stop: always;
+        min-width: 0;
+        display: none;
+        scroll-snap-align: unset;
+        scroll-snap-stop: normal;
+    }
+
+    .home-market-panel.is-active {
+        display: grid;
+        gap: 1rem;
+    }
+
+    .home-market-panel [href],
+    .home-market-panel button {
+        position: relative;
+        z-index: 2;
+        pointer-events: auto;
     }
 
     .home-section-title {
@@ -506,13 +517,27 @@
     .home-community-avatar {
         width: 30px;
         height: 30px;
-        border-radius: 50%;
+        display: grid;
+        gap: 1rem;
         object-fit: cover;
         border: 1px solid rgba(255,255,255,0.2);
         background: rgba(255,255,255,0.3);
+        min-width: 0;
+        display: none;
+        scroll-snap-align: unset;
+        scroll-snap-stop: normal;
     }
 
-    .home-community-author-info {
+    .home-market-panel.is-active {
+        display: grid;
+        gap: 1rem;
+    }
+
+    .home-market-panel [href],
+    .home-market-panel button {
+        position: relative;
+        z-index: 2;
+        pointer-events: auto;
         display: grid;
         gap: 0.08rem;
         min-width: 0;
@@ -1358,44 +1383,32 @@
 
         document.querySelectorAll('[data-home-market-panel]').forEach((panel) => {
             const target = String(panel.getAttribute('data-home-market-panel') || '');
-            panel.setAttribute('aria-hidden', target === safeTab ? 'false' : 'true');
+            const isActive = target === safeTab;
+            panel.classList.toggle('is-active', isActive);
+            panel.setAttribute('aria-hidden', isActive ? 'false' : 'true');
+            if ('hidden' in panel) {
+                panel.hidden = !isActive;
+            }
         });
     }
 
     function scrollHomeMarketTo(tab, behavior = 'smooth') {
-        const viewport = document.getElementById('homeMarketViewport');
-        if (!viewport) return;
-
         const safeTab = HOME_MARKET_TAB_SEQUENCE.includes(tab) ? tab : 'offers';
-        const targetIndex = HOME_MARKET_TAB_SEQUENCE.indexOf(safeTab);
-        const panelWidth = Math.max(1, viewport.clientWidth || viewport.offsetWidth || 1);
-        viewport.scrollTo({
-            left: targetIndex * panelWidth,
-            behavior,
-        });
         updateHomeMarketTabsUi(safeTab);
+
+        const shell = document.getElementById('homeMarketShell');
+        if (shell && behavior !== 'none') {
+            shell.scrollIntoView({ behavior, block: 'start' });
+        }
     }
 
     function syncHomeMarketTabFromScroll() {
-        const viewport = document.getElementById('homeMarketViewport');
-        if (!viewport) return;
-        const panelWidth = Math.max(1, viewport.clientWidth || viewport.offsetWidth || 1);
-        const index = Math.max(0, Math.min(HOME_MARKET_TAB_SEQUENCE.length - 1, Math.round(viewport.scrollLeft / panelWidth)));
-        updateHomeMarketTabsUi(HOME_MARKET_TAB_SEQUENCE[index]);
+        updateHomeMarketTabsUi(homeMarketActiveTab);
     }
 
     function initHomeMarketTabs() {
-        const viewport = document.getElementById('homeMarketViewport');
         const tabbar = document.querySelector('.home-market-tabbar');
-        if (!viewport || !tabbar) return;
-
-        let scrollRaf = 0;
-        let isDragging = false;
-        let dragPointerId = null;
-        let dragStartX = 0;
-        let dragStartLeft = 0;
-        let dragStartY = 0;
-        let dragAxisLocked = null;
+        if (!tabbar) return;
 
         document.querySelectorAll('[data-home-market-target]').forEach((button) => {
             button.addEventListener('click', () => {
@@ -1413,71 +1426,6 @@
             });
         });
 
-        viewport.addEventListener('scroll', () => {
-            if (scrollRaf) return;
-            scrollRaf = window.requestAnimationFrame(() => {
-                scrollRaf = 0;
-                syncHomeMarketTabFromScroll();
-            });
-        }, { passive: true });
-
-        viewport.addEventListener('pointerdown', (event) => {
-            if (event.pointerType === 'mouse' && event.button !== 0) return;
-            isDragging = true;
-            dragPointerId = event.pointerId;
-            dragStartX = event.clientX;
-            dragStartY = event.clientY;
-            dragStartLeft = viewport.scrollLeft;
-            dragAxisLocked = null;
-            viewport.classList.add('is-dragging');
-            if (typeof viewport.setPointerCapture === 'function') {
-                viewport.setPointerCapture(event.pointerId);
-            }
-        });
-
-        viewport.addEventListener('pointermove', (event) => {
-            if (!isDragging) return;
-            if (dragPointerId !== null && event.pointerId !== dragPointerId) return;
-            const deltaX = event.clientX - dragStartX;
-            const deltaY = event.clientY - dragStartY;
-
-            if (!dragAxisLocked) {
-                dragAxisLocked = Math.abs(deltaX) > Math.abs(deltaY) ? 'x' : 'y';
-            }
-
-            if (dragAxisLocked !== 'x') return;
-
-            viewport.scrollLeft = dragStartLeft - deltaX;
-        });
-
-        const finishDrag = (event) => {
-            if (!isDragging) return;
-            if (dragPointerId !== null && event.pointerId !== dragPointerId) return;
-            isDragging = false;
-            dragPointerId = null;
-            viewport.classList.remove('is-dragging');
-            dragAxisLocked = null;
-            if (typeof viewport.releasePointerCapture === 'function') {
-                try {
-                    viewport.releasePointerCapture(event.pointerId);
-                } catch {
-                    // Ignore capture release issues on browsers that already cleared it.
-                }
-            }
-            syncHomeMarketTabFromScroll();
-            scrollHomeMarketTo(homeMarketActiveTab, 'smooth');
-        };
-
-        viewport.addEventListener('pointerup', finishDrag);
-        viewport.addEventListener('pointercancel', finishDrag);
-
-        viewport.addEventListener('wheel', (event) => {
-            const horizontalIntent = Math.abs(event.deltaX) > Math.abs(event.deltaY) || event.shiftKey;
-            if (!horizontalIntent) return;
-            event.preventDefault();
-            viewport.scrollLeft += event.deltaX || event.deltaY;
-        }, { passive: false });
-
         if (typeof window.ResizeObserver === 'function') {
             const resizeObserver = new ResizeObserver(() => {
                 window.requestAnimationFrame(() => {
@@ -1486,7 +1434,6 @@
                 });
             });
             resizeObserver.observe(tabbar);
-            resizeObserver.observe(viewport);
         }
 
         window.addEventListener('resize', () => {
