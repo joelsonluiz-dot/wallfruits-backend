@@ -343,6 +343,72 @@
         .home-market-indicator,
         .home-market-tab,
         .home-market-panel,
+
+        .home-market-panel .home-offers-head {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 0.55rem;
+        }
+
+        .home-market-panel .home-offers-head > div {
+            min-width: 0;
+        }
+
+        .home-market-panel .home-offers-head .btn,
+        .home-market-panel .home-offers-head a {
+            width: 100%;
+        }
+
+        .home-products-row,
+        .home-services-row,
+        .home-community-row {
+            display: grid;
+            grid-auto-flow: row;
+            grid-template-columns: 1fr;
+            gap: 0.65rem;
+            overflow: visible;
+            padding: 0;
+            scroll-snap-type: none;
+        }
+
+        .home-products-row > *,
+        .home-services-row > *,
+        .home-community-row > * {
+            min-width: 0;
+            max-width: 100%;
+            width: 100%;
+            contain-intrinsic-size: auto;
+        }
+
+        .home-product-card,
+        .home-service-card,
+        .home-community-card {
+            min-width: 0;
+            max-width: 100%;
+            width: 100%;
+        }
+
+        .home-service-media,
+        .home-community-media,
+        .home-product-media {
+            height: 160px;
+        }
+
+        .home-service-body,
+        .home-community-body,
+        .home-product-body {
+            padding: 0.78rem;
+        }
+
+        .home-community-head {
+            flex-wrap: wrap;
+        }
+
+        .home-service-name,
+        .home-community-title,
+        .home-product-name {
+            min-height: auto;
+        }
         .home-market-panel [data-home-market-fade] {
             transition: none !important;
         }
