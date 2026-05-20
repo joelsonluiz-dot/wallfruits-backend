@@ -15,6 +15,10 @@
         margin: 0 !important;
     }
 
+    body.wf-home-page {
+        overflow-x: hidden;
+    }
+
     .hero-section {
         position: relative;
         padding: 1.5rem 0 2.2rem;
@@ -1241,6 +1245,154 @@
         .home-community-card {
             min-width: 224px;
             max-width: 224px;
+        }
+    }
+
+    @media (max-width: 900px) {
+        .home-market-shell {
+            gap: 0.55rem;
+        }
+
+        .home-market-head {
+            top: 0;
+            padding: 0.38rem;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 100%;
+        }
+
+        .home-market-kicker {
+            font-size: 0.62rem;
+            padding: 0.2rem 0.5rem;
+            letter-spacing: 0.06em;
+        }
+
+        .home-market-tabbar {
+            width: 100%;
+            max-width: 100%;
+            gap: 0.2rem;
+            padding: 0.18rem;
+            border-radius: 16px;
+        }
+
+        .home-market-tab {
+            min-width: 0;
+            font-size: 0.68rem;
+            padding: 0.3rem 0.45rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .home-market-indicator {
+            inset: 0.18rem auto 0.18rem 0.18rem;
+            width: calc(50% - 0.2rem);
+        }
+
+        .home-market-viewport,
+        .home-market-track,
+        .home-market-panel,
+        .home-offers-section,
+        .home-products-section,
+        .home-services-section,
+        .home-community-section {
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+        }
+
+        .home-offers-section,
+        .home-products-section,
+        .home-services-section,
+        .home-community-section {
+            border-radius: 16px;
+            padding: 0.7rem 0.66rem;
+        }
+
+        .home-market-panel .home-offers-head {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 0.55rem;
+        }
+
+        .home-market-panel .home-offers-head > div {
+            min-width: 0;
+            width: 100%;
+        }
+
+        .home-market-panel .home-offers-head .btn,
+        .home-market-panel .home-offers-head a {
+            width: 100%;
+        }
+
+        .home-products-row,
+        .home-services-row,
+        .home-community-row {
+            display: grid !important;
+            grid-auto-flow: row;
+            grid-template-columns: 1fr !important;
+            gap: 0.65rem;
+            overflow: visible !important;
+            padding: 0 !important;
+            scroll-snap-type: none !important;
+        }
+
+        .home-products-row > *,
+        .home-services-row > *,
+        .home-community-row > * {
+            min-width: 0 !important;
+            max-width: 100% !important;
+            width: 100% !important;
+            contain-intrinsic-size: auto !important;
+        }
+
+        .home-product-card,
+        .home-service-card,
+        .home-community-card {
+            min-width: 0 !important;
+            max-width: 100% !important;
+            width: 100% !important;
+        }
+
+        .home-service-media,
+        .home-community-media,
+        .home-product-media {
+            height: 160px;
+        }
+
+        .home-service-body,
+        .home-community-body,
+        .home-product-body {
+            padding: 0.78rem;
+        }
+
+        .home-market-panel .stats-grid {
+            grid-template-columns: 1fr !important;
+            gap: 0.6rem;
+            margin-top: 0.5rem;
+        }
+
+        .home-market-panel .stat-card {
+            width: 100% !important;
+            min-width: 0 !important;
+            max-width: 100% !important;
+            padding: 1rem 0.9rem;
+        }
+
+        .home-market-panel .stat-value {
+            font-size: 1.2rem;
+        }
+
+        .home-market-panel .stat-label {
+            font-size: 0.62rem;
+        }
+
+        .home-market-panel .home-section-title,
+        .home-market-panel .home-section-subtitle {
+            max-width: 100% !important;
+            min-width: 0 !important;
+            overflow-wrap: anywhere;
+            word-break: break-word;
         }
     }
 </style>
