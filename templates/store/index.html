@@ -215,36 +215,6 @@
 		background: #FFFFFF;
 	}
 
-/* Banner controls (prev/next) */
-.loja-banner-controls {
-	position: absolute;
-	inset: 0;
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	pointer-events: none;
-	z-index: 4;
-}
-
-.loja-banner-controls button {
-	pointer-events: auto;
-	border: none;
-	background: rgba(0,0,0,0.32);
-	color: #fff;
-	width: 44px;
-	height: 44px;
-	border-radius: 999px;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	margin: 0 8px;
-	cursor: pointer;
-	transition: background 120ms ease, transform 80ms ease;
-}
-
-.loja-banner-controls button:hover { background: rgba(0,0,0,0.48); transform: translateY(-1px); }
-
-
 	.loja-header {
 		position: sticky;
 		top: 0;
@@ -428,58 +398,6 @@
 		min-width: 0;
 		scroll-snap-align: start;
 	}
-
-/* Highlight rows: show certain sections as horizontal scrollable carousels */
-.loja-section-grid.loja-highlight-row {
-	display: flex;
-	gap: 12px;
-	overflow-x: auto;
-	padding: 8px 0 18px;
-	-webkit-overflow-scrolling: touch;
-}
-
-.loja-section-grid.loja-highlight-row .loja-card {
-	flex: 0 0 auto;
-	min-width: 220px;
-	max-width: 280px;
-	scroll-snap-align: start;
-}
-
-.loja-section-head h3 {
-    margin: 0 0 6px 0;
-}
-
-/* Carousel controls */
-.loja-carousel-controls {
-	display: inline-flex;
-	gap: 8px;
-	align-items: center;
-}
-
-.loja-carousel-controls button {
-	border: none;
-	background: rgba(0,0,0,0.06);
-	width: 36px;
-	height: 36px;
-	border-radius: 999px;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	cursor: pointer;
-	transition: background 120ms ease;
-}
-
-.loja-carousel-controls button:hover { background: rgba(0,0,0,0.12); }
-
-.loja-carousel-controls button:active { transform: translateY(1px); }
-
-/* Highlight row image/card tweaks */
-.loja-section-grid.loja-highlight-row .loja-card-media {
-	aspect-ratio: 4 / 3;
-	min-height: 140px;
-}
-
-.loja-section-grid.loja-highlight-row { padding-bottom: 12px; }
 
 	.loja-category-label {
 		display: block;
@@ -1638,22 +1556,6 @@
 				category: "",
 				image: "/static/store/banner-wallfruits-polos.svg",
 			},
-			{
-				tag: "promocao",
-				title: "Ofertas especiais de equipamentos",
-				subtitle: "Descontos em ferramentas e implementos por tempo limitado.",
-				cta: "Ver ofertas",
-				category: "",
-				image: "https://images.unsplash.com/photo-1598514982901-ae5f1f5d40f3?auto=format&fit=crop&w=1200&q=80",
-			},
-			{
-				tag: "novo",
-				title: "Lançamentos da safra",
-				subtitle: "Produtos recém-chegados e reposições recentes na vitrine.",
-				cta: "Explorar novidades",
-				category: "",
-				image: "https://images.unsplash.com/photo-1628359355624-855775b5c9c4?auto=format&fit=crop&w=1200&q=80",
-			},
 		];
 
 		function readJsonScript(id, fallback) {
@@ -1896,10 +1798,6 @@
 							</article>
 						`).join("")}
 					</div>
-					<div class="loja-banner-controls" id="lojaBannerControls">
-						<button type="button" class="loja-banner-prev" aria-label="Anterior">‹</button>
-						<button type="button" class="loja-banner-next" aria-label="Proximo">›</button>
-					</div>
 					<div class="loja-banner-dots" id="lojaBannerDots">
 						${bannerSlides.map((_, index) => `
 							<button type="button" class="loja-banner-dot ${index === 0 ? "is-active" : ""}" data-banner-dot="${index}" aria-label="Slide ${index + 1}"></button>
@@ -2141,16 +2039,8 @@
 									<h3>${escapeHtml(section.title)}</h3>
 									<p>${escapeHtml(section.subtitle)}</p>
 								</div>
-								<div>
-									${['best','recommended','new'].includes(section.key) ? `
-										<div class="loja-carousel-controls" data-target="${escapeHtml(section.key)}">
-											<button type="button" class="loja-carousel-prev" aria-label="Anterior">‹</button>
-											<button type="button" class="loja-carousel-next" aria-label="Próximo">›</button>
-										</div>
-									` : `<a href="/store?section=${encodeURIComponent(section.key)}" class="loja-section-more">Ver mais</a>`}
-								</div>
 							</header>
-							<div class="loja-section-grid ${['best','recommended','new'].includes(section.key) ? 'loja-highlight-row' : ''}">
+							<div class="loja-section-grid">
 								${render_loja_cards(section.items, section.key)}
 							</div>
 						</section>
@@ -2161,65 +2051,6 @@
 			refreshLojaImageFallbacks(dom.produtosMount);
 
 			setupRevealObserver();
-
-			// initialize carousel controls for highlight rows
-			(function setupLojaCarousels() {
-				const carousels = dom.produtosMount.querySelectorAll('.loja-section');
-				if (!carousels.length) return;
-				carousels.forEach((section) => {
-					const key = section.getAttribute('data-loja-section');
-					if (!['best','recommended','new'].includes(key)) return;
-					const grid = section.querySelector('.loja-section-grid');
-					const controls = section.querySelector('.loja-carousel-controls');
-					if (!grid || !controls) return;
-					const prev = controls.querySelector('.loja-carousel-prev');
-					const next = controls.querySelector('.loja-carousel-next');
-					const scrollAmount = Math.max(grid.clientWidth * 0.75, 240);
-
-					prev.addEventListener('click', () => {
-						grid.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
-					});
-					next.addEventListener('click', () => {
-						grid.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-					});
-
-					// keyboard accessibility
-					controls.querySelectorAll('button').forEach((btn) => {
-						btn.addEventListener('keydown', (ev) => {
-							if (ev.key === 'Enter' || ev.key === ' ') {
-								ev.preventDefault();
-								btn.click();
-							}
-						});
-					});
-				});
-			})();
-
-			// If controls were not rendered server-side, inject them dynamically for highlight rows
-			(function injectLojaControlsIfMissing() {
-				const sections = dom.produtosMount.querySelectorAll('.loja-section');
-				sections.forEach((section) => {
-					const key = section.getAttribute('data-loja-section');
-					if (!['best','recommended','new'].includes(key)) return;
-					const head = section.querySelector('.loja-section-head');
-					if (!head) return;
-					if (head.querySelector('.loja-carousel-controls')) return; // already there
-					const controls = document.createElement('div');
-					controls.className = 'loja-carousel-controls';
-					controls.setAttribute('data-target', key);
-					controls.innerHTML = '<button type="button" class="loja-carousel-prev" aria-label="Anterior">‹</button><button type="button" class="loja-carousel-next" aria-label="Próximo">›</button>';
-					// append to header
-					head.appendChild(controls);
-					// wire handlers (reuse same logic)
-					const grid = section.querySelector('.loja-section-grid');
-					const prev = controls.querySelector('.loja-carousel-prev');
-					const next = controls.querySelector('.loja-carousel-next');
-					if (!grid || !prev || !next) return;
-					const scrollAmount = Math.max(grid.clientWidth * 0.75, 240);
-					prev.addEventListener('click', () => grid.scrollBy({ left: -scrollAmount, behavior: 'smooth' }));
-					next.addEventListener('click', () => grid.scrollBy({ left: scrollAmount, behavior: 'smooth' }));
-				});
-			})();
 		}
 
 		function applyRipple(event, element) {
@@ -2821,12 +2652,6 @@
 					prevBanner(true);
 				}
 			}, { passive: true });
-
-			// prev/next buttons
-			const prevBtn = document.querySelector('.loja-banner-prev');
-			const nextBtn = document.querySelector('.loja-banner-next');
-			if (prevBtn) prevBtn.addEventListener('click', () => prevBanner(true));
-			if (nextBtn) nextBtn.addEventListener('click', () => nextBanner(true));
 
 			startBannerAutoPlay();
 		}
