@@ -7,10 +7,7 @@ import androidx.compose.runtime.collectAsState
 fun AuthGate(viewModel: AuthViewModel) {
     val state = viewModel.state.collectAsState().value
     if (state.isLoggedIn) {
-        PremiumFruitFormScreen(
-            onLogout = viewModel::logout,
-            onRefresh = viewModel::refreshDashboard,
-        )
+        AppNav()
     } else {
         LoginScreen(viewModel = viewModel)
     }
