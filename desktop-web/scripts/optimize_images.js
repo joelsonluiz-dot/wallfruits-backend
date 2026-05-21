@@ -1,7 +1,14 @@
 #!/usr/bin/env node
-const fs = require('fs').promises;
-const path = require('path');
-const sharp = require('sharp');
+import fs from 'fs/promises';
+import path from 'path';
+
+let sharp;
+try {
+  ({ default: sharp } = await import('sharp'));
+} catch (err) {
+  console.warn('sharp not available, skipping image optimization:', err.message);
+  process.exit(0);
+}
 
 const srcDir = process.argv[2] || 'public/images';
 const outDir = process.argv[3] || 'public/images/optimized';
@@ -58,8 +65,20 @@ async function processImage(file) {
 
 (async () => {
   try {
+    try {
+      await fs.access(srcDir);
+    } catch {
+      console.log(`Source image directory not found, skipping optimization: ${srcDir}`);
+      process.exit(0);
+    }
+
     const all = await walk(srcDir);
     const images = all.filter(isImage);
+    if (images.length === 0) {
+      console.log(`No images found in ${srcDir}, skipping optimization.`);
+      process.exit(0);
+    }
+
     for (const img of images) {
       console.log('Optimizing', img);
       await processImage(img);
