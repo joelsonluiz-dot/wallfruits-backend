@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.core.auth_middleware import get_current_user, get_current_user_optional
 from app.core.http_cache import set_detail_cache_headers
 from app.database.connection import get_db
-from app.models import CommunityComment, CommunityLike, CommunityPost, CommunityShare, Follow, Offer, User
+from app.models import CommunityComment, CommunityLike, CommunityPost, CommunityShare, Follow, Offer, Service, User
 from app.schemas.social_schema import (
     ActiveAccountItem,
     FollowActionResponse,
@@ -36,6 +36,29 @@ def _normalize_profile_image(image: str | None) -> str | None:
     if image.startswith("http://") or image.startswith("https://") or image.startswith("/"):
         return image
     return f"/api/uploads/profiles/{image}"
+
+
+def _service_card_payload(item: Service) -> dict:
+    ficha = item.ficha_tecnica if isinstance(item.ficha_tecnica, dict) else {}
+    created_by = item.created_by
+    return {
+        "id": str(item.id),
+        "title": item.titulo,
+        "description": item.descricao,
+        "price": item.preco,
+        "location": item.local,
+        "image": item.imagem,
+        "category": ficha.get("categoria") or ficha.get("area_atuacao") or "Serviço",
+        "status": "disponível" if item.is_active else "indisponível",
+        "created_at": item.created_at.isoformat() if item.created_at else None,
+        "provider": {
+            "id": created_by.id,
+            "name": created_by.name,
+            "profile_image": _normalize_profile_image(created_by.profile_image),
+        }
+        if created_by
+        else None,
+    }
 
 
 @router.get("/users/{user_id}", response_model=PublicUserProfileResponse)
@@ -92,6 +115,14 @@ def get_public_user_profile(
         .all()
     )
 
+    services = (
+        db.query(Service)
+        .filter(Service.created_by_user_id == user.id, Service.is_active.is_(True))
+        .order_by(Service.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+
     followers_count = db.query(func.count(Follow.id)).filter(Follow.followed_id == user.id).scalar() or 0
     following_count = db.query(func.count(Follow.id)).filter(Follow.follower_id == user.id).scalar() or 0
 
@@ -118,6 +149,12 @@ def get_public_user_profile(
         else None
     )
 
+    profile = ProfileService(db).get_or_create_profile(user)
+    area_atuacao = profile.profile_type if profile and profile.profile_type else user.role
+    display_name = user.name
+    joined_at = user.created_at
+    status = "online" if current_user and current_user.id == user.id else "offline"
+
     if response is not None:
         set_detail_cache_headers(response, private=bool(current_user))
 
@@ -125,9 +162,13 @@ def get_public_user_profile(
         id=user.id,
         name=user.name,
         username=_username_from_email(user.email, user.id),
+        display_name=display_name,
         email=user.email if can_view_contact else None,
         phone=user.phone if can_view_contact else None,
         role=user.role,
+        area_atuacao=area_atuacao,
+        joined_at=joined_at,
+        status=status,
         bio=user.bio,
         location=user.location if can_view_contact else None,
         profile_image=_normalize_profile_image(user.profile_image),
@@ -150,6 +191,7 @@ def get_public_user_profile(
             }
             for offer in offers
         ],
+        services=[_service_card_payload(service) for service in services],
         community_posts=[
             {
                 "id": post.id,

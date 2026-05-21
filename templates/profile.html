@@ -701,6 +701,227 @@
         }
     }
 
+        .profile-tabbar {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.5rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .profile-tabbar .nav-link {
+            justify-content: center;
+            width: 100%;
+            border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(0,0,0,0.22);
+            cursor: pointer;
+        }
+
+        .profile-about-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.5fr) minmax(280px, 1fr);
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .profile-about-panel {
+            border-radius: 18px;
+            border: 1px solid rgba(255,255,255,0.14);
+            background: linear-gradient(145deg, rgba(10, 18, 32, 0.55), rgba(8, 16, 28, 0.4));
+            padding: 0.9rem;
+            box-shadow: 0 14px 26px rgba(4, 10, 20, 0.18);
+        }
+
+        .profile-about-panelHero {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .profile-about-panelHero::after {
+            content: '';
+            position: absolute;
+            inset: auto -20px -36px auto;
+            width: 120px;
+            height: 120px;
+            background: radial-gradient(circle, rgba(108, 99, 255, 0.24), rgba(108, 99, 255, 0));
+            pointer-events: none;
+        }
+
+        .profile-about-label {
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #9aa8c8;
+            font-size: 0.65rem;
+            font-weight: 800;
+            margin-bottom: 0.35rem;
+        }
+
+        .profile-about-name {
+            font-size: clamp(1.45rem, 2.2vw, 2.1rem);
+            font-weight: 900;
+            letter-spacing: -0.04em;
+            color: #f4f7ff;
+        }
+
+        .profile-about-user {
+            display: inline-flex;
+            margin-top: 0.25rem;
+            color: #8ef0d1;
+            font-weight: 800;
+            font-size: 0.95rem;
+            text-shadow: 0 0 16px rgba(142, 240, 209, 0.2);
+        }
+
+        .profile-about-bio {
+            margin-top: 0.6rem;
+            color: #c8d5ef;
+            line-height: 1.55;
+            max-width: 58ch;
+        }
+
+        .profile-about-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.45rem;
+        }
+
+        .profile-status-badge {
+            border-radius: 999px;
+            padding: 0.22rem 0.55rem;
+            font-size: 0.72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .profile-status-badge.online {
+            background: rgba(54, 208, 141, 0.18);
+            color: #bfffe8;
+            box-shadow: 0 0 0 1px rgba(54, 208, 141, 0.24) inset;
+        }
+
+        .profile-status-badge.offline {
+            background: rgba(154, 168, 200, 0.14);
+            color: #e6ecfb;
+            box-shadow: 0 0 0 1px rgba(154, 168, 200, 0.18) inset;
+        }
+
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.7rem;
+        }
+
+        .service-card {
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.12);
+            background: linear-gradient(180deg, rgba(14, 20, 32, 0.96), rgba(10, 14, 25, 0.96));
+            box-shadow: 0 14px 30px rgba(4, 10, 20, 0.24);
+            cursor: pointer;
+            transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+        }
+
+        .service-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(0, 212, 170, 0.28);
+            box-shadow: 0 16px 34px rgba(4, 10, 20, 0.3);
+        }
+
+        .service-image {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .service-body {
+            padding: 0.75rem;
+            display: grid;
+            gap: 0.45rem;
+        }
+
+        .service-head,
+        .service-footer,
+        .service-provider {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.4rem;
+        }
+
+        .service-status {
+            border-radius: 999px;
+            padding: 0.18rem 0.5rem;
+            font-size: 0.66rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            background: rgba(255,255,255,0.05);
+            color: #dfe8ff;
+        }
+
+        .service-price {
+            color: #8ef0d1;
+            font-weight: 800;
+        }
+
+        .service-title {
+            margin: 0;
+            color: #f4f7ff;
+            font-size: 1rem;
+            font-weight: 800;
+            line-height: 1.2;
+        }
+
+        .service-desc {
+            margin: 0;
+            color: #c8d5ef;
+            font-size: 0.84rem;
+            line-height: 1.45;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .service-footer {
+            font-size: 0.7rem;
+            color: #9aa8c8;
+            flex-wrap: wrap;
+            justify-content: flex-start;
+        }
+
+        .service-provider {
+            justify-content: flex-start;
+            color: #dfe8ff;
+            font-size: 0.72rem;
+        }
+
+        .service-provider img {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        @media (max-width: 1100px) {
+            .profile-about-grid,
+            .services-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 760px) {
+            .profile-tabbar {
+                grid-template-columns: 1fr;
+            }
+
+            .profile-about-grid,
+            .services-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
     .offer-card {
         border-radius: 16px;
         border: 1px solid rgba(255,255,255,0.1);
@@ -775,28 +996,38 @@
             </div>
 
             <div class="profile-body">
-                <ul class="nav-links">
-                    <li><a href="#" class="nav-link active" data-section="home">Home</a></li>
-                    <li><a href="#" class="nav-link" data-section="profile">Perfil</a></li>
-                    <li><a href="#" class="nav-link" data-section="settings" id="settingsTab">Configurações</a></li>
-                    <li><a href="#" class="nav-link" data-section="logout" id="logoutTab">Sair</a></li>
-                </ul>
+                <div class="profile-tabbar" role="tablist" aria-label="Navegação do perfil">
+                    <button type="button" class="nav-link active" data-section="about" role="tab" aria-selected="true">Sobre</button>
+                    <button type="button" class="nav-link" data-section="services" role="tab" aria-selected="false">Serviços</button>
+                    <button type="button" class="nav-link" data-section="offers" role="tab" aria-selected="false">Ofertas</button>
+                </div>
 
                 <div class="content-sections">
-                    <section class="content-section active" id="home-section">
+                    <section class="content-section active" id="about-section">
                         <div class="section-head">
-                            <h3 class="section-title" id="offersSectionTitle">Ofertas publicadas</h3>
-                            <p class="section-sub" id="offersSectionHint">Portfólio público de produtos e preços.</p>
+                            <div>
+                                <h3 class="section-title" id="offersSectionTitle">Sobre o perfil</h3>
+                                <p class="section-sub" id="offersSectionHint">Informações públicas, status e contato com acabamento premium.</p>
+                            </div>
                         </div>
-                        <div class="offer-grid" id="offersGrid"></div>
-                        <div id="offersLoadMoreWrap" class="settings-actions" style="justify-content:flex-start;margin-top:0.5rem;display:none;">
-                            <button class="btn-profile" type="button" id="offersLoadMoreBtn">Carregar mais ofertas</button>
+                        <div class="profile-about-grid">
+                            <div class="profile-about-panel profile-about-panelHero">
+                                <div class="profile-about-label">Identidade pública</div>
+                                <div class="profile-about-name" id="profileNameHero">Perfil</div>
+                                <div class="profile-about-user" id="profileUserHero">@usuario</div>
+                                <div class="profile-about-bio" id="profileBioHero">Carregando dados do perfil...</div>
+                            </div>
+                            <div class="profile-about-panel">
+                                <div class="profile-about-label">Resumo</div>
+                                <div class="profile-about-meta" id="profileMeta"></div>
+                            </div>
                         </div>
-                        <div id="emptyOffers" class="helper-text" style="margin-top:0.5rem;display:none;">Nenhuma oferta publicada ainda.</div>
-
+                        <div class="profile-details" id="profileDetails"></div>
                         <div class="section-head" style="margin-top:0.9rem;">
-                            <h3 class="section-title" style="margin:0;">Posts da comunidade</h3>
-                            <p class="section-sub" id="communitySectionHint">Atividade social recente deste perfil.</p>
+                            <div>
+                                <h3 class="section-title" style="margin:0;">Atividade recente</h3>
+                                <p class="section-sub" id="communitySectionHint">Publicações e presença social deste perfil.</p>
+                            </div>
                         </div>
                         <div class="community-grid" id="communityPostsGrid"></div>
                         <div id="communityLoadMoreWrap" class="settings-actions" style="justify-content:flex-start;margin-top:0.5rem;display:none;">
@@ -805,12 +1036,29 @@
                         <div id="emptyCommunityPosts" class="helper-text" style="margin-top:0.5rem;display:none;">Nenhuma publicação da comunidade ainda.</div>
                     </section>
 
-                    <section class="content-section" id="profile-section">
+                    <section class="content-section" id="services-section">
                         <div class="section-head">
-                            <h3 class="section-title" style="margin:0;">Detalhes do perfil</h3>
-                            <p class="section-sub" id="detailsSectionHint">Identidade pública e informações da conta.</p>
+                            <div>
+                                <h3 class="section-title" style="margin:0;">Serviços</h3>
+                                <p class="section-sub" id="detailsSectionHint">Serviços associados a este perfil.</p>
+                            </div>
                         </div>
-                        <div class="profile-details" id="profileDetails"></div>
+                        <div class="services-grid" id="servicesGrid"></div>
+                        <div id="emptyServices" class="helper-text" style="margin-top:0.5rem;display:none;">Nenhum serviço publicado ainda.</div>
+                    </section>
+
+                    <section class="content-section" id="offers-section">
+                        <div class="section-head">
+                            <div>
+                                <h3 class="section-title" id="offersGridTitle" style="margin:0;">Ofertas publicadas</h3>
+                                <p class="section-sub" id="offersSectionHint">Portfólio público de produtos e preços.</p>
+                            </div>
+                        </div>
+                        <div class="offer-grid" id="offersGrid"></div>
+                        <div id="offersLoadMoreWrap" class="settings-actions" style="justify-content:flex-start;margin-top:0.5rem;display:none;">
+                            <button class="btn-profile" type="button" id="offersLoadMoreBtn">Carregar mais ofertas</button>
+                        </div>
+                        <div id="emptyOffers" class="helper-text" style="margin-top:0.5rem;display:none;">Nenhuma oferta publicada ainda.</div>
                     </section>
 
                     <section class="content-section" id="settings-section">
@@ -889,6 +1137,10 @@
     const PROFILE_CROSS_PREFETCH_PREFIX = 'wf_profile_cross_prefetch_v1';
     const PROFILE_RENDER_CHUNK = 6;
     const offersListState = {
+        all: [],
+        visibleCount: 0,
+    };
+    const servicesListState = {
         all: [],
         visibleCount: 0,
     };
@@ -992,6 +1244,10 @@
             push(offer?.product_name);
             push(offer?.category);
         });
+        (Array.isArray(data?.services) ? data.services : []).slice(0, 5).forEach((service) => {
+            push(service?.title);
+            push(service?.category);
+        });
 
         return Array.from(unique).slice(0, 3);
     }
@@ -1094,18 +1350,19 @@
     function setActiveSection(sectionId) {
         document.querySelectorAll('.nav-link').forEach((link) => {
             link.classList.toggle('active', link.dataset.section === sectionId);
+            link.setAttribute('aria-selected', link.dataset.section === sectionId ? 'true' : 'false');
         });
         document.querySelectorAll('.content-section').forEach((section) => {
             section.classList.toggle('active', section.id === `${sectionId}-section`);
         });
 
-        if (sectionId === 'home') {
+        if (sectionId === 'about') {
             animateHomeStagger();
         }
     }
 
     function animateHomeStagger() {
-        const items = document.querySelectorAll('#offersGrid .offer-card, #communityPostsGrid .community-card');
+        const items = document.querySelectorAll('#offersGrid .offer-card, #communityPostsGrid .community-card, #servicesGrid .service-card');
         items.forEach((item, index) => {
             item.classList.add('stagger-item');
             item.classList.remove('is-in');
@@ -1139,9 +1396,35 @@
     function renderStats(data) {
         document.getElementById('profileStats').innerHTML = `
             <div class="stat"><div class="stat-value">${Number(data.total_offers || 0)}</div><div class="stat-label">Ofertas</div></div>
+            <div class="stat"><div class="stat-value">${Number((data.services || []).length)}</div><div class="stat-label">Serviços</div></div>
             <div class="stat"><div class="stat-value">${Number((data.community_posts || []).length)}</div><div class="stat-label">Posts</div></div>
             <div class="stat"><div class="stat-value">${Number(data.followers_count || 0)}</div><div class="stat-label">Seguidores</div></div>
             <div class="stat"><div class="stat-value">${Number(data.following_count || 0)}</div><div class="stat-label">Seguindo</div></div>
+        `;
+    }
+
+    function formatAreaLabel(value) {
+        const raw = String(value || '').replace(/_/g, ' ').trim();
+        if (!raw) return '-';
+        return raw.charAt(0).toUpperCase() + raw.slice(1);
+    }
+
+    function renderDetails(data) {
+        const lockReason = data.contact_lock_reason || 'Contato e localização completos são liberados para assinantes Premium.';
+        const contactValue = [data.phone, data.email].filter(Boolean).join(' · ') || 'Não informado';
+        const contactNode = data.contact_locked
+            ? lockFieldMarkup('Contato', 'Disponível para assinantes', lockReason)
+            : `<div class="detail-value">${esc(contactValue)}</div>`;
+
+        document.getElementById('profileDetails').innerHTML = `
+            <div class="detail-item"><div class="detail-label">Nome principal</div><div class="detail-value">${esc(data.display_name || data.name || '-')}</div></div>
+            <div class="detail-item"><div class="detail-label">Usuário</div><div class="detail-value">${esc(data.username || '-')}</div></div>
+            <div class="detail-item"><div class="detail-label">Área de atuação</div><div class="detail-value">${esc(formatAreaLabel(data.area_atuacao || data.role))}</div></div>
+            <div class="detail-item"><div class="detail-label">Bio</div><div class="detail-value">${esc(data.bio || 'Sem bio informada')}</div></div>
+            <div class="detail-item"><div class="detail-label">Cadastro</div><div class="detail-value">${esc(fmtDate(data.joined_at))}</div></div>
+            <div class="detail-item"><div class="detail-label">Cidade / Estado</div><div class="detail-value">${esc(data.location || 'Não informada')}</div></div>
+            <div class="detail-item"><div class="detail-label">Status</div><div class="detail-value"><span class="profile-status-badge ${esc(data.status || 'offline')}">${esc((data.status || 'offline') === 'online' ? 'Online' : 'Offline')}</span></div></div>
+            <div class="detail-item"><div class="detail-label">Contato</div>${contactNode}</div>
         `;
     }
 
@@ -1190,6 +1473,68 @@
 
         if (loadWrap) {
             loadWrap.style.display = communityListState.visibleCount < communityListState.all.length ? 'flex' : 'none';
+        }
+
+        animateHomeStagger();
+    }
+
+    function renderServices(services, preserveVisible = false) {
+        const grid = document.getElementById('servicesGrid');
+        const empty = document.getElementById('emptyServices');
+        const loadWrap = document.getElementById('servicesLoadMoreWrap');
+
+        if (!Array.isArray(services) || !services.length) {
+            servicesListState.all = [];
+            servicesListState.visibleCount = 0;
+            grid.innerHTML = '';
+            empty.textContent = isOwnerProfile
+                ? 'Você ainda não publicou serviços. Adicione sua primeira prestação para ampliar sua presença.'
+                : 'Este perfil ainda não publicou serviços.';
+            empty.style.display = 'block';
+            if (loadWrap) loadWrap.style.display = 'none';
+            return;
+        }
+
+        servicesListState.all = services.slice();
+        if (!preserveVisible) {
+            servicesListState.visibleCount = Math.min(PROFILE_RENDER_CHUNK, servicesListState.all.length);
+        } else {
+            servicesListState.visibleCount = Math.min(
+                Math.max(servicesListState.visibleCount, PROFILE_RENDER_CHUNK),
+                servicesListState.all.length,
+            );
+        }
+
+        empty.style.display = 'none';
+        const visibleItems = servicesListState.all.slice(0, servicesListState.visibleCount);
+        grid.innerHTML = visibleItems.map((service) => {
+            const image = service.image || service.imagem || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="420" height="240"><rect width="100%" height="100%" fill="%23172530"/><text x="50%" y="50%" fill="%23e7f0ff" dominant-baseline="middle" text-anchor="middle" font-size="20">Serviço</text></svg>';
+            const providerImage = service.provider?.profile_image || '';
+            return `
+                <article class="service-card stagger-item" onclick="window.location.href='/services'">
+                    <img class="service-image" src="${esc(image)}" alt="${esc(service.title || service.titulo || 'Serviço')}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='${esc(image)}'">
+                    <div class="service-body">
+                        <div class="service-head">
+                            <span class="service-status ${esc(service.status || 'disponível')}">${esc(service.status || 'disponível')}</span>
+                            <span class="service-price">${esc(service.price || service.preco || 'R$ -')}</span>
+                        </div>
+                        <h3 class="service-title">${esc(service.title || service.titulo || 'Serviço')}</h3>
+                        <p class="service-desc">${esc(service.description || service.descricao || '')}</p>
+                        <div class="service-footer">
+                            <span>${esc(service.category || service.ficha_tecnica?.categoria || 'Serviço')}</span>
+                            <span>${esc(service.location || service.local || '')}</span>
+                        </div>
+                        <div class="service-provider">
+                            ${providerImage ? `<img src="${esc(providerImage)}" alt="Fornecedor" onerror="wfAvatarOnError(this)">` : ''}
+                            <span>${esc(service.provider?.name || service.created_by_user?.name || 'Produtor')}</span>
+                        </div>
+                    </div>
+                </article>
+            `;
+        }).join('');
+
+        if (loadWrap) {
+            loadWrap.style.display = servicesListState.visibleCount < servicesListState.all.length ? 'flex' : 'none';
         }
 
         animateHomeStagger();
@@ -1260,6 +1605,15 @@
         renderOffers(offersListState.all, true);
     }
 
+    function loadMoreProfileServices() {
+        if (!servicesListState.all.length) return;
+        servicesListState.visibleCount = Math.min(
+            servicesListState.visibleCount + PROFILE_RENDER_CHUNK,
+            servicesListState.all.length,
+        );
+        renderServices(servicesListState.all, true);
+    }
+
     function loadMoreCommunityPosts() {
         if (!communityListState.all.length) return;
         communityListState.visibleCount = Math.min(
@@ -1272,6 +1626,7 @@
     function renderAudienceBanner(data) {
         const banner = document.getElementById('profileAudienceBanner');
         const offersCount = Number(data.total_offers || 0);
+        const servicesCount = Number((data.services || []).length);
         const postsCount = Number((data.community_posts || []).length);
 
         if (isOwnerProfile) {
@@ -1280,7 +1635,7 @@
                     <h4 class="profile-audience-title">Seu painel público está ativo</h4>
                     <span class="profile-audience-pill">Visão do dono</span>
                 </div>
-                <p class="profile-audience-sub">Este é o mesmo perfil que outros usuários veem. Você tem ${offersCount} oferta(s) publicada(s) e ${postsCount} post(s).</p>
+                <p class="profile-audience-sub">Este é o mesmo perfil que outros usuários veem. Você tem ${offersCount} oferta(s), ${servicesCount} serviço(s) e ${postsCount} post(s).</p>
             `;
             return;
         }
@@ -1290,30 +1645,7 @@
                 <h4 class="profile-audience-title">Perfil público de ${esc(data.name || 'usuário')}</h4>
                 <span class="profile-audience-pill">Visão pública</span>
             </div>
-            <p class="profile-audience-sub">Explore as ofertas publicadas e a atividade da comunidade deste perfil. Atualmente: ${offersCount} oferta(s) e ${postsCount} post(s).</p>
-        `;
-    }
-
-    function renderDetails(data) {
-        const lockReason = data.contact_lock_reason || 'Contato e localização completos são liberados para assinantes Premium.';
-        const emailNode = data.contact_locked
-            ? lockFieldMarkup('Contato', 'Email disponível para assinantes', lockReason)
-            : `<div class="detail-value">${esc(data.email || '-')}</div>`;
-        const phoneNode = data.contact_locked
-            ? lockFieldMarkup('Contato', 'Telefone disponível para assinantes', lockReason)
-            : `<div class="detail-value">${esc(data.phone || 'Não informado')}</div>`;
-        const locationNode = data.contact_locked
-            ? lockFieldMarkup('Endereço', 'Localização completa para assinantes', lockReason)
-            : `<div class="detail-value">${esc(data.location || 'Não informada')}</div>`;
-
-        document.getElementById('profileDetails').innerHTML = `
-            <div class="detail-item"><div class="detail-label">Nome</div><div class="detail-value">${esc(data.name || '-')}</div></div>
-            <div class="detail-item"><div class="detail-label">Email</div>${emailNode}</div>
-            <div class="detail-item"><div class="detail-label">Telefone</div>${phoneNode}</div>
-            <div class="detail-item"><div class="detail-label">Usuário</div><div class="detail-value">${esc(data.username || '-')}</div></div>
-            <div class="detail-item"><div class="detail-label">Perfil</div><div class="detail-value">${esc(data.role || '-')}</div></div>
-            <div class="detail-item"><div class="detail-label">Localização</div>${locationNode}</div>
-            <div class="detail-item"><div class="detail-label">Bio</div><div class="detail-value">${esc(data.bio || 'Sem bio informada')}</div></div>
+            <p class="profile-audience-sub">Explore as ofertas, serviços e atividade da comunidade deste perfil. Atualmente: ${offersCount} oferta(s), ${servicesCount} serviço(s) e ${postsCount} post(s).</p>
         `;
     }
 
@@ -1324,9 +1656,12 @@
         if (isOwnerProfile) {
             actions.innerHTML = `
                 <button class="btn-profile" type="button" id="modeSwitchBtn">Modo Noturno</button>
+                <button class="btn-profile primary" type="button" id="editProfileBtn">Editar perfil</button>
                 <a class="btn-profile primary" href="/offers/new">Nova oferta</a>
+                <a class="btn-profile secondary" href="/services">Novo serviço</a>
             `;
             document.getElementById('modeSwitchBtn').addEventListener('click', toggleThemeMode);
+            document.getElementById('editProfileBtn').addEventListener('click', () => setActiveSection('settings'));
             return;
         }
 
@@ -1355,16 +1690,12 @@
         const settingsLocked = document.getElementById('settingsLocked');
         const logoutBox = document.getElementById('logoutBox');
         const logoutLocked = document.getElementById('logoutLocked');
-        const settingsTab = document.getElementById('settingsTab');
-        const logoutTab = document.getElementById('logoutTab');
 
         if (isOwnerProfile) {
             settingsForm.classList.remove('hidden');
             settingsLocked.classList.add('hidden');
             logoutBox.classList.remove('hidden');
             logoutLocked.classList.add('hidden');
-            settingsTab.classList.remove('hidden');
-            logoutTab.classList.remove('hidden');
 
             document.getElementById('editName').value = data.name || '';
             document.getElementById('editLocation').value = data.location || '';
@@ -1374,11 +1705,9 @@
             settingsLocked.classList.remove('hidden');
             logoutBox.classList.add('hidden');
             logoutLocked.classList.remove('hidden');
-            settingsTab.classList.add('hidden');
-            logoutTab.classList.add('hidden');
 
             if (document.querySelector('.nav-link.active')?.dataset.section === 'settings' || document.querySelector('.nav-link.active')?.dataset.section === 'logout') {
-                setActiveSection('home');
+                setActiveSection('about');
             }
         }
     }
@@ -1388,12 +1717,19 @@
         avatarLink.href = isOwnerProfile ? '/me/profile' : `/users/${data.id}`;
 
         document.getElementById('profileName').textContent = data.name || 'Perfil';
+        const profileNameHero = document.getElementById('profileNameHero');
+        const profileUserHero = document.getElementById('profileUserHero');
+        const profileBioHero = document.getElementById('profileBioHero');
         document.getElementById('profileBio').textContent = data.bio || 'Sem bio informada.';
+        if (profileNameHero) profileNameHero.textContent = data.display_name || data.name || 'Perfil';
+        if (profileUserHero) profileUserHero.textContent = data.username || '@usuario';
+        if (profileBioHero) profileBioHero.textContent = data.bio || 'Sem bio informada.';
 
         document.getElementById('profileMeta').innerHTML = `
             <span class="meta-pill">${esc(data.username || '@usuario')}</span>
             <span class="meta-pill">${esc(data.location || 'Sem localização')}</span>
-            <span class="meta-pill">${esc(data.role || '-')}</span>
+            <span class="meta-pill">${esc(formatAreaLabel(data.area_atuacao || data.role))}</span>
+            <span class="meta-pill">${esc((data.status || 'offline') === 'online' ? 'Online' : 'Offline')}</span>
         `;
 
         renderAvatar(data.name, data.profile_image);
@@ -1405,7 +1741,7 @@
         const settingsHint = document.getElementById('settingsSectionHint');
         const logoutHint = document.getElementById('logoutSectionHint');
         if (offersTitle) {
-            offersTitle.textContent = isOwnerProfile ? 'Minhas ofertas publicadas' : `Ofertas publicadas por ${data.name || 'usuário'}`;
+            offersTitle.textContent = isOwnerProfile ? 'Meu perfil, minhas ofertas' : `Ofertas publicadas por ${data.name || 'usuário'}`;
         }
         if (offersHint) {
             offersHint.textContent = isOwnerProfile
@@ -1419,7 +1755,7 @@
         }
         if (detailsHint) {
             detailsHint.textContent = isOwnerProfile
-                ? 'Dados da sua identidade pública e informações principais da conta.'
+                ? 'Dados públicos, status, contato e configuração visual do perfil.'
                 : 'Informações públicas disponíveis deste perfil na plataforma.';
         }
         if (settingsHint) {
@@ -1441,6 +1777,7 @@
         setupProfileHeader(profileData);
         renderStats(profileData);
         renderDetails(profileData);
+        renderServices(profileData.services || []);
         renderOffers(profileData.offers || []);
         renderCommunityPosts(profileData.community_posts || []);
         renderAudienceBanner(profileData);
@@ -1501,6 +1838,11 @@
     const offersLoadMoreBtn = document.getElementById('offersLoadMoreBtn');
     if (offersLoadMoreBtn) {
         offersLoadMoreBtn.addEventListener('click', loadMoreProfileOffers);
+    }
+
+    const servicesLoadMoreBtn = document.getElementById('servicesLoadMoreBtn');
+    if (servicesLoadMoreBtn) {
+        servicesLoadMoreBtn.addEventListener('click', loadMoreProfileServices);
     }
 
     const communityLoadMoreBtn = document.getElementById('communityLoadMoreBtn');

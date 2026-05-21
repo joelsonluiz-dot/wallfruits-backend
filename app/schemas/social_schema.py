@@ -33,9 +33,13 @@ class PublicUserProfileResponse(BaseModel):
     id: int
     name: str
     username: str
+    display_name: str
     email: Optional[str]
     phone: Optional[str]
     role: str
+    area_atuacao: Optional[str] = None
+    joined_at: Optional[datetime] = None
+    status: str = "offline"
     bio: Optional[str]
     location: Optional[str]
     profile_image: Optional[str]
@@ -48,6 +52,7 @@ class PublicUserProfileResponse(BaseModel):
     is_following: bool
 
     offers: list[ProfileOfferItem]
+    services: list[dict]
     community_posts: list[ProfileCommunityPostItem]
 
 
