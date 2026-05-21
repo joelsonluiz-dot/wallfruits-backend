@@ -700,6 +700,50 @@
             flex-direction: column;
         }
     }
+
+    .offer-card {
+        border-radius: 16px;
+        border: 1px solid rgba(255,255,255,0.1);
+        background: linear-gradient(180deg, rgba(14, 20, 32, 0.96), rgba(10, 14, 25, 0.96));
+        box-shadow: 0 14px 30px rgba(4, 10, 20, 0.24);
+    }
+
+    .offer-card:hover {
+        border-color: rgba(0, 212, 170, 0.28);
+        box-shadow: 0 16px 34px rgba(4, 10, 20, 0.3);
+    }
+
+    .offer-image {
+        filter: saturate(1.06) contrast(1.04);
+    }
+
+    .offer-body {
+        padding: 0.64rem 0.7rem 0.75rem;
+    }
+
+    .offer-title {
+        color: #f3f7ff;
+    }
+
+    .offer-status-badge {
+        border: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .offer-status-badge.active {
+        background: rgba(54, 208, 141, 0.16);
+        color: #bfffe8;
+    }
+
+    .offer-status-badge.sold,
+    .offer-status-badge.closed,
+    .offer-status-badge.expired {
+        background: rgba(255, 123, 123, 0.16);
+        color: #ffd4d4;
+    }
+
+    .offer-date {
+        color: #9aa8c8;
+    }
 </style>
 
 <div id="profilePage" class="profile-page" data-viewed-user-id="{{ viewed_user_id if viewed_user_id is not none else '' }}">
