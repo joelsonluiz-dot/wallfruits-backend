@@ -52,6 +52,11 @@ interface AuthApi {
     @GET("api/library/catalog")
     suspend fun libraryCatalog(): LibraryCatalogResponse
 
+    @GET("social/users/{userId}")
+    suspend fun publicProfile(
+        @Path("userId") userId: String,
+    ): JsonObject
+
     @GET("api/buyer-clients/dashboard")
     suspend fun buyerClientsDashboard(): BuyerClientsDashboardResponse
 
