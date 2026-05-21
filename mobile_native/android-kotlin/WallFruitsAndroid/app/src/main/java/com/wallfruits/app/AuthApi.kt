@@ -57,6 +57,21 @@ interface AuthApi {
         @Path("userId") userId: String,
     ): JsonObject
 
+    @POST("social/users/{userId}/follow")
+    suspend fun followUser(@Path("userId") userId: String): JsonObject
+
+    @POST("api/messages")
+    suspend fun sendMessage(@Body request: JsonObject): JsonObject
+
+    @POST("api/offers/{offerId}/favorite")
+    suspend fun favoriteOffer(@Path("offerId") offerId: String): JsonObject
+
+    @POST("api/offers/{offerId}/bookmark")
+    suspend fun bookmarkOffer(@Path("offerId") offerId: String): JsonObject
+
+    @POST("api/offers/{offerId}/reserve")
+    suspend fun reserveOffer(@Path("offerId") offerId: String, @Body request: JsonObject): JsonObject
+
     @GET("api/buyer-clients/dashboard")
     suspend fun buyerClientsDashboard(): BuyerClientsDashboardResponse
 

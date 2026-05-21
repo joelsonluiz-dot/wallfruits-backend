@@ -12,12 +12,18 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.material3.Button
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import kotlinx.serialization.json.JsonObject
 
 
 @Composable
 fun ProfileScreen(userId: Long? = null) {
     val vm: ProfileViewModel = hiltViewModel()
+    val authVm: AuthViewModel = hiltViewModel()
     val profile = vm.profile.collectAsState()
     val uid = (userId ?: 0L).toString()
 
@@ -32,7 +38,20 @@ fun ProfileScreen(userId: Long? = null) {
 
             when (val p = profile.value) {
                 null -> Text("Carregando perfil...")
-                else -> renderProfileJson(p)
+                else -> {
+                    renderProfileJson(p)
+
+                    // basic action row
+                    val name = p["name"]?.toString()?.replace('"', ' ')?.trim()
+                    val isOwner = authVm.state.value.userName != null && authVm.state.value.userName == name
+
+                    if (!isOwner) {
+                        Button(onClick = { vm.toggleFollow(uid) }) { Text("Seguir") }
+                        Button(onClick = { vm.sendMessage(uid, "Olá, tenho interesse nos seus produtos.") }) { Text("Mensagem") }
+                    } else {
+                        Button(onClick = { /* Edit action - to implement */ }) { Text("Editar Perfil") }
+                    }
+                }
             }
         }
     }
