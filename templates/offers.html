@@ -3621,7 +3621,14 @@
             return payload;
         }
 
-        return apiRequest(buildOffersQuery(skip, limit));
+        try {
+            return await apiRequest(buildOffersQuery(skip, limit));
+        } catch (err) {
+            // Fallback to a direct fetch if the global apiRequest helper fails
+            const url = buildOffersQuery(skip, limit);
+            const resp = await fetch(url, { credentials: 'same-origin' });
+            return await resp.json();
+        }
     }
 
     function prefetchNextPage() {
@@ -3637,7 +3644,15 @@
             return;
         }
 
-        const request = apiRequest(buildOffersQuery(nextSkip, OFFERS_PAGE_SIZE))
+        const request = (async () => {
+            try {
+                return await apiRequest(buildOffersQuery(nextSkip, OFFERS_PAGE_SIZE));
+            } catch (err) {
+                const url = buildOffersQuery(nextSkip, OFFERS_PAGE_SIZE);
+                const resp = await fetch(url, { credentials: 'same-origin' });
+                return await resp.json();
+            }
+        })()
             .then((payload) => {
                 offersFeedState.prefetch = {
                     signature,
@@ -3744,7 +3759,14 @@
         offersFeedState.isLoading = true;
 
         try {
-            const data = await apiRequest(buildOffersQuery(0, OFFERS_PAGE_SIZE));
+            let data;
+            try {
+                data = await apiRequest(buildOffersQuery(0, OFFERS_PAGE_SIZE));
+            } catch (err) {
+                const url = buildOffersQuery(0, OFFERS_PAGE_SIZE);
+                const resp = await fetch(url, { credentials: 'same-origin' });
+                data = await resp.json();
+            }
             if (getFilterSignature() !== expectedSignature) return;
 
             const incoming = Array.isArray(data?.offers) ? data.offers : [];
@@ -3789,7 +3811,14 @@
         if (offersRefreshPaused || offersFeedState.isLoading || !offersFeedState.items.length) return;
 
         try {
-            const data = await apiRequest(buildOffersQuery(0, Math.min(10, OFFERS_PAGE_SIZE)));
+            let data;
+            try {
+                data = await apiRequest(buildOffersQuery(0, Math.min(10, OFFERS_PAGE_SIZE)));
+            } catch (err) {
+                const url = buildOffersQuery(0, Math.min(10, OFFERS_PAGE_SIZE));
+                const resp = await fetch(url, { credentials: 'same-origin' });
+                data = await resp.json();
+            }
             const latest = Array.isArray(data?.offers) ? data.offers : [];
             if (!latest.length) return;
 
