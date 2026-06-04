@@ -2035,10 +2035,12 @@
     <div id="offersFeaturedStore" class="offers-store-row"></div>
 </section>
 
-<div class="offers-list wf-stagger" id="offersContainer">
-    <div class="skeleton-card"></div>
-    <div class="skeleton-card"></div>
-    <div class="skeleton-card"></div>
+<div class="offers-grid-wrap">
+    <div class="offers-list wf-stagger" id="offersContainer">
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+    </div>
 </div>
 <div id="offersLoadMoreSentinel" style="height:2px;"></div>
 <div id="offersLoadMoreStatus" class="offers-count" style="margin-top:0.45rem;" role="status" aria-live="polite" aria-atomic="true"></div>
@@ -3664,6 +3666,11 @@
         bindCardOpenBehavior();
         syncOffersVirtualization();
         primeOffersMedia(items);
+        // Accessibility: ensure container children are focusable and wrap correctly
+        container.querySelectorAll('.produto-card').forEach((card) => {
+            card.setAttribute('role', 'article');
+            card.setAttribute('tabindex', '0');
+        });
     }
 
     function ensureOffersVirtualization() {
@@ -4176,6 +4183,49 @@
         width: 100%;
         overflow-x: hidden;
         min-width: 0;
+        align-items: start;
+    }
+
+    /* Premium card tweaks */
+    .offers-grid-wrap {
+        width: 100%;
+        max-width: 1380px;
+        margin: 0 auto;
+        padding: 0 0.6rem;
+    }
+
+    .produto-card {
+        min-width: 0; /* allow flex/grid children to shrink */
+        display: grid;
+        grid-template-columns: 120px 1fr auto;
+        gap: 0.8rem;
+        align-items: stretch;
+    }
+
+    .produto-img-wrap {
+        width: 120px;
+        min-width: 120px;
+        min-height: 120px;
+        height: 120px;
+        border-right: none;
+        border-radius: 12px;
+        overflow: hidden;
+        display: block;
+    }
+
+    .produto-img-wrap img, .offers-store-media img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    .produto-content {
+        min-width: 0;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 0.5rem;
+        align-items: start;
     }
 
     .offers-list > * {
