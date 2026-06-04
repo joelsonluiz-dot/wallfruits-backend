@@ -3268,7 +3268,9 @@
             params.set('radius', '100');
         }
 
-        return `/offers?${params.toString()}`;
+        // Use the API JSON endpoint so client requests always receive JSON payloads
+        // instead of accidentally requesting the HTML page route.
+        return `/api/offers?${params.toString()}`;
     }
 
     function getFilterState() {
