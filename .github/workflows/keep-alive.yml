@@ -1,0 +1,17 @@
+name: Keep-Alive Ping
+
+on:
+  schedule:
+    # every 5 minutes
+    - cron: '*/5 * * * *'
+  workflow_dispatch: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    name: Ping production site to prevent spin-down
+    steps:
+      - name: Curl production root
+        run: |
+          echo "Pinging production site: https://wallfruits-backend.onrender.com/"
+          curl -sS -o /dev/null -w "%{http_code}\n" https://wallfruits-backend.onrender.com/ || true
